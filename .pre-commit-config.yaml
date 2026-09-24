@@ -1,0 +1,28 @@
+# Espelha a disciplina do backend: lint/format/typecheck antes de cada commit.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+      - id: mixed-line-ending
+        args: [--fix=lf]
+  - repo: local
+    hooks:
+      - id: lint
+        name: eslint --fix
+        entry: pnpm exec eslint . --fix
+        language: system
+        types: [file]
+        files: \.(ts|tsx|css)$
+      - id: format
+        name: prettier --write
+        entry: pnpm exec prettier --write
+        language: system
+        types: [file]
+      - id: typecheck
+        name: tsc --noEmit
+        entry: pnpm exec tsc --noEmit
+        language: system
+        pass_filenames: false

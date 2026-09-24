@@ -1,0 +1,22 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*
+!.env.example
+
+# tooling
+.eslintcache
+.prettiercache
+coverage/
+playwright-report/
+test-results/
+.vite/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
