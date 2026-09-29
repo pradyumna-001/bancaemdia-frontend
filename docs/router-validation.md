@@ -1,5 +1,7 @@
 # Validação do roteador e error boundaries (#3)
 
+Registro histórico da primeira execução. Após a instrução do dono em 29/09/2026, a validação passou a ser permanente e obrigatória no commit final, conforme AGENTS regra 28 e ADR 008. Os checks atuais do PR #42 são a referência para sua entrega; a execução abaixo não substitui os checks do head.
+
 Executada em 29/09/2026 sobre `6a0fa04a2fa8e4a4423e8a2915ced3ba6a1656c8`, baseada no PR #41 (`4b184f9591cabb2bd83d81705b936cbd9cdb1c4b`).
 
 [Execução de aceitação no GitHub Actions — sucesso](https://github.com/pradyumna-001/bancaemdia-frontend/actions/runs/36602200645).

@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Testes (${{ github.event_name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm install --global pnpm@10.34.6
+      - run: make install lint typecheck test build gen-types
+      - run: git diff --exit-code -- src/api/schema.d.ts
+      - run: pnpm exec playwright install --with-deps
+      - run: make test:e2e
+      - run: pipx run pre-commit run --all-files
+      - name: Verificar nginx, rotas e CSP em Docker
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose up -d --build
+          trap 'docker compose logs; docker compose down' EXIT
+          container=$(docker compose ps -q frontend)
+          test "$(docker exec "$container" id -u)" = '101'
+          docker exec "$container" nginx -t
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8080/ -o /tmp/index.html; then break; fi
+            sleep 1
+          done
+          curl --fail --silent -D /tmp/route.headers http://127.0.0.1:8080/aposta/abc -o /tmp/deep.html
+          cmp /tmp/index.html /tmp/deep.html
+          grep -i "Content-Security-Policy: default-src 'self'" /tmp/route.headers
+          node tests/verify-nginx.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-${{ github.event_name }}-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -115,7 +115,13 @@ python -m pip install pre-commit
 python -m pre_commit run --all-files
 ```
 
-Ela verifica whitespace, EOF, arquivos grandes, LF, lint, formato e tipos. Não execute `pre-commit install` sobre o Husky: há um único dono do hook. Antes de push, rode `make lint`, `make typecheck` e `make test`. **Não existe workflow de CI permanente**; a implementação dos gates, budgets e deploy pertence à #8. A validação pontual da #1 em Linux, incluindo os seis e2e, Docker sem root e `make up` com a API, está registrada em [docs/scaffold-validation.md](docs/scaffold-validation.md).
+Ela verifica whitespace, EOF, arquivos grandes, LF, lint, formato e tipos. Não execute `pre-commit install` sobre o Husky: há um único dono do hook. Antes de push, rode `make lint`, `make typecheck` e `make test`.
+
+**CI permanente:** `.github/workflows/ci.yml` executa em push e pull request, inclusive mudanças só de documentação. Valida o commit da branch com lint, tipos, testes, build, geração do contrato, e2e, pre-commit e nginx/Docker. Relatórios e screenshots ficam nos artefatos de cada execução. Budgets, cobertura mínima, proteção de branch e deploy continuam na #8.
+
+**Regra de entrega:** nenhum PR pode ser declarado pronto em rascunho ou com testes/checks pendentes ou falhando. Após o último push, aguarde todos os checks do commit final, incluindo integrações externas. Rascunho temporário durante o trabalho é permitido; impedimentos fora do controle devem ser explicitados sem declarar aprovação. Ver AGENTS regra 28.
+
+A validação histórica da #1 em Linux, incluindo os seis e2e, Docker sem root e `make up` com a API, está registrada em [docs/scaffold-validation.md](docs/scaffold-validation.md).
 
 ## Imagem estática e API local
 
