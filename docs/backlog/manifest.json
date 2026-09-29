@@ -75,7 +75,7 @@
     "number": 20,
     "title": "[ADR-019] Painel — resumo financeiro e séries canônicas",
     "file": "020.md",
-    "dependencies": "#7, #9, #10, #16, #17; #52"
+    "dependencies": "#7, #9, #10, #16, #17; #52; #50 (hierarquia grupo/tipster e série diária)"
   },
   {
     "number": 21,

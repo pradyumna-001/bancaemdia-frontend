@@ -20,6 +20,7 @@ A auditoria comparou main, cadeias abertas do backend e as 39 issues frontend. O
 8. Lucro, ROI, saldo, progresso de meta e resultados de calculadoras vêm da API. Formatar e desenhar não autoriza somar dinheiro. Filtros/resumos/exports devem compartilhar população ou explicitar diferença. Refetch não força refresh de MV.
 9. Stripe Checkout/Billing, cartão obrigatório, teste único de 168 horas após confirmação do cartão pelo servidor; sem tiers/preços inventados. Quatro calculadoras aprovadas; pesquisa de linhas No-Go. Decisões recentes registradas substituem ADRs históricos conflitantes do backend, mas dependência continua bloqueada enquanto o código/contrato não acompanhar.
 10. Upload de prints, prévia XLSX, consentimento de gasto, mídia de aposta, catálogos, preferências e hipotética têm lacunas explícitas em #50/consumidoras. Mock não satisfaz integração nem autoriza processamento sem consentimento.
+11. Após revisão dos gráficos iniciais, o titular tornou obrigatórios: lucro por grupo com tipsters dentro do grupo (#20/#50), lucro por esporte (#56) e lucro por dia com data/valor de cada dia legíveis sem hover (#20/#50). Os componentes da #7 não limitam o catálogo visual. Ausência de contrato da hierarquia exige ampliar a API, não retirar a jornada; agregados continuam exclusivos do servidor. Diário não é linha acumulada nem mapa por dia da semana. Propostas visuais serão validadas nos dois viewports antes de implementar essas jornadas.
 
 ## Ordem por dependências
 
