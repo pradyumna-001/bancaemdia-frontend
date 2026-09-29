@@ -25,7 +25,19 @@ Preservamos a disciplina de tokens, acessibilidade e consistência, substituindo
 ## Consequências e limites
 
 - A #4 aplica a fundação às páginas provisórias e erros existentes. Não inventa telas financeiras nem libera acesso às rotas protegidas.
-- Marca/wordmark/favicon ficam na #5; shell e navegação na #6; gráficos na #7. O seletor será acomodado pelo shell quando ele existir.
+- Marca/wordmark/favicon são definidos na #5, conforme decisão abaixo; shell e navegação ficam na #6; gráficos na #7. O seletor será acomodado pelo shell quando ele existir.
 - Fontes locais dispensam CDN e mantêm CSP restrita, mas os três arquivos somam aproximadamente 456 KiB; o navegador busca os pesos usados e o texto pode aparecer com fallback enquanto carregam. O orçamento completo de desempenho permanece na #8.
 - A configuração nginx agora é um artefato do build, inseparável do HTML. Ver [runbook](../runbooks/deploy.md).
 - Validar móvel/desktop, teclado, axe, persistência, pre-paint, sincronização e storage bloqueado. CI também verifica a imagem nginx com CSP real.
+
+## Identidade mínima — #5, 29/09/2026
+
+Adotada a recomendação A dentro da delegação do responsável para seguir a direção pesquisada: assinatura tipográfica em minúsculas, **banca** em Source Sans 3 700 e **emdia** em 400, sem espaço visual inserido e sem símbolo ao lado. A alternativa B acrescenta o símbolo à assinatura; a comparação foi apresentada, sem presumir que ausência de resposta seja aprovação explícita da alternativa A.
+
+A escolha preserva espaço no cabeçalho e leitura do nome. É uma decisão de design, não uma afirmação de preferência comprovada do público. O componente `Logo` expõe um único nome acessível e não acrescenta um link redundante; o shell da #6 poderá envolvê-lo em navegação quando houver destino apropriado.
+
+O favicon é um "b" geométrico desenhado em SVG, com fundo azul de ação e traço em `--sobre-acao` do tema claro. Essa combinação fixa mantém a marca identificável nas abas claras e escuras; não comunica lucro ou estado. Fonte e geometria são independentes: o favicon não depende de download de fonte.
+
+`src/marca/favicon.svg` é a fonte editável com referências a tokens. O plugin Vite resolve essas referências da regra `:root` de `tokens.css` e emite `dist/favicon.svg`, servido também em desenvolvimento. Não há CSS externo, estilos inline ou cores literais duplicadas no código-fonte. nginx serve SVG com MIME correto, sem cache persistente e sem fallback de SPA para ícone ausente.
+
+Cabeçalhos provisórios, login, erro de rota, falha de configuração e carregamento inicial usam a mesma assinatura. Não são introduzidos shell, novo acento, dependência ou fonte adicional.

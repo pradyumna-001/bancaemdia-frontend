@@ -7,6 +7,7 @@ import { initializeConfig } from './lib/config';
 import { createBrowserRouter } from 'react-router-dom';
 import { createAppRoutes } from './app/routes';
 import { createAppQueryClient } from './app/queryClient';
+import { Logo } from './components/Logo';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Não foi possível iniciar a aplicação.');
@@ -14,6 +15,9 @@ if (!root) throw new Error('Não foi possível iniciar a aplicação.');
 const application = createRoot(root);
 application.render(
   <main className="pagina">
+    <header className="cabecalho-marca">
+      <Logo />
+    </header>
     <p role="status">Iniciando o bancaemdia…</p>
   </main>,
 );

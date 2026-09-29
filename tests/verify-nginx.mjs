@@ -61,6 +61,17 @@ for (const [name, browserType] of Object.entries({
         'http://127.0.0.1:8080/tutorial',
       );
       const csp = htmlResponse.headers()['content-security-policy'];
+      const favicon = await page.request.get(
+        'http://127.0.0.1:8080/favicon.svg',
+      );
+      expect(favicon.status()).toBe(200);
+      expect(favicon.headers()['content-type']).toContain('image/svg+xml');
+      expect(await favicon.text()).not.toContain('var(');
+      await expect(
+        page
+          .locator('header')
+          .getByRole('img', { name: 'bancaemdia', exact: true }),
+      ).toHaveCount(1);
       expect(csp).toMatch(/script-src 'self' 'sha256-[^']+'/);
       expect(csp).not.toContain('unsafe-inline');
       await page.evaluate(() => document.fonts.ready);

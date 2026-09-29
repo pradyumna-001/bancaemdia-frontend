@@ -127,6 +127,13 @@ Revisão de escopo autorizada pelo responsável após a pesquisa visual: a #4 pr
 
 **Acceptance**: nome/favicon/wordmark consistentes em header, login e página de erro; decisão registrada neste ADR ou em follow-up
 
+#### Implementação da #5
+
+- Direção A recomendada: assinatura tipográfica `bancaemdia`, com peso 700 em "banca" e 400 em "emdia"; símbolo "b" reservado ao favicon. Decisão e alternativa registradas no ADR 006, seguindo a delegação de design do responsável.
+- `Logo` único nos cabeçalhos provisórios, login, erros e início do boot. A navegação completa permanece na #6.
+- Fonte SVG editável em `src/marca/favicon.svg`; Vite gera `/favicon.svg` com cores lidas de `tokens.css`. Paleta e fontes existentes preservadas.
+- Verificação móvel/desktop dos dois temas, nome acessível, imagem SVG carregável e resposta sob CSP no nginx. Evidências em `docs/brand-validation.md`.
+
 ---
 
 ### Issue 6: Shell de Navegação (fonte única ABAS)

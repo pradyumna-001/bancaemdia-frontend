@@ -30,7 +30,7 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 
 13. Cor só existe como token CSS em `src/styles/tokens.css`: superfícies neutras e cores semânticas de ação, foco e resultado (ADR 006 revisado após pesquisa). ESLint e varredura CSS/HTML/SVG proíbem cor literal fora desse arquivo; estados nunca dependem apenas da cor.
 14. Aparência segue o sistema por padrão; escolhas explícitas Claro/Escuro persistem. `data-tema="claro|escuro"` é resolvido antes da pintura, com script autorizado por hash exato na CSP. Storage indisponível não pode impedir o uso.
-15. Source Sans 3 para a interface, servida localmente em WOFF2 com licença OFL e `font-display: swap`; nenhum CDN. Números comparáveis usam algarismos tabulares (`.numero`). Marca final continua na #5.
+15. Source Sans 3 para a interface, servida localmente em WOFF2 com licença OFL e `font-display: swap`; nenhum CDN. Números comparáveis usam algarismos tabulares (`.numero`). Marca: `Logo` único, "banca" em 700 + "emdia" em 400; favicon gerado de `src/marca/favicon.svg` usando os tokens, sem cores duplicadas (ADR 006).
 16. Sem biblioteca de gráficos: gráficos são SVG/CSS próprios (componentes em `src/components/graficos/`), incluindo a regra barra: comprimento ∝ |lucro|, **espessura = √(nº de apostas)**.
 17. Ícones inline SVG registrados em um macro único `src/components/Icone.tsx`; nome novo de ícone exige registro. Ilustrações SVG desenhadas à mão; nenhuma captura de tela inventada em tutoriais.
 
