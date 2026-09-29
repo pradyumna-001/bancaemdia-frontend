@@ -1,0 +1,70 @@
+name: Temporary issue 2 validation
+
+on:
+  push:
+    branches: [feat/2-configuracao-ambiente]
+    paths:
+      - '.github/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'nginx/**'
+      - 'public/**'
+      - 'config/**'
+      - '*config*'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm install --global pnpm@10.34.6
+      - run: make install lint typecheck test build gen-types
+      - run: git diff --exit-code -- src/api/schema.d.ts
+      - run: pnpm exec playwright install --with-deps
+      - run: make test:e2e
+      - run: pipx run pre-commit run --all-files
+      - name: Verify the same image with runtime configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose up -d --build
+          container=$(docker compose ps -q frontend)
+          trap 'docker compose logs; docker compose down; docker rm -f config-missing 2>/dev/null || true' EXIT
+          test "$(docker inspect --format '{{.Config.User}}' "$container")" = '101:101'
+          test "$(docker exec "$container" id -u)" = '101'
+          docker exec "$container" nginx -t
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8080/ -o /tmp/index.html; then break; fi
+            sleep 1
+          done
+          curl --fail --silent -D /tmp/config.headers http://127.0.0.1:8080/config.json -o /tmp/config.json
+          grep -i 'Cache-Control: no-store' /tmp/config.headers
+          grep -i 'Content-Type: application/json' /tmp/config.headers
+          grep -i "Content-Security-Policy: default-src 'self'" /tmp/config.headers
+          grep -i 'X-Content-Type-Options: nosniff' /tmp/config.headers
+          image=$(docker inspect --format '{{.Image}}' "$container")
+          mkdir -p /tmp/missing-config
+          docker cp "$container":/usr/share/nginx/html/. /tmp/missing-config/
+          rm /tmp/missing-config/config.json
+          docker run -d --name config-missing -p 127.0.0.1:8081:8080 --mount type=bind,source=/tmp/missing-config,target=/usr/share/nginx/html,readonly "$image"
+          node .github/runtime-validation.mjs
+          test "$(docker inspect --format '{{.Image}}' "$container")" = "$image"
+          test "$(curl --silent -o /tmp/missing-body -w '%{http_code}' http://127.0.0.1:8081/config.json)" = '404'
+          ! cmp -s /tmp/index.html /tmp/missing-body
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue-2-validation
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
