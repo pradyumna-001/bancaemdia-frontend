@@ -73,6 +73,8 @@ Cada rota tem um error boundary com mensagem segura, tentativa explícita e link
 
 O `QueryClientProvider` compartilha um cliente por aplicação. Listas ficam frescas por 30 segundos, `painel`/`metricas` por 60 e `revisao` por zero. Queries representam GETs idempotentes: 500 permite uma repetição; 503, três com backoff exponencial e jitter; outros erros não repetem automaticamente. Mutations não repetem. A integração de erros HTTP, `Retry-After` e banners será feita na #10 sem duplicar a camada de retry.
 
+As evidências de testes, navegação e nginx estão em [docs/router-validation.md](docs/router-validation.md).
+
 ## Estrutura e testes
 
 - `src/main.tsx` e `src/app/App.tsx`: boot validado, data router e QueryClientProvider.
