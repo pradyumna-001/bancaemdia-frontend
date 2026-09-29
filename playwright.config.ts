@@ -22,15 +22,23 @@ export default defineConfig({
       use: { browserName, viewport: { width, height } },
     })),
   ),
-  webServer: {
-    env: {
-      VITE_API_URL: 'http://127.0.0.1:8000',
-      VITE_APP_ENV: 'production',
-      VITE_UPLOAD_POLL_MS: '1000',
+  webServer: [
+    {
+      env: {
+        VITE_API_URL: 'http://127.0.0.1:8000',
+        VITE_APP_ENV: 'production',
+        VITE_UPLOAD_POLL_MS: '1000',
+      },
+      command:
+        'pnpm build && pnpm preview --host 127.0.0.1 --port 4173 --strictPort',
+      url: 'http://127.0.0.1:4173',
+      reuseExistingServer: false,
     },
-    command:
-      'pnpm build && pnpm preview --host 127.0.0.1 --port 4173 --strictPort',
-    url: 'http://127.0.0.1:4173',
-    reuseExistingServer: false,
-  },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/shell.vite.config.ts && pnpm exec vite preview --config tests/fixtures/shell.vite.config.ts --host 127.0.0.1 --port 4175 --strictPort',
+      url: 'http://127.0.0.1:4175',
+      reuseExistingServer: false,
+    },
+  ],
 });

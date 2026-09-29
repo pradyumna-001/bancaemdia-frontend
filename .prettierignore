@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-security/
+dist-shell-fixture/
 public/fontes/OFL-source-sans-3.md
 coverage/
 playwright-report/

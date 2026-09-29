@@ -41,7 +41,7 @@ it.each([
   ['/painel', 'Painel'],
   ['/enviar', 'Enviar'],
   ['/coleta', 'Coleta'],
-  ['/banca', 'Banca'],
+  ['/banca', 'Caixa'],
   ['/resultados', 'Resultados'],
   ['/revisao', 'Revisão'],
   ['/aposta/abc-123', 'Aposta'],

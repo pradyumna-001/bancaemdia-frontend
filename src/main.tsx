@@ -3,7 +3,7 @@ import './styles/base.css';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import { ConfigFailure } from './app/ConfigFailure';
-import { initializeConfig } from './lib/config';
+import { getConfig, initializeConfig } from './lib/config';
 import { createBrowserRouter } from 'react-router-dom';
 import { createAppRoutes } from './app/routes';
 import { createAppQueryClient } from './app/queryClient';
@@ -28,7 +28,11 @@ initializeConfig().then(
     const router = createBrowserRouter(createAppRoutes());
     application.render(
       <StrictMode>
-        <App router={router} queryClient={queryClient} />
+        <App
+          router={router}
+          queryClient={queryClient}
+          ambiente={getConfig().appEnv}
+        />
       </StrictMode>,
     );
   },

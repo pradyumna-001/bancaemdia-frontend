@@ -10,6 +10,7 @@ export default tseslint.config(
     ignores: [
       'dist/**',
       'dist-security/**',
+      'dist-shell-fixture/**',
       'coverage/**',
       'playwright-report/**',
       'test-results/**',
@@ -18,6 +19,10 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    files: ['tests/fixtures/shell/*.tsx'],
+    languageOptions: { globals: globals.browser },
+  },
   {
     files: ['**/*.{js,mjs,ts,tsx}'],
     languageOptions: { globals: globals.node },

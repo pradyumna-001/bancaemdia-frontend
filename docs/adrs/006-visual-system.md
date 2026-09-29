@@ -30,6 +30,12 @@ Preservamos a disciplina de tokens, acessibilidade e consistência, substituindo
 - A configuração nginx agora é um artefato do build, inseparável do HTML. Ver [runbook](../runbooks/deploy.md).
 - Validar móvel/desktop, teclado, axe, persistência, pre-paint, sincronização e storage bloqueado. CI também verifica a imagem nginx com CSP real.
 
+## Navegação — #6
+
+O topo desktop mantém os sete destinos elegíveis. Em telas até 62rem, a barra inferior prioriza Apostas/Painel/Enviar e Revisão quando há fila; Mais reúne Coleta/Caixa/Resultados. A escolha deixa os rótulos legíveis em 320px. Não supõe uma preferência universal por determinada quantidade de abas; a prioridade poderá ser revista com uso real. As regras e a divisão continuam declaradas em `ABAS`.
+
+Menu nativo modal para os demais destinos, configurações e aparência; indicação de seção atual, alvos de toque e área segura inferior. O conteúdo conserva espaço para a futura lista operacional. Sem gráficos ou números financeiros inventados no placeholder.
+
 ## Identidade mínima — #5, 29/09/2026
 
 Adotada a recomendação A dentro da delegação do responsável para seguir a direção pesquisada: assinatura tipográfica em minúsculas, **banca** em Source Sans 3 700 e **emdia** em 400, sem espaço visual inserido e sem símbolo ao lado. A alternativa B acrescenta o símbolo à assinatura; a comparação foi apresentada, sem presumir que ausência de resposta seja aprovação explícita da alternativa A.
