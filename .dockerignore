@@ -2,6 +2,7 @@
 .husky
 node_modules
 dist
+dist-shell-fixture
 coverage
 playwright-report
 test-results

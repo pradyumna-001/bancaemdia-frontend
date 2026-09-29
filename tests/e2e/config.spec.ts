@@ -15,6 +15,9 @@ test('runtime válido permite iniciar a aplicação', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Entrar', exact: true }),
   ).toBeVisible();
+  await expect(page.getByRole('note')).toContainText(
+    'Cópia de teste · Homologação',
+  );
 });
 
 for (const [label, config, message] of [

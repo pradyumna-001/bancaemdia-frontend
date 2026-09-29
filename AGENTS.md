@@ -24,7 +24,7 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 ## Estado, navegação e URL
 
 11. **A URL é a fonte da verdade dos filtros.** Filtros ativos (casa, tipster, grupo, banca, estado, origem, período, `?apagadas=1`) vivem em query params: pílulas removíveis, links compartilháveis, sem perda silenciosa de estado ao navegar.
-12. Navegação tem fonte única: lista `ABAS` em `src/app/nav.ts` renderiza topo (desktop) e barra inferior (mobile). A aba "Revisão" só aparece com fila não-vazia e mostra o contador.
+12. Navegação tem fonte única: lista `ABAS` em `src/app/nav.ts` renderiza topo (desktop) e barra inferior/menu Mais (mobile). Apostas, Painel e Enviar têm acesso direto no celular; Revisão só aparece com fila não-vazia e mostra o contador. Coleta, Caixa e Resultados ficam em Mais no celular. Links entre abas preservam os query params.
 
 ## Paleta e tipografia
 
@@ -53,3 +53,4 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 26. `make lint && make typecheck && make test` verde local antes de push; e2e no CI.
 27. Toda mudança estrutural relevante atualiza este arquivo e/ou ADR.
 28. **PR só pode ser entregue como pronto fora de rascunho e com todos os testes/checks verdes no commit final.** Rascunho temporário durante o trabalho é permitido, mas deve ser convertido antes da entrega. Após o último push, aguardar os checks terminarem e conferir o SHA validado; ausência de checks, estado pendente ou sucesso em commit anterior não equivalem a aprovação. Não remover workflows, desabilitar testes ou enfraquecer gates para obter verde. Se um impedimento externo estiver fora do controle do agente, informar explicitamente o impedimento e o estado real, sem declarar o PR pronto.
+29. Demonstrações que injetam sessão simulada ficam exclusivamente em `tests/fixtures/`, com build separado de `dist/`. Nenhum query param, storage ou variável pública pode liberar sessão na aplicação; o build público é testado contra o endereço da fixture.

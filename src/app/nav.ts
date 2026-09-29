@@ -1,10 +1,27 @@
-// Fonte única das abas; apresentação e contador de Revisão serão ligados na #6.
+import type { NomeIcone } from '../components/Icone';
+// Fonte única: rotas, topo, barra inferior e destinos do menu Mais.
 export const ABAS = [
-  { path: '/', title: 'Apostas' },
-  { path: '/painel', title: 'Painel' },
-  { path: '/enviar', title: 'Enviar' },
-  { path: '/coleta', title: 'Coleta' },
-  { path: '/banca', title: 'Banca' },
-  { path: '/resultados', title: 'Resultados' },
-  { path: '/revisao', title: 'Revisão' },
-] as const;
+  { path: '/', title: 'Apostas', icone: 'apostas', mobile: true },
+  { path: '/painel', title: 'Painel', icone: 'painel', mobile: true },
+  { path: '/enviar', title: 'Enviar', icone: 'enviar', mobile: true },
+  { path: '/coleta', title: 'Coleta', icone: 'coleta', mobile: false },
+  { path: '/banca', title: 'Caixa', icone: 'caixa', mobile: false },
+  {
+    path: '/resultados',
+    title: 'Resultados',
+    icone: 'resultados',
+    mobile: false,
+  },
+  { path: '/revisao', title: 'Revisão', icone: 'revisao', mobile: true },
+] as const satisfies ReadonlyArray<{
+  path: string;
+  title: string;
+  icone: NomeIcone;
+  mobile: boolean;
+}>;
+
+export function abaAtual(path: string, pathname: string) {
+  return path === '/'
+    ? pathname === '/' || pathname.startsWith('/aposta/')
+    : pathname === path;
+}

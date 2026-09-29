@@ -5,6 +5,8 @@ import { RequireSession } from '../auth/RequireSession';
 import { Placeholder } from './Placeholder';
 import { ErrorPage, RouteError } from './RouteError';
 import { ROTAS_AUTH, ROTAS_PROTEGIDAS, ROTAS_PUBLICAS } from './paths';
+import { Shell } from './Shell';
+import type { ConsultarRevisao } from '../features/revisao/estatisticas';
 
 export function loginLoader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -13,6 +15,7 @@ export function loginLoader({ request }: LoaderFunctionArgs) {
 
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
+  consultarRevisao?: ConsultarRevisao,
 ): RouteObject[] {
   const guard = exigirSessao(consultarSessao);
   return [
@@ -27,7 +30,9 @@ export function createAppRoutes(
       ),
       element: (
         <RequireSession>
-          <Placeholder title={title} />
+          <Shell consultarRevisao={consultarRevisao}>
+            <Placeholder title={title} interna />
+          </Shell>
         </RequireSession>
       ),
       errorElement: <RouteError />,
@@ -53,7 +58,9 @@ export function createAppRoutes(
           : undefined,
       element: protectedRoute ? (
         <RequireSession>
-          <Placeholder title={title} />
+          <Shell consultarRevisao={consultarRevisao}>
+            <Placeholder title={title} interna />
+          </Shell>
         </RequireSession>
       ) : (
         <Placeholder title={title} />

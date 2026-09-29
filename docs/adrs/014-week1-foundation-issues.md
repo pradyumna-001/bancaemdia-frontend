@@ -153,6 +153,17 @@ Revisão de escopo autorizada pelo responsável após a pesquisa visual: a #4 pr
 
 **Acceptance**: snapshot test garante ABAS única; badge da Revisão só renderiza com contagem > 0; mobile/desktop ambos verificáveis
 
+#### Implementação da #6
+
+- `ABAS` reúne caminho, título, ícone e prioridade móvel. Desktop mostra todas as abas elegíveis. Mobile mostra Apostas, Painel, Enviar, Revisão (apenas com fila) e Mais; Coleta, Caixa e Resultados continuam acessíveis em Mais. A adaptação evita comprimir sete rótulos em 320px e mantém uma única fonte de navegação, conforme a direção pesquisada.
+- A rota `/banca` permanece estável, mas o rótulo passa a **Caixa**, conforme AGENTS 4. Links entre abas e configurações preservam os query params; voltar/avançar mantém o histórico. Detalhe de aposta destaca Apostas.
+- Marca no topo, estado ativo com indicação além da cor, alvos de toque, safe-area, link para pular ao conteúdo e foco no conteúdo ao mudar de seção. Menu usa `dialog` nativo, com Escape, contenção e devolução de foco. O seletor de aparência fica no menu.
+- Banner de desenvolvimento/homologação vem da configuração validada no boot; produção não exibe banner.
+- Consulta `['revisao', 'stats']` consome tipo gerado do endpoint `/api/v1/revisao/stats`. Nesta etapa o fornecedor padrão é explicitamente um mock vazio; o cliente autenticado entra na #10. O transporte é injetável, sem requests privados antes da integração de sessão.
+- Carregamento, falha e retry são visíveis. Dados anteriores são mantidos em falha de atualização; 429/503 têm mensagens próprias. Contador inválido é erro, não zero. Mudança do cache atualiza ambas as navegações, com contagem integral acessível e badge compacto até 99+.
+- Registro único de ícones tipados; nome desconhecido falha. Snapshot cobre catálogo canônico e integração verifica os links de ambos os layouts.
+- A entrada `tests/fixtures/shell/` injeta sessão somente na demonstração isolada e gera `dist-shell-fixture/`. O build normal não a inclui nem habilita atalhos de autenticação. Playwright usa essa entrada para validar o shell real enquanto a #11 não existe.
+
 ---
 
 ### Issue 7: Gráficos SVG Base
