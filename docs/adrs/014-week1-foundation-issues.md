@@ -1,5 +1,7 @@
 # Semana 1: Fundação — Milestones & GitHub Issues
 
+> Revisão visual de 29/09/2026: aplicar os [critérios comuns do backlog](../research/backlog-visual.md) e o [ADR 006](006-visual-system.md). Paridade com o monólito significa tarefas e dados; a aparência segue a pesquisa aprovada.
+
 ## Milestone: **Semana 1 — Fundação (Vite + TS strict + Tooling + Sistema Visual + Shell)**
 
 **Target Date**: 7 days from start
@@ -8,7 +10,7 @@
 - [ ] Repositório scaffolded com toda a tooling; `make install && make lint && make typecheck && make test && make build` verde
 - [ ] CI GitHub Actions: `lint → typecheck → unit → build` verde em qualquer push
 - [ ] Design tokens conforme ADR 006 revisado após pesquisa, com lint de "cor só em tokens" ativo
-- [ ] Shell com navegação das 7 abas a partir de fonte única `ABAS`, desktop (topo) + mobile (barra inferior)
+- [ ] Shell com navegação das 7 abas a partir de fonte única `ABAS`, desktop (topo) + mobile (barra inferior e Mais)
 - [ ] Página interna `/sistema` mostrando tokens, tipografia, ícones (`/sistema` da paridade)
 - [ ] Estrutura de pastas `src/{app,api,auth,components,features,lib,styles}` definida
 
@@ -43,6 +45,12 @@
 - A imagem nginx usa UID/GID 101, porta 8080, fallback de SPA e CSP somente da mesma origem. A conexão com a API e sua allowlist serão integradas nas issues próprias. Nenhuma decisão de plataforma de deploy ou workflow de CI é introduzida.
 - A tela provisória usa HTML sem sistema visual; temas, fontes, tokens, marca e shell permanecem nas issues #4–#6. O formatador abrange a documentação preexistente, com alterações mecânicas necessárias para `prettier --check .`.
 
+#### Direção de uso e visual — GitHub #1
+
+Manter a base leve, fontes locais e CSS próprio. Tooling verifica tokens e registro de ícones; não introduzir um kit visual que substitua a fundação aprovada.
+
+**Aceite complementar:** Scaffold e builds continuam reproduzíveis; dependências e CSP não exigem CDN ou estilos que contornem os tokens.
+
 ---
 
 ### Issue 2: Configuração por Ambiente
@@ -60,6 +68,12 @@
 - [ ] `.env.example` completo e coerente com `.env.example` do backend
 
 **Acceptance**: app sobe com apenas `VITE_API_URL` definida; var inválida aborta com erro legível
+
+#### Direção de uso e visual — GitHub #2
+
+Falha de configuração usa a mesma marca, tipografia e hierarquia de erro da aplicação, com explicação segura e próximo passo. Ambiente é informação de contexto, sem expor valores internos.
+
+**Aceite complementar:** Configuração inválida produz tela legível em móvel/desktop e nos dois temas; nunca página em branco nem dump de configuração.
 
 ---
 
@@ -89,6 +103,12 @@
 - Cada rota possui error boundary com texto seguro, recuperação e retorno. O wildcard mostra 404 mesmo sem sessão. CSS inicial cuida de largura, espaçamento, bordas e foco; paleta, fontes e temas continuam na #4 e ilustrações finais na #13.
 - Um QueryClient por aplicação: listas 30s, prefixos `painel`/`metricas` 60s, `revisao` 0. Queries são reservadas a leituras GET idempotentes: status 500 permite uma repetição; 503, três com backoff exponencial e jitter; demais status e rede exigem ação explícita. Mutations não repetem. Refetch automático por foco/reconexão é desativado para não reabrir ciclos de falha. A integração de `Retry-After`, banners e cliente da API fica na #10, usando uma única camada de retry.
 
+#### Direção de uso e visual — GitHub #3
+
+Rotas, estados de erro e placeholders seguem a fundação atual; preservam destino e filtros, título de página e foco previsível. Rotas protegidas continuam protegidas nas demonstrações.
+
+**Aceite complementar:** Verificar retorno contextual, histórico e navegação por teclado; simulação de sessão só na entrada isolada de testes.
+
 ---
 
 ### Issue 4: Fundação visual — tokens, tipografia e temas
@@ -111,6 +131,12 @@
 
 Revisão de escopo autorizada pelo responsável após a pesquisa visual: a #4 preserva a disciplina de tokens, mas substitui a cópia obrigatória da C1 e as fontes anteriores. Marca (#5), shell (#6) e gráficos (#7) continuam separados.
 
+#### Direção de uso e visual — GitHub #4
+
+Conservar tokens semânticos, Source Sans 3 local e números tabulares. Sistema é o padrão, com Claro/Escuro explícitos; as escolhas aprovadas substituem a identidade visual antiga.
+
+**Aceite complementar:** Contraste, pre-paint, storage indisponível e sincronização entre abas permanecem cobertos; não reintroduzir paleta/fontes antigas.
+
 ---
 
 ### Issue 5: Marca e Identidade Mínima
@@ -120,10 +146,10 @@ Revisão de escopo autorizada pelo responsável após a pesquisa visual: a #4 pr
 
 **Tasks**:
 
-- [ ] Decidir com o dono: wordmark final "bancaemdia" (manter padrão peso-cortado? sem símbolo?) — registrar decisão
+- [ ] Aplicar wordmark decidido no ADR 006: banca em 700 + emdia em 400; símbolo b reservado ao favicon
 - [ ] `favicon.svg` novo
 - [ ] Wordmark componente `<Logo />` usado em header/login
-- [ ] Atualizar tokens se nova marca alterar acento
+- [ ] Reutilizar tokens aprovados na marca, sem novo acento visual
 
 **Acceptance**: nome/favicon/wordmark consistentes em header, login e página de erro; decisão registrada neste ADR ou em follow-up
 
@@ -133,6 +159,12 @@ Revisão de escopo autorizada pelo responsável após a pesquisa visual: a #4 pr
 - `Logo` único nos cabeçalhos provisórios, login, erros e início do boot. A navegação completa permanece na #6.
 - Fonte SVG editável em `src/marca/favicon.svg`; Vite gera `/favicon.svg` com cores lidas de `tokens.css`. Paleta e fontes existentes preservadas.
 - Verificação móvel/desktop dos dois temas, nome acessível, imagem SVG carregável e resposta sob CSP no nginx. Evidências em `docs/brand-validation.md`.
+
+#### Direção de uso e visual — GitHub #5
+
+Reutilizar Logo: banca em peso 700 e emdia em 400, sem símbolo adicional junto ao nome; b geométrico no favicon. A decisão está registrada no ADR 006.
+
+**Aceite complementar:** Marca e nome acessível consistentes no shell, conta e erros, em ambos os temas; sem criar variantes locais do logotipo.
 
 ---
 
@@ -145,10 +177,10 @@ Revisão de escopo autorizada pelo responsável após a pesquisa visual: a #4 pr
 
 **Tasks**:
 
-- [ ] `ABAS` fonte única: Apostas `/`, Painel `/painel`, Enviar `/enviar`, Coleta `/coleta`, Banca `/banca`, Resultados `/resultados`, Revisão `/revisao` (oculta sem fila; badge com contador)
-- [ ] Desktop: barra superior; mobile: barra inferior ícone+label (regra de design herdada) a partir da mesma lista
+- [ ] `ABAS` fonte única: Apostas `/`, Painel `/painel`, Enviar `/enviar`, Coleta `/coleta`, Caixa `/banca`, Resultados `/resultados`, Revisão `/revisao` (oculta sem fila; badge com contador)
+- [ ] Desktop: barra superior; mobile: barra inferior com ícone+label e menu Mais para seções secundárias, a partir da mesma ABAS
 - [ ] `Icone.tsx`: registro único de nomes de ícone; teste falha com ícone não registrado (porta do watcher de ícones)
-- [ ] Banner de cópia de teste quando `VITE_APP_ENV != production`
+- [ ] Banner de cópia de teste quando o ambiente validado (runtime ou build) não for production
 - [ ] Query de contagem da fila de revisão (`/api/v1/revisao/stats`) alimentando badge — com mock por enquanto
 
 **Acceptance**: snapshot test garante ABAS única; badge da Revisão só renderiza com contagem > 0; mobile/desktop ambos verificáveis
@@ -159,10 +191,16 @@ Revisão de escopo autorizada pelo responsável após a pesquisa visual: a #4 pr
 - A rota `/banca` permanece estável, mas o rótulo passa a **Caixa**, conforme AGENTS 4. Links entre abas e configurações preservam os query params; voltar/avançar mantém o histórico. Detalhe de aposta destaca Apostas.
 - Marca no topo, estado ativo com indicação além da cor, alvos de toque, safe-area, link para pular ao conteúdo e foco no conteúdo ao mudar de seção. Menu usa `dialog` nativo, com Escape, contenção e devolução de foco. O seletor de aparência fica no menu.
 - Banner de desenvolvimento/homologação vem da configuração validada no boot; produção não exibe banner.
-- Consulta `['revisao', 'stats']` consome tipo gerado do endpoint `/api/v1/revisao/stats`. Nesta etapa o fornecedor padrão é explicitamente um mock vazio; o cliente autenticado entra na #10. O transporte é injetável, sem requests privados antes da integração de sessão.
+- Consulta `['revisao', 'stats']` consome tipo gerado do endpoint `/api/v1/revisao/stats`. Nesta etapa o fornecedor padrão é explicitamente um mock vazio; o cliente base entra na #9, a matriz de erros na #10 e a sessão na #11. O transporte é injetável, sem requests privados antes da integração de sessão.
 - Carregamento, falha e retry são visíveis. Dados anteriores são mantidos em falha de atualização; 429/503 têm mensagens próprias. Contador inválido é erro, não zero. Mudança do cache atualiza ambas as navegações, com contagem integral acessível e badge compacto até 99+.
 - Registro único de ícones tipados; nome desconhecido falha. Snapshot cobre catálogo canônico e integração verifica os links de ambos os layouts.
 - A entrada `tests/fixtures/shell/` injeta sessão somente na demonstração isolada e gera `dist-shell-fixture/`. O build normal não a inclui nem habilita atalhos de autenticação. Playwright usa essa entrada para validar o shell real enquanto a #11 não existe.
+
+#### Direção de uso e visual — GitHub #6
+
+Preservar ABAS e o shell implementado: topo desktop; Apostas/Painel/Enviar, Revisão com fila e Mais no celular. Mais reúne Coleta/Caixa/Resultados; Caixa mantém /banca.
+
+**Aceite complementar:** Menu operável por teclado/toque, retorno de foco, seção atual além da cor, query params preservados e ausência de sobreposição em 320px.
 
 ---
 
@@ -175,12 +213,18 @@ Revisão de escopo autorizada pelo responsável após a pesquisa visual: a #4 pr
 
 **Tasks**:
 
-- [ ] `GraficoEvolucao`: linha de lucro acumulado, x proporcional ao dia de calendário (lacunas aparecem), eixo zero sempre desenhado, preenchimento de área — port de `_grafico_da_evolucao`
+- [ ] `GraficoEvolucao`: linha de lucro acumulado, x proporcional ao dia de calendário (lacunas aparecem), eixo zero sempre desenhado, preenchimento de área apenas se favorecer leitura — preservar a semântica temporal e financeira do gráfico original
 - [ ] `BarrasLucro`: barras horizontais, comprimento ∝ |lucro|, **espessura = √n**, origem no zero e direção pelo sinal; tooltip acessível
 - [ ] Testes unit de geometria (escala, zero-clamp, √n) — sem snapshot de pixels
 - [ ] Demonstração dos dois na página `/sistema`
 
 **Acceptance**: geometria coberta por unit tests; `/sistema` renderiza ambos com dados fake; nenhuma dependência de chart lib no `package.json` (CI grep)
+
+#### Direção de uso e visual — GitHub #7
+
+Gráficos respondem a perguntas de evolução e comparação: título, período, unidade, eixo zero e rótulos legíveis. Traço e grade discretos; preenchimento de área opcional, somente se ajudar a leitura. Lucro acumulado vem pronto da API; escala e geometria SVG não calculam resultado financeiro. Preservar datas proporcionais, comprimento ∝ |lucro| e espessura √n, explicando a espessura na legenda.
+
+**Aceite complementar:** Tabela ou lista textual equivalente acessível; informação disponível sem hover, também por teclado/toque. Cobrir vazio, um ponto, zero, sinais mistos, extremos e datas espaçadas nos dois temas/viewports. Dados de demonstração identificados como fictícios, em /sistema protegido ou fixture isolada.
 
 ---
 
@@ -199,3 +243,9 @@ Revisão de escopo autorizada pelo responsável após a pesquisa visual: a #4 pr
 - [ ] Branch protection: workflow verde obrigatório para merge em `main`
 
 **Acceptance**: PR de teste passa por todos os gates; marcação de plataforma de deploy registrada no ADR 008
+
+#### Direção de uso e visual — GitHub #8
+
+Consolidar os gates existentes de paleta, tema, foco e compatibilidade; não recriar nem reduzir o CI já implementado. Orçamentos preservam resposta rápida e estabilidade visual; anexar evidências úteis de falhas.
+
+**Aceite complementar:** Lint/tipos/unit/build, e2e existente e segurança verdes no SHA final; PR fora de rascunho. Registrar medições e limitações, sem tratar score automatizado como prova de usabilidade.
