@@ -6,7 +6,7 @@ Proposed
 
 ## Context
 
-O backend tem GitHub Actions `test → build → deploy` e rollback < 5min como alvo (HIGH_LEVEL_PLAN). O frontend é estático (Vite `dist/`): deploy é publicar artefato + servidor estático atrás de CDN, com headers de segurança. Plataforma alvo: escolher na Semana 1/5 entre AWS (S3+CloudFront, coeso com o backend ECS/ALB) ou Vercel/Cloudflare Pages (mais simples). **Decisão de plataforma fica na Issue de CI da Semana 1**, registrando resultado aqui por suplantação/adição.
+A SPA é estática e sua plataforma será decidida na #8 em compatibilidade com API, identidade, CSP/CORS e orçamento. O backend prepara Fase 1 Lightsail/Compose/Caddy no PR #146; não presumir ECS/ALB, staging público ou provisionamento executado. #14 exige ambiente de homologação realmente autorizado/disponível; build local não equivale a deploy. ADR019 substitui cronograma e pressupostos herdados.
 
 ## Decision
 
@@ -27,7 +27,7 @@ Não se remove mais o workflow após uma validação pontual nem se usa um commi
 
 ### CD (main)
 
-- Deploy automático para **staging**; canário manual/percentual para produção se a plataforma escolhida suportar (espelho do backend PR→staging→canary→prod).
+- Deploy para homologação quando existir ambiente autorizado e API/emissor compatíveis. Produção #38 depende do aceite #39; estratégia de rollout é a da plataforma aprovada, sem canário presumido.
 - Releases versionados por tag `v0.x.y`; `dist/` nomeado com hash de commit para rollback instantâneo.
 - Rollback: republicar artefato anterior **<7 min** (runbook `docs/runbooks/rollback.md`).
 
@@ -46,5 +46,5 @@ Não se remove mais o workflow após uma validação pontual nem se usa um commi
 
 ## Consequences
 
-- Deploy frontend é independente do backend e mais barato (estático); a compatibilidade de contrato é garantida pelos tipos gerados + contract tests (ADR 003/007), não por deploy conjunto.
+- Deploy frontend é independente do backend e mais barato (estático); a compatibilidade de contrato é garantida pelos tipos gerados + contract tests (ADR 003/007), com versão compatível da API e do emissor registrada por ambiente; não basta TypeScript compilar.
 - Rollback trivial (reapontar artefato) — condição para aprovar mudanças maiores na Semana 5.

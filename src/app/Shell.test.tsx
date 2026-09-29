@@ -87,6 +87,26 @@ it('catálogo canônico mantém rotas e ícones registrados', () => {
         "Revisão",
         "revisao",
       ],
+      [
+        "/contas",
+        "Contas e titulares",
+        "contas",
+      ],
+      [
+        "/calculadoras",
+        "Calculadoras",
+        "calculadoras",
+      ],
+      [
+        "/assinatura",
+        "Assinatura",
+        "assinatura",
+      ],
+      [
+        "/configuracoes",
+        "Configurações",
+        "configuracoes",
+      ],
     ]
   `);
   for (const aba of ABAS) expect(NOMES_ICONES).toContain(aba.icone);
@@ -95,6 +115,9 @@ it('catálogo canônico mantém rotas e ícones registrados', () => {
   ).toThrow('Ícone não registrado');
   expect(abaAtual('/', '/aposta/abc')).toBe(true);
   expect(abaAtual('/', '/painel')).toBe(false);
+  expect(abaAtual('/contas', '/contas/42')).toBe(true);
+  expect(abaAtual('/configuracoes', '/configuracoes/conexoes')).toBe(true);
+  expect(abaAtual('/contas', '/contas-alheias')).toBe(false);
 });
 
 it('contador atualizado pelo cache aparece e desaparece nas duas navegações', async () => {
@@ -107,7 +130,9 @@ it('contador atualizado pelo cache aparece e desaparece nas duas navegações', 
     name: 'Navegação principal no celular',
   });
   await within(desktop).findByRole('link', { name: /Revisão.*12 pendências/ });
-  expect(within(desktop).getAllByRole('link')).toHaveLength(ABAS.length);
+  expect(within(desktop).getAllByRole('link')).toHaveLength(
+    ABAS.filter((aba) => aba.desktop).length,
+  );
   expect(within(mobile).getAllByRole('link')).toHaveLength(
     ABAS.filter((a) => a.mobile).length,
   );
