@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { expect, it } from 'vitest';
 import { GraficoEvolucao } from './GraficoEvolucao';
 import { BarrasLucro } from './BarrasLucro';
-import type { PontoEvolucao } from './geometria';
+import type { PontoEvolucao, GrupoLucro } from './geometria';
 
 const dados: PontoEvolucao[] = [
   {
@@ -53,4 +53,60 @@ it('vazio sugere próximo passo nos dois componentes', () => {
   );
   expect(screen.getAllByText(/Escolha outro período ou envie/)).toHaveLength(2);
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
+});
+
+it('mostra o acumulado final recebido, sem somar os pontos', () => {
+  render(
+    <GraficoEvolucao
+      dados={[
+        ...dados,
+        {
+          ...dados[0]!,
+          periodo_inicio: '2026-01-02',
+          lucro_acumulado_centavos: 500,
+        },
+      ]}
+      titulo="Evolução"
+      periodo="Janeiro"
+    />,
+  );
+  expect(screen.getByText('Acumulado até 02/01/2026')).toBeVisible();
+  expect(screen.getByText('+R$ 5,00', { selector: 'strong' })).toBeVisible();
+});
+
+it('usa resumo informado pela API e não soma grupos nem inventa total ausente', () => {
+  const grupo: GrupoLucro = {
+    id: 1,
+    nome: 'Grupo',
+    familia: null,
+    metricas: {
+      lucro_centavos: 100,
+      total_apostas: 2,
+      base_roi_centavos: 0,
+      freebets: 0,
+      giro_centavos: 0,
+      greens: 0,
+      pendentes: 0,
+      reds: 0,
+      retorno_centavos: 0,
+      roi: '0',
+      roi_basis_points: 0,
+      win_rate: '0',
+      win_rate_basis_points: 0,
+    },
+  };
+  const { rerender } = render(
+    <BarrasLucro
+      dados={[grupo]}
+      titulo="Comparação"
+      periodo="Janeiro"
+      resumo={{ lucro_centavos: 999, total_apostas: 7 }}
+    />,
+  );
+  expect(screen.getByText('+R$ 9,99')).toBeVisible();
+  expect(screen.getByText('7 apostas · 1 grupo exibido')).toBeVisible();
+  rerender(
+    <BarrasLucro dados={[grupo]} titulo="Comparação" periodo="Janeiro" />,
+  );
+  expect(screen.getByText('Total não informado')).toBeVisible();
 });

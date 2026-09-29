@@ -2,6 +2,10 @@ import type { components } from '../../api/schema';
 
 export type PontoEvolucao = components['schemas']['EvolucaoSaida'];
 export type GrupoLucro = components['schemas']['GrupoSaida'];
+export type ResumoLucro = Pick<
+  components['schemas']['MetricasSaida'],
+  'lucro_centavos' | 'total_apostas'
+>;
 const DIA = 86_400_000;
 
 function inteiro(valor: number) {

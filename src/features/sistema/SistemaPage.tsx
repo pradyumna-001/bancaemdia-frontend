@@ -124,7 +124,7 @@ export function SistemaPage() {
     cenario === 'Sem dados'
       ? []
       : cenario === 'Um ponto'
-        ? pontos.slice(2, 3)
+        ? pontos.slice(3, 4)
         : cenario === 'Zero'
           ? pontos.map((p) => ({ ...p, lucro_acumulado_centavos: 0 }))
           : cenario === 'Extremos'
@@ -193,6 +193,18 @@ export function SistemaPage() {
         />
         <BarrasLucro
           dados={comparacao}
+          resumo={
+            cenario === 'Um ponto'
+              ? { lucro_centavos: 24000, total_apostas: 16 }
+              : cenario === 'Zero' || cenario === 'Sem dados'
+                ? { lucro_centavos: 0, total_apostas: 0 }
+                : cenario === 'Extremos'
+                  ? {
+                      lucro_centavos: Number.MAX_SAFE_INTEGER,
+                      total_apostas: 29,
+                    }
+                  : { lucro_centavos: 18000, total_apostas: 29 }
+          }
           titulo="Lucro por grupo"
           periodo="Setembro de 2026"
         />

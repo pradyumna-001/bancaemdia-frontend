@@ -14,3 +14,15 @@ export function dataCivil(data: string): string {
   const [ano, mes, dia] = data.split('-');
   return `${dia}/${mes}/${ano}`;
 }
+
+/** Escala compacta apenas para eixos; resumo e tabela preservam centavos exatos. */
+export function moedaEixo(centavos: number): string {
+  if (!Number.isSafeInteger(centavos)) throw new Error('Valor indisponível.');
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    notation: 'compact',
+    maximumFractionDigits: Math.abs(centavos) < 100000 ? 2 : 1,
+    minimumFractionDigits: 0,
+  }).format(centavos / 100);
+}

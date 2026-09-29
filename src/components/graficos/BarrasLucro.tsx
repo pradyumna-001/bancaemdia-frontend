@@ -1,23 +1,32 @@
 import { useId } from 'react';
 import { useLeitura } from './useLeitura';
 import { moeda } from '../../lib/format';
-import { barras, type GrupoLucro } from './geometria';
+import { barras, type GrupoLucro, type ResumoLucro } from './geometria';
 import './graficos.css';
 
 export function BarrasLucro({
   dados,
   titulo,
   periodo,
+  resumo,
 }: {
   dados: readonly GrupoLucro[];
   titulo: string;
   periodo: string;
+  resumo?: ResumoLucro;
 }) {
   const id = useId();
   const [selecionado, selecionar] = useLeitura();
   let desenho;
   try {
     desenho = barras(dados);
+    if (
+      resumo &&
+      (!Number.isSafeInteger(resumo.lucro_centavos) ||
+        !Number.isSafeInteger(resumo.total_apostas) ||
+        resumo.total_apostas < 0)
+    )
+      throw new Error('Resumo indisponível.');
   } catch {
     return (
       <section className="grafico">
@@ -42,10 +51,24 @@ export function BarrasLucro({
         <p>Sem grupos para comparar. Escolha outro período ou envie apostas.</p>
       ) : (
         <>
-          <p className="grafico-nota">
-            Comprimento: valor do lucro ou prejuízo. Espessura: raiz quadrada da
-            quantidade de apostas. O traço vertical marca R$ 0.
-          </p>
+          <div className="grafico-resumo">
+            <span>Lucro total no período</span>
+            <strong className="numero grafico-total">
+              {resumo
+                ? moeda(resumo.lucro_centavos, true)
+                : 'Total não informado'}
+            </strong>
+            {resumo && (
+              <span>
+                {resumo.total_apostas} apostas · {itens.length}{' '}
+                {itens.length === 1 ? 'grupo exibido' : 'grupos exibidos'}
+              </span>
+            )}
+          </div>
+          <div className="barra-cabecalho grafico-colunas">
+            <span>Grupo</span>
+            <span>Lucro / prejuízo</span>
+          </div>
           <ul className="barras-lista">
             {itens.map((item, i) => (
               <li key={i}>
@@ -104,6 +127,10 @@ export function BarrasLucro({
               </li>
             ))}
           </ul>
+          <p className="grafico-nota">
+            À esquerda de zero: prejuízo. À direita: lucro. A espessura
+            representa a raiz quadrada da quantidade de apostas.
+          </p>
           <div className="grafico-leitura numero">
             {atual ? (
               <span role="tooltip" id={id + '-leitura'}>

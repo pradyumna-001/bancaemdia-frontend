@@ -11,6 +11,14 @@ test('gráficos têm leitura por teclado, toque, tabela e ambos os temas', async
   await expect(
     page.getByText('Demonstração com dados fictícios.', { exact: false }),
   ).toBeVisible();
+  await expect(page.getByText('Acumulado até 29/09/2026')).toBeVisible();
+  await expect(page.locator('.grafico-total')).toHaveText([
+    '+R$ 180,00',
+    '+R$ 180,00',
+  ]);
+  await expect(page.getByText('29 apostas · 3 grupos exibidos')).toBeVisible();
+  await expect(page.locator('.grafico-marca')).toHaveCount(3);
+  await expect(page.locator('.grafico-data')).toHaveCount(4);
   const ponto = page.getByRole('button', {
     name: '03/09/2026: −R$ 120,00',
     exact: true,
@@ -18,6 +26,16 @@ test('gráficos têm leitura por teclado, toque, tabela e ambos os temas', async
   await ponto.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('tooltip')).toHaveText('03/09/2026: −R$ 120,00');
+  expect(await ponto.evaluate((el) => getComputedStyle(el).stroke)).toBe(
+    'rgba(0, 0, 0, 0)',
+  );
+  const indicador = page.locator('.ponto-selecionado .grafico-indicador');
+  const destaque = await indicador.boundingBox();
+  expect(destaque!.width).toBeLessThan(20);
+  await page.screenshot({
+    path: testInfo.outputPath('graficos-foco.png'),
+    fullPage: true,
+  });
   await page.keyboard.press('Escape');
   await expect(page.getByRole('tooltip')).toHaveCount(0);
   const alvo = await ponto.boundingBox();
