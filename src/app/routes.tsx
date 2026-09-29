@@ -6,6 +6,7 @@ import { Placeholder } from './Placeholder';
 import { ErrorPage, RouteError } from './RouteError';
 import { ROTAS_AUTH, ROTAS_PROTEGIDAS, ROTAS_PUBLICAS } from './paths';
 import { Shell } from './Shell';
+import { SistemaPage } from '../features/sistema/SistemaPage';
 import type { ConsultarRevisao } from '../features/revisao/estatisticas';
 
 export function loginLoader({ request }: LoaderFunctionArgs) {
@@ -31,7 +32,11 @@ export function createAppRoutes(
       element: (
         <RequireSession>
           <Shell consultarRevisao={consultarRevisao}>
-            <Placeholder title={title} interna />
+            {path === '/sistema' ? (
+              <SistemaPage />
+            ) : (
+              <Placeholder title={title} interna />
+            )}
           </Shell>
         </RequireSession>
       ),
