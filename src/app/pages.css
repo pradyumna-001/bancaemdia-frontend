@@ -1,0 +1,43 @@
+/* Layout inicial; paleta, fontes e temas serão fornecidos pelos tokens da #4. */
+.pagina {
+  box-sizing: border-box;
+  width: min(100%, 48rem);
+  margin: var(--espaco-32, 2rem) auto;
+  padding: var(--espaco-24, 1.5rem);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.pagina-erro {
+  border: 1px solid;
+  border-radius: var(--raio, 14px);
+}
+
+.pagina h1 {
+  line-height: 1.2;
+}
+
+.legenda {
+  font-weight: bold;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-16, 1rem);
+  margin-block-start: var(--espaco-24, 1.5rem);
+}
+
+.acoes a,
+.acoes button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font: inherit;
+}
+
+.acoes :focus-visible {
+  outline: 2px solid;
+  outline-offset: 4px;
+}

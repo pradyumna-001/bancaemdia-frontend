@@ -19,6 +19,12 @@ O backend tem GitHub Actions `test → build → deploy` e rollback < 5min como 
 5. `lighthouse` (budgets do ADR 001)
 6. e2e Playwright shardado: gate de merge.
 
+#### CI básica adotada em 29/09/2026
+
+Por instrução explícita do dono após o PR #42, a CI básica passa a ser permanente em `.github/workflows/ci.yml`, antecipando esta parte da #8. Executa em push e pull request, inclusive alterações documentais, e valida o SHA da branch do PR: lint, tipos, testes unitários/componentes, build, geração de contrato sem drift, e2e nos seis pares browser/viewport, pre-commit e verificação do nginx em Docker. A entrega exige PR fora de rascunho e todos os checks concluídos com sucesso após o último push, incluindo integrações externas.
+
+Não se remove mais o workflow após uma validação pontual nem se usa um commit anterior como substituto da validação final. Checks externos fora do controle do agente devem ser relatados como pendência, sem declarar o PR pronto. Budgets, cobertura mínima, sharding, proteção de branch e plataforma de deploy continuam na #8; esta decisão não declara esses itens implementados.
+
 ### CD (main)
 
 - Deploy automático para **staging**; canário manual/percentual para produção se a plataforma escolhida suportar (espelho do backend PR→staging→canary→prod).

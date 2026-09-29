@@ -30,7 +30,7 @@ No Windows, use GNU Make 4.4.1 (por exemplo, o pacote `make` do Chocolatey) no P
 
 ## Configuração por ambiente
 
-O boot valida a configuração em `src/lib/config.ts` antes de montar a aplicação. Para desenvolvimento, basta um `.env` com `VITE_API_URL=http://127.0.0.1:8000`. Reinicie o Vite após editar o arquivo. Integração da API, rotas e sistema visual pertencem às próximas issues; não há cálculos financeiros, dados fictícios de domínio ou autenticação nesta etapa.
+O boot valida a configuração em `src/lib/config.ts` antes de montar a aplicação. Para desenvolvimento, basta um `.env` com `VITE_API_URL=http://127.0.0.1:8000`. Reinicie o Vite após editar o arquivo. Integração da API e sistema visual pertencem às próximas issues; não há cálculos financeiros, dados fictícios de domínio ou autenticação real nesta etapa.
 
 | Variável              | Validação                                                    | Padrão quando omitida                            |
 | --------------------- | ------------------------------------------------------------ | ------------------------------------------------ |
@@ -56,15 +56,36 @@ O nginx serve `/config.json` com `Cache-Control: no-store`, sem fallback para HT
 
 A validação local e em Linux, incluindo 42 e2e e promoção da mesma imagem entre ambientes, está registrada em [docs/config-validation.md](docs/config-validation.md).
 
+## Rotas e sessão provisória
+
+O data router oferece 19 páginas provisórias em português. As sete abas vêm de `src/app/nav.ts`; a barra visual será implementada na #6. Uma URL desconhecida mostra 404 com ações de retorno, mesmo sem sessão.
+
+| Acesso    | Rotas                                                                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Protegido | `/`, `/painel`, `/enviar`, `/coleta`, `/banca`, `/resultados`, `/revisao`, `/aposta/:chave`, `/configuracoes`, `/sistema`, `/senha`, `/sair` |
+| Público   | `/tutorial`, `/extensao`, `/login`, `/criar-conta`, `/esqueci-senha`, `/redefinir-senha`, `/confirmar-email`                                 |
+
+O provedor de sessão ainda não foi integrado: abrir `/` leva a `/login?destino=%2F`. Nenhum login ou logout real é executado. A função de consulta de sessão pode ser injetada nos testes; o build usa sempre o estado sem sessão e não contém atalho por URL, storage ou variável de ambiente.
+
+O destino mantém filtros e fragmento, mas precisa passar por `src/auth/destinoInterno.ts`: somente rotas internas de conteúdo cadastradas são aceitas. Caminhos de autenticação, URLs externas e caminhos ambíguos caem em `/`. O loader do login entrega o destino já validado para a futura tela de conta.
+
+Cada rota tem um error boundary com mensagem segura, tentativa explícita e links de retorno. A apresentação inicial usa CSS de layout sem cores literais; tokens, fontes e temas são escopo da #4, e ilustrações finais de erros, da #13.
+
+O `QueryClientProvider` compartilha um cliente por aplicação. Listas ficam frescas por 30 segundos, `painel`/`metricas` por 60 e `revisao` por zero. Queries representam GETs idempotentes: 500 permite uma repetição; 503, três com backoff exponencial e jitter; outros erros não repetem automaticamente. Mutations não repetem. A integração de erros HTTP, `Retry-After` e banners será feita na #10 sem duplicar a camada de retry.
+
+As evidências de testes, navegação e nginx estão em [docs/router-validation.md](docs/router-validation.md).
+
 ## Estrutura e testes
 
-- `src/main.tsx` e `src/app/App.tsx`: boot React e tela provisória em pt-BR.
+- `src/main.tsx` e `src/app/App.tsx`: boot validado, data router e QueryClientProvider.
+- `src/app/routes.tsx`, `paths.ts` e `nav.ts`: rotas provisórias e catálogo único das abas.
+- `src/auth/`: consulta provisória de sessão, guard e validação de destino interno.
 - `src/api/schema.d.ts`: tipos gerados, sem cliente ou shapes manuais.
 - `tests/setup.ts`: Testing Library/jsdom; testes de componente ficam junto do código.
-- `tests/e2e/`: Playwright contra o **build de produção**, Chromium/Firefox/WebKit em 390×844 e 1440×900. O smoke consulta informações por teclado, verifica acessibilidade com axe, erros de JavaScript e overflow horizontal. Não usa mocks da API porque ainda não há integração.
+- `tests/e2e/`: Playwright contra o **build de produção**, Chromium/Firefox/WebKit em 390×844 e 1440×900. Verifica configuração, rotas públicas/protegidas, URL de retorno, 404, teclado, axe e overflow. Testes de componente cobrem todas as páginas com sessão injetada, falhas de loader/componente e recuperação. Não usa mocks da API porque ainda não há integração.
 - `vite.config.ts`, `tsconfig.json` e `eslint.config.mjs`: Vite 6, TS strict com `noUncheckedIndexedAccess`, hooks React e acessibilidade.
 
-React Router 7, TanStack Query, openapi-fetch e MSW estão instalados para as próximas issues. Vitest 3 e plugin React 4 são compatíveis com Vite 6. O peer `@testing-library/dom` é explícito; jest-dom 6.9.1 evita a versão 6.10.0 descontinuada. ESLint 9 atende aos peers dos plugins atuais (a atualização de major exige revisar esses peers). O postinstall do esbuild é permitido; o postinstall informativo do MSW é ignorado, pois não há worker de navegador neste scaffold.
+React Router 7 e TanStack Query fornecem roteamento e cache; openapi-fetch e MSW estão instalados para a integração da API. Vitest 3 e plugin React 4 são compatíveis com Vite 6. O peer `@testing-library/dom` é explícito; jest-dom 6.9.1 evita a versão 6.10.0 descontinuada. ESLint 9 atende aos peers dos plugins atuais (a atualização de major exige revisar esses peers). O postinstall do esbuild é permitido; o postinstall informativo do MSW é ignorado, pois não há worker de navegador neste scaffold.
 
 ## Geração de tipos
 
@@ -94,7 +115,13 @@ python -m pip install pre-commit
 python -m pre_commit run --all-files
 ```
 
-Ela verifica whitespace, EOF, arquivos grandes, LF, lint, formato e tipos. Não execute `pre-commit install` sobre o Husky: há um único dono do hook. Antes de push, rode `make lint`, `make typecheck` e `make test`. **Não existe workflow de CI permanente**; a implementação dos gates, budgets e deploy pertence à #8. A validação pontual da #1 em Linux, incluindo os seis e2e, Docker sem root e `make up` com a API, está registrada em [docs/scaffold-validation.md](docs/scaffold-validation.md).
+Ela verifica whitespace, EOF, arquivos grandes, LF, lint, formato e tipos. Não execute `pre-commit install` sobre o Husky: há um único dono do hook. Antes de push, rode `make lint`, `make typecheck` e `make test`.
+
+**CI permanente:** `.github/workflows/ci.yml` executa em push e pull request, inclusive mudanças só de documentação. Valida o commit da branch com lint, tipos, testes, build, geração do contrato, e2e, pre-commit e nginx/Docker. Relatórios e screenshots ficam nos artefatos de cada execução. Budgets, cobertura mínima, proteção de branch e deploy continuam na #8.
+
+**Regra de entrega:** nenhum PR pode ser declarado pronto em rascunho ou com testes/checks pendentes ou falhando. Após o último push, aguarde todos os checks do commit final, incluindo integrações externas. Rascunho temporário durante o trabalho é permitido; impedimentos fora do controle devem ser explicitados sem declarar aprovação. Ver AGENTS regra 28.
+
+A validação histórica da #1 em Linux, incluindo os seis e2e, Docker sem root e `make up` com a API, está registrada em [docs/scaffold-validation.md](docs/scaffold-validation.md).
 
 ## Imagem estática e API local
 

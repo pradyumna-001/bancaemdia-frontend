@@ -79,6 +79,16 @@
 
 **Acceptance**: navegar para cada rota renderiza placeholder; rota inexistente → 404 estilizada; rota protegida sem sessão → `/login?destino=...`
 
+#### Implementação da #3
+
+- Data router com catálogo das sete abas em `src/app/nav.ts`, reutilizado nas rotas e na allowlist de destinos. O shell visual e a contagem de Revisão ficam na #6; esta etapa não exibe uma barra de abas.
+- Abas, detalhe de aposta, configurações, sistema, senha e sair são protegidos. Tutorial, extensão, login, criar conta, esqueci/redefinir senha e confirmar e-mail são públicos, conforme os caminhos do ADR 013. Não há ação real de login/logout nesta etapa.
+- O guard consulta uma função de sessão injetável, cujo padrão é sem sessão. Apenas testes injetam uma sessão presente; nenhum parâmetro, storage ou variável pública libera acesso. O futuro provedor da #11 substituirá a consulta padrão.
+- O loader consulta a sessão; o componente guard usa `location` para redirecionar antes de renderizar o conteúdo protegido, preservando também o fragmento (requests dos loaders não o incluem). Loaders futuros que busquem dados privados precisarão consultar a sessão antes da busca; a autorização definitiva permanece no backend.
+- `destinoInterno` aceita apenas paths cadastrados de conteúdo, preservando query e fragmento. Rejeita URLs absolutas, autoridades `//`, barras invertidas, controles, escapes inválidos e paths fora da allowlist; destinos de auth caem em `/` para evitar loops. O guard usa substituição no histórico ao redirecionar para login.
+- Cada rota possui error boundary com texto seguro, recuperação e retorno. O wildcard mostra 404 mesmo sem sessão. CSS inicial cuida de largura, espaçamento, bordas e foco; paleta, fontes e temas continuam na #4 e ilustrações finais na #13.
+- Um QueryClient por aplicação: listas 30s, prefixos `painel`/`metricas` 60s, `revisao` 0. Queries são reservadas a leituras GET idempotentes: status 500 permite uma repetição; 503, três com backoff exponencial e jitter; demais status e rede exigem ação explícita. Mutations não repetem. Refetch automático por foco/reconexão é desativado para não reabrir ciclos de falha. A integração de `Retry-After`, banners e cliente da API fica na #10, usando uma única camada de retry.
+
 ---
 
 ### Issue 4: Design Tokens e Paleta (port da C1)

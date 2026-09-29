@@ -13,7 +13,7 @@ test('runtime válido permite iniciar a aplicação', async ({ page }) => {
   );
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { name: 'bancaemdia', exact: true }),
+    page.getByRole('heading', { name: 'Entrar', exact: true }),
   ).toBeVisible();
 });
 
@@ -35,7 +35,9 @@ for (const [label, config, message] of [
     );
     await page.goto('/');
     await expect(page.getByRole('alert')).toContainText(message);
-    await expect(page.getByText('Aplicação em preparação.')).toHaveCount(0);
+    await expect(page.getByText('Esta página está em preparação.')).toHaveCount(
+      0,
+    );
   });
 }
 
@@ -82,7 +84,7 @@ test('erro de leitura é acessível e permite recuperar o mesmo build por teclad
   ).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(
-    page.getByRole('heading', { name: 'bancaemdia', exact: true }),
+    page.getByRole('heading', { name: 'Entrar', exact: true }),
   ).toBeVisible();
   expect(await page.locator('script[type="module"]').getAttribute('src')).toBe(
     bundle,

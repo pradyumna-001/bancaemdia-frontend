@@ -52,3 +52,4 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 25. Issue → branch `feat/<n>-descricao` → PR pequeno → revisão → merge. PRs referenciam a issue e o ADR (`Closes #N`, `Implements ADR-0XX`).
 26. `make lint && make typecheck && make test` verde local antes de push; e2e no CI.
 27. Toda mudança estrutural relevante atualiza este arquivo e/ou ADR.
+28. **PR só pode ser entregue como pronto fora de rascunho e com todos os testes/checks verdes no commit final.** Rascunho temporário durante o trabalho é permitido, mas deve ser convertido antes da entrega. Após o último push, aguardar os checks terminarem e conferir o SHA validado; ausência de checks, estado pendente ou sucesso em commit anterior não equivalem a aprovação. Não remover workflows, desabilitar testes ou enfraquecer gates para obter verde. Se um impedimento externo estiver fora do controle do agente, informar explicitamente o impedimento e o estado real, sem declarar o PR pronto.

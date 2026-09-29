@@ -1,12 +1,17 @@
-export function App() {
+import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
+import { RouterProvider, type createBrowserRouter } from 'react-router-dom';
+import './pages.css';
+
+export function App({
+  router,
+  queryClient,
+}: {
+  router: ReturnType<typeof createBrowserRouter>;
+  queryClient: QueryClient;
+}) {
   return (
-    <main>
-      <h1>bancaemdia</h1>
-      <p>Aplicação em preparação.</p>
-      <details>
-        <summary>Sobre esta versão</summary>
-        <p>As telas serão disponibilizadas nas próximas etapas.</p>
-      </details>
-    </main>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
   );
 }
