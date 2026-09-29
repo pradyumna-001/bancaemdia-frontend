@@ -2,9 +2,13 @@
 
 Revisão de 29/09/2026 solicitada pelo responsável antes da issue #7. Abrange as 39 issues do plano, inclusive as já implementadas em PRs ainda abertos. Os critérios específicos estão em cada issue e nos ADRs 014–018; este documento reúne os critérios comuns.
 
+## Revisão de escopo posterior
+
+O ADR019 e `docs/backlog/` substituem o inventário funcional antigo após a auditoria do backend. Os critérios visuais deste documento continuam; o plano agora inclui assinatura, titulares/contas, bot, calculadoras, análises/metas e privacidade. A revisão anterior foi visual e não é tratada como auditoria completa de produto.
+
 ## Fontes e precedência
 
-A [síntese da pesquisa](visual-direction.md) registra fontes, fundamentos e limites. O [ADR 006](../adrs/006-visual-system.md) é a decisão visual vigente. Os ADRs 013–018 preservam inventário, contratos e regras de negócio, mas referências ao monólito significam paridade de tarefas e dados, não reprodução de sua aparência. Os trechos conflitantes foram substituídos nesta revisão.
+A [síntese da pesquisa](visual-direction.md) registra fontes, fundamentos e limites. O [ADR 006](../adrs/006-visual-system.md) é a decisão visual vigente. O ADR019, o ADR013 revisado e API-CONTRACTS governam inventário/contratos. Referências ao monólito são histórico ou regressão das tarefas preservadas; não delimitam o produto atual.
 
 Facilidade de uso deve ser avaliada por conclusão, erros, tempo e compreensão. Padrões de produtos consolidados orientam hipóteses; não demonstram que uma paleta específica seja a preferida do público nem que a aparência cause sucesso comercial. As decisões aprovadas podem ser revistas com evidência de uso.
 
@@ -24,7 +28,7 @@ Facilidade de uso deve ser avaliada por conclusão, erros, tempo e compreensão.
 
 Mudança de tela anexa capturas móvel/desktop nos dois temas e registra cenários/limites; testes exercitam comportamento relevante, sem exigir testes artificiais para ajustes documentais. Estudos com participantes são distintos da revisão visual e dos testes automatizados. Registrar o que foi realmente observado.
 
-Toda entrega de PR segue AGENTS 28: fora de rascunho e todos os checks aplicáveis verdes no SHA final, sem desabilitar gates. Referenciar a issue e ADRs pertinentes. As issues técnicas aplicam os critérios visuais apenas às interfaces que afetam; não ganham telas novas por esta revisão.
+Toda entrega de PR segue AGENTS 28: fora de rascunho e todos os checks aplicáveis verdes no SHA final, sem desabilitar gates. Referenciar a issue e ADRs pertinentes. As issues técnicas aplicam os critérios visuais apenas às interfaces que afetam. Novas áreas de produto são explicitadas pelo ADR019, não inferidas da pesquisa visual.
 
 ## Rastreabilidade
 

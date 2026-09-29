@@ -1,34 +1,21 @@
-# ADR 004: Estado, URL e Cache — URL como fonte dos filtros, política de cache
+# ADR 004: URL, população dos filtros e frescor dos dados
 
 ## Status
 
-Proposed
-
-## Context
-
-O monólito auditava repetidamente perda de estado de filtro ("as pílulas carregam a URL inteira"); `?apagadas=1` viajava em todo link para a visão de apagadas não sumir. Perder estado silenciosamente era classificado como bug de produto. No SPA, o risco migra para: caches de query obsoletos após mutação, e estado guardado em componente que morre na navegação.
+Revisado pelo ADR019 em 29/09/2026; issues #17/#9 e consumidoras.
 
 ## Decision
 
-### URL
-
-1. Todo estado de filtro/período/paginação visível na URL como query params: `casa`, `tipster`, `grupo`, `banca`, `estado`, `origem`, `de`, `ate`, `apagadas`, `cursor`.
-2. Parsing com schema (zod ou `URLSearchParams` + coercers em `src/lib/params.ts`): **param inválido → valor padrão** (nunca 422 nem crash — regra 19 do AGENTS, espelho da web antiga).
-3. Pílulas de filtro ativas derivam dos params; remover pílula = navegar sem o param. Atalhos de período (7/30 dias, este mês) geram params explícitos; sem `<input type=date>` nativo (componente próprio).
-
-### Cache de servidor (TanStack Query)
-
-4. `queryKey` = `[recurso, paramsNormalizados]` — filtro novo é cache novo.
-5. `staleTime`: 30s listas; 60s painel/métricas; 0 para revisão (fila muda por ação própria).
-6. **Read-your-writes** (espelho do backend ADR-009 — escritas no primário): toda mutação (`mutateAsync`) invalida e aguarda `refetch` das queries afetadas antes de fechar o formulário/confirmar o toast. Sem dados próprios escritos localmente que não vieram da API.
-7. Mutations destrutivas (apagar aposta, zerar tudo) usam confirmação explícita; ação reversível (restaurar aposta, desfazer resultado) fica acessível conforme contrato.
-
-### Estado local
-
-8. Apenas estado efêmero de UI (modal aberto, draft de formulário, fila de desfazer da sessão de Resultados) vive em componente/contexto. `sessionStorage` para a fila de desfazer de Resultados (sobrevive F5, morre ao fechar aba — paridade com o hidden field do monólito).
+1. Filtros visíveis e paginação vivem na URL. Adapter por recurso mapeia nomes amigáveis para campos realmente suportados. Preservar contexto ao navegar não significa afirmar que todas as telas aplicam os mesmos filtros.
+2. Invalidade sintática conhecida normaliza antes da chamada. Filtro válido rejeitado por contrato/erro não desaparece silenciosamente. Explicar escopo diferente ou bloquear a opção até existir suporte.
+3. Main usa page/page_size, desde/ate e dimensões específicas; cursor não é contrato atual. Datas e atalhos têm fronteiras/fuso explícitos. Pickers próprios acessíveis sem select/date nativo.
+4. `apagadas=1` continua estado de URL do site. `incluir_apagadas=true` na API inclui ativas e apagadas; somente apagadas depende de contrato #50. Nunca filtrar só a página local para simular esse conjunto.
+5. Resumo, gráficos, lista e exportação usam população equivalente ou identificam escopos distintos. Não recalcular agregado a partir de itens/páginas. Titular/conta/grupo/banca exigem suporte real por recurso.
+6. queryKey inclui recurso, usuário/sessão e params normalizados. Logout/troca de conta elimina cache privado. staleTime padrão 30s listas, 60s painel, 0 revisão; detalhes podem ajustar com evidência.
+7. Sucesso de escrita depende da resposta autoritativa; invalidar/refetch dados afetados. Refetch não força atualização de MV: `fresh=true` escolhe primário, não refresh. Mostrar confirmação da gravação e frescor/pêndencia de atualização sem spinner eterno ou promessa de agregado instantâneo.
+8. Otimismo só para feedback de ação autorizado, com rollback; totais financeiros continuam da API. Fila de desfazer em sessionStorage é por usuário/sessão, limpa no logout e exige reconciliação de versão/concorrência antes de escrever.
+9. Destrutivas têm confirmação ou desfazer conforme contrato. Encerrar conta, remover aposta e reset de dados são operações diferentes; não substituir uma pela outra.
 
 ## Consequences
 
-- Link compartilhável de qualquer lista filtrada (suporte e debug mais fáceis).
-- Sem "dados velhos após salvar": toda mutação termina com dados vindos do servidor.
-- Trade-off aceito: mais `refetch` que o mínimo teórico — consistência óbvia vale mais que economia de requests neste produto financeiro.
+Histórico, pílulas e links são reproduzíveis sem filtros silenciosos. Um número válido porém antigo é apresentado com seu contexto, não substituído por cálculo do navegador.

@@ -24,7 +24,7 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 ## Estado, navegação e URL
 
 11. **A URL é a fonte da verdade dos filtros.** Filtros ativos (casa, tipster, grupo, banca, estado, origem, período, `?apagadas=1`) vivem em query params: pílulas removíveis, links compartilháveis, sem perda silenciosa de estado ao navegar.
-12. Navegação tem fonte única: lista `ABAS` em `src/app/nav.ts` renderiza topo (desktop) e barra inferior/menu Mais (mobile). Apostas, Painel e Enviar têm acesso direto no celular; Revisão só aparece com fila não-vazia e mostra o contador. Coleta, Caixa e Resultados ficam em Mais no celular. Links entre abas preservam os query params.
+12. Navegação tem fonte única: lista `ABAS` em `src/app/nav.ts` renderiza topo (desktop) e barra inferior/menu Mais (mobile). Apostas, Painel e Enviar têm acesso direto no celular; Revisão só aparece com fila não-vazia e mostra o contador. Coleta, Caixa e Resultados ficam em Mais no celular; Contas e titulares, Calculadoras, Assinatura e Configurações são destinos secundários também no desktop. ABAS define elegibilidade desktop/mobile; rotas filhas mantêm a área ativa. Links entre áreas preservam query params, sem afirmar que um filtro é aplicado onde a API não o suporta.
 
 ## Paleta e tipografia
 
@@ -38,7 +38,7 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 
 18. Tipos gerados do OpenAPI da API (`openapi-typescript`) — código de domínio nunca declara shape de resposta à mão.
 19. Query params inválidos **nunca quebram a tela**: inválido → valor padrão (a API devolve 422, mas a UI já deve cair para defaults antes, como o monólito fazia).
-20. Operation 202 de upload/extração é assíncrona: UI faz polling de `/api/v1/upload/{job_id}` (1s, exponencial depois), pausada no cartão de autorização de gasto quando a API sinalizar.
+20. Operation 202 de upload/extração é assíncrona: UI faz polling de `/api/v1/upload/{job_id}` (1s, exponencial depois), com estados reais da API. Pausar/autorizar/recusar gasto depende de contrato específico antes do processamento sujeito a consentimento; não inventar estado de job nem iniciar gasto para simular uma prévia.
 21. Rate limit (429) e 503 têm copy própria e retry com backoff; nunca laço infinito de tentativa.
 
 ## Segurança
@@ -55,3 +55,7 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 28. **PR só pode ser entregue como pronto fora de rascunho e com todos os testes/checks verdes no commit final.** Rascunho temporário durante o trabalho é permitido, mas deve ser convertido antes da entrega. Após o último push, aguardar os checks terminarem e conferir o SHA validado; ausência de checks, estado pendente ou sucesso em commit anterior não equivalem a aprovação. Não remover workflows, desabilitar testes ou enfraquecer gates para obter verde. Se um impedimento externo estiver fora do controle do agente, informar explicitamente o impedimento e o estado real, sem declarar o PR pronto.
 29. Demonstrações que injetam sessão simulada ficam exclusivamente em `tests/fixtures/`, com build separado de `dist/`. Nenhum query param, storage ou variável pública pode liberar sessão na aplicação; o build público é testado contra o endereço da fixture.
 30. O planejamento visual segue ADR 006, `docs/research/visual-direction.md` e `docs/research/backlog-visual.md`; os ADRs 014–018 e as issues devem permanecer coerentes. Paridade com o monólito é de tarefas e dados, não reprodução de sua aparência. Mudança de direção atualiza especificação e aceite afetados antes da implementação.
+
+31. O escopo vigente segue ADR 019, `docs/API-CONTRACTS.md` e os corpos canônicos em `docs/backlog/`. Cada capacidade distingue main/versionada, PR aberto, planejada e lacuna; monólito não é inventário exclusivo. Gerar tipos de uma versão integrada pinada, nunca de união manual de branches. O manifesto e as issues remotas devem corresponder.
+32. Sessão e acesso comercial são separados: 401 reautentica, 402 preserva leitura/exportação e entrada. Permissão por operação vem do contrato/servidor, não apenas do verbo HTTP. Titular, conta, casa e banca não são sinônimos; atribuição e troca temporal são decisões da API.
+33. Resumo/gráfico/lista/exportação precisam de população compatível ou escopo explícito. `incluir_apagadas` não significa somente apagadas; não filtrar uma página para simular o conjunto. Refetch/fresh não força refresh de MV; valores nulos/desconhecidos não viram zero. Freebet mantém valor de face da entrada, com custo próprio decidido pelo servidor.

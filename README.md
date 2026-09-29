@@ -2,7 +2,7 @@
 
 Refatoração do frontend do Planilhador de Apostas. Single-page application **React + Vite + TypeScript (strict)** que consome a API versionada [`bancaemdia-api`](https://github.com/pradyumna-001/bancaemdia-api) (`/api/v1`, contratos em `docs/API.md` do backend).
 
-Substitui a UI HTMX embarcada do monólito original (`planilhador/web/`), preservando paridade de funcionalidade, vocabulário (pt-BR) e as regras mensuráveis de qualidade de tela ("qualidade de tela é requisito, não polimento").
+SPA para as tarefas atuais de bancaemdia-api: apostas, contas/titulares, caixa, revisão, entrada, assinatura, análises e ferramentas. Preserva vocabulário pt-BR e qualidade de tela; o monólito é referência histórica, não limite de escopo. Ver ADR 019 e docs/backlog.
 
 ## Quickstart
 
@@ -58,18 +58,18 @@ A validação local e em Linux, incluindo 42 e2e e promoção da mesma imagem en
 
 ## Rotas e sessão provisória
 
-O data router oferece 19 páginas provisórias em português. As sete abas vêm de `src/app/nav.ts`; a barra visual será implementada na #6. Uma URL desconhecida mostra 404 com ações de retorno, mesmo sem sessão.
+O data router e o shell usam ABAS em src/app/nav.ts. Os sete destinos principais e os novos destinos secundários têm elegibilidade desktop/mobile; Contas e titulares, Calculadoras, Assinatura e Configurações ficam em Opções/Mais. Rotas filhas de Painel e Configurações permanecem na respectiva área. As páginas de domínio continuam em preparação, sem operações simuladas. URL desconhecida mostra 404 recuperável.
 
-| Acesso    | Rotas                                                                                                                                        |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Protegido | `/`, `/painel`, `/enviar`, `/coleta`, `/banca`, `/resultados`, `/revisao`, `/aposta/:chave`, `/configuracoes`, `/sistema`, `/senha`, `/sair` |
-| Público   | `/tutorial`, `/extensao`, `/login`, `/criar-conta`, `/esqueci-senha`, `/redefinir-senha`, `/confirmar-email`                                 |
+| Acesso    | Rotas                                                                                                                                                                                                                                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Protegido | `/`, `/painel`, `/enviar`, `/coleta`, `/banca`, `/resultados`, `/revisao`, `/aposta/:chave`, `/configuracoes`, `/configuracoes/conexoes`, `/configuracoes/privacidade`, `/contas`, `/contas/:titularId`, `/assinatura`, `/calculadoras`, `/painel/analises`, `/painel/metas`, `/sistema`, `/senha`, `/sair` |
+| Público   | `/tutorial`, `/extensao`, `/login`, `/criar-conta`, `/esqueci-senha`, `/redefinir-senha`, `/confirmar-email`                                                                                                                                                                                                |
 
 O provedor de sessão ainda não foi integrado: abrir `/` leva a `/login?destino=%2F`. Nenhum login ou logout real é executado. A função de consulta de sessão pode ser injetada nos testes; o build usa sempre o estado sem sessão e não contém atalho por URL, storage ou variável de ambiente.
 
 O destino mantém filtros e fragmento, mas precisa passar por `src/auth/destinoInterno.ts`: somente rotas internas de conteúdo cadastradas são aceitas. Caminhos de autenticação, URLs externas e caminhos ambíguos caem em `/`. O loader do login entrega o destino já validado para a futura tela de conta.
 
-Cada rota tem um error boundary com mensagem segura, tentativa explícita e links de retorno. A apresentação inicial usa CSS de layout sem cores literais; tokens, fontes e temas são escopo da #4, e ilustrações finais de erros, da #13.
+Cada rota tem um error boundary com mensagem segura, tentativa explícita e links de retorno. Tokens, fontes, temas e marca já são compartilhados. Ilustrações finais de erro permanecem na #13. Assinatura e sessão serão integradas separadamente; acesso somente de leitura não deve ser tratado como logout.
 
 O `QueryClientProvider` compartilha um cliente por aplicação. Listas ficam frescas por 30 segundos, `painel`/`metricas` por 60 e `revisao` por zero. Queries representam GETs idempotentes: 500 permite uma repetição; 503, três com backoff exponencial e jitter; outros erros não repetem automaticamente. Mutations não repetem. A integração de erros HTTP, `Retry-After` e banners será feita na #10 sem duplicar a camada de retry.
 
@@ -82,7 +82,7 @@ As evidências de testes, navegação e nginx estão em [docs/router-validation.
 - `src/auth/`: consulta provisória de sessão, guard e validação de destino interno.
 - `src/api/schema.d.ts`: tipos gerados, sem cliente ou shapes manuais.
 - `tests/setup.ts`: Testing Library/jsdom; testes de componente ficam junto do código.
-- `tests/e2e/`: Playwright contra o **build de produção**, Chromium/Firefox/WebKit em 390×844 e 1440×900. Verifica configuração, rotas públicas/protegidas, URL de retorno, 404, teclado, axe e overflow. Testes de componente cobrem todas as páginas com sessão injetada, falhas de loader/componente e recuperação. Não usa mocks da API porque ainda não há integração.
+- `tests/e2e/`: Playwright contra o **build de produção**, Chromium/Firefox/WebKit em 390×844 e 1440×900. Verifica configuração, rotas públicas/protegidas, URL de retorno, 404, teclado, axe e overflow. Testes de componente cobrem todas as páginas com sessão injetada, falhas de loader/componente e recuperação. A fixture isolada do shell simula sessão e contador para validar apresentação; o build público não pode liberar essa sessão. Isso não comprova integração da API.
 - `vite.config.ts`, `tsconfig.json` e `eslint.config.mjs`: Vite 6, TS strict com `noUncheckedIndexedAccess`, hooks React e acessibilidade.
 
 React Router 7 e TanStack Query fornecem roteamento e cache; openapi-fetch e MSW estão instalados para a integração da API. Vitest 3 e plugin React 4 são compatíveis com Vite 6. O peer `@testing-library/dom` é explícito; jest-dom 6.9.1 evita a versão 6.10.0 descontinuada. ESLint 9 atende aos peers dos plugins atuais (a atualização de major exige revisar esses peers). O postinstall do esbuild é permitido; o postinstall informativo do MSW é ignorado, pois não há worker de navegador neste scaffold.
@@ -157,17 +157,9 @@ make up API_DIR=../bancaemdia-api
 | [`docs/runbooks/`](docs/runbooks/)               | Deploy, rollback e incidente                                           |
 | [`AGENTS.md`](AGENTS.md)                         | Regras invioláveis do projeto (dinheiro, vocabulário, paleta, estados) |
 
-## Marcos (GitHub)
+## Planejamento vigente
 
-Milestones e issues ficam **neste repositório**. Os corpos completos das issues são os ADRs de planejamento 014–018; as issues do GitHub referenciam o ADR correspondente (`Implements ADR-014`, etc.).
-
-| Milestone                        | ADR     | Escopo                                                  |
-| -------------------------------- | ------- | ------------------------------------------------------- |
-| Semana 1 — Fundação              | ADR 014 | Scaffold, tooling, design tokens, shell de navegação    |
-| Semana 2 — Auth e Cliente da API | ADR 015 | Auth, cliente tipado gerado do OpenAPI, páginas de erro |
-| Semana 3 — Telas Centrais        | ADR 016 | Apostas, Aposta (detalhe), Painel                       |
-| Semana 4 — Fluxos de Entrada     | ADR 017 | Enviar, Prints, Importar, Resultados, Revisão           |
-| Semana 5 — Conta e Endurecimento | ADR 018 | Banca, Casas, Configurações, Coleta, e2e, deploy        |
+O [ADR 019](docs/adrs/019-current-product-backend-alignment.md) substitui o plano limitado a cinco semanas de paridade. Os [43 corpos de issues futuras](docs/backlog/README.md) registram contratos, dependências e aceite; #49–59 cobrem lacunas de escopo. A [auditoria](docs/audits/backend-2026-09-29.md) e a [matriz de contratos](docs/API-CONTRACTS.md) distinguem main, PR aberto e trabalho planejado. #8 pode avançar em infraestrutura; identidade #49 e parcelas bloqueantes de #50 precedem suas consumidoras.
 
 ## Convenções
 

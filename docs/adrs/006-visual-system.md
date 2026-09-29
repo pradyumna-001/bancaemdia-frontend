@@ -38,7 +38,7 @@ Demonstração identificada como fictícia em `/sistema`, mantendo proteção de
 
 ## Navegação — #6
 
-O topo desktop mantém os sete destinos elegíveis. Em telas até 62rem, a barra inferior prioriza Apostas/Painel/Enviar e Revisão quando há fila; Mais reúne Coleta/Caixa/Resultados. A escolha deixa os rótulos legíveis em 320px. Não supõe uma preferência universal por determinada quantidade de abas; a prioridade poderá ser revista com uso real. As regras e a divisão continuam declaradas em `ABAS`.
+O topo desktop mantém os sete destinos elegíveis. Em telas até 62rem, a barra inferior prioriza Apostas/Painel/Enviar e Revisão quando há fila; Mais reúne Coleta/Caixa/Resultados e os destinos secundários Contas e titulares, Calculadoras, Assinatura e Configurações (ADR 019). Esses destinos secundários ficam em Opções também no desktop, sem aumentar a barra principal. A escolha deixa os rótulos legíveis em 320px. Não supõe uma preferência universal por determinada quantidade de abas; a prioridade poderá ser revista com uso real. As regras e a divisão continuam declaradas em `ABAS`.
 
 Menu nativo modal para os demais destinos, configurações e aparência; indicação de seção atual, alvos de toque e área segura inferior. O conteúdo conserva espaço para a futura lista operacional. Sem gráficos ou números financeiros inventados no placeholder.
 

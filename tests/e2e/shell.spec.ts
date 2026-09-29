@@ -37,6 +37,10 @@ test('shell preserva filtros, mostra fila e navega com menus acessíveis', async
     await expect(dialog).toBeVisible();
     await dialog.getByRole('radio', { name: tema, exact: true }).check();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    await page.screenshot({
+      path: testInfo.outputPath('menu-' + tema + '.png'),
+      fullPage: true,
+    });
     await page.keyboard.press('Escape');
     await expect(dialog).not.toBeVisible();
     await expect(
@@ -69,15 +73,41 @@ test('shell preserva filtros, mostra fila e navega com menus acessíveis', async
     ),
   ).toBe(true);
   // O menu e a barra juntos derivam todas as abas do mesmo catálogo.
-  if (mobile)
-    await nav.getByRole('button', { name: 'Mais', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções', exact: true }).click();
   for (const aba of ABAS) {
-    const area = mobile && !aba.mobile ? page.getByRole('dialog') : nav;
+    const area = (mobile ? !aba.mobile : !aba.desktop)
+      ? page.getByRole('dialog')
+      : nav;
     // Com o diálogo aberto os outros links ficam inertes, mas continuam no DOM.
     expect(await area.locator('a').filter({ hasText: aba.title }).count()).toBe(
       1,
     );
   }
+  await page
+    .getByRole('dialog')
+    .getByRole('link', { name: 'Contas e titulares', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Contas e titulares', exact: true }),
+  ).toBeVisible();
+  expect(new URL(page.url()).search).toBe('?apagadas=1&casa=teste');
+  await page.getByRole('button', { name: 'Opções', exact: true }).click();
+  const opcoes = page.getByRole('dialog');
+  await expect(
+    opcoes.getByRole('link', { name: 'Contas e titulares', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
+  await opcoes.getByRole('link', { name: 'Assinatura', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Assinatura', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Opções', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('link', { name: 'Calculadoras', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Calculadoras', exact: true }),
+  ).toBeVisible();
 });
 
 test('fila vazia, erro e recuperação não fabricam contador nem bloqueiam navegação', async ({

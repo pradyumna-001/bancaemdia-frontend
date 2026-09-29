@@ -106,7 +106,7 @@ export function Shell({
           </button>
         </div>
         <nav className="nav-desktop" aria-label="Navegação principal">
-          <div>{abas.map(link)}</div>
+          <div>{abas.filter((aba) => aba.desktop).map(link)}</div>
         </nav>
       </header>
       <div
@@ -176,13 +176,6 @@ export function Shell({
         </div>
         <nav aria-label="Outras seções">
           <div className="menu-secoes">{secundarias.map(link)}</div>
-          <Link
-            to={{ pathname: '/configuracoes', search: location.search }}
-            onClick={() => setMenu(false)}
-          >
-            <Icone nome="configuracoes" />
-            Configurações
-          </Link>
           <Link
             to={{ pathname: '/tutorial', search: location.search }}
             onClick={() => setMenu(false)}
