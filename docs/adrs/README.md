@@ -4,16 +4,16 @@ Numeração própria deste repositório, a partir de 001. ADRs de alto nível qu
 
 ## Registros de Decisão
 
-| #   | Title                                                                                  | Status   | Date       |
-| --- | -------------------------------------------------------------------------------------- | -------- | ---------- |
-| 001 | Atributos de Qualidade do Frontend — Core Web Vitals, A11y, Regras de Tela Mensuráveis | Proposed | 2026-09-24 |
-| 002 | Stack — Vite + React + TypeScript Strict, TanStack Query, React Router                 | Proposed | 2026-09-24 |
-| 003 | Cliente da API, Tipagem e Sessão — OpenAPI-generated types, JWT externo, Polling 202   | Proposed | 2026-09-24 |
-| 004 | Estado, URL e Cache — URL como fonte dos filtros, política de cache                    | Proposed | 2026-09-24 |
-| 005 | Erros, Timeouts e Retry — Fallbacks de query params, 429/503, páginas de erro          | Proposed | 2026-09-24 |
-| 006 | Sistema visual — Legibilidade, tokens semânticos e SVG próprio                         | Accepted | 2026-09-29 |
-| 007 | Estratégia de Testes — Vitest + Testing Library + Playwright + lints de sistema        | Proposed | 2026-09-24 |
-| 008 | CI/CD e Deploy — GH Actions lint→typecheck→test→build, SPA deploy, rollback            | Proposed | 2026-09-24 |
+| #   | Title                                                                                  | Status             | Date       |
+| --- | -------------------------------------------------------------------------------------- | ------------------ | ---------- |
+| 001 | Atributos de Qualidade do Frontend — Core Web Vitals, A11y, Regras de Tela Mensuráveis | Revisado #8/ADR019 | 2026-09-29 |
+| 002 | Stack — Vite + React + TypeScript Strict, TanStack Query, React Router                 | Proposed           | 2026-09-24 |
+| 003 | Cliente da API, Tipagem e Sessão — OpenAPI-generated types, JWT externo, Polling 202   | Proposed           | 2026-09-24 |
+| 004 | Estado, URL e Cache — URL como fonte dos filtros, política de cache                    | Proposed           | 2026-09-24 |
+| 005 | Erros, Timeouts e Retry — Fallbacks de query params, 429/503, páginas de erro          | Proposed           | 2026-09-24 |
+| 006 | Sistema visual — Legibilidade, tokens semânticos e SVG próprio                         | Accepted           | 2026-09-29 |
+| 007 | Estratégia de Testes — Vitest + Testing Library + Playwright + lints de sistema        | Revisado #8/ADR019 | 2026-09-29 |
+| 008 | CI, budgets e hospedagem estática — Fase 1 nginx/Compose/Caddy                         | Accepted           | 2026-09-29 |
 
 ---
 

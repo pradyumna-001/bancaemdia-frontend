@@ -6,7 +6,7 @@ SPA para as tarefas atuais de bancaemdia-api: apostas, contas/titulares, caixa, 
 
 ## Quickstart
 
-Pré-requisitos: Node 22.14+ (versão de referência em `.node-version`), pnpm **10.34.6** e GNU Make. Instale a versão fixada com `npm install --global pnpm@10.34.6`. O lockfile é obrigatório; `make install` usa `--frozen-lockfile`. Não é necessário ter API ativa, credenciais ou serviço pago para iniciar a tela provisória. Configure sua URL pública antes de iniciar.
+Pré-requisitos: Node 22.22.0+ (versão de referência em `.node-version`), pnpm **10.34.6** e GNU Make. Instale a versão fixada com `npm install --global pnpm@10.34.6`. O lockfile é obrigatório; `make install` usa `--frozen-lockfile`. Não é necessário ter API ativa, credenciais ou serviço pago para iniciar a tela provisória. Configure sua URL pública antes de iniciar.
 
 ```bash
 make install        # instalação reproduzível e hook Husky
@@ -15,9 +15,12 @@ make dev            # Vite em http://localhost:5173
 make lint           # eslint + prettier --check
 make typecheck      # tsc --noEmit
 make test           # vitest run (sem watch)
+make test:coverage  # suíte + mínimo 80% por arquivo em lib/features
 pnpm exec playwright install --with-deps  # browsers e dependências de Linux
 make test:e2e       # build + preview + Playwright (3 browsers × 2 viewports)
 make build          # produção (dist/)
+make check:bundle   # JS inicial <=200.000 bytes gzip
+make measure:lighthouse # baseline mobile/desktop do build público
 make gen-types      # contrato oficial da API → src/api/schema.d.ts
 pnpm preview        # inspecionar dist/ em http://localhost:4173
 pnpm format         # formatar arquivos
@@ -166,3 +169,7 @@ O [ADR 019](docs/adrs/019-current-product-backend-alignment.md) substitui o plan
 - Todo PR fecha uma issue deste repo e referencia o ADR relevante ("Implements ADR-XXX").
 - Decisões novas viram ADR antes do código (`docs/adrs/`): criar → revisar → aceitar → implementar → suplantar.
 - Nenhuma lógica financeira no cliente: número calculado no frontend é bug (ver `AGENTS.md`).
+
+## Qualidade e hospedagem
+
+A #8 acrescenta cobertura por arquivo, budget de JavaScript e medição Lighthouse à CI permanente. Relatórios ficam nos artifacts; build público e nginx/CSP são guardados juntos por SHA. Não há deploy automático. Plataforma Fase 1, limites da medição e impedimento administrativo de proteção de branch estão em [ADR008](docs/adrs/008-ci-cd-deploy.md) e [validação](docs/ci-budgets-validation.md).
