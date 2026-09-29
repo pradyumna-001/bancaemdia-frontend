@@ -9,13 +9,11 @@
   overflow-wrap: anywhere;
 }
 
-.assinatura {
-  font-weight: var(--peso-forte);
-  letter-spacing: -0.02em;
+.cabecalho-marca {
   margin-block-end: var(--espaco-32);
 }
 
-.pagina > p:not(.assinatura, .legenda) {
+.pagina > p:not(.legenda) {
   color: var(--tinta-secundaria);
   max-width: 60ch;
 }

@@ -1,0 +1,13 @@
+.logo {
+  display: inline-block;
+  color: var(--tinta);
+  font-family: var(--fonte-interface);
+  font-size: var(--fonte-marca);
+  font-weight: var(--peso-normal);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+.logo strong {
+  font-weight: var(--peso-forte);
+}
