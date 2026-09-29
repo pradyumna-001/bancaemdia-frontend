@@ -1,6 +1,7 @@
 # ADR 006: Sistema Visual — Tokens de Paleta, Tipografia Vendida, SVG Próprio (Sem Chart Lib)
 
 ## Status
+
 Proposed
 
 ## Context

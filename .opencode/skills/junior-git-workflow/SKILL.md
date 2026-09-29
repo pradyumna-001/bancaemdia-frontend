@@ -33,19 +33,19 @@ git checkout -b feature/issue-04-alembic
 
 ## Rule 2 — Socratic-loop commits
 
-A "Socratic loop" is *one chunk code authored + three Socratic questions answered + verification run green*. Every closed loop ends with a commit. The commit message describes **the chunk, not the issue as a whole**.
+A "Socratic loop" is _one chunk code authored + three Socratic questions answered + verification run green_. Every closed loop ends with a commit. The commit message describes **the chunk, not the issue as a whole**.
 
 Conventional Commits style. Allowed types:
 
-| Type       | Use                                                 |
-|------------|----------------------------------------------------|
-| `feat`     | New feature chunk (new endpoint, new table, etc.)  |
-| `fix`      | Bug fix, not a feature change                       |
-| `refactor` | Restructuring without behavior change               |
-| `test`     | Tests, including invariant tests                    |
-| `docs`     | Documentation only                                  |
-| `chore`    | Tooling, scaffolding, dependencies                  |
-| `build`    | Build/CI changes                                    |
+| Type       | Use                                               |
+| ---------- | ------------------------------------------------- |
+| `feat`     | New feature chunk (new endpoint, new table, etc.) |
+| `fix`      | Bug fix, not a feature change                     |
+| `refactor` | Restructuring without behavior change             |
+| `test`     | Tests, including invariant tests                  |
+| `docs`     | Documentation only                                |
+| `chore`    | Tooling, scaffolding, dependencies                |
+| `build`    | Build/CI changes                                  |
 
 Scope goes in parens. Format: `<type>(<scope>): <imperative summary>`. Summary ≤72 chars.
 
@@ -85,14 +85,14 @@ We never auto-merge. PRs sit open until a human reviews and merges.
 
 Five files maintain the repo's professional appearance for recruiters / future collaborators / CI:
 
-| Path                                          | Purpose                                                                | Status today                                         |
-|-----------------------------------------------|------------------------------------------------------------------------|------------------------------------------------------|
-| `README.md`                                   | Project overview, quickstart                                           | **exists**                                           |
-| `.gitignore`                                  | Excludes node_modules, dist, caches, env files                          | **exists**                                           |
-| `.github/workflows/ci.yml`                    | Run lint + typecheck + vitest on PRs to `main`                          | **missing** — ADR 014 Issue 8                        |
-| `.github/PULL_REQUEST_TEMPLATE.md`            | PR body structure scaffold that matches Rule 4                         | **exists**                                           |
-| `.github/ISSUE_TEMPLATE/issue.md`             | Issue body in the ADR 014–018 format                                    | **exists**                                           |
-| `LICENSE`                                     | Proprietary — All rights reserved                                      | **exists**                                           |
-| `CODEOWNERS`                                  | Default owner per directory (`src/app/`, `src/features/`, etc.)         | **missing**                                          |
+| Path                               | Purpose                                                         | Status today                  |
+| ---------------------------------- | --------------------------------------------------------------- | ----------------------------- |
+| `README.md`                        | Project overview, quickstart                                    | **exists**                    |
+| `.gitignore`                       | Excludes node_modules, dist, caches, env files                  | **exists**                    |
+| `.github/workflows/ci.yml`         | Run lint + typecheck + vitest on PRs to `main`                  | **missing** — ADR 014 Issue 8 |
+| `.github/PULL_REQUEST_TEMPLATE.md` | PR body structure scaffold that matches Rule 4                  | **exists**                    |
+| `.github/ISSUE_TEMPLATE/issue.md`  | Issue body in the ADR 014–018 format                            | **exists**                    |
+| `LICENSE`                          | Proprietary — All rights reserved                               | **exists**                    |
+| `CODEOWNERS`                       | Default owner per directory (`src/app/`, `src/features/`, etc.) | **missing**                   |
 
 These missing files get their own planned sessions. The workflow still enforces them: every PR opened includes CI passing, so the workflow file matters; every PR filed uses the PR template, so that file matters; etc.

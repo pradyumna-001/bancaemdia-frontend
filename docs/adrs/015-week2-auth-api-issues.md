@@ -4,6 +4,7 @@
 
 **Target Date**: 7 days from Week 1
 **Success Criteria**:
+
 - [ ] Tipos da API gerados do OpenAPI; `make gen-types` integrado e checado no CI
 - [ ] `client.ts` único com matriz de erros do ADR 005 implementada e testada
 - [ ] Fluxo de autenticação completo contra provedor definido (lacuna backend resolvida ou credenciais de teste)
@@ -15,12 +16,14 @@
 ## GitHub Issues (7 issues)
 
 ### Issue 1: Tipos OpenAPI e Cliente Base
+
 **Labels**: `semana-2`, `api`
 **Size**: M (3-4 hours)
 
 **Files**: `src/api/client.ts`, `src/api/schema.d.ts`, `scripts/gen-types.mjs`
 
 **Tasks**:
+
 - [ ] `make gen-types`: `openapi-typescript` contra `VITE_API_URL/openapi.json` (ou `openapi.json` baixado e commitado quando API offline) → `src/api/schema.d.ts`
 - [ ] `client.ts` com `openapi-fetch`: base URL da config, timeouts (GET 10s / POST 15s / upload 60s), `AbortSignal` por navegação
 - [ ] `ApiError { status, code?, detail }` — corpo nunca vaza cru para componentes
@@ -32,12 +35,14 @@
 ---
 
 ### Issue 2: Matriz de Erros e Retry
+
 **Labels**: `semana-2`, `api`
 **Size**: M (3-4 hours)
 
 **File**: `src/api/errors.ts` + integração `client.ts`/`QueryClient`
 
 **Tasks**:
+
 - [ ] Implementar tabela status→comportamento do ADR 005 (401 reauth, 409 reload, 413 limite, 429 `Retry-After` com banner e lock de ações, 500 retry 1×, 503 backoff máx 3 com jitter, offline com indicador)
 - [ ] Componentes de banner/estado de erro compartilhados (`<ErroApi />`) em pt-BR
 - [ ] Testes de componente com MSW para cada status
@@ -48,12 +53,14 @@
 ---
 
 ### Issue 3: Camada de Autenticação (`ProvedorAuth`)
+
 **Labels**: `semana-2`, `auth`
 **Size**: L (4-6 hours)
 
 **Files**: `src/auth/`
 
 **Tasks**:
+
 - [ ] **Pré-requisito**: backend define provedor de identidade (issue no repo da API — ver `docs/API-CONTRACTS.md`); se indefinido, implementar contra mock local atrás da mesma interface
 - [ ] Interface `ProvedorAuth` (ADR 003): `token()`, `login()`, `logout()`, estado de interação; implementação para o provedor escolhido
 - [ ] Guard de rotas com `destino` validado contra allowlist de paths internos
@@ -65,12 +72,14 @@
 ---
 
 ### Issue 4: Telas de Conta
+
 **Labels**: `semana-2`, `auth`, `telas`
 **Size**: L (4-6 hours)
 
 **Files**: `src/features/conta/`
 
 **Tasks**:
+
 - [ ] Login, criar conta (com código de convite se suportado), esqueci/redefinir senha, confirmar e-mail — redirecionando ao provedor hosted quando for o caso, ou telas próprias conforme a decisão do backend
 - [ ] Copy pt-BR espelhando as telas antigas; validações de formulário com mensagens de domínio
 - [ ] Rate-limit/lockout do provedor tem UI própria (não genérica)
@@ -81,12 +90,14 @@
 ---
 
 ### Issue 5: Páginas de Erro Definitivas
+
 **Labels**: `semana-2`, `design`, `telas`
 **Size**: S (1-2 hours)
 
 **Files**: `src/features/erros/`
 
 **Tasks**:
+
 - [ ] `NaoAchei` (404), `DeuErrado` (500), método errado (405) com ilustração SVG própria em 2 cores — paridade visual com `nao_achei.html`/`deu_errado.html`
 - [ ] Links de retorno contextuais por prefixo (ex.: erro em `/aposta/` → voltar para Apostas)
 - [ ] Error Boundary da Semana 1 passa a usar `DeuErrado`
@@ -97,10 +108,12 @@
 ---
 
 ### Issue 6: Configuração de Ambientes e Deploy de Staging
+
 **Labels**: `semana-2`, `infra`
 **Size**: M (2-3 hours)
 
 **Tasks**:
+
 - [ ] Deploy automático de `main` → staging na plataforma escolhida (ADR 008)
 - [ ] Config runtime (`public/config.json`) ou variáveis por ambiente sem rebuild (decisão da Issue 2 da Semana 1)
 - [ ] Headers de segurança (CSP estrita, XCTO, Referrer-Options), SPA fallback, cache imutável de assets hasheados, `index.html` sem cache
@@ -111,12 +124,14 @@
 ---
 
 ### Issue 7: Hook de Job 202 (`useJob`)
+
 **Labels**: `semana-2`, `api`
 **Size**: M (2-3 hours)
 
 **Files**: `src/api/useJob.ts`
 
 **Tasks**:
+
 - [ ] Polling de `GET /api/v1/upload/{job_id}` a 1000ms com backoff exponencial após 10s estável; cancel on unmount/rota-troca
 - [ ] Estados de primeira classe: `processando`, `aguardando_autorizacao` (cartão do pode — UI detalhada na Semana 4), `concluido`, `erro`
 - [ ] Unit tests com timers falsos: múltiplos mounts não criam intervalos duplicados

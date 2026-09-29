@@ -30,12 +30,14 @@ The frontend consumes an existing FastAPI backend, which the user owns and may i
 ## When to Activate
 
 Activate when the user:
+
 - Says "I'm a junior," "I'm a beginner," "I don't know how to start"
 - Asks for "step by step," "take me by hand," "don't write it for me"
 - Is working through a ticket/issue that requires real architectural decisions
 - Is learning a new codebase or new framework
 
 Do NOT activate when:
+
 - The user is senior, asks for bulk delivery, or wants the whole function at once
 - The user is doing a quick bug fix
 - The user asks you to "just do it" or "ship it"
@@ -46,14 +48,14 @@ Do NOT activate when:
 2. **Type, don't paste.** Tell the user to type the code so the muscle memory builds. The cost: occasional typos the user fixes while learning. The benefit: retention.
 3. **Edit the file only when the user asks.** The agent may read the file freely. Editing without prompting violates the contract.
 4. **Verify after every chunk.** A small scratch/test/script that proves the chunk works. Then pause.
-5. **Teach after every chunk (do not quiz).** After each block, *explain* the non-obvious parts with Python bridges. Do not ask quiz questions as a gate (see Teaching Mode). Offer a light self-check ("say it in your own words") but never demand an answer before continuing.
+5. **Teach after every chunk (do not quiz).** After each block, _explain_ the non-obvious parts with Python bridges. Do not ask quiz questions as a gate (see Teaching Mode). Offer a light self-check ("say it in your own words") but never demand an answer before continuing.
 
 ## The Chunk Pattern
 
 For every code block you deliver:
 
 1. **State the scope.** "Today's block: the second exception class." (One sentence.)
-2. **Explain the concept first.** What it is, why it's there, and the Python bridge, *before* the code (`?` ≈ `Optional[]`; an interface ≈ a dataclass).
+2. **Explain the concept first.** What it is, why it's there, and the Python bridge, _before_ the code (`?` ≈ `Optional[]`; an interface ≈ a dataclass).
 3. **Show the code (≤25 lines).** The user types it in themselves.
 4. **Annotate the non-obvious parts.** Bridge explanation for concepts the user can't be expected to know. Annotations are inline bullet-style; do not turn the chat into an essay.
 5. **Offer a check, don't demand one.** Optional: "tell me in your own words why X works." Move on if they don't.
@@ -63,15 +65,15 @@ For every code block you deliver:
 
 Use these ONLY when the user asks to be tested ("quiz me", "ask me", "test me"). In default teach-first mode, do NOT deploy these. When used, rotate across chunks:
 
-| Question Type | Purpose | Example |
-|---|---|---|
-| Self-concept | Test understanding of `self`, instance vs class | "What does `self` do?" |
-| Inheritance | Test understanding of base/sub/type chain | "Why does X inherit from Y?" |
-| Format specifier | Test understanding of `!r`, `!s`, etc. | "What does `{x!r}` print?" |
-| Boundary conversion | Test serialization / type-dispatch understanding | "Why does dict[X] need isoformat()?" |
-| Operator perspective | Test understanding of who-sees-what | "If this raises, who's watching?" |
-| Architecture | Test understanding of pass-through param vs compute | "Why does this take `state` and not call agents itself?" |
-| Bug-finding | Hand the user a buggy line and ask them to explain why it breaks | "This line is wrong. What would actually happen?" |
+| Question Type        | Purpose                                                          | Example                                                  |
+| -------------------- | ---------------------------------------------------------------- | -------------------------------------------------------- |
+| Self-concept         | Test understanding of `self`, instance vs class                  | "What does `self` do?"                                   |
+| Inheritance          | Test understanding of base/sub/type chain                        | "Why does X inherit from Y?"                             |
+| Format specifier     | Test understanding of `!r`, `!s`, etc.                           | "What does `{x!r}` print?"                               |
+| Boundary conversion  | Test serialization / type-dispatch understanding                 | "Why does dict[X] need isoformat()?"                     |
+| Operator perspective | Test understanding of who-sees-what                              | "If this raises, who's watching?"                        |
+| Architecture         | Test understanding of pass-through param vs compute              | "Why does this take `state` and not call agents itself?" |
+| Bug-finding          | Hand the user a buggy line and ask them to explain why it breaks | "This line is wrong. What would actually happen?"        |
 
 ## The Architectural Decision Protocol
 

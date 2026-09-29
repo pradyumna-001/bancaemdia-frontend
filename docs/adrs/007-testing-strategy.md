@@ -1,6 +1,7 @@
 # ADR 007: Estratégia de Testes — Vitest + Testing Library + Playwright + Lints de Sistema
 
 ## Status
+
 Proposed
 
 ## Context
@@ -11,15 +12,16 @@ O monólito impunha disciplina de frontend por testes Python (paleta única, íc
 
 ### Camadas
 
-| Camada | Ferramenta | Escopo |
-|---|---|---|
-| Unit | Vitest | `lib/` (formatadores, params, termos), reducers de fluxo, geometria dos SVGs |
-| Component | Vitest + Testing Library | Telas e componentes com MSW mockando `/api/v1`; axe-core em cada tela (a11y gate) |
-| Contract | MSW handlers gerados/che cados contra `openapi.json` | CI falha se handler divergir do schema (drift de contrato) |
-| e2e | Playwright (Chromium/Firefox/WebKit, viewports 390×844 e 1440×900) | Fluxos críticos contra API de teste (staging ou backend docker) |
-| Visual/Lint | ESLint custom + snapshot | Cor fora de token (ADR 006), ícone não registrado, ABAS fonte única |
+| Camada      | Ferramenta                                                         | Escopo                                                                            |
+| ----------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Unit        | Vitest                                                             | `lib/` (formatadores, params, termos), reducers de fluxo, geometria dos SVGs      |
+| Component   | Vitest + Testing Library                                           | Telas e componentes com MSW mockando `/api/v1`; axe-core em cada tela (a11y gate) |
+| Contract    | MSW handlers gerados/che cados contra `openapi.json`               | CI falha se handler divergir do schema (drift de contrato)                        |
+| e2e         | Playwright (Chromium/Firefox/WebKit, viewports 390×844 e 1440×900) | Fluxos críticos contra API de teste (staging ou backend docker)                   |
+| Visual/Lint | ESLint custom + snapshot                                           | Cor fora de token (ADR 006), ícone não registrado, ABAS fonte única               |
 
 ### Fluxos e2e obrigatórios (gate de release)
+
 1. Login → início com números carregados.
 2. Filtrar apostas → pílulas aparecem → URL reflete → reload preserva.
 3. Resultados: 20 resultados em 20 toques, sem reload (regra §1-bis), com desfazer da sessão.
@@ -30,6 +32,7 @@ O monólito impunha disciplina de frontend por testes Python (paleta única, íc
 8. Tema escuro padrão sem flash; toggle claro persiste.
 
 ### Gates
+
 - PR: lint + typecheck + unit + component + Lighthouse CI (ADR 001 budgets).
 - Merge/release: e2e inteiro.
 - Cobertura: linhas ≥ 80% em `src/lib` e `src/features` (iguala cultura do backend); sem cobertura obrigatória em `graficos/` além de unit de geometria.
