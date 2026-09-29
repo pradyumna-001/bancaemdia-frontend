@@ -23,6 +23,11 @@ export default defineConfig({
     })),
   ),
   webServer: {
+    env: {
+      VITE_API_URL: 'http://127.0.0.1:8000',
+      VITE_APP_ENV: 'production',
+      VITE_UPLOAD_POLL_MS: '1000',
+    },
     command:
       'pnpm build && pnpm preview --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173',

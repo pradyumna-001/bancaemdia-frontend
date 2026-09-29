@@ -6,16 +6,17 @@ Substitui a UI HTMX embarcada do monólito original (`planilhador/web/`), preser
 
 ## Quickstart
 
-Pré-requisitos: Node 22.14+ (versão de referência em `.node-version`), pnpm **10.34.6** e GNU Make. Instale a versão fixada com `npm install --global pnpm@10.34.6`. O lockfile é obrigatório; `make install` usa `--frozen-lockfile`. Não é necessário ter API, `.env`, credenciais ou serviço pago para iniciar o scaffold.
+Pré-requisitos: Node 22.14+ (versão de referência em `.node-version`), pnpm **10.34.6** e GNU Make. Instale a versão fixada com `npm install --global pnpm@10.34.6`. O lockfile é obrigatório; `make install` usa `--frozen-lockfile`. Não é necessário ter API ativa, credenciais ou serviço pago para iniciar a tela provisória. Configure sua URL pública antes de iniciar.
 
 ```bash
 make install        # instalação reproduzível e hook Husky
+cp .env.example .env # no PowerShell: Copy-Item .env.example .env
 make dev            # Vite em http://localhost:5173
 make lint           # eslint + prettier --check
 make typecheck      # tsc --noEmit
 make test           # vitest run (sem watch)
 pnpm exec playwright install --with-deps  # browsers e dependências de Linux
-make test:e2e       # build + preview + Playwright (6 cenários)
+make test:e2e       # build + preview + Playwright (3 browsers × 2 viewports)
 make build          # produção (dist/)
 make gen-types      # contrato oficial da API → src/api/schema.d.ts
 pnpm preview        # inspecionar dist/ em http://localhost:4173
@@ -27,7 +28,33 @@ No Windows, use GNU Make 4.4.1 (por exemplo, o pacote `make` do Chocolatey) no P
 
 `make up` requer Docker Engine com containers Linux e Compose v2. WSL2/Docker Desktop é uma opção no Windows; não é necessário para os testes de frontend.
 
-`.env.example` documenta somente variáveis públicas planejadas. A tela provisória ainda não as consome. Configuração validada, integração da API, rotas e sistema visual pertencem às próximas issues; não há cálculos financeiros, dados fictícios de domínio ou autenticação neste scaffold.
+## Configuração por ambiente
+
+O boot valida a configuração em `src/lib/config.ts` antes de montar a aplicação. Para desenvolvimento, basta um `.env` com `VITE_API_URL=http://127.0.0.1:8000`. Reinicie o Vite após editar o arquivo. Integração da API, rotas e sistema visual pertencem às próximas issues; não há cálculos financeiros, dados fictícios de domínio ou autenticação nesta etapa.
+
+| Variável              | Validação                                                    | Padrão quando omitida                            |
+| --------------------- | ------------------------------------------------------------ | ------------------------------------------------ |
+| `VITE_API_URL`        | URL HTTP/HTTPS absoluta, sem credenciais, query ou fragmento | Obrigatória                                      |
+| `VITE_APP_ENV`        | `development`, `staging` ou `production`                     | `development` no Vite dev; `production` no build |
+| `VITE_UPLOAD_POLL_MS` | Inteiro de 1 a 2147483647 ms                                 | `1000`                                           |
+
+Nenhuma variável aceita valor vazio ou `null`. `.env.example` explica as variáveis públicas; as entradas `VITE_AUTH_*` estão reservadas para a #11 e ainda não são consumidas. Nunca copie segredos do `.env` do backend para o frontend.
+
+Em um **build publicado**, o boot busca `/config.json` e aplica seus campos sobre os valores compilados de `import.meta.env`. O arquivo versionado `public/config.json` contém `{}`, preservando os valores do build. Para promover o mesmo `dist/` ou imagem de staging para produção sem recompilar, substitua apenas esse arquivo no servidor:
+
+```json
+{
+  "VITE_API_URL": "https://api.example.com",
+  "VITE_APP_ENV": "production",
+  "VITE_UPLOAD_POLL_MS": 1000
+}
+```
+
+Somente essas três chaves são aceitas no JSON. O artefato pode ser compilado sem URL, desde que ela seja fornecida no runtime. O modo dev não busca esse arquivo. Clientes futuros acessam `getConfig()` após o boot; não leem variáveis diretamente.
+
+O nginx serve `/config.json` com `Cache-Control: no-store`, sem fallback para HTML. A busca tem limite de cinco segundos e não repete automaticamente. Arquivo indisponível, JSON inválido ou variável inválida interrompem o boot com mensagem em português e botão **Tentar novamente**, sem montar a aplicação ou revelar o conteúdo recebido. Veja a decisão no [ADR 008](docs/adrs/008-ci-cd-deploy.md).
+
+A validação local e em Linux, incluindo 42 e2e e promoção da mesma imagem entre ambientes, está registrada em [docs/config-validation.md](docs/config-validation.md).
 
 ## Estrutura e testes
 
@@ -73,7 +100,7 @@ Ela verifica whitespace, EOF, arquivos grandes, LF, lint, formato e tipos. Não 
 
 ```bash
 docker build -t bancaemdia-frontend:local .
-docker run --rm -d --name bancaemdia-frontend-smoke -p 127.0.0.1:8080:8080 bancaemdia-frontend:local
+docker run --rm -d --name bancaemdia-frontend-smoke -p 127.0.0.1:8080:8080 --mount "type=bind,source=$(pwd)/config/local.json,target=/usr/share/nginx/html/config.json,readonly" bancaemdia-frontend:local
 docker exec bancaemdia-frontend-smoke id   # uid=101; nunca root
 docker exec bancaemdia-frontend-smoke nginx -t
 curl -f http://127.0.0.1:8080/
@@ -83,7 +110,9 @@ docker stop bancaemdia-frontend-smoke
 
 O Dockerfile compila com Node/pnpm e serve somente `dist/` com nginx unprivileged na porta 8080. A imagem define `USER 101:101`, healthcheck, CSP restrita à mesma origem, proteção contra MIME sniffing, referrer policy, index sem cache e assets com hash/cache imutável. Um asset inexistente retorna 404. A allowlist de conexão da API será configurada junto da integração; não há `unsafe-inline`, CDN ou curingas de conexão no scaffold.
 
-`docker compose up -d --build` inicia apenas o SPA em `http://127.0.0.1:8080`, com filesystem somente leitura e `/tmp` temporário. Para iniciar também a stack **existente** da API:
+`docker compose up -d --build` inicia apenas o SPA em `http://127.0.0.1:8080`, com filesystem somente leitura e `/tmp` temporário. Monta `config/local.json` como configuração pública local. Para outro ambiente, defina `FRONTEND_CONFIG_FILE` com o caminho absoluto de um JSON existente antes de executar o Compose; o arquivo é montado somente para leitura. Essa variável pertence ao Compose e não entra no bundle. Em produção, a origem da API também deve estar na allowlist da CSP do servidor quando a integração for implementada; o JSON não altera políticas de segurança.
+
+Para iniciar também a stack **existente** da API:
 
 ```bash
 # Requer checkout do backend com .env preparado segundo seu README.

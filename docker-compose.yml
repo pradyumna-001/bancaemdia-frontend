@@ -4,6 +4,13 @@ services:
     ports:
       - '127.0.0.1:8080:8080'
     read_only: true
+    volumes:
+      - type: bind
+        source: ${FRONTEND_CONFIG_FILE:-./config/local.json}
+        target: /usr/share/nginx/html/config.json
+        read_only: true
+        bind:
+          create_host_path: false
     tmpfs:
       - /tmp
     cap_drop:

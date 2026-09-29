@@ -32,7 +32,11 @@ O backend tem GitHub Actions `test → build → deploy` e rollback < 5min como 
 
 ### Configuração por ambiente
 
-- Sem rebuild entre staging/prod quando possível — env injetado em runtime via `public/config.json` ou build separado por ambiente (decisão na implementação; preferir config runtime para facilitar rollback).
+- Decisão da #2: o build publicado lê `/config.json` antes de montar a aplicação. Esse JSON público sobrescreve somente `VITE_API_URL`, `VITE_APP_ENV` e `VITE_UPLOAD_POLL_MS` do build; `{}` mantém os valores do build. Em desenvolvimento, somente `import.meta.env` é usado.
+- O mesmo `dist/`/imagem pode ser promovido entre ambientes substituindo apenas o arquivo JSON. No Compose, o arquivo é montado somente para leitura (`FRONTEND_CONFIG_FILE`, padrão `config/local.json`). Não há interpolação de segredos ou geração de JavaScript no container.
+- `VITE_API_URL` é obrigatória; ambiente omitido usa `development` no dev server e `production` no build; intervalo omitido usa 1000 ms. Configuração ausente/inválida impede o boot, com mensagem em português e ação de tentar novamente. A validação é feita após aplicar a precedência, para permitir um build sem URL promovido por configuração runtime.
+- `/config.json` usa `Cache-Control: no-store`, não recebe fallback HTML, e sua leitura tem timeout de 5 segundos, sem tentativas automáticas ou fallback silencioso em falhas. JSON inválido, campos desconhecidos e falhas HTTP/rede abortam o boot.
+- O arquivo não altera a CSP: a allowlist de origens da API/auth deve ser ajustada no servidor ao integrar esses clientes. A #2 mantém a política estrita existente; não escolhe plataforma de deploy nem implementa a CI permanente.
 
 ## Consequences
 
