@@ -21,3 +21,7 @@ Tema acompanha o sistema com escolha explícita persistida. A interface precisa 
 A paleta, fonte e raios escolhidos são recomendações informadas, não resultados de pesquisa com usuários do bancaemdia. Nas telas funcionais, verificar identificação da ação principal, marcação de resultados, leitura de valores e entendimento de filtros com participantes representativos. Comparar taxa de conclusão, erros e tempo; coletar preferência visual separadamente. Não confundir telas simples por ausência de funções com simplicidade de uma tarefa real.
 
 As etapas seguintes devem construir marca (#5), navegação (#6), gráficos (#7) e telas funcionais mantendo essa direção e revendo decisões quando houver evidência de uso. Não são necessárias extensões ou assinaturas para implementar esta fundação.
+
+## Aplicação no planejamento
+
+A revisão das 39 issues está nos ADRs 014–018, com [critérios comuns de interface e entrega](backlog-visual.md) e aceite específico por tarefa. As orientações substituem a cópia visual do monólito e preservam contratos, funcionalidades e disciplina de qualidade.

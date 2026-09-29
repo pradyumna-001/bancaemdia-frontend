@@ -11,7 +11,7 @@ Numeração própria deste repositório, a partir de 001. ADRs de alto nível qu
 | 003 | Cliente da API, Tipagem e Sessão — OpenAPI-generated types, JWT externo, Polling 202   | Proposed | 2026-09-24 |
 | 004 | Estado, URL e Cache — URL como fonte dos filtros, política de cache                    | Proposed | 2026-09-24 |
 | 005 | Erros, Timeouts e Retry — Fallbacks de query params, 429/503, páginas de erro          | Proposed | 2026-09-24 |
-| 006 | Sistema Visual — Tokens de paleta, tipografia vendida, SVG próprio (sem chart lib)     | Proposed | 2026-09-24 |
+| 006 | Sistema visual — Legibilidade, tokens semânticos e SVG próprio                         | Accepted | 2026-09-29 |
 | 007 | Estratégia de Testes — Vitest + Testing Library + Playwright + lints de sistema        | Proposed | 2026-09-24 |
 | 008 | CI/CD e Deploy — GH Actions lint→typecheck→test→build, SPA deploy, rollback            | Proposed | 2026-09-24 |
 
@@ -31,6 +31,10 @@ Numeração própria deste repositório, a partir de 001. ADRs de alto nível qu
 Os corpos das issues das semanas 1–5 vivem nestes ADRs e são criadas como GitHub Issues **deste repositório** (`pradyumna-001/bancaemdia-frontend`), com milestones por semana.
 
 ---
+
+## Revisão do backlog após pesquisa
+
+Em 29/09/2026, as 39 issues e seus textos nos ADRs 014–018 foram alinhados à [direção visual aprovada](../research/visual-direction.md). Os [critérios comuns](../research/backlog-visual.md) complementam o aceite específico de cada issue; referências ao monólito preservam funcionalidade e dados, não a aparência rejeitada.
 
 ## Process
 
