@@ -67,7 +67,7 @@ python -m pip install pre-commit
 python -m pre_commit run --all-files
 ```
 
-Ela verifica whitespace, EOF, arquivos grandes, LF, lint, formato e tipos. Não execute `pre-commit install` sobre o Husky: há um único dono do hook. Antes de push, rode `make lint`, `make typecheck` e `make test`. **Ainda não existe workflow de CI**; a implementação dos gates, budgets e deploy pertence à #8.
+Ela verifica whitespace, EOF, arquivos grandes, LF, lint, formato e tipos. Não execute `pre-commit install` sobre o Husky: há um único dono do hook. Antes de push, rode `make lint`, `make typecheck` e `make test`. **Não existe workflow de CI permanente**; a implementação dos gates, budgets e deploy pertence à #8. A validação pontual da #1 em Linux, incluindo os seis e2e, Docker sem root e `make up` com a API, está registrada em [docs/scaffold-validation.md](docs/scaffold-validation.md).
 
 ## Imagem estática e API local
 
