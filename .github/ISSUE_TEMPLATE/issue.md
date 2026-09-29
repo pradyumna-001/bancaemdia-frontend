@@ -10,10 +10,13 @@ about: Corpo de issue no padrão dos ADRs 014–018
 **ADR**: # (ex.: Implements ADR-016, Issue 3)
 
 **Files**:
+
 - `src/...`
 
 **Tasks**:
+
 - [ ] ...
 
 **Acceptance**:
+
 - ...

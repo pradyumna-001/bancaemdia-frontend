@@ -2,11 +2,11 @@
 
 ## What this PR does
 
-- 
+-
 
 ## What this PR does NOT do
 
-- 
+-
 
 ## How to verify
 
@@ -17,4 +17,4 @@ make install && make lint && make typecheck && make test
 
 ## Decisions worth flagging
 
-- 
+-

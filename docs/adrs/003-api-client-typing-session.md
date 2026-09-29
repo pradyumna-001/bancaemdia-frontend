@@ -1,6 +1,7 @@
 # ADR 003: Cliente da API, Tipagem e Sessão — OpenAPI-generated types, JWT externo, Polling 202
 
 ## Status
+
 Proposed
 
 ## Context
