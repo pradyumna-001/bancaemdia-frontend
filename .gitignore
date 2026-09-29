@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-security/
 dist-ssr/
 *.local
 .env

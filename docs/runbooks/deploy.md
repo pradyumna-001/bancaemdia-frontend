@@ -2,6 +2,14 @@
 
 Deploy de SPA estático (artefato `dist/`) na plataforma definida em ADR 008.
 
+## HTML e CSP da aparência
+
+`pnpm build` gera `dist/` e `dist-security/default.conf`. A segunda saída contém o hash SHA-256 exato do único script inline de tema inserido pelo Vite. O Docker copia essa configuração gerada; `nginx/default.conf` no repositório é apenas o template, com marcador `__THEME_HASH__`.
+
+Publicar HTML e configuração como uma unidade. Não editar/minificar o HTML depois do build nem copiar o template diretamente para produção. Outro provedor deve transportar a mesma política e hash para seus headers. Mudanças no controlador exigem novo build; jamais adicionar `unsafe-inline` para contornar falhas.
+
+Na verificação: escolher Escuro, recarregar, confirmar `data-tema="escuro"` antes do React e ausência de violações CSP. As fontes vêm de `/fontes/` na mesma origem; fonte inexistente deve retornar 404. `tests/verify-nginx.mjs` cobre a política real no contêiner, além dos testes de primeira pintura e preferência em Playwright.
+
 ## Pré-requisitos
 
 - CI verde na tag/commit (lint, typecheck, test, build, lighthouse, e2e)

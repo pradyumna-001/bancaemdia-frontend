@@ -50,7 +50,30 @@ for (const [name, browserType] of Object.entries({
         radius: getComputedStyle(element).borderRadius,
         border: getComputedStyle(element).borderTopWidth,
       }));
-      expect(styles).toEqual({ radius: '14px', border: '1px' });
+      expect(styles).toEqual({ radius: '12px', border: '1px' });
+      await page.getByRole('radio', { name: 'Escuro', exact: true }).check();
+      await page.reload();
+      await expect(page.locator('html')).toHaveAttribute('data-tema', 'escuro');
+      await page.getByRole('radio', { name: 'Claro', exact: true }).check();
+      await page.reload();
+      await expect(page.locator('html')).toHaveAttribute('data-tema', 'claro');
+      const htmlResponse = await page.request.get(
+        'http://127.0.0.1:8080/tutorial',
+      );
+      const csp = htmlResponse.headers()['content-security-policy'];
+      expect(csp).toMatch(/script-src 'self' 'sha256-[^']+'/);
+      expect(csp).not.toContain('unsafe-inline');
+      await page.evaluate(() => document.fonts.ready);
+      expect(
+        await page.evaluate(() =>
+          document.fonts.check('400 16px "Source Sans 3"'),
+        ),
+      ).toBe(true);
+      expect(
+        (
+          await page.request.get('http://127.0.0.1:8080/fontes/ausente.woff2')
+        ).status(),
+      ).toBe(404);
       expect(
         await page.evaluate(() => document.documentElement.dataset.cspFailure),
       ).toBeUndefined();

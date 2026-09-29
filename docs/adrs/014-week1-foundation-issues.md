@@ -7,7 +7,7 @@
 
 - [ ] Repositório scaffolded com toda a tooling; `make install && make lint && make typecheck && make test && make build` verde
 - [ ] CI GitHub Actions: `lint → typecheck → unit → build` verde em qualquer push
-- [ ] Design tokens portados da paleta C1 com lint de "cor só em tokens" ativo
+- [ ] Design tokens conforme ADR 006 revisado após pesquisa, com lint de "cor só em tokens" ativo
 - [ ] Shell com navegação das 7 abas a partir de fonte única `ABAS`, desktop (topo) + mobile (barra inferior)
 - [ ] Página interna `/sistema` mostrando tokens, tipografia, ícones (`/sistema` da paridade)
 - [ ] Estrutura de pastas `src/{app,api,auth,components,features,lib,styles}` definida
@@ -91,7 +91,7 @@
 
 ---
 
-### Issue 4: Design Tokens e Paleta (port da C1)
+### Issue 4: Fundação visual — tokens, tipografia e temas
 
 **Labels**: `semana-1`, `design`
 **Size**: M (3-4 hours)
@@ -100,13 +100,16 @@
 
 **Tasks**:
 
-- [ ] Portar tokens de `paleta.css` (monólito) para CSS custom properties semânticas: tinta/fundo/superfícies, `--lucro` (#0e7a55/#3ad698 por tema), `--perda` (#c5372c/#ff6f61), foco, bordas — temas `data-tema="escuro"` (padrão) e `"claro"`
-- [ ] Escala de espaçamento 4/8/16/24/32 e raio 14 como tokens
-- [ ] Script pre-paint inline em `index.html` (sem flash); toggle persiste em `localStorage` (porta de `tema.js`)
-- [ ] Regra ESLint custom + script CI: literal de cor (`#`, `rgb(`, `hsl(`) proibido fora de `tokens.css` (porta do teste de paleta única)
-- [ ] Fontes woff2 vendidas em `public/fontes/` com licenças OFL; `@font-face` com `font-display: swap`
+- [ ] Tokens semânticos de tinta/fundo/superfícies, ação, foco, bordas e resultados conforme ADR 006 revisado; contraste testado nos temas claro/escuro
+- [ ] Escala de espaçamento 4/8/12/16/24/32/48 e raios 6/12 como tokens
+- [ ] Sistema por padrão e escolhas Claro/Escuro persistidas; pre-paint antes de React/CSS, CSP por hash exato, storage bloqueado e sincronização entre abas
+- [ ] Regra ESLint custom + varredura CSS/HTML/SVG no lint/CI: cor literal proibida fora do arquivo canônico
+- [ ] Source Sans 3 WOFF2 local em 400/600/700 com OFL, procedência e `font-display: swap`; números tabulares
+- [ ] Aplicação nas páginas provisórias e erros; verificação móvel/desktop, teclado e axe nos dois temas
 
 **Acceptance**: CI falha ao adicionar `#abc` num componente; temas escuro/claro alternam sem flash; Lighthouse não flaga fonte
+
+Revisão de escopo autorizada pelo responsável após a pesquisa visual: a #4 preserva a disciplina de tokens, mas substitui a cópia obrigatória da C1 e as fontes anteriores. Marca (#5), shell (#6) e gráficos (#7) continuam separados.
 
 ---
 

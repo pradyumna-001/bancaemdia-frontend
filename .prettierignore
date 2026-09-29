@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-security/
+public/fontes/OFL-source-sans-3.md
 coverage/
 playwright-report/
 test-results/

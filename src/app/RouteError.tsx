@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { PreferenciaTema } from '../components/PreferenciaTema';
 import {
   isRouteErrorResponse,
   Link,
@@ -39,7 +40,7 @@ export function ErrorPage({
   const missing = status === 404;
   return (
     <main className="pagina pagina-erro">
-      <p>bancaemdia</p>
+      <p className="assinatura">bancaemdia</p>
       <p className="legenda">Erro {status}</p>
       <h1>{missing ? 'Não achei esta página' : 'Deu errado'}</h1>
       <p role="alert">
@@ -58,6 +59,7 @@ export function ErrorPage({
         <Link to="/">Voltar para Apostas</Link>
         <Link to="/tutorial">Abrir tutorial</Link>
       </div>
+      <PreferenciaTema />
     </main>
   );
 }

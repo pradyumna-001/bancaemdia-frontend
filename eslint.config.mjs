@@ -3,11 +3,13 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import { regraPaleta } from './scripts/paleta.mjs';
 
 export default tseslint.config(
   {
     ignores: [
       'dist/**',
+      'dist-security/**',
       'coverage/**',
       'playwright-report/**',
       'test-results/**',
@@ -19,6 +21,16 @@ export default tseslint.config(
   {
     files: ['**/*.{js,mjs,ts,tsx}'],
     languageOptions: { globals: globals.node },
+  },
+  {
+    files: ['src/**/*.{js,ts,tsx}'],
+    ignores: ['**/*.test.{ts,tsx}'],
+    plugins: { paleta: { rules: { 'so-tokens': regraPaleta } } },
+    rules: { 'paleta/so-tokens': 'error' },
+  },
+  {
+    files: ['src/styles/tema-inicial.js'],
+    languageOptions: { globals: globals.browser },
   },
   {
     files: ['src/**/*.{ts,tsx}'],

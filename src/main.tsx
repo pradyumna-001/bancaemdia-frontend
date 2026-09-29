@@ -1,4 +1,5 @@
 import { StrictMode } from 'react';
+import './styles/base.css';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import { ConfigFailure } from './app/ConfigFailure';
@@ -12,7 +13,7 @@ if (!root) throw new Error('Não foi possível iniciar a aplicação.');
 
 const application = createRoot(root);
 application.render(
-  <main>
+  <main className="pagina">
     <p role="status">Iniciando o bancaemdia…</p>
   </main>,
 );
