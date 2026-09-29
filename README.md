@@ -54,6 +54,8 @@ Somente essas três chaves são aceitas no JSON. O artefato pode ser compilado s
 
 O nginx serve `/config.json` com `Cache-Control: no-store`, sem fallback para HTML. A busca tem limite de cinco segundos e não repete automaticamente. Arquivo indisponível, JSON inválido ou variável inválida interrompem o boot com mensagem em português e botão **Tentar novamente**, sem montar a aplicação ou revelar o conteúdo recebido. Veja a decisão no [ADR 008](docs/adrs/008-ci-cd-deploy.md).
 
+A validação local e em Linux, incluindo 42 e2e e promoção da mesma imagem entre ambientes, está registrada em [docs/config-validation.md](docs/config-validation.md).
+
 ## Estrutura e testes
 
 - `src/main.tsx` e `src/app/App.tsx`: boot React e tela provisória em pt-BR.
