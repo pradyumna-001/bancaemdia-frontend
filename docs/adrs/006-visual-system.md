@@ -30,6 +30,12 @@ Preservamos a disciplina de tokens, acessibilidade e consistência, substituindo
 - A configuração nginx agora é um artefato do build, inseparável do HTML. Ver [runbook](../runbooks/deploy.md).
 - Validar móvel/desktop, teclado, axe, persistência, pre-paint, sincronização e storage bloqueado. CI também verifica a imagem nginx com CSP real.
 
+## Gráficos — #7
+
+Componentes SVG próprios recebem tipos gerados do OpenAPI. Evolução mantém datas proporcionais e eixo zero; comparação mantém comprimento ∝ |lucro| e espessura ∝ √n. Nenhum componente calcula lucro acumulado ou agrega bancas. Linha sem área preenchida, rótulos HTML, dados por foco/toque/ponteiro e tabela equivalente seguem a direção de leitura simples. Valores fora da precisão segura são erro explícito.
+
+Demonstração identificada como fictícia em `/sistema`, mantendo proteção de sessão. Casos de borda, limites e evidências em [validação dos gráficos](../charts-validation.md). O formatador central de centavos é introduzido apenas na extensão necessária; o restante da #16 permanece no backlog.
+
 ## Navegação — #6
 
 O topo desktop mantém os sete destinos elegíveis. Em telas até 62rem, a barra inferior prioriza Apostas/Painel/Enviar e Revisão quando há fila; Mais reúne Coleta/Caixa/Resultados. A escolha deixa os rótulos legíveis em 320px. Não supõe uma preferência universal por determinada quantidade de abas; a prioridade poderá ser revista com uso real. As regras e a divisão continuam declaradas em `ABAS`.
