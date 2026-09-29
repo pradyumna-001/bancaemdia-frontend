@@ -1,37 +1,20 @@
-# Runbook — Deploy (bancaemdia-frontend)
+# Runbook — Deploy
 
-Deploy de SPA estático (artefato `dist/`) na plataforma definida em ADR 008.
+Plataforma Fase 1: nginx estático em Compose atrás de Caddy/TLS, na arquitetura Lightsail do backend. Decisão: [ADR008](../adrs/008-ci-cd-deploy.md). Infraestrutura, DNS e deploy ainda não foram executados; não há CD automático por merge/tag nesta etapa.
 
-## HTML e CSP da aparência
+## Antes de implantar (#14 / #38)
 
-`pnpm build` gera `dist/` e `dist-security/default.conf`. A segunda saída contém o hash SHA-256 exato do único script inline de tema inserido pelo Vite. O Docker copia essa configuração gerada; `nginx/default.conf` no repositório é apenas o template, com marcador `__THEME_HASH__`.
+1. Confirmar ambiente autorizado e capacidade, domínio/TLS, rede e API/emissor compatíveis; registrar versão do contrato por ambiente.
+2. Exigir todos os checks verdes no SHA, incluindo budget, cobertura e segurança. Baixar o artifact `frontend-<SHA>-<evento>` do run correspondente; ele contém `dist/` e `dist-security/` da mesma compilação. Não usar artifact de fixture/relatórios como site.
+3. Preparar release imutável (imagem por digest no fluxo #38), preservar HTML/assets/nginx juntos e registrar o digest anterior para rollback. Não editar/minificar HTML após build: isso invalidaria o hash CSP do tema.
+4. Fornecer `config.json` público validado, montado somente para leitura; segredos nunca entram nele. A mesma origem HTTPS para site e `/api/*` é preferida. CSP/CORS de API/emissor externos só com origens exatas definidas em #49/#14.
+5. Implantar conforme o procedimento operacional do ambiente; esta issue não fornece nem executa provisionamento.
 
-Publicar HTML e configuração como uma unidade. Não editar/minificar o HTML depois do build nem copiar o template diretamente para produção. Outro provedor deve transportar a mesma política e hash para seus headers. Mudanças no controlador exigem novo build; jamais adicionar `unsafe-inline` para contornar falhas.
+## Smoke no ambiente real
 
-Na verificação: escolher Escuro, recarregar, confirmar `data-tema="escuro"` antes do React e ausência de violações CSP. As fontes vêm de `/fontes/` na mesma origem; fonte inexistente deve retornar 404. `tests/verify-nginx.mjs` cobre a política real no contêiner, além dos testes de primeira pintura e preferência em Playwright.
+- SPA deep link abre; asset/fonte inexistente retorna 404; configuração recebe JSON/no-store e nunca fallback HTML.
+- TLS/headers/CSP sem violações, hash de tema correto, fonte local e ausência de flash; index revalidável e assets com hash imutáveis.
+- Runtime aponta ao ambiente correto; health da API conforme contrato, sessão real, consulta e exportação reconciliadas. Um placeholder ou sessão injetada não aprova esse smoke.
+- Publicar produção somente após #39; falha exige restaurar release anterior com [rollback](rollback.md).
 
-## Pré-requisitos
-
-- CI verde na tag/commit (lint, typecheck, test, build, lighthouse, e2e)
-- Artefato imutável do workflow (nome contém o SHA do commit)
-- Config do ambiente revisada (`VITE_API_URL` apontando para o ambiente certo)
-
-## Staging
-
-1. Merge em `main` dispara CD automaticamente.
-2. Verificar: banner de ambiente visível, `GET /health` da API alvo 200, console sem violação de CSP.
-
-## Produção
-
-1. Criar tag `v0.x.y` a partir de `main` → workflow de release.
-2. Conferir headers de segurança no domínio:
-   - `Content-Security-Policy` sem `unsafe-inline` de script externo / sem CDN
-   - `Cache-Control: immutable` em assets hasheados; `index.html` com `no-cache`
-   - `X-Content-Type-Options: nosniff`, `Referrer-Options: same-origin`
-3. Smoke pós-deploy: login → início carrega números → painel renderiza → export baixa.
-4. Anunciar no canal do projeto com tag + changelog.
-
-## Falha no deploy
-
-- Se o smoke falhar: executar `rollback.md` imediatamente (alvo < 7 min).
-- Abrir issue `incident` com timestamp, tag e sintoma.
+A CI testa o nginx real em Docker; isso não comprova Caddy/TLS, DNS, emissor nem ambiente público.

@@ -6,7 +6,7 @@ Revisado pelo ADR019 em 29/09/2026. Preserva a CI existente e amplia o escopo do
 
 ## Camadas
 
-Vitest/Testing Library para regras de apresentação e componentes; fixtures/MSW conformes ao OpenAPI pinado; Playwright Chromium/Firefox/WebKit em 390×844 e 1440×900. Lints de tokens/ícones, build e geração sem drift permanecem. Mocks não comprovam integração; cenários de release usam API/emissor descartáveis compatíveis. Cobertura alvo >=80% em lib/features (#8), geometria de gráficos testada sem recalcular domínio.
+Vitest/Testing Library para regras de apresentação e componentes; fixtures/MSW conformes ao OpenAPI pinado; Playwright Chromium/Firefox/WebKit em 390×844 e 1440×900. Lints de tokens/ícones, build e geração sem drift permanecem. Mocks não comprovam integração; cenários de release usam API/emissor descartáveis compatíveis. Cobertura V8 obrigatória >=80% por arquivo em linhas/statements/funções/branches de lib/features (#8), inclusive arquivos não importados, geometria de gráficos testada sem recalcular domínio.
 
 ## Jornadas de release
 

@@ -25,9 +25,20 @@ jobs:
         with:
           node-version-file: .node-version
       - run: npm install --global pnpm@10.34.6
-      - run: make install lint typecheck test build gen-types
+      - run: make install lint typecheck test:coverage build check:bundle gen-types
       - run: git diff --exit-code -- src/api/schema.d.ts
       - run: pnpm exec playwright install --with-deps
+      - run: make measure:lighthouse
+      - name: Guardar build público e CSP do mesmo SHA
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.event_name }}
+          include-hidden-files: true
+          if-no-files-found: error
+          path: |
+            dist/
+            dist-security/
+          retention-days: 30
       - run: make test:e2e
       - run: pipx run pre-commit run --all-files
       - name: Verificar nginx, rotas e CSP em Docker
@@ -54,4 +65,6 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            coverage/
+            reports/
           retention-days: 7

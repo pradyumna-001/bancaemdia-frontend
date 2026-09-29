@@ -12,6 +12,7 @@ export default tseslint.config(
       'dist-security/**',
       'dist-shell-fixture/**',
       'coverage/**',
+      'reports/**',
       'playwright-report/**',
       'test-results/**',
       '.husky/_/**',
