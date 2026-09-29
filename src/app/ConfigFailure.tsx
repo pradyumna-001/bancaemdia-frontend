@@ -1,8 +1,9 @@
 import { ConfigError } from '../lib/config';
+import { PreferenciaTema } from '../components/PreferenciaTema';
 
 export function ConfigFailure({ error }: { error: unknown }) {
   return (
-    <main>
+    <main className="pagina pagina-erro">
       <h1>Não foi possível iniciar o bancaemdia</h1>
       <p role="alert">
         {error instanceof ConfigError
@@ -13,6 +14,7 @@ export function ConfigFailure({ error }: { error: unknown }) {
       <button type="button" onClick={() => window.location.reload()}>
         Tentar novamente
       </button>
+      <PreferenciaTema />
     </main>
   );
 }
