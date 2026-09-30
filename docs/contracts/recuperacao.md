@@ -18,7 +18,7 @@ Base: [cliente tipado](cliente-api.md), [ADR005](../adrs/005-errors-timeouts-ret
 | 429/503                            | Leituras seguras têm tentativas limitadas e prazo por recurso.                                                                                                                                                    |
 | Escrita com resultado desconhecido | Conferir resultado; não oferecer reenvio como recuperação automática.                                                                                                                                             |
 
-Formulários controlados permanecem montados. A consumidora fornece `actions.revisar` para voltar ao campo/contexto e callbacks de leitura para `conferir`/`recarregar`; essas ações não devem usar mutation. Um GET após timeout, sozinho, não prova que a gravação falhou. Reconciliar pelo contrato da operação; sem identificador/contrato suficiente, manter resultado desconhecido. Idempotência da #9 continua com a mesma chave/corpo onde publicada.
+Formulários controlados permanecem montados durante a recuperação da mesma identidade. Troca de usuário/sessão deve descartar entrada e dados privados conforme AGENTS.md/#11; preservar um formulário após 401 não autoriza levá-lo para outra conta. A consumidora fornece `actions.revisar` para voltar ao campo/contexto e callbacks de leitura para `conferir`/`recarregar`; essas ações não devem usar mutation. Um GET após timeout, sozinho, não prova que a gravação falhou. Reconciliar pelo contrato da operação; sem identificador/contrato suficiente, manter resultado desconhecido. Idempotência da #9 continua com a mesma chave/corpo onde publicada.
 
 ## Validação e URL
 
