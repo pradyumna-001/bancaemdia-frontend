@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-security/
+dist-shell-fixture/
 dist-ssr/
 *.local
 .env
@@ -13,6 +15,8 @@ coverage/
 playwright-report/
 test-results/
 .vite/
+*.tsbuildinfo
+.pnpm-store/
 
 # OS/editor
 .DS_Store
@@ -20,3 +24,7 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+reports/
+.identity-api/
+__pycache__/

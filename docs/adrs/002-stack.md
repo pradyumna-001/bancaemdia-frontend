@@ -1,6 +1,7 @@
 # ADR 002: Stack — Vite + React 18 + TypeScript Strict, TanStack Query, React Router
 
 ## Status
+
 Proposed
 
 ## Context

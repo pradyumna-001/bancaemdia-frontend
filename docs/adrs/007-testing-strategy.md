@@ -1,41 +1,37 @@
-# ADR 007: Estratégia de Testes — Vitest + Testing Library + Playwright + Lints de Sistema
+# ADR 007: Testes de tarefas, contratos e release
 
 ## Status
-Proposed
 
-## Context
+Revisado pelo ADR019 em 29/09/2026. Preserva a CI existente e amplia o escopo do produto.
 
-O monólito impunha disciplina de frontend por testes Python (paleta única, ícone registrado, ABAS↔macro, rotas abertas). O backend novo tem `pytest` + Testcontainers como gate. O SPA precisa de cobertura equivalente em camadas, mais os testes das regras de tela mensuráveis (ADR 001).
+## Camadas
 
-## Decision
+Vitest/Testing Library para regras de apresentação e componentes; fixtures/MSW conformes ao OpenAPI pinado; Playwright Chromium/Firefox/WebKit em 390×844 e 1440×900. Lints de tokens/ícones, build e geração sem drift permanecem. Mocks não comprovam integração; cenários de release usam API/emissor descartáveis compatíveis. Cobertura V8 obrigatória >=80% por arquivo em linhas/statements/funções/branches de lib/features (#8), inclusive arquivos não importados, geometria de gráficos testada sem recalcular domínio.
 
-### Camadas
+## Jornadas de release
 
-| Camada | Ferramenta | Escopo |
-|---|---|---|
-| Unit | Vitest | `lib/` (formatadores, params, termos), reducers de fluxo, geometria dos SVGs |
-| Component | Vitest + Testing Library | Telas e componentes com MSW mockando `/api/v1`; axe-core em cada tela (a11y gate) |
-| Contract | MSW handlers gerados/che cados contra `openapi.json` | CI falha se handler divergir do schema (drift de contrato) |
-| e2e | Playwright (Chromium/Firefox/WebKit, viewports 390×844 e 1440×900) | Fluxos críticos contra API de teste (staging ou backend docker) |
-| Visual/Lint | ESLint custom + snapshot | Cor fora de token (ADR 006), ícone não registrado, ABAS fonte única |
+1. Cadastro/login/provisionamento, expiração/renovação/logout e cache isolado.
+2. Cartão/retorno Checkout/status, teste confirmado, leitura/402, portal/cancelamento e exportação.
+3. Titular/conta, matriz/histórico, ativar e trocar no instante T; não atribuídas visíveis.
+4. Filtros/pílulas/URL/reload, página e somente apagadas; resumo da mesma população.
+5. Detalhe/correção, apagar/restaurar, freebet com face preservada e concorrência.
+6. Resultados: 20 simples em 20 toques; duplo toque seguro, desfazer sem sobrescrever alteração recente.
+7. Upload Telegram, consentimento conforme contrato, progresso/parcial/limite; prints e XLSX prévia/confirmar sem duplicidade.
+8. Revisão por motivo: leitura com/sem foto, conta, par e zerar fila mantendo saída.
+9. Caixa: depósito/retry, transferência atômica, saldo desconhecido, extrato e conta alheia.
+10. Bot: código/vínculo/expiração/revogação; extensão: instalações independentes e credenciais temporárias. Matching/v2 só quando contratos integrados.
+11. Painel, análises, metas/fuso: lucro separado de caixa, null/desconhecido e frescor explícitos.
+12. Quatro calculadoras: cenários da API, entradas inválidas e resposta obsoleta descartada.
+13. Privacidade: exportação real, encerramento e 409 assistido, sem prometer binários/reset.
+14. 401/402/409/413/422/429/503/offline/timeout; sem loops, vazamento ou estado morto.
+15. Sistema/Claro/Escuro, sem flash, storage bloqueado, teclado, zoom, foco, reflow320 e alternativas dos gráficos.
 
-### Fluxos e2e obrigatórios (gate de release)
-1. Login → início com números carregados.
-2. Filtrar apostas → pílulas aparecem → URL reflete → reload preserva.
-3. Resultados: 20 resultados em 20 toques, sem reload (regra §1-bis), com desfazer da sessão.
-4. Enviar: upload → polling de progresso → cartão de autorização → conclusão.
-5. Revisão: abrir bilhete, corrigir campo, resolver → sai da fila e contador do menu atualiza.
-6. Apagar e restaurar aposta; visão `?apagadas=1` persistente em navegação.
-7. Erros: 429, 503, offline simulados (ADR 005 matriz).
-8. Tema escuro padrão sem flash; toggle claro persiste.
+## Gates e evidência
 
-### Gates
-- PR: lint + typecheck + unit + component + Lighthouse CI (ADR 001 budgets).
-- Merge/release: e2e inteiro.
-- Cobertura: linhas ≥ 80% em `src/lib` e `src/features` (iguala cultura do backend); sem cobertura obrigatória em `graficos/` além de unit de geometria.
-
-## Consequences
-
-- MSW handlers são única fonte de mocks de componente → mock errado é bug rastreável.
-- e2e é a encarnação automatizada das regras §1-bis/DESIGN; nova regra de tela exige teste no mesmo PR.
-- Custo: Playwright em CI é o passo mais lento; mitigar com sharding (8 workers, espelhando `pytest -n 8`).
+- Antes de push: make lint, typecheck e test. CI completa e segurança verdes no SHA final; PR fora de rascunho. Não remover gates nem pular falhas para declarar pronto.
+- E2E nos três browsers e dois viewports, capturas e traces sem segredos. Axe nos cenários pertinentes e revisão manual complementar; não confundir com certificação completa ou teste com participantes.
+- Orçamento de bundle/performance conforme ADR001 e #8/#37. Paralelismo só com dados isolados e medição.
+- #23 cobre núcleo, #30 entrada, #36 conjunto. #39 audita antes de #38 publicar; não há dependência circular entre auditoria e publicação.
+- Dependência backend ausente permanece bloqueio, não um cenário skipped que aprova release. Adiamento exige decisão explícita do escopo.
+- #49 acrescenta CI de contrato com uma versão completa pinada do backend PR #168, Keycloak/SMTP/PostgreSQL/Chromium reais e dist/CSP públicos da SPA nos dois viewports. Gates exigem zero skips; não promove schema de PR aos tipos públicos. Valida transporte e contrato, mantendo sessão/telas da #11/#12 e homologação do emissor produtivo como entregas distintas. Ver [prova e limites](../identity-validation.md).
+- #9 estende os mesmos gates por arquivo (quatro métricas >=80%) a `src/api/`, excluindo testes e `.d.ts`. MSW verifica transporte sobre paths/shapes da versão integrada, incluindo cancelamento, deadlines, bytes/multipart e chave estável. Testar HTTP402 não declara billing integrado; fixtures não comprovam sessão ou contratos ausentes. Hash do OpenAPI e políticas geradas têm gates próprios sem relaxar a CI existente.

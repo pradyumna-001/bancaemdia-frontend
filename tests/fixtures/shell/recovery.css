@@ -1,0 +1,15 @@
+/* Layout of the test-only form; the product component owns its own stylesheet. */
+.pagina form > label {
+  display: block;
+  margin-block-end: var(--espaco-8);
+  font-weight: var(--peso-destaque);
+}
+.pagina form > input {
+  width: min(100%, 20rem);
+  min-height: var(--alvo-toque);
+  border: 1px solid var(--borda-controle);
+  padding: var(--espaco-8) var(--espaco-12);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--tinta);
+}
