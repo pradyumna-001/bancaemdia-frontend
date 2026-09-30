@@ -2,6 +2,8 @@
 
 ProvedorAuth consulta a identidade real, protege as rotas existentes e conecta o contador de Revisão ao GET tipado. Entrar navega para o emissor via `/auth/start`; Confirmar saída chama o logout da API. São ações mínimas nas páginas já existentes: as telas completas de conta são #12. Sessão válida não concede assinatura ou FULL_WRITE; 402 preserva identidade, sem repetir escrita.
 
+A conferência inicial pertence ao loader protegido ou à página Entrar. Páginas públicas de ajuda/conta ainda em preparação não iniciam pedidos de identidade; foco/visibilidade só reconferem um contexto que já tem pessoa. Isso evita pedidos desnecessários durante navegação de documentos. Novas telas públicas de conta (#12) devem iniciar somente as operações necessárias à sua jornada.
+
 Referência de identidade: backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, [contrato](identidade.md), [ADR003](../adrs/003-api-client-typing-session.md). Continua aberto, sem deploy. OpenAPI de domínio permanece na main integrada `bd055417459f796fed960b5b37efb33a9744419f`, com SHA-256 em `config/api-contract.json`; nenhum schema de PR foi promovido ou concatenado.
 
 ## Fronteira e estado

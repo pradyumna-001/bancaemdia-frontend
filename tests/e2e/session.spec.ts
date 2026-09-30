@@ -48,6 +48,39 @@ const stats = (total = 0) => ({
   idade_maxima_segundos: 0,
 });
 
+test('páginas públicas não consultam identidade; login inicia a conferência necessária', async ({
+  page,
+  context,
+}) => {
+  let reads = 0;
+  await mockApi(context, async (route) => {
+    if (new URL(route.request().url()).pathname === '/auth/session') reads++;
+    await respond(route, { code: 'not_authenticated' }, 401);
+  });
+  for (const path of [
+    '/tutorial',
+    '/extensao',
+    '/criar-conta',
+    '/redefinir-senha',
+  ]) {
+    await page.goto(path);
+    await expect(
+      page.getByText('Esta página está em preparação.'),
+    ).toBeVisible();
+    await page.bringToFront();
+    await page.reload();
+    await expect(
+      page.getByText('Esta página está em preparação.'),
+    ).toBeVisible();
+  }
+  expect(reads).toBe(0);
+  await page.goto('/login');
+  await expect(
+    page.getByRole('button', { name: 'Entrar com minha conta' }),
+  ).toBeEnabled();
+  expect(reads).toBe(1);
+});
+
 test('sem sessão, URL/storage não liberam rota e login hospedado recebe destino sem hash', async ({
   page,
   context,

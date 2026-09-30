@@ -24,13 +24,16 @@ export function ProvedorAuth({
   );
   useEffect(() => {
     const resume = () => {
+      const current = service.getSnapshot();
       if (
+        current.person &&
         document.visibilityState !== 'hidden' &&
-        !service.getSnapshot().logoutUnconfirmed
+        !current.logoutUnconfirmed
       )
         void service.resume();
     };
-    resume();
+    // The protected loader and login page bootstrap on demand. Public help pages
+    // must not launch identity requests that can outlive a document navigation.
     window.addEventListener('focus', resume);
     document.addEventListener('visibilitychange', resume);
     return () => {

@@ -1,4 +1,5 @@
 import { useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuth } from './ProvedorAuth';
 import { ErroApi } from '../components/ErroApi';
 
@@ -6,6 +7,12 @@ import { ErroApi } from '../components/ErroApi';
 export function SessionActions() {
   const auth = useAuth();
   const location = useLocation();
+  const service = auth?.service;
+  const phase = auth?.state.phase;
+  const pathname = location.pathname;
+  useEffect(() => {
+    if (pathname === '/login' && phase === 'checking') void service?.resume();
+  }, [service, phase, pathname]);
   if (!auth) return null;
   if (location.pathname === '/sair')
     return (
@@ -41,6 +48,7 @@ export function SessionActions() {
           type="button"
           disabled={
             auth.state.phase === 'checking' ||
+            auth.state.phase === 'ending' ||
             (!!auth.state.error && auth.state.error.kind !== 'invalid_request')
           }
           onClick={() => auth.service.login(destination)}
