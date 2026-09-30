@@ -4,8 +4,10 @@ Run with the pinned backend as cwd, after building the frontend. Its sandbox fix
 own disposable PostgreSQL/OIDC/SMTP. This server stands in for the same-origin proxy.
 """
 
+import asyncio
 import json
 import mimetypes
+import os
 import re
 import secrets
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -16,6 +18,10 @@ from uuid import uuid4
 import httpx
 import pytest
 from playwright.async_api import async_playwright, expect
+from sqlalchemy import text
+from sqlalchemy.engine import make_url
+from sqlalchemy.ext.asyncio import create_async_engine
+from tests.conftest import _preparar
 
 from tests.identity import journey as backend
 
@@ -109,6 +115,30 @@ async def browser_request(page, path, *, method="GET", csrf=None, body=None):
         }""",
         {"path": path, "method": method, "csrf": csrf, "body": body},
     )
+
+
+@pytest.fixture
+async def banco():
+    # Each harness generates its own keyring. Never reuse encrypted rows from another
+    # sandbox harness: its revocation outbox must remain with the keys that created it.
+    url = make_url(os.environ["TEST_DATABASE_URL"])
+    assert url.host == "127.0.0.1" and url.port == 55432
+    assert url.database == "bancaemdia_identity", (
+        "Only the disposable CI database is allowed"
+    )
+    name = "identity_frontend_" + uuid4().hex
+    admin = create_async_engine(
+        url.set(database="postgres"), isolation_level="AUTOCOMMIT"
+    )
+    try:
+        async with admin.connect() as conn:
+            await conn.execute(text(f"CREATE DATABASE {name}"))
+        isolated_url = url.set(database=name).render_as_string(hide_password=False)
+        yield await asyncio.to_thread(_preparar, isolated_url)
+    finally:
+        async with admin.connect() as conn:
+            await conn.execute(text(f"DROP DATABASE {name}"))
+        await admin.dispose()
 
 
 @pytest.fixture

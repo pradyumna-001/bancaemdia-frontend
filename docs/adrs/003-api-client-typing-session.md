@@ -2,7 +2,7 @@
 
 ## Status
 
-Revisado pela #49 em 29/09/2026, conforme ADR019. Contrato de identidade implementado no backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, ainda aberto. Decisão de transporte baseada nessa implementação; adoção no aplicativo em #9/#11/#12 depende da versão integrada e do ambiente. [Contrato e evidências](../contracts/identidade.md).
+Revisado pela #49 em 30/09/2026, conforme ADR019. Contrato de identidade implementado no backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, ainda aberto. Decisão de transporte baseada nessa implementação; adoção no aplicativo em #9/#11/#12 depende da versão integrada e do ambiente. [Contrato e evidências](../contracts/identidade.md).
 
 ## Decision
 

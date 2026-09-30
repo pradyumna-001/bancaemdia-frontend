@@ -1,6 +1,6 @@
 # Contratos do produto — capacidade, versão e dependência
 
-Atualização 29/09/2026, ADR019 / #48 / #49. Esta matriz substitui o inventário baseado apenas no monólito. Código/contrato foram lidos na main `bd055417459f796fed960b5b37efb33a9744419f` e em PRs com SHA no [inventário](audits/inventario-contratos.md). Identidade foi revalidada no PR #168 em `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`. Nenhum PR abaixo é tratado como deploy. O frontend ainda gera tipos dessa main; uma versão integrada deve ser adotada antes de consumir a expansão.
+Atualização 30/09/2026, ADR019 / #48 / #49. Esta matriz substitui o inventário baseado apenas no monólito. Código/contrato foram lidos na main `bd055417459f796fed960b5b37efb33a9744419f` e em PRs com SHA no [inventário](audits/inventario-contratos.md). Identidade foi revalidada no PR #168 em `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`. Nenhum PR abaixo é tratado como deploy. O frontend ainda gera tipos dessa main; uma versão integrada deve ser adotada antes de consumir a expansão.
 
 ## Estados
 
