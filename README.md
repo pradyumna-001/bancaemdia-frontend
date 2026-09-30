@@ -41,7 +41,7 @@ O boot valida a configuração em `src/lib/config.ts` antes de montar a aplicaç
 | `VITE_APP_ENV`        | `development`, `staging` ou `production`                     | `development` no Vite dev; `production` no build |
 | `VITE_UPLOAD_POLL_MS` | Inteiro de 1 a 2147483647 ms                                 | `1000`                                           |
 
-Nenhuma variável aceita valor vazio ou `null`. `.env.example` explica as variáveis públicas; as entradas `VITE_AUTH_*` estão reservadas para a #11 e ainda não são consumidas. Nunca copie segredos do `.env` do backend para o frontend.
+Nenhuma variável aceita valor vazio ou `null`. `.env.example` explica as variáveis públicas. A identidade do [ADR003](docs/adrs/003-api-client-typing-session.md) é operada pelo backend: o SPA não configura emissor/client ID/audience em `VITE_AUTH_*` nem recebe tokens. Nunca copie segredos do `.env` do backend para o frontend. [Contrato da #49 e pendências de publicação](docs/contracts/identidade.md).
 
 Em um **build publicado**, o boot busca `/config.json` e aplica seus campos sobre os valores compilados de `import.meta.env`. O arquivo versionado `public/config.json` contém `{}`, preservando os valores do build. Para promover o mesmo `dist/` ou imagem de staging para produção sem recompilar, substitua apenas esse arquivo no servidor:
 

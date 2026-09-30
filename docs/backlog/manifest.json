@@ -195,7 +195,7 @@
     "number": 49,
     "title": "[ADR-019] Contrato de identidade e provisionamento do usuário",
     "file": "049.md",
-    "dependencies": "#48; backend auth pradyumna-001/bancaemdia-api#24"
+    "dependencies": "#48; backend auth pradyumna-001/bancaemdia-api#24 e #167 (PR #168)"
   },
   {
     "number": 50,

@@ -26,3 +26,5 @@ Thumbs.db
 !.vscode/extensions.json
 
 reports/
+.identity-api/
+__pycache__/

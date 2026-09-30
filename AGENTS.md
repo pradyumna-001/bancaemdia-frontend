@@ -44,7 +44,7 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 ## Segurança
 
 22. Nenhum segredo no bundle: apenas `VITE_` vars públicas, documentadas em `.env.example`.
-23. Token de sessão nunca em `localStorage` legível por terceiros — decisão de transporte de token em ADR 003; redirects pós-login só para destinos internos (guard `destinoInterno`).
+23. Identidade conforme ADR003/#49: tokens ficam somente no servidor; browser usa cookie HttpOnly/Secure e CSRF/versão em memória. Nunca token/CSRF em localStorage/sessionStorage ou configuração pública. Redirects pós-login só para destinos internos (guard `destinoInterno`); `return_to` da API não aceita fragmento. Logout/troca cancelam requests e limpam dados privados, descartando respostas antigas. Prova de sandbox não é deploy nem autoriza promover schema de PR ao contrato integrado.
 24. Sem CSP relaxada em produção; ver `docs/runbooks/deploy.md`.
 
 ## Fluxo de trabalho

@@ -7,7 +7,7 @@ Plataforma Fase 1: nginx estático em Compose atrás de Caddy/TLS, na arquitetur
 1. Confirmar ambiente autorizado e capacidade, domínio/TLS, rede e API/emissor compatíveis; registrar versão do contrato por ambiente.
 2. Exigir todos os checks verdes no SHA, incluindo budget, cobertura e segurança. Baixar o artifact `frontend-<SHA>-<evento>` do run correspondente; ele contém `dist/` e `dist-security/` da mesma compilação. Não usar artifact de fixture/relatórios como site.
 3. Preparar release imutável (imagem por digest no fluxo #38), preservar HTML/assets/nginx juntos e registrar o digest anterior para rollback. Não editar/minificar HTML após build: isso invalidaria o hash CSP do tema.
-4. Fornecer `config.json` público validado, montado somente para leitura; segredos nunca entram nele. A mesma origem HTTPS para site e `/api/*` é preferida. CSP/CORS de API/emissor externos só com origens exatas definidas em #49/#14.
+4. Fornecer `config.json` público validado, montado somente para leitura; segredos nunca entram nele. Usar mesma origem HTTPS: proxy encaminha `/api/*` **e `/auth/*`** ao backend. Callback `/auth/callback` não pode receber HTML da SPA. CSP `connect-src 'self'` cobre o transporte por cookie; emissor é navegação hospedada. Origens/callback/emissor e versão integrada precisam dos gates de [identidade](../contracts/identidade.md) e #14. Não copiar cookie inseguro do sandbox para produção.
 5. Implantar conforme o procedimento operacional do ambiente; esta issue não fornece nem executa provisionamento.
 
 ## Smoke no ambiente real

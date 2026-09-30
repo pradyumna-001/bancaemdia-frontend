@@ -24,7 +24,7 @@ Configuração V8: [documentação oficial](https://v3.vitest.dev/config/#covera
 
 A integração #14 deverá confirmar capacidade da instância, domínio/DNS/TLS, rede entre Caddy/nginx/API, rollback e disponibilidade operacional da Fase 1. Se o ambiente não comportar o site, revisar este ADR antes de contratar/provisionar outra plataforma.
 
-Origem preferida: uma origem HTTPS de aplicação, com Caddy encaminhando `/api/*` à API e demais caminhos ao frontend. O nginx serve a SPA, não recebe credenciais de backend. `VITE_API_URL` deve ser a origem pública da aplicação nesse arranjo; não duplicar `/api/v1` na base. A topologia e a versão compatível da API só são publicadas após smoke conjunto. Nenhum domínio fictício é configurado como ambiente real.
+Origem preferida: uma origem HTTPS de aplicação, com Caddy encaminhando `/api/*` **e `/auth/*`** à API e demais caminhos ao frontend (contrato #49 / ADR003). O callback não pode cair no fallback da SPA. O nginx serve a SPA, não recebe credenciais de backend. `VITE_API_URL` deve ser a origem pública da aplicação nesse arranjo; não duplicar `/api/v1` na base. A topologia e a versão compatível da API só são publicadas após smoke conjunto. Nenhum domínio fictício é configurado como ambiente real.
 
 CSP continua estrita: script próprio + hash exato do tema, fontes próprias, sem `unsafe-inline`/wildcards. API na mesma origem cabe em `connect-src 'self'`. Se #49 exigir conexão com emissor externo ou outra origem API, registrar origens HTTPS exatas em CSP/CORS antes do deploy; o `config.json` não amplia permissões. Callbacks e refresh dependem do contrato de identidade, sem escolher transporte de token por conveniência da hospedagem.
 
