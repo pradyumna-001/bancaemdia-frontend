@@ -30,8 +30,8 @@ export function Shell({
   const ultimoPath = useRef(location.pathname);
   const fila = useQuery({
     queryKey: CHAVE_REVISAO,
-    queryFn: async () => {
-      const dados = await consultarRevisao();
+    queryFn: async ({ signal }) => {
+      const dados = await consultarRevisao(signal);
       validarTotalRevisao(dados);
       return dados;
     },

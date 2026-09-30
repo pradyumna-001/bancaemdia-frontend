@@ -2,7 +2,7 @@
 
 ## Status
 
-Revisado pela #49 em 30/09/2026, conforme ADR019. Contrato de identidade implementado no backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, ainda aberto. Decisão de transporte baseada nessa implementação; adoção no aplicativo em #9/#11/#12 depende da versão integrada e do ambiente. [Contrato e evidências](../contracts/identidade.md).
+Revisado pela #49/#11 em 30/09/2026, conforme ADR019. Contrato de identidade implementado no backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, ainda aberto. #11 implementa ProvedorAuth contra essa referência, para revisão; publicação depende da versão integrada e do ambiente. Telas completas de conta permanecem na #12. [Contrato de identidade](../contracts/identidade.md), [implementação da sessão](../contracts/sessao.md).
 
 ## Decision
 
@@ -20,6 +20,10 @@ Revisado pela #49 em 30/09/2026, conforme ADR019. Contrato de identidade impleme
 
 ## Consequences
 
-Mocks testam apresentação, não completam identidade ou API ausente. Troca de usuário/logout cancela requests/polling/refresh/retries, limpa QueryClient (queries e mutations), formulários privados, arquivos/URLs de mídia e exports. Cada request captura um contexto de sessão e sua versão; respostas anteriores são descartadas mesmo se o aborto chegar tarde. Cache privado não é persistido nem compartilhado entre usuários. #11 implementa isso no aplicativo; o build atual continua sem sessão real. Nenhum cálculo financeiro do domínio migra para o cliente para cobrir lacuna.
+Mocks testam apresentação, não completam identidade ou API ausente. #11 liga o guard ao ProvedorAuth real e ao contador de Revisão da API. Troca de usuário/logout cancela requests/polling/refresh/retries, limpa QueryClient (queries e mutations), desmonta formulários privados e executa limpezas registradas de arquivos/URLs de mídia e exports. Cada request captura um contexto de sessão e sua versão; respostas anteriores são descartadas mesmo se o aborto chegar tarde ou durante parsing. Cache privado não é persistido nem compartilhado entre usuários. Sem sessão válida da API, o build público permanece anônimo. Nenhum cálculo financeiro do domínio migra para o cliente para cobrir lacuna.
+
+O serviço serializa consulta/refresh/logout com Web Locks por origem; consulta novamente dentro da trava e só renova se o backend exigir. BroadcastChannel divulga apenas eventos de controle, sem identidade, versão ou prova. Sem trava confiável, não emite refresh/logout concorrente; oferece reentrada. Recuperação após `access_expired` repete no máximo um GET seguro da mesma pessoa/família. Escritas nunca são repetidas automaticamente. Saída falha remove dados locais, mas exige reconciliação explícita e não anuncia revogação confirmada.
+
+Enquanto #168 não integrar, o transporte de identidade lê `unknown` e valida uma projeção interna de controle (`SessionContext`), não um DTO `SessionStatus` manual nem um shape de domínio. O schema gerado continua na main pinada; sua adoção integrada é gate de publicação. Ao adotar essa versão, migrar o transporte para a operação gerada sem remover a validação de fronteira. Destino e fragmento internos, sem prova/token, podem ficar por até dez minutos em sessionStorage para retorno único do login; o fragmento nunca é enviado à API.
 
 O OpenAPI de produção permanece pinado na main integrada. O sandbox de contrato usa **uma única versão completa** do PR #168, isolada dos tipos/build públicos; não é união de schemas. Provas com Keycloak real validam o protocolo implementado, não homologam um tenant Cognito/Auth0 nem demonstram deploy. A #49 conserva o gate de publicação até revisão/merge, aprovação/configuração do emissor e ambiente conjunto.

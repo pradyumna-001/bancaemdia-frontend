@@ -5,9 +5,17 @@ import xml.etree.ElementTree as ET
 
 root = ET.parse(sys.argv[1]).getroot()
 cases = root.findall(".//testcase")
-assert len(cases) == 2, "Both mobile and desktop identity proofs are required"
+assert len(cases) == 4, (
+    "Cookie and provider lifecycle proofs are required on mobile and desktop"
+)
 assert all(
-    "test_public_spa_real_identity_cookie_contract" in case.attrib["name"]
+    any(
+        name in case.attrib["name"]
+        for name in (
+            "test_public_spa_real_identity_cookie_contract",
+            "test_public_spa_session_lifecycle",
+        )
+    )
     for case in cases
 )
 assert not root.findall(".//skipped"), "Identity acceptance may not skip"
