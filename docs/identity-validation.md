@@ -28,7 +28,7 @@ O gate `tests/identity/check_results.py` exige exatamente os dois cenários, zer
 ```bash
 pytest -n 0 tests/identity/journey.py tests/integration/test_identity_db.py --junitxml=identity-results.xml --tb=short -v
 python scripts/check_identity_results.py identity-results.xml
-pytest -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_browser_contract.py --junitxml=browser-contract.xml --tb=short -v
+python -m pytest -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_browser_contract.py --junitxml=browser-contract.xml --tb=short -v
 python ../tests/identity/check_results.py browser-contract.xml
 ```
 
