@@ -160,9 +160,20 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
         pages = [await context.new_page() for context in contexts]
         violations = []
         for page in pages:
-            page.on("pageerror", lambda _error: violations.append("pageerror"))
-            await page.add_init_script("""document.addEventListener('securitypolicyviolation',
-              () => { document.documentElement.dataset.cspFailure='true'; });""")
+
+            def public_page_error(_error, current_page=page):
+                if urlsplit(current_page.url).netloc == urlsplit(backend.FRONT).netloc:
+                    violations.append("public SPA pageerror")
+
+            page.on("pageerror", public_page_error)
+            # This monitor belongs to the SPA, not the hosted issuer's documents. It
+            # also records early CSP violations before documentElement exists.
+            await page.add_init_script(
+                "if (location.origin === "
+                + json.dumps(backend.FRONT)
+                + ") { document.addEventListener('securitypolicyviolation',"
+                + "() => { window.__identityCspFailure=true; }); }"
+            )
         sessions = []
         for page in pages:
             email = uuid4().hex + "@example.org"
@@ -174,6 +185,7 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
             await expect(
                 page.get_by_role("heading", name="Entrar", exact=True)
             ).to_be_visible()
+            assert not await page.evaluate("window.__identityCspFailure === true")
             assert not {"access_token", "refresh_token", "id_token"}.intersection(
                 session
             )
@@ -218,12 +230,13 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
         assert (await browser_request(pages[1], "/auth/session"))["status"] == 200
         assert "no-store" in logout["headers"]["cache-control"]
         for context, page in zip(contexts, pages):
-            assert not await page.locator("html").get_attribute("data-csp-failure")
+            assert not await page.evaluate("window.__identityCspFailure === true")
             assert all(c["httpOnly"] for c in await context.cookies(backend.FRONT))
             # Public guard is still provisional: this proof never enables #11 in the bundle.
             await page.goto(backend.FRONT + "/painel")
             await expect(
                 page.get_by_role("heading", name="Entrar", exact=True)
             ).to_be_visible()
+            assert not await page.evaluate("window.__identityCspFailure === true")
         assert not violations
         await browser.close()
