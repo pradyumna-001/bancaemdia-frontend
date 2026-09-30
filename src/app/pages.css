@@ -1,0 +1,68 @@
+/* Fundação visual; o shell de navegação será integrado na #6. */
+.pagina {
+  width: min(calc(100% - var(--espaco-32)), var(--largura-leitura));
+  margin: var(--espaco-48) auto;
+  padding: var(--espaco-32);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  overflow-wrap: anywhere;
+}
+
+.cabecalho-marca {
+  margin-block-end: var(--espaco-32);
+}
+
+.pagina > p:not(.legenda) {
+  color: var(--tinta-secundaria);
+  max-width: 60ch;
+}
+
+.legenda {
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-pequena);
+  font-weight: var(--peso-destaque);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-16);
+  margin-block-start: var(--espaco-24);
+}
+
+.acoes a,
+.acoes button,
+.pagina > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-16);
+  border-radius: var(--raio-controle);
+  font-weight: var(--peso-destaque);
+}
+
+.acoes button,
+.pagina > button,
+.acoes a:first-child {
+  border: 1px solid var(--acao);
+  background: var(--acao);
+  color: var(--sobre-acao);
+  text-decoration: none;
+}
+
+.acoes button:hover,
+.pagina > button:hover,
+.acoes a:first-child:hover {
+  border-color: var(--acao-hover);
+  background: var(--acao-hover);
+}
+
+@media (max-width: 35rem) {
+  .pagina {
+    margin-block: var(--espaco-24);
+    padding: var(--espaco-24) var(--espaco-16);
+  }
+}

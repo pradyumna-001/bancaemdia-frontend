@@ -1,0 +1,5 @@
+{
+  "VITE_API_URL": "http://127.0.0.1:8000",
+  "VITE_APP_ENV": "development",
+  "VITE_UPLOAD_POLL_MS": 1000
+}
