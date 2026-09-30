@@ -1,6 +1,56 @@
 // @vitest-environment node
 import { expect, it } from 'vitest';
 import { ApiError, httpError, retryAfterMs } from './error';
+import type { components } from './schema';
+
+it('422 retém apenas campos conhecidos de loc, nunca msg/input/ctx', () => {
+  const validation = {
+    detail: [
+      {
+        loc: ['body', 'odd'],
+        msg: 'PRIVATE_MESSAGE',
+        type: 'float_parsing',
+        input: 'PRIVATE_INPUT',
+        ctx: { error: 'PRIVATE_CTX' },
+      },
+      { loc: ['query', 'estado'], msg: 'bad filter', type: 'value_error' },
+    ],
+  } satisfies components['schemas']['ValidationErrorResponse'];
+  const error = httpError(
+    new Response(null, { status: 422 }),
+    validation,
+    true,
+  );
+  expect(error.invalidFields).toEqual([
+    { scope: 'body', field: 'odd' },
+    { scope: 'query', field: 'estado' },
+  ]);
+  expect(JSON.stringify(error)).not.toContain('PRIVATE');
+  expect(Object.isFrozen(error.invalidFields)).toBe(true);
+});
+it('não retém localização malformada ou campo arbitrário e deduplica campos', () => {
+  const error = httpError(
+    new Response(null, { status: 422 }),
+    {
+      detail: [
+        null,
+        {},
+        { loc: null },
+        { loc: ['header', 'Authorization'] },
+        { loc: ['body', '<private>'] },
+        { loc: ['body', 1] },
+        { loc: ['body', 'odd'] },
+        { loc: ['body', 'odd', 0] },
+      ],
+    },
+    true,
+  );
+  expect(error.invalidFields).toEqual([{ scope: 'body', field: 'odd' }]);
+  expect(
+    httpError(new Response(null, { status: 422 }), { detail: 'private' }, true)
+      .invalidFields,
+  ).toEqual([]);
+});
 
 it.each([
   null,

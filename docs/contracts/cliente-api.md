@@ -50,7 +50,7 @@ Na planilha, usar campos `arquivo` e `origem_id` contratados. Não criar protoco
 
 ## Erros e evidência
 
-ApiError expõe apenas `kind`, `status`, código conhecido, mensagem pt-BR, `retryAfterMs`, `requestId` seguro e `outcomeUnknown`. Corpo, trace, URL, senha/token e causa externa não são retidos. Código auth pode vir de `X-Auth-Error`; nunca exibir `detail` arbitrário. 401 e 402 têm mensagens distintas e não disparam logout aqui. Retry-After aceita segundos e HTTP-date, preservando zero. A #10 aplicará decisão limitada de retry/recuperação sem duplicar writes.
+ApiError expõe `kind`, `status`, código conhecido, mensagem pt-BR, `retryAfterMs`, `requestId` seguro, `outcomeUnknown` e a projeção de campos 422 `invalidFields`. Corpo, input/msg/ctx de validação, trace, URL, senha/token e causa externa não são retidos. Código auth pode vir de `X-Auth-Error`; nunca exibir `detail` arbitrário. 401 e 402 têm mensagens distintas e não disparam logout aqui. Retry-After aceita segundos e HTTP-date, preservando zero. A [#10](recuperacao.md) aplica decisão limitada de retry/recuperação sem duplicar writes; limites de paginação também são gerados do mesmo snapshot.
 
 Fixtures/MSW em `tests/fixtures/api/` são tipadas pelos schemas selecionados: null, HTTP401/402/409/422/429/503, resposta não JSON, upload202/resultado parcial, bytes, cancelamento, prazo e chave estável. O caso 402 testa separação de erro; billing permanece em PR separado, sem afirmar disponibilidade desse recurso na main. Nenhum endpoint fictício é usado e nenhum mock entra no bundle. Tipos estáticos não são um validador runtime completo do JSON de sucesso; os testes de contrato backend continuam necessários.
 

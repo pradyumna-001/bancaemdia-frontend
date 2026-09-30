@@ -7,3 +7,21 @@ export const UPLOAD_OPERATIONS = [
   'POST /api/v1/apostas/importar-planilha',
   'POST /api/v1/upload',
 ] as const;
+export const PAGINATION_RULES = {
+  'GET /api/v1/apostas': {
+    page: { default: 1, minimum: 1 },
+    page_size: { default: 50, minimum: 1, maximum: 100 },
+  },
+  'GET /api/v1/caixa': {
+    page: { default: 1, minimum: 1, maximum: 9007199254740991 },
+    page_size: { default: 50, minimum: 1, maximum: 100 },
+  },
+  'GET /api/v1/caixa/extrato': {
+    page: { default: 1, minimum: 1, maximum: 9007199254740991 },
+    page_size: { default: 50, minimum: 1, maximum: 100 },
+  },
+  'GET /api/v1/revisao': {
+    page: { default: 1, minimum: 1, maximum: 9007199254740991 },
+    page_size: { default: 50, minimum: 1, maximum: 100 },
+  },
+} as const;
