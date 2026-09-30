@@ -33,3 +33,4 @@ Vitest/Testing Library para regras de apresentação e componentes; fixtures/MSW
 - Orçamento de bundle/performance conforme ADR001 e #8/#37. Paralelismo só com dados isolados e medição.
 - #23 cobre núcleo, #30 entrada, #36 conjunto. #39 audita antes de #38 publicar; não há dependência circular entre auditoria e publicação.
 - Dependência backend ausente permanece bloqueio, não um cenário skipped que aprova release. Adiamento exige decisão explícita do escopo.
+- #49 acrescenta CI de contrato com uma versão completa pinada do backend PR #168, Keycloak/SMTP/PostgreSQL/Chromium reais e dist/CSP públicos da SPA nos dois viewports. Gates exigem zero skips; não promove schema de PR aos tipos públicos. Valida transporte e contrato, mantendo sessão/telas da #11/#12 e homologação do emissor produtivo como entregas distintas. Ver [prova e limites](../identity-validation.md).
