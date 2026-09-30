@@ -92,20 +92,16 @@ React Router 7 e TanStack Query fornecem roteamento e cache; openapi-fetch e MSW
 
 ## Geração de tipos
 
-`make gen-types` baixa o [snapshot OpenAPI oficial de bancaemdia-api](https://github.com/pradyumna-001/bancaemdia-api/blob/bd055417459f796fed960b5b37efb33a9744419f/tests/contract/schemas/openapi.json), fixado no commit `bd055417459f796fed960b5b37efb33a9744419f` já integrado em `main`. A geração usa `openapi-typescript`, formata a saída e grava `src/api/schema.d.ts`, versionado. Não é um contrato inventado nem depende de PR pendente. A fonte fixada torna a regeneração reproduzível sem iniciar banco, Redis ou auth; requer acesso à rede.
+`make gen-types` baixa o [snapshot OpenAPI oficial de bancaemdia-api](https://github.com/pradyumna-001/bancaemdia-api/blob/bd055417459f796fed960b5b37efb33a9744419f/tests/contract/schemas/openapi.json), fixado no commit `bd055417459f796fed960b5b37efb33a9744419f` já integrado em `main`. [config/api-contract.json](config/api-contract.json) fixa commit e SHA-256 dos bytes. Após conferir o hash, `openapi-typescript` gera `src/api/schema.d.ts` e políticas de upload/idempotência em `src/api/operations.generated.ts`, ambos versionados e verificados por drift na CI. Nenhum schema de PR é promovido ou concatenado.
 
-Para usar o contrato de uma API local conforme ADR 003:
+Para reproduzir sem rede, use o mesmo snapshot pinado de um checkout verificado:
 
 ```bash
-# Clone bancaemdia-api, prepare seu .env conforme o README daquele repo e inicie:
-make -C ../bancaemdia-api up
-make gen-types OPENAPI_SOURCE=http://127.0.0.1:8000/openapi.json
-# Alternativa offline: snapshot de um checkout verificado do backend
 pnpm gen-types ../bancaemdia-api/tests/contract/schemas/openapi.json
 make typecheck
 ```
 
-Um argumento de URL ou arquivo substitui a fonte padrão. Não inclua tokens na URL. Ao atualizar o contrato, revise o diff e atualize a referência fixada em `scripts/gen-types.mjs` e nesta documentação. Falhas de leitura/geração retornam exit code diferente de zero e preservam o arquivo anterior.
+Um arquivo local também precisa corresponder ao hash aprovado. URLs alternativas e referências flutuantes são recusadas. Para atualizar a API, verificar integração/compatibilidade, atualizar commit/hash em `config/api-contract.json`, regenerar e revisar os dois diffs e as consumidoras. Falhas de leitura/hash/geração ocorrem antes de gravar saídas. Ver [cliente e contrato](docs/contracts/cliente-api.md).
 
 ## Hooks
 
