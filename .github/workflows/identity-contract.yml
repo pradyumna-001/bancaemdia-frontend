@@ -74,7 +74,7 @@ jobs:
       - name: Comprovar cookie/CSRF/isolamento com SPA pública e CSP exata
         working-directory: .identity-api
         run: |
-          python -m pytest -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_browser_contract.py --junitxml=browser-contract.xml --tb=short -v
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_browser_contract.py --junitxml=browser-contract.xml --tb=short -v
           python ../tests/identity/check_results.py browser-contract.xml
       - uses: actions/upload-artifact@v4
         if: always()
