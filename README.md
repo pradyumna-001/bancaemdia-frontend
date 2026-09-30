@@ -47,13 +47,13 @@ Em um **build publicado**, o boot busca `/config.json` e aplica seus campos sobr
 
 ```json
 {
-  "VITE_API_URL": "https://api.example.com",
+  "VITE_API_URL": "https://bancaemdia.example",
   "VITE_APP_ENV": "production",
   "VITE_UPLOAD_POLL_MS": 1000
 }
 ```
 
-Somente essas três chaves são aceitas no JSON. O artefato pode ser compilado sem URL, desde que ela seja fornecida no runtime. O modo dev não busca esse arquivo. Clientes futuros acessam `getConfig()` após o boot; não leem variáveis diretamente.
+Somente essas três chaves são aceitas no JSON. Em produção, a URL é a origem do próprio SPA, com proxy para `/auth/*` e `/api/*`. O artefato pode ser compilado sem URL, desde que ela seja fornecida no runtime. O modo dev não busca esse arquivo. Clientes acessam `getConfig()` após o boot; não leem variáveis diretamente.
 
 O nginx serve `/config.json` com `Cache-Control: no-store`, sem fallback para HTML. A busca tem limite de cinco segundos e não repete automaticamente. Arquivo indisponível, JSON inválido ou variável inválida interrompem o boot com mensagem em português e botão **Tentar novamente**, sem montar a aplicação ou revelar o conteúdo recebido. Veja a decisão no [ADR 008](docs/adrs/008-ci-cd-deploy.md).
 
@@ -134,9 +134,9 @@ curl -f http://127.0.0.1:8080/rota-de-smoke # fallback para index.html
 docker stop bancaemdia-frontend-smoke
 ```
 
-O Dockerfile compila com Node/pnpm e serve somente `dist/` com nginx unprivileged na porta 8080. A imagem define `USER 101:101`, healthcheck, CSP restrita à mesma origem, proteção contra MIME sniffing, referrer policy, index sem cache e assets com hash/cache imutável. Um asset inexistente retorna 404. A allowlist de conexão da API será configurada junto da integração; não há `unsafe-inline`, CDN ou curingas de conexão no scaffold.
+O Dockerfile compila com Node/pnpm e serve somente `dist/` com nginx unprivileged na porta 8080. A imagem define `USER 101:101`, healthcheck, CSP restrita à mesma origem, proteção contra MIME sniffing, referrer policy, index sem cache e assets com hash/cache imutável. Um asset inexistente retorna 404. A publicação usa proxy de mesma origem para API/identidade; não há `unsafe-inline`, CDN ou curingas de conexão.
 
-`docker compose up -d --build` inicia apenas o SPA em `http://127.0.0.1:8080`, com filesystem somente leitura e `/tmp` temporário. Monta `config/local.json` como configuração pública local. Para outro ambiente, defina `FRONTEND_CONFIG_FILE` com o caminho absoluto de um JSON existente antes de executar o Compose; o arquivo é montado somente para leitura. Essa variável pertence ao Compose e não entra no bundle. Em produção, a origem da API também deve estar na allowlist da CSP do servidor quando a integração for implementada; o JSON não altera políticas de segurança.
+`docker compose up -d --build` inicia apenas o SPA em `http://127.0.0.1:8080`, com filesystem somente leitura e `/tmp` temporário. Monta `config/local.json` apontando à mesma origem para preservar CSP `connect-src 'self'`. Sem proxy/API, `/auth/*` e `/api/*` retornam 503 JSON/no-store, nunca HTML da SPA; a entrada oferece tentar novamente sem navegar para um serviço indisponível. Para outro ambiente, defina `FRONTEND_CONFIG_FILE` com o caminho absoluto de um JSON existente antes de executar o Compose; o arquivo é montado somente para leitura. Essa variável pertence ao Compose e não entra no bundle. Em produção, configurar o proxy de mesma origem para ambos os prefixos; o JSON não altera políticas de segurança.
 
 Para iniciar também a stack **existente** da API:
 
@@ -145,7 +145,7 @@ Para iniciar também a stack **existente** da API:
 make up API_DIR=../bancaemdia-api
 ```
 
-`API_DIR` pode ser absoluto (útil em worktrees). O alvo usa o Compose e `.env` daquele checkout antes de subir o frontend; não gera, copia ou altera segredos. Para encerrar, use `docker compose down` neste repo e no backend, sem `-v` para preservar dados. Isso prepara a execução local, sem implementar conexão, auth ou telas da API.
+`API_DIR` pode ser absoluto (útil em worktrees). O alvo usa o Compose e `.env` daquele checkout antes de subir o frontend; não gera, copia ou altera segredos. Para encerrar, use `docker compose down` neste repo e no backend, sem `-v` para preservar dados. O proxy de mesma origem ainda precisa ser configurado para conectar essas duas stacks; subir processos não comprova a integração de identidade.
 
 ## Documentação
 

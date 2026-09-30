@@ -8,7 +8,9 @@ Referência de identidade: backend [PR #168](https://github.com/pradyumna-001/ba
 
 `protocol.ts` recebe `unknown`, valida campos de controle e produz `SessionContext` interno. Não declara a resposta `SessionStatus` manualmente. Esse contexto contém identidade, versão, prova e sinal de renovação somente em memória; React recebe apenas pessoa, fase, erro seguro e geração privada. Antes de publicar, integrar #168, adotar seu OpenAPI completo e migrar o transporte para operações geradas, preservando a validação de fronteira.
 
-Todos os pedidos usam cookie, `credentials: include`, sem Authorization, cache no-store e deadline incluindo corpo. Prova CSRF acompanha somente POST autenticado. Cookie é HttpOnly/Secure em HTTPS; a exceção HTTP é exclusiva do sandbox de loopback. URL, payload, provas e tokens não entram em erros, logs ou artifacts. Fases: conferindo, anônimo, autenticado, encerrando e erro recuperável.
+Todos os pedidos usam cookie, `credentials: include`, sem Authorization, cache no-store e deadline incluindo corpo. Prova CSRF acompanha somente POST autenticado. Cookie é HttpOnly/Secure em HTTPS; a exceção HTTP é exclusiva do sandbox de loopback. URL, payload, provas e tokens não entram em erros, logs ou artifacts. Fases: conferindo, anônimo, autenticado, encerrando e erro recuperável. Entrada fica indisponível durante conferência/erro da API, com tentativa explícita antes da navegação hospedada.
+
+Compose local aponta à mesma origem 8080, preservando CSP `connect-src 'self'`. O nginx estático retorna 503 JSON/no-store em `/auth/*` e `/api/*` quando não houver proxy upstream; callback não recebe HTML da SPA. Produção exige proxy anterior ao servidor estático, conforme o runbook. Esses 503 não substituem API real nem relaxam a CSP.
 
 `destinoInterno` valida caminho/query/fragmento pelo catálogo. A API recebe somente caminho/query. Um registro não secreto em sessionStorage guarda o fragmento por até dez minutos, consumido uma vez ao voltar ao destino correspondente; storage indisponível não quebra a entrada. Não existe parâmetro, storage ou variável que libere sessão simulada.
 

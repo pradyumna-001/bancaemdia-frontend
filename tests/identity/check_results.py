@@ -8,15 +8,16 @@ cases = root.findall(".//testcase")
 assert len(cases) == 4, (
     "Cookie and provider lifecycle proofs are required on mobile and desktop"
 )
-assert all(
-    any(
-        name in case.attrib["name"]
-        for name in (
-            "test_public_spa_real_identity_cookie_contract",
-            "test_public_spa_session_lifecycle",
-        )
+expected = {
+    f"{name}[viewport{index}]"
+    for name in (
+        "test_public_spa_real_identity_cookie_contract",
+        "test_public_spa_session_lifecycle",
     )
-    for case in cases
+    for index in range(2)
+}
+assert {case.attrib["name"] for case in cases} == expected, (
+    "Both proofs are required exactly once on each viewport"
 )
 assert not root.findall(".//skipped"), "Identity acceptance may not skip"
 assert not root.findall(".//failure") and not root.findall(".//error"), (

@@ -28,7 +28,7 @@ function context(id: number) {
     session_expires_at: '2030-01-02T00:00:00Z',
   });
 }
-function open(path = '/painel', denied = false) {
+function open(path = '/painel', denied = false, withoutLock = false) {
   const queryClient = new QueryClient();
   const current = context(1);
   const transport = {
@@ -46,7 +46,7 @@ function open(path = '/painel', denied = false) {
     baseUrl: 'https://site.example.org',
     transport,
     navigate,
-    exclusive: async (_signal, work) => work(),
+    exclusive: withoutLock ? undefined : async (_signal, work) => work(),
     channel: {
       postMessage: vi.fn(),
       addEventListener: (_type, listener) => {
@@ -208,10 +208,30 @@ it('consulta indisponível no login tem tentativa explícita sem fabricar identi
       name: 'O serviço está temporariamente indisponível',
     }),
   ).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Entrar com minha conta' }),
+  ).toBeDisabled();
   transport.read.mockRejectedValue(new ApiError('http', { status: 401 }));
   await userEvent.click(
     screen.getByRole('button', { name: 'Tentar novamente' }),
   );
   await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   expect(service.getSnapshot().phase).toBe('anonymous');
+  expect(
+    screen.getByRole('button', { name: 'Entrar com minha conta' }),
+  ).toBeEnabled();
+});
+it('sem Web Locks não renova, mas permite reentrada hospedada explícita', async () => {
+  const { service, transport, navigate } = open('/login', false, true);
+  await screen.findByRole('button', { name: 'Entrar com minha conta' });
+  transport.read.mockResolvedValue({ ...context(1), needsRenewal: true });
+  await act(async () => {
+    await service.resume();
+  });
+  expect(service.getSnapshot().error?.kind).toBe('invalid_request');
+  expect(transport.renew).not.toHaveBeenCalled();
+  const login = screen.getByRole('button', { name: 'Entrar com minha conta' });
+  expect(login).toBeEnabled();
+  await userEvent.click(login);
+  expect(new URL(navigate.mock.calls[0]![0]).pathname).toBe('/auth/start');
 });

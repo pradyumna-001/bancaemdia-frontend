@@ -37,7 +37,14 @@ export function SessionActions() {
         />
       )}
       <div className="acoes">
-        <button type="button" onClick={() => auth.service.login(destination)}>
+        <button
+          type="button"
+          disabled={
+            auth.state.phase === 'checking' ||
+            (!!auth.state.error && auth.state.error.kind !== 'invalid_request')
+          }
+          onClick={() => auth.service.login(destination)}
+        >
           Entrar com minha conta
         </button>
       </div>

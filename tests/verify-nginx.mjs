@@ -61,6 +61,27 @@ for (const [name, browserType] of Object.entries({
         'http://127.0.0.1:8080/tutorial',
       );
       const csp = htmlResponse.headers()['content-security-policy'];
+      expect(csp).toContain("connect-src 'self'");
+      const config = await page.request.get(
+        'http://127.0.0.1:8080/config.json',
+      );
+      expect((await config.json()).VITE_API_URL).toBe('http://127.0.0.1:8080');
+      for (const path of [
+        '/auth/session',
+        '/auth/callback',
+        '/api/v1/apostas',
+      ]) {
+        const unavailable = await page.request.get(
+          `http://127.0.0.1:8080${path}`,
+        );
+        expect(unavailable.status()).toBe(503);
+        expect(unavailable.headers()['content-type']).toContain(
+          'application/json',
+        );
+        expect(unavailable.headers()['cache-control']).toBe('no-store');
+        expect(unavailable.headers()['content-security-policy']).toBe(csp);
+        expect(await unavailable.text()).not.toContain('<html');
+      }
       const favicon = await page.request.get(
         'http://127.0.0.1:8080/favicon.svg',
       );

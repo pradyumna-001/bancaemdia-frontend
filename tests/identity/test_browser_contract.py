@@ -18,6 +18,7 @@ from uuid import uuid4
 
 import httpx
 import pytest
+from playwright.async_api import Error as BrowserError
 from playwright.async_api import async_playwright, expect
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
@@ -116,6 +117,25 @@ async def browser_request(page, path, *, method="GET", csrf=None, body=None):
         }""",
         {"path": path, "method": method, "csrf": csrf, "body": body},
     )
+
+
+async def complete_hosted_entry(page, email, password, destination):
+    # Keycloak can remember a different SSO account and show password-only. The
+    # hosted "reset-login" action selects another account without altering cookies.
+    # Source: keycloak/keycloak 26.7.4, base/login/template.ftl.
+    try:
+        await page.locator("#kc-form-login").wait_for()
+        if not await page.locator("#username").is_visible():
+            await page.locator("#reset-login").click()
+        await page.locator("#username").fill(email)
+        if not await page.locator("#password").count():
+            await page.locator("#kc-login").click()
+        await page.locator("#password").fill(password)
+        await page.locator("#kc-login").click()
+        await page.wait_for_url(destination, timeout=30000)
+    except BrowserError:
+        # Playwright diagnostics can contain protocol URLs or filled credentials.
+        pytest.fail("Hosted account entry did not complete", pytrace=False)
 
 
 @pytest.fixture
@@ -317,7 +337,11 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         ]
         assert refresh_required is False
         # Log in as B in one tab; the other mounted SPA must discard A's private cache.
-        await backend.login(second, email_b, password_b)
+        await second.goto(backend.FRONT + "/login?destino=%2Fpainel")
+        await second.get_by_role("button", name="Entrar com minha conta").click()
+        await complete_hosted_entry(
+            second, email_b, password_b, backend.FRONT + "/painel"
+        )
         await expect(
             pa.get_by_role("link", name=re.compile(r"Revisão.*1 pendências"))
         ).to_have_count(0)
@@ -340,12 +364,9 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         # A fresh hosted entry initiated by the real SPA preserves filters and hash.
         await pa.goto(backend.FRONT + "/login?destino=%2Fpainel%3Fapagadas%3D1%23serie")
         await pa.get_by_role("button", name="Entrar com minha conta").click()
-        await pa.locator("#username").fill(email_a)
-        if not await pa.locator("#password").count():
-            await pa.locator("#kc-login").click()
-        await pa.locator("#password").fill(password_a)
-        await pa.locator("#kc-login").click()
-        await pa.wait_for_url(backend.FRONT + "/painel?apagadas=1#serie", timeout=30000)
+        await complete_hosted_entry(
+            pa, email_a, password_a, backend.FRONT + "/painel?apagadas=1#serie"
+        )
         await expect(
             pa.get_by_role("heading", name="Painel", exact=True)
         ).to_be_visible()
