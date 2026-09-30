@@ -231,12 +231,10 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
         assert (await browser_request(pages[0], "/auth/session"))["status"] == 401
         assert (await browser_request(pages[0], "/api/v1/apostas"))["status"] == 401
         assert (await browser_request(pages[1], "/auth/session"))["status"] == 200
-        assert (
-            "no-store"
-            in (await browser_request(pages[1], "/auth/session"))["headers"][
-                "cache-control"
-            ]
-        )
+        cache_control = (await browser_request(pages[1], "/auth/session"))["headers"][
+            "cache-control"
+        ]
+        assert "no-store" in cache_control
         for context, page in zip(contexts, pages):
             assert not await page.evaluate("window.__identityCspFailure === true")
             assert all(c["httpOnly"] for c in await context.cookies(backend.FRONT))
@@ -314,9 +312,10 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
                 page.get_by_role("heading", name="Painel", exact=True)
             ).to_be_visible()
         assert harness.network.token_requests == grants + 1
-        assert (await browser_request(pa, "/auth/session"))["data"][
+        refresh_required = (await browser_request(pa, "/auth/session"))["data"][
             "refresh_required"
-        ] is False
+        ]
+        assert refresh_required is False
         # Log in as B in one tab; the other mounted SPA must discard A's private cache.
         await backend.login(second, email_b, password_b)
         await expect(
@@ -325,9 +324,10 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         await expect(
             pa.get_by_role("heading", name="Painel", exact=True)
         ).to_be_visible()
-        assert (await browser_request(pa, "/auth/session"))["data"]["usuario_id"] == sb[
+        current_person = (await browser_request(pa, "/auth/session"))["data"][
             "usuario_id"
         ]
+        assert current_person == sb["usuario_id"]
         assert (await browser_request(pa, "/api/v1/apostas"))["data"]["pagination"][
             "total"
         ] == 0
