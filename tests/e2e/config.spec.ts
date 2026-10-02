@@ -1,7 +1,14 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+const cors = {
+  'Access-Control-Allow-Origin': 'http://127.0.0.1:4173',
+  'Access-Control-Allow-Credentials': 'true',
+};
 
 test('runtime válido permite iniciar a aplicação', async ({ page }) => {
+  await page.route('https://api.example.com/auth/session', (route) =>
+    route.fulfill({ status: 401, json: {}, headers: cors }),
+  );
   await page.route('**/config.json', (route) =>
     route.fulfill({
       json: {
@@ -47,6 +54,9 @@ for (const [label, config, message] of [
 test('erro de leitura é acessível e permite recuperar o mesmo build por teclado', async ({
   page,
 }, testInfo) => {
+  await page.route('https://production.example.com/auth/session', (route) =>
+    route.fulfill({ status: 401, json: {}, headers: cors }),
+  );
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   let fixed = false;

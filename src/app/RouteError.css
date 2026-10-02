@@ -1,0 +1,38 @@
+.pagina-erro {
+  max-width: 40rem;
+}
+.shell-conteudo .pagina.pagina-erro {
+  max-width: 40rem;
+}
+.erro-ilustracao {
+  display: block;
+  color: var(--tinta-secundaria);
+  margin-block-end: var(--espaco-24);
+}
+.pagina-erro h1:focus:not(:focus-visible) {
+  outline: none;
+}
+.pagina-erro .acoes {
+  align-items: stretch;
+}
+.pagina-erro .acoes .erro-principal {
+  background: var(--acao);
+  border: 1px solid var(--acao);
+  color: var(--sobre-acao);
+  text-decoration: none;
+}
+.pagina-erro .acoes .erro-principal:hover:not(:disabled) {
+  background: var(--acao-hover);
+  border-color: var(--acao-hover);
+}
+.pagina-erro .acoes button:disabled {
+  opacity: 0.65;
+}
+.erro-espera {
+  font-size: var(--fonte-pequena);
+}
+@media (max-width: 35rem) {
+  .pagina-erro .acoes {
+    flex-direction: column;
+  }
+}

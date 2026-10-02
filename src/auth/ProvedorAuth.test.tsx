@@ -5,7 +5,6 @@ import { createMemoryRouter } from 'react-router-dom';
 import { QueryClient } from '@tanstack/react-query';
 import { createSession } from './session';
 import { ProvedorAuth } from './ProvedorAuth';
-import { RequireSession } from './RequireSession';
 import { App } from '../app/App';
 import { createAppRoutes } from '../app/routes';
 import { sessionContext } from './protocol';
@@ -28,7 +27,12 @@ function context(id: number) {
     session_expires_at: '2030-01-02T00:00:00Z',
   });
 }
-function open(path = '/painel', denied = false, withoutLock = false) {
+function open(
+  path = '/painel',
+  denied = false,
+  withoutLock = false,
+  routeFailure = false,
+) {
   const queryClient = new QueryClient();
   const current = context(1);
   const transport = {
@@ -57,19 +61,17 @@ function open(path = '/painel', denied = false, withoutLock = false) {
     },
   });
   const routes = createAppRoutes(service.resume);
-  routes.unshift({
-    path: '/painel',
-    hydrateFallbackElement: <p role="status">Conferindo sessão…</p>,
-    loader: service.resume,
-    element: (
-      <RequireSession>
-        <label>
-          Entrada privada
-          <input />
-        </label>
-      </RequireSession>
-    ),
-  });
+  const probe = routes.find((route) => route.path === '/painel')!.children![0]!;
+  probe.element = (
+    <label>
+      Entrada privada
+      <input />
+    </label>
+  );
+  if (routeFailure)
+    probe.loader = () => {
+      throw new Response('PRIVATE', { status: 404 });
+    };
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   render(
     <ProvedorAuth service={service}>
@@ -99,6 +101,28 @@ it('saída iniciada em outra aba pode ser conferida se a aba fechar sem resposta
   await userEvent.click(screen.getByRole('button', { name: 'Conferir saída' }));
   expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeVisible();
   expect(transport.logout).not.toHaveBeenCalled();
+});
+
+it('boundary interno continua abaixo do guard: revogar sessão remove erro e shell privados', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  const { service, transport } = open('/painel', false, false, true);
+  await screen.findByRole('heading', {
+    name: 'Este recurso não está disponível',
+  });
+  expect(
+    screen.getByRole('navigation', { name: 'Navegação principal' }),
+  ).toBeVisible();
+  transport.read.mockRejectedValue(new ApiError('http', { status: 401 }));
+  await act(async () => {
+    await service.resume();
+  });
+  expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeVisible();
+  expect(
+    screen.queryByRole('heading', { name: 'Este recurso não está disponível' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('navigation', { name: 'Navegação principal' }),
+  ).not.toBeInTheDocument();
 });
 it('boot real não libera sessão por URL/storage; entrada inicia fluxo hospedado com destino seguro', async () => {
   const { navigate, router } = open(

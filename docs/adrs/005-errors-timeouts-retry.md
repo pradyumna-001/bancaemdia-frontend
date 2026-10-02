@@ -23,6 +23,10 @@ GET10s, POST15s, upload60s. Abort de observação não cancela job remoto. Reten
 
 Error Boundaries e 404/405/500 têm ações acessíveis. Carregamento reserva espaço quando pertinente; formulário estático não ganha skeleton obrigatório. Foco/anúncio acompanham erro, sem spinner infinito e sem repetir anúncios a cada polling. A matriz de acesso por operação é #52; calculadoras POST não implicam mutação financeira.
 
+## Implementação #13 — 02/10/2026
+
+A #13 (02/10/2026) complementa a recuperação com [páginas de erro e limites do boundary](../contracts/erros-de-rota.md). Layout protegido pai guarda Shell/RequireSession e boundary no filho preserva navegação sem contornar identidade. Falha no guard/layout sobe à recuperação externa. Endereço desconhecido, recurso indisponível e falha temporária têm mensagens distintas. Retorno usa ABAS/destino validado, conserva filtros/seção não secretos. Abrir novamente é GET explícito, nunca ressubmissão de action; Retry-After/navegação bloqueiam o botão. Resultado incerto não oferece reenvio. Foco não é retomado por polling/tema/expiração de prazo; falhas são injetadas somente na fixture isolada, com verificação do build público.
+
 ## Implementação #10 — 30/09/2026
 
 [Contrato de recuperação](../contracts/recuperacao.md): `recuperacaoErro`/`ErroApi`, projeção segura de campos 422, paginação gerada do snapshot, QueryClient e `useRetryAfter`. HTTP429 tem até duas tentativas extras; rede/timeout de leitura até uma. Prazo automático acima de 60s termina em recuperação explícita, sem antecipar Retry-After. Mutations e resultados desconhecidos nunca entram em retry. Conflito sem motivo publicado mantém orientação conservadora; contexto de estado/prévia/idempotência exige prova na consumidora. Sessão/billing/telas continuam com as respectivas issues; demonstração visual somente no build de testes.

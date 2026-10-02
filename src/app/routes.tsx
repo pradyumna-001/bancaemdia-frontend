@@ -1,4 +1,9 @@
-import { type LoaderFunctionArgs, type RouteObject } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import {
+  Outlet,
+  type LoaderFunctionArgs,
+  type RouteObject,
+} from 'react-router-dom';
 import { destinoInterno } from '../auth/destinoInterno';
 import { exigirSessao, semSessao, type ConsultarSessao } from '../auth/guard';
 import { RequireSession } from '../auth/RequireSession';
@@ -20,59 +25,59 @@ export function createAppRoutes(
   consultarRevisao?: ConsultarRevisao,
 ): RouteObject[] {
   const guard = exigirSessao(consultarSessao);
+  const protectedRoute = (path: string, element: ReactNode): RouteObject => ({
+    path,
+    caseSensitive: true,
+    loader: guard,
+    hydrateFallbackElement: (
+      <main className="pagina">
+        <p role="status">Abrindo página…</p>
+      </main>
+    ),
+    element: (
+      <RequireSession>
+        <Shell consultarRevisao={consultarRevisao}>
+          <Outlet />
+        </Shell>
+      </RequireSession>
+    ),
+    // A failed guard has no proven private context. Child failures keep the guarded shell.
+    errorElement: <RouteError />,
+    children: [{ index: true, element, errorElement: <RouteError internal /> }],
+  });
   return [
-    ...ROTAS_PROTEGIDAS.map(({ path, title }) => ({
-      path,
-      caseSensitive: true,
-      loader: guard,
-      hydrateFallbackElement: (
-        <main className="pagina">
-          <p role="status">Abrindo página…</p>
-        </main>
+    ...ROTAS_PROTEGIDAS.map(({ path, title }) =>
+      protectedRoute(
+        path,
+        path === '/sistema' ? (
+          <SistemaPage />
+        ) : (
+          <Placeholder title={title} interna />
+        ),
       ),
-      element: (
-        <RequireSession>
-          <Shell consultarRevisao={consultarRevisao}>
-            {path === '/sistema' ? (
-              <SistemaPage />
-            ) : (
-              <Placeholder title={title} interna />
-            )}
-          </Shell>
-        </RequireSession>
-      ),
-      errorElement: <RouteError />,
-    })),
+    ),
     ...ROTAS_PUBLICAS.map(({ path, title }) => ({
       path,
       caseSensitive: true,
       element: <Placeholder title={title} />,
       errorElement: <RouteError />,
     })),
-    ...ROTAS_AUTH.map(({ path, protected: protectedRoute }) => ({
-      hydrateFallbackElement: (
-        <main className="pagina">
-          <p role="status">Abrindo página…</p>
-        </main>
-      ),
-      path,
-      caseSensitive: true,
-      loader: protectedRoute
-        ? guard
-        : path === '/login'
-          ? loginLoader
-          : undefined,
-      element: protectedRoute ? (
-        <RequireSession>
-          <Shell consultarRevisao={consultarRevisao}>
-            <AccountPage path={path} />
-          </Shell>
-        </RequireSession>
-      ) : (
-        <AccountPage path={path} />
-      ),
-      errorElement: <RouteError />,
-    })),
+    ...ROTAS_AUTH.map(({ path, protected: isProtected }) =>
+      isProtected
+        ? protectedRoute(path, <AccountPage path={path} />)
+        : {
+            hydrateFallbackElement: (
+              <main className="pagina">
+                <p role="status">Abrindo página…</p>
+              </main>
+            ),
+            path,
+            caseSensitive: true,
+            loader: path === '/login' ? loginLoader : undefined,
+            element: <AccountPage path={path} />,
+            errorElement: <RouteError />,
+          },
+    ),
     { path: '*', element: <ErrorPage />, errorElement: <RouteError /> },
   ];
 }

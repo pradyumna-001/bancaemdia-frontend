@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useRevalidator } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Logo } from '../components/Logo';
 import { Icone } from '../components/Icone';
@@ -22,6 +22,8 @@ export function Shell({
   consultarRevisao?: ConsultarRevisao;
 }) {
   const location = useLocation();
+  const revalidation = useRevalidator();
+  const recoveringError = useRef(false);
   const [menuEm, setMenuEm] = useState<string | null>(null);
   const menu = menuEm === location.key;
   const setMenu = (abrir: boolean) => setMenuEm(abrir ? location.key : null);
@@ -49,6 +51,22 @@ export function Shell({
       conteudo.current?.focus();
     }
   }, [location.pathname]);
+  useEffect(() => {
+    if (revalidation.state === 'loading') {
+      recoveringError.current =
+        !!conteudo.current?.querySelector('.pagina-erro');
+    } else if (recoveringError.current) {
+      recoveringError.current = false;
+      const active = document.activeElement;
+      if (
+        !conteudo.current?.querySelector('.pagina-erro') &&
+        !dialog.current?.open &&
+        (active === document.body ||
+          (active && conteudo.current?.contains(active)))
+      )
+        conteudo.current?.focus({ preventScroll: true });
+    }
+  }, [revalidation.state]);
   function link(aba: (typeof ABAS)[number]) {
     const atual = abaAtual(aba.path, location.pathname);
     return (
