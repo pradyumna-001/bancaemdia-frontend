@@ -8,6 +8,7 @@ import { ROTAS_AUTH, ROTAS_PROTEGIDAS, ROTAS_PUBLICAS } from './paths';
 import { Shell } from './Shell';
 import { SistemaPage } from '../features/sistema/SistemaPage';
 import type { ConsultarRevisao } from '../features/revisao/estatisticas';
+import { AccountPage } from '../features/conta/AccountPage';
 
 export function loginLoader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -48,7 +49,7 @@ export function createAppRoutes(
       element: <Placeholder title={title} />,
       errorElement: <RouteError />,
     })),
-    ...ROTAS_AUTH.map(({ path, title, protected: protectedRoute }) => ({
+    ...ROTAS_AUTH.map(({ path, protected: protectedRoute }) => ({
       hydrateFallbackElement: (
         <main className="pagina">
           <p role="status">Abrindo página…</p>
@@ -64,11 +65,11 @@ export function createAppRoutes(
       element: protectedRoute ? (
         <RequireSession>
           <Shell consultarRevisao={consultarRevisao}>
-            <Placeholder title={title} interna />
+            <AccountPage path={path} />
           </Shell>
         </RequireSession>
       ) : (
-        <Placeholder title={title} />
+        <AccountPage path={path} />
       ),
       errorElement: <RouteError />,
     })),

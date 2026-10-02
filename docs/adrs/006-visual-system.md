@@ -24,6 +24,8 @@ Preservamos a disciplina de tokens, acessibilidade e consistência, substituindo
 
 ## Consequências e limites
 
+A #12 aplica esta fundação às telas de conta: painel único de leitura, título por tarefa, próximo passo hospedado explícito, ação principal única, links secundários e ajuda expansível. Aparência permanece Sistema/Claro/Escuro, sem nova paleta/fontes. E-mail e senha são preenchidos no emissor; não desenhar formulários locais que prometam operações inexistentes. Ver `docs/contracts/conta.md` para rotas, limites e evidências mobile/desktop.
+
 - A #4 aplica a fundação às páginas provisórias e erros existentes. Não inventa telas financeiras nem libera acesso às rotas protegidas.
 - Marca/wordmark/favicon são definidos na #5, conforme decisão abaixo; shell e navegação ficam na #6; gráficos na #7. O seletor será acomodado pelo shell quando ele existir.
 - Fontes locais dispensam CDN e mantêm CSP restrita, mas os três arquivos somam aproximadamente 456 KiB; o navegador busca os pesos usados e o texto pode aparecer com fallback enquanto carregam. O orçamento completo de desempenho permanece na #8.

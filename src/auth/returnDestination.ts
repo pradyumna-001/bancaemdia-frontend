@@ -1,4 +1,18 @@
 import { destinoInterno } from './destinoInterno';
+import { clearProtocolParameters } from './protocolParameters';
+
+export function sanitizeProtocolLocation(location: Location, history: History) {
+  const current = location.pathname + location.search + location.hash;
+  const url = new URL(current, 'https://destino.invalid');
+  clearProtocolParameters(url);
+  if (url.searchParams.has('destino'))
+    url.searchParams.set(
+      'destino',
+      destinoInterno(url.searchParams.get('destino')),
+    );
+  const safe = url.pathname + url.search + url.hash;
+  if (safe !== current) history.replaceState(history.state, '', safe);
+}
 
 const key = 'bancaemdia:retorno-fragmento';
 export function loginDestination(value: string, storage?: Storage) {

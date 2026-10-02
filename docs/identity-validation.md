@@ -1,6 +1,10 @@
-# Validação de identidade — #49 e #11
+# Validação de identidade — #49, #11 e #12
 
-Esta revisão verifica o contrato do backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, e sua compatibilidade com o build público do frontend. [Contrato e gates restantes](contracts/identidade.md), [ADR003](adrs/003-api-client-typing-session.md). A #49 verificou transporte sem ProvedorAuth; a #11 acrescenta o provedor real e as ações mínimas nas rotas existentes. Telas completas permanecem na #12.
+Esta revisão verifica o contrato do backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, e sua compatibilidade com o build público do frontend. [Contrato e gates restantes](contracts/identidade.md), [ADR003](adrs/003-api-client-typing-session.md). A #49 verificou transporte sem ProvedorAuth; a #11 acrescenta o provedor real e as ações mínimas nas rotas existentes; a #12 implementa as [telas de conta](contracts/conta.md).
+
+## Extensão pela #12
+
+O gate exige agora **oito cenários SPA** mais nove backend, zero failures/errors/skips. Mantém os quatro da #11 e acrescenta cadastro/recuperação iniciados pelo aplicativo e confirmação expirada, em mobile/desktop. Confirmação usa SMTP real e provisionamento único; repetir o link não cria nova sessão. Interromper a recuperação preserva o acesso anterior; concluir intent=recover revoga as sessões anteriores sem mudar o usuário interno. Expiração usa lifetime temporário somente no realm descartável, restaurado em finally, sem token adulterado nem relógio congelado. Nenhuma evidência do emissor com credenciais é capturada/publicada. Os números das seções históricas abaixo não substituem o gate atual.
 
 ## Extensão da prova pela #11
 
@@ -22,7 +26,7 @@ Depois, `tests/identity/test_browser_contract.py` reutiliza os fixtures de proce
 
 Na revisão original da #49, dois cenários obrigatórios, 390×844 e 1440×900, criaram duas identidades pelo cadastro/confirmação do emissor real; verificaram usuário interno distinto, API autorizada por cookie, isolamento RLS, 403 sem CSRF, refresh real/versionamento, logout e recusa posterior, preservação da outra sessão, armazenamento vazio/HttpOnly/no-store e ausência de violação CSP/erro de página. Naquele momento o guard ainda era provisório: Painel voltava a Entrar mesmo com cookie. A extensão #11 acima substitui essa expectativa pela sessão real.
 
-O gate `tests/identity/check_results.py` exige atualmente exatamente os quatro cenários, zero failures/errors/skips. Relatórios JUnit são artifacts separados do artifact público da CI existente. `dist-shell-fixture` e ferramentas Python nunca são publicados.
+O gate `tests/identity/check_results.py` exige atualmente exatamente os oito cenários, zero failures/errors/skips. Relatórios JUnit são artifacts separados do artifact público da CI existente. `dist-shell-fixture` e ferramentas Python nunca são publicados.
 
 ### Reprodução local em Linux com Docker
 

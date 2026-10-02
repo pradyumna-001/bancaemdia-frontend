@@ -5,14 +5,16 @@ import xml.etree.ElementTree as ET
 
 root = ET.parse(sys.argv[1]).getroot()
 cases = root.findall(".//testcase")
-assert len(cases) == 4, (
-    "Cookie and provider lifecycle proofs are required on mobile and desktop"
+assert len(cases) == 8, (
+    "Cookie, lifecycle, account and expired-mail proofs are required on mobile and desktop"
 )
 expected = {
     f"{name}[viewport{index}]"
     for name in (
         "test_public_spa_real_identity_cookie_contract",
         "test_public_spa_session_lifecycle",
+        "test_public_spa_account_registration_and_recovery",
+        "test_public_spa_expired_confirmation",
     )
     for index in range(2)
 }

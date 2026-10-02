@@ -11,13 +11,17 @@ import { Logo } from './components/Logo';
 import { ProvedorAuth } from './auth/ProvedorAuth';
 import { browserExclusive, createSession } from './auth/session';
 import { initializeApiClient } from './api/client';
-import { restoreLoginFragment } from './auth/returnDestination';
+import {
+  restoreLoginFragment,
+  sanitizeProtocolLocation,
+} from './auth/returnDestination';
 import { ApiError } from './api/error';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Não foi possível iniciar a aplicação.');
 
 const application = createRoot(root);
+sanitizeProtocolLocation(location, history);
 application.render(
   <main className="pagina">
     <header className="cabecalho-marca">

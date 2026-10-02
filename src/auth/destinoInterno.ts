@@ -1,5 +1,6 @@
 import { matchPath } from 'react-router-dom';
 import { ROTAS_PROTEGIDAS, ROTAS_PUBLICAS } from '../app/paths';
+import { clearProtocolParameters } from './protocolParameters';
 
 const allowedPaths = [...ROTAS_PROTEGIDAS, ...ROTAS_PUBLICAS];
 const internalOrigin = 'https://destino.invalid';
@@ -41,5 +42,6 @@ export function destinoInterno(value: string | null | undefined): string {
     )
   )
     return '/';
+  clearProtocolParameters(url);
   return `${url.pathname}${url.search}${url.hash}`;
 }
