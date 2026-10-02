@@ -1,25 +1,20 @@
-# Runbook — Deploy (bancaemdia-frontend)
+# Runbook — Deploy
 
-Deploy de SPA estático (artefato `dist/`) na plataforma definida em ADR 008.
+Plataforma Fase 1: nginx estático em Compose atrás de Caddy/TLS, na arquitetura Lightsail do backend. Decisão: [ADR008](../adrs/008-ci-cd-deploy.md). Infraestrutura, DNS e deploy ainda não foram executados; não há CD automático por merge/tag nesta etapa.
 
-## Pré-requisitos
-- CI verde na tag/commit (lint, typecheck, test, build, lighthouse, e2e)
-- Artefato imutável do workflow (nome contém o SHA do commit)
-- Config do ambiente revisada (`VITE_API_URL` apontando para o ambiente certo)
+## Antes de implantar (#14 / #38)
 
-## Staging
-1. Merge em `main` dispara CD automaticamente.
-2. Verificar: banner de ambiente visível, `GET /health` da API alvo 200, console sem violação de CSP.
+1. Confirmar ambiente autorizado e capacidade, domínio/TLS, rede e API/emissor compatíveis; registrar versão do contrato por ambiente.
+2. Exigir todos os checks verdes no SHA, incluindo budget, cobertura e segurança. Baixar o artifact `frontend-<SHA>-<evento>` do run correspondente; ele contém `dist/` e `dist-security/` da mesma compilação. Não usar artifact de fixture/relatórios como site.
+3. Preparar release imutável (imagem por digest no fluxo #38), preservar HTML/assets/nginx juntos e registrar o digest anterior para rollback. Não editar/minificar HTML após build: isso invalidaria o hash CSP do tema.
+4. Fornecer `config.json` público validado, montado somente para leitura; segredos nunca entram nele. Usar mesma origem HTTPS: proxy encaminha `/api/*` **e `/auth/*`** ao backend. Callback `/auth/callback` não pode receber HTML da SPA. CSP `connect-src 'self'` cobre o transporte por cookie; emissor é navegação hospedada. Origens/callback/emissor e versão integrada precisam dos gates de [identidade](../contracts/identidade.md) e #14. Não copiar cookie inseguro do sandbox para produção.
+5. Implantar conforme o procedimento operacional do ambiente; esta issue não fornece nem executa provisionamento.
 
-## Produção
-1. Criar tag `v0.x.y` a partir de `main` → workflow de release.
-2. Conferir headers de segurança no domínio:
-   - `Content-Security-Policy` sem `unsafe-inline` de script externo / sem CDN
-   - `Cache-Control: immutable` em assets hasheados; `index.html` com `no-cache`
-   - `X-Content-Type-Options: nosniff`, `Referrer-Options: same-origin`
-3. Smoke pós-deploy: login → início carrega números → painel renderiza → export baixa.
-4. Anunciar no canal do projeto com tag + changelog.
+## Smoke no ambiente real
 
-## Falha no deploy
-- Se o smoke falhar: executar `rollback.md` imediatamente (alvo < 7 min).
-- Abrir issue `incident` com timestamp, tag e sintoma.
+- SPA deep link abre; asset/fonte inexistente retorna 404; configuração recebe JSON/no-store e nunca fallback HTML.
+- TLS/headers/CSP sem violações, hash de tema correto, fonte local e ausência de flash; index revalidável e assets com hash imutáveis.
+- Runtime aponta ao ambiente correto; health da API conforme contrato, sessão real, consulta e exportação reconciliadas. Um placeholder ou sessão injetada não aprova esse smoke.
+- Publicar produção somente após #39; falha exige restaurar release anterior com [rollback](rollback.md).
+
+A CI testa o nginx real em Docker; isso não comprova Caddy/TLS, DNS, emissor nem ambiente público.

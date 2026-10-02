@@ -11,14 +11,14 @@ repos:
   - repo: local
     hooks:
       - id: lint
-        name: eslint --fix
-        entry: pnpm exec eslint . --fix
+        name: eslint
+        entry: pnpm exec eslint --max-warnings 0
         language: system
         types: [file]
-        files: \.(ts|tsx|css)$
+        files: \.(js|mjs|ts|tsx)$
       - id: format
-        name: prettier --write
-        entry: pnpm exec prettier --write
+        name: prettier --check
+        entry: pnpm exec prettier --check --ignore-unknown
         language: system
         types: [file]
       - id: typecheck

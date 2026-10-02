@@ -1,0 +1,66 @@
+/* ADR 006: cores semânticas, com o mesmo papel nos dois temas. */
+:root {
+  color-scheme: light;
+  --fundo: #f5f5f2;
+  --superficie: #ffffff;
+  --superficie-secundaria: #ebeeeb;
+  --tinta: #202925;
+  --tinta-secundaria: #536059;
+  --borda: #d1d8d2;
+  --borda-controle: #78877d;
+  --acao: #244f68;
+  --acao-hover: #183b50;
+  --sobre-acao: #ffffff;
+  --foco: #8c420c;
+  --lucro: #146c43;
+  --lucro-fundo: #e7f3eb;
+  --perda: #ac302b;
+  --perda-fundo: #fbece9;
+  --atencao: #785006;
+  --atencao-fundo: #faf0d7;
+  --transparente: transparent;
+  --sombra-modal: #101a1466;
+  --fonte-interface: 'Source Sans 3', 'Segoe UI', sans-serif;
+  --fonte-pequena: 0.875rem;
+  --fonte-corpo: 1rem;
+  --fonte-secao: 1.375rem;
+  --fonte-marca: 1.625rem;
+  --fonte-titulo: clamp(1.75rem, 4vw, 2.25rem);
+  --peso-normal: 400;
+  --peso-destaque: 600;
+  --peso-forte: 700;
+  --linha-corpo: 1.5;
+  --linha-titulo: 1.15;
+  --espaco-4: 0.25rem;
+  --espaco-8: 0.5rem;
+  --espaco-12: 0.75rem;
+  --espaco-16: 1rem;
+  --espaco-24: 1.5rem;
+  --espaco-32: 2rem;
+  --espaco-48: 3rem;
+  --raio-controle: 0.375rem;
+  --raio-painel: 0.75rem;
+  --raio-pilula: 100vmax;
+  --alvo-toque: 2.75rem;
+  --largura-leitura: 48rem;
+}
+:root[data-tema='escuro'] {
+  color-scheme: dark;
+  --fundo: #171d1a;
+  --superficie: #202823;
+  --superficie-secundaria: #2b3530;
+  --tinta: #f0f3ee;
+  --tinta-secundaria: #bbc7be;
+  --borda: #425148;
+  --borda-controle: #899e90;
+  --acao: #a5cfe7;
+  --acao-hover: #c5e4f4;
+  --sobre-acao: #172630;
+  --foco: #edb777;
+  --lucro: #7dd9a4;
+  --lucro-fundo: #20382b;
+  --perda: #ffaaa0;
+  --perda-fundo: #402b29;
+  --atencao: #edc572;
+  --atencao-fundo: #393221;
+}
