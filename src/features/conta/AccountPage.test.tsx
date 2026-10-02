@@ -101,8 +101,9 @@ it('trocar entre jornadas preserva filtros/fragmento e não expõe destino exter
     screen.getByRole('link', { name: 'Voltar para entrar' }),
   );
   await userEvent.click(
-    screen.getByRole('link', { name: 'Esqueci minha senha' }),
+    await screen.findByRole('link', { name: 'Esqueci minha senha' }),
   );
+  await screen.findByRole('heading', { name: 'Esqueci minha senha' });
   expect(router.state.location.pathname).toBe('/esqueci-senha');
   await act(() => router.navigate('/login?destino=https://foreign.example'));
   expect(screen.getByRole('link', { name: 'Criar conta' })).toHaveAttribute(
