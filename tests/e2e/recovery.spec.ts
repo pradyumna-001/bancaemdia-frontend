@@ -184,48 +184,45 @@ test('429 respeita prazo e 503 termina sem loop de leitura', async ({
   await page.clock.runFor(30000);
   expect(reads).toBe(4);
 });
-test('rede e timeout após commit preservam entrada e exigem conferência sem reenviar', async ({
-  page,
-}) => {
-  await page.clock.install();
-  let committed = 0;
-  let timeout = false;
-  await page.route('**/api/v1/apostas*', async (route) => {
-    if (route.request().method() === 'POST') {
-      committed++;
-      if (!timeout) await route.abort('failed');
-    } else await route.fulfill({ json: betsWithUnknownValues });
+for (const outcome of ['rede', 'timeout'] as const) {
+  test(`${outcome} após commit preserva entrada e exige conferência sem reenviar`, async ({
+    page,
+  }) => {
+    await page.clock.install();
+    let committed = 0;
+    let reads = 0;
+    await page.route('**/api/v1/apostas*', async (route) => {
+      if (route.request().method() === 'POST') {
+        committed++;
+        if (outcome === 'rede') await route.abort('failed');
+      } else {
+        reads++;
+        await route.fulfill({ json: betsWithUnknownValues });
+      }
+    });
+    await page.goto(fixture);
+    await page.getByLabel('Odd', { exact: true }).fill('4.50');
+    await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+    await expect.poll(() => committed).toBe(1);
+    if (outcome === 'timeout') await page.clock.runFor(15000);
+    await expect(
+      page.getByRole('heading', { name: 'Confira se o pedido foi concluído' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Odd', { exact: true })).toHaveValue('4.50');
+    await expect(
+      page.getByRole('button', { name: 'Enviar', exact: true }),
+    ).toBeDisabled();
+    expect(reads).toBe(0);
+    await page.getByRole('button', { name: 'Conferir resultado' }).click();
+    await expect(page.getByRole('status')).toContainText(
+      'não prova que a gravação falhou',
+    );
+    expect(reads).toBe(1);
+    await page.clock.runFor(60000);
+    expect(committed).toBe(1);
+    expect(reads).toBe(1);
   });
-  await page.goto(fixture);
-  await page.getByLabel('Odd', { exact: true }).fill('4.50');
-  await page.getByRole('button', { name: 'Enviar', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Confira se o pedido foi concluído' }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Enviar', exact: true }),
-  ).toBeDisabled();
-  await page.getByRole('button', { name: 'Conferir resultado' }).click();
-  await expect(page.getByRole('status')).toContainText(
-    'não prova que a gravação falhou',
-  );
-  expect(committed).toBe(1);
-  timeout = true;
-  await page.reload();
-  await page.getByLabel('Odd', { exact: true }).fill('4.50');
-  await page.getByRole('button', { name: 'Enviar', exact: true }).click();
-  await expect.poll(() => committed).toBe(2);
-  await page.clock.runFor(15000);
-  await expect(
-    page.getByRole('heading', { name: 'Confira se o pedido foi concluído' }),
-  ).toBeVisible();
-  await expect(page.getByLabel('Odd', { exact: true })).toHaveValue('4.50');
-  await expect(
-    page.getByRole('button', { name: 'Enviar', exact: true }),
-  ).toBeDisabled();
-  await page.clock.runFor(60000);
-  expect(committed).toBe(2);
-});
+}
 test('build público não expõe a demonstração de recuperação', async ({
   page,
 }) => {

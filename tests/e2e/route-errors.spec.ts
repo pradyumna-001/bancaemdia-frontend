@@ -90,8 +90,8 @@ test('404/405/500 nas áreas antigas e novas mantêm navegação sem revelar cor
   ]) {
     for (const value of [404, 405, 500] as const) {
       status = value;
+      await page.goto('about:blank');
       await page.goto(`${fixture}${path}${suffix}`);
-      await page.reload();
       await expect(
         page.getByRole('heading', { name: titles[value] }),
       ).toBeFocused();
@@ -125,8 +125,8 @@ test('erros no shell têm foco, temas, teclado e reflow; falha de render também
   );
   for (const value of [404, 405, 500] as const) {
     status = value;
+    await page.goto('about:blank');
     await page.goto(`${fixture}/painel/analises${suffix}`);
-    await page.reload();
     const title = page.getByRole('heading', { name: titles[value] });
     await expect(title).toBeFocused();
     for (const theme of ['Claro', 'Escuro']) {
@@ -158,7 +158,8 @@ test('erros no shell têm foco, temas, teclado e reflow; falha de render também
     });
   }
   renderFailure = true;
-  await page.reload();
+  await page.goto('about:blank');
+  await page.goto(`${fixture}/painel/analises${suffix}`);
   await expect(page.getByRole('heading', { name: titles[500] })).toBeFocused();
   await expect(page.locator('main')).not.toContainText(
     /DETALHE_INTERNO|DETALHE_PRIVADO/,
