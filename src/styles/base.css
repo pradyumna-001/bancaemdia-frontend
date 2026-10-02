@@ -1,0 +1,81 @@
+@import './tokens.css';
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url('/fontes/source-sans-3-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url('/fontes/source-sans-3-semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url('/fontes/source-sans-3-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  background: var(--fundo);
+  color: var(--tinta);
+  font-family: var(--fonte-interface);
+  line-height: var(--linha-corpo);
+}
+body {
+  margin: 0;
+  font-size: var(--fonte-corpo);
+}
+button,
+input,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+a {
+  color: var(--acao);
+  text-underline-offset: 0.2em;
+}
+a:hover {
+  color: var(--acao-hover);
+}
+:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 3px;
+}
+h1,
+h2,
+p {
+  margin-block: 0 var(--espaco-16);
+}
+h1,
+h2 {
+  font-weight: var(--peso-destaque);
+  line-height: var(--linha-titulo);
+}
+h1 {
+  font-size: var(--fonte-titulo);
+  letter-spacing: -0.025em;
+}
+h2 {
+  font-size: var(--fonte-secao);
+}
+.numero {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+::selection {
+  color: var(--sobre-acao);
+  background: var(--acao);
+}

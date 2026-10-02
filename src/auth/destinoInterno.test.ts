@@ -1,0 +1,56 @@
+import { expect, it } from 'vitest';
+import { destinoInterno } from './destinoInterno';
+
+it.each([
+  '/',
+  '/painel',
+  '/revisao?origem=telegram&apagadas=1',
+  '/aposta/abc-123?casa=Bet%20365#foto',
+  '/?grupo=A%26B&tipster=Jo%C3%A3o',
+  '/configuracoes',
+  '/configuracoes/conexoes',
+  '/configuracoes/privacidade',
+  '/contas/42?casa=1',
+  '/assinatura',
+  '/calculadoras',
+  '/painel/analises',
+  '/painel/metas',
+  '/tutorial',
+  '/extensao',
+  '/sistema',
+])('preserva destino interno permitido %s', (value) =>
+  expect(destinoInterno(value)).toBe(value),
+);
+
+it.each([
+  null,
+  undefined,
+  '',
+  'https://fora.example',
+  'http://fora.example',
+  '//fora.example',
+  'javascript:alert(1)',
+  '/\\fora.example',
+  '/%5cfora.example',
+  '/%2ffora.example',
+  '/%252ffora.example',
+  '/aposta/%252f%252ffora.example',
+  '/aposta/%2fsegundo',
+  '/painel\n',
+  '/painel%0d%0aLocation:evil',
+  '/painel%00',
+  ' /painel',
+  '/%ZZ',
+  '/aposta/../painel',
+  '/aposta/%2e%2e/painel',
+  '/login',
+  '/login?destino=/login',
+  '/sair',
+  '/senha',
+  '/criar-conta',
+  '/desconhecida',
+  '/painel/extra',
+  '/Painel',
+])('rejeita destino externo, ambíguo ou fora da allowlist: %s', (value) =>
+  expect(destinoInterno(value)).toBe('/'),
+);

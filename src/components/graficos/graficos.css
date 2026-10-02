@@ -1,0 +1,216 @@
+.grafico {
+  min-width: 0;
+  padding: var(--espaco-24);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+.grafico header p,
+.grafico-nota {
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-pequena);
+}
+.grafico h2 {
+  margin-bottom: var(--espaco-8);
+}
+.escala-valores,
+.escala-datas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--espaco-8);
+  font-size: var(--fonte-pequena);
+  color: var(--tinta-secundaria);
+}
+.evolucao-svg {
+  display: block;
+  width: 100%;
+  height: 258px;
+  overflow: visible;
+}
+.grafico-grade {
+  stroke: var(--borda);
+  stroke-width: 1;
+}
+.grafico-zero {
+  stroke: var(--borda-controle);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+.grafico-linha {
+  fill: none;
+  stroke: var(--acao);
+  stroke-width: 2;
+}
+.grafico-rotulo {
+  fill: var(--tinta-secundaria);
+  font-size: 14px;
+}
+.grafico-ponto {
+  fill: var(--acao);
+}
+.grafico-alvo {
+  fill: var(--transparente);
+  stroke: var(--transparente);
+  cursor: pointer;
+}
+.grafico-alvo:focus-visible {
+  outline: none;
+}
+.grafico-indicador {
+  fill: none;
+  stroke: var(--transparente);
+}
+.grafico-alvo:hover + .grafico-indicador,
+.grafico-alvo:focus-visible + .grafico-indicador,
+.ponto-selecionado .grafico-indicador {
+  fill: var(--superficie);
+  stroke: var(--acao);
+  stroke-width: 2;
+}
+.grafico-alvo:focus-visible + .grafico-indicador {
+  stroke-width: 3;
+}
+.grafico-resumo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  margin: var(--espaco-24) 0 var(--espaco-16);
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-pequena);
+}
+.grafico-total {
+  color: var(--tinta);
+  font-size: 1.875rem;
+  font-weight: var(--peso-destaque);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.grafico-colunas {
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-pequena);
+  border-bottom: 1px solid var(--borda);
+  padding-bottom: var(--espaco-8);
+}
+.grafico-leitura {
+  min-height: 4.5rem;
+  padding-block: var(--espaco-16);
+  overflow-wrap: anywhere;
+}
+.grafico-tabela {
+  margin-top: var(--espaco-16);
+}
+.grafico-tabela summary {
+  min-height: var(--alvo-toque);
+  padding-block: var(--espaco-12);
+  cursor: pointer;
+  color: var(--acao);
+  font-weight: var(--peso-destaque);
+}
+.grafico-tabela table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fonte-pequena);
+}
+.grafico-tabela caption {
+  text-align: left;
+  color: var(--tinta-secundaria);
+  padding-block: var(--espaco-8);
+}
+.grafico-tabela th,
+.grafico-tabela td {
+  padding: var(--espaco-8) var(--espaco-4);
+  border-bottom: 1px solid var(--borda);
+  text-align: left;
+  overflow-wrap: break-word;
+}
+.grafico-tabela td {
+  white-space: nowrap;
+  text-align: right;
+}
+.barras-lista {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.barra-item,
+.shell .barra-item {
+  background: var(--superficie);
+  color: var(--tinta);
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--borda);
+  border-radius: 0;
+  padding: var(--espaco-12) 0;
+}
+.barra-item:hover {
+  background: var(--superficie-secundaria);
+}
+.barra-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--espaco-4) var(--espaco-16);
+  overflow-wrap: anywhere;
+}
+.barra-svg {
+  display: block;
+  width: 100%;
+  height: 40px;
+}
+.barra-lucro {
+  fill: var(--lucro);
+}
+.barra-perda {
+  fill: var(--perda);
+}
+.sistema-graficos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-24);
+  margin-top: var(--espaco-24);
+}
+.sistema-cenarios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-8);
+  border: 0;
+  padding: 0;
+}
+.sistema-cenarios label {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-8);
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-12);
+}
+.sistema-cenarios legend {
+  font-weight: var(--peso-destaque);
+  margin-bottom: var(--espaco-8);
+}
+@media (max-width: 62rem) {
+  .sistema-graficos {
+    grid-template-columns: 1fr;
+  }
+  .grafico {
+    padding: var(--espaco-16);
+  }
+}
+
+.grafico-rolagem {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.grafico-tabela th[scope='row'] {
+  min-width: 6rem;
+}
+.sistema-cenarios input {
+  accent-color: var(--acao);
+}
+
+.barras-lista + .grafico-nota {
+  margin-top: var(--espaco-16);
+}
