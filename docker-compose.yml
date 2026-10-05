@@ -1,0 +1,14 @@
+# Compose opcional (Issue 1): SPA estático + API local (bancaemdia-api).
+# A imagem da API deve vir do repositório backend; ajuste `image:` conforme necessário.
+services:
+  frontend:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+
+  api:
+    image: bancaemdia-api:latest
+    ports:
+      - "8000:8000"
