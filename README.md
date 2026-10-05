@@ -16,30 +16,35 @@ make typecheck      # tsc --noEmit
 make test           # vitest
 make test:e2e       # playwright
 make build          # produção (dist/)
+make gen-types      # openapi-typescript → src/api/schema.d.ts
+make up             # docker compose (SPA + API)
 ```
+
+Além do ESLint, `lint` roda o lint de paleta (`scripts/lint-palette.mjs`): literal
+de cor (`#hex`, `rgb(`, `hsl(`) só é permitido em `src/styles/tokens.css`.
 
 Copie `.env.example` para `.env` e aponte `VITE_API_URL` para a API (local: `http://127.0.0.1:8000`).
 
 ## Documentação
 
-| Doc | Conteúdo |
-|---|---|
-| [`docs/adrs/README.md`](docs/adrs/README.md) | Índice de ADRs (registros de decisão e cronogramas de issues) |
-| [`docs/API-CONTRACTS.md`](docs/API-CONTRACTS.md) | Mapeamento tela → endpoint `/api/v1` e lacunas a abrir no backend |
-| [`docs/runbooks/`](docs/runbooks/) | Deploy, rollback e incidente |
-| [`AGENTS.md`](AGENTS.md) | Regras invioláveis do projeto (dinheiro, vocabulário, paleta, estados) |
+| Doc                                              | Conteúdo                                                               |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
+| [`docs/adrs/README.md`](docs/adrs/README.md)     | Índice de ADRs (registros de decisão e cronogramas de issues)          |
+| [`docs/API-CONTRACTS.md`](docs/API-CONTRACTS.md) | Mapeamento tela → endpoint `/api/v1` e lacunas a abrir no backend      |
+| [`docs/runbooks/`](docs/runbooks/)               | Deploy, rollback e incidente                                           |
+| [`AGENTS.md`](AGENTS.md)                         | Regras invioláveis do projeto (dinheiro, vocabulário, paleta, estados) |
 
 ## Marcos (GitHub)
 
 Milestones e issues ficam **neste repositório**. Os corpos completos das issues são os ADRs de planejamento 014–018; as issues do GitHub referenciam o ADR correspondente (`Implements ADR-014`, etc.).
 
-| Milestone | ADR | Escopo |
-|---|---|---|
-| Semana 1 — Fundação | ADR 014 | Scaffold, tooling, design tokens, shell de navegação |
+| Milestone                        | ADR     | Escopo                                                  |
+| -------------------------------- | ------- | ------------------------------------------------------- |
+| Semana 1 — Fundação              | ADR 014 | Scaffold, tooling, design tokens, shell de navegação    |
 | Semana 2 — Auth e Cliente da API | ADR 015 | Auth, cliente tipado gerado do OpenAPI, páginas de erro |
-| Semana 3 — Telas Centrais | ADR 016 | Apostas, Aposta (detalhe), Painel |
-| Semana 4 — Fluxos de Entrada | ADR 017 | Enviar, Prints, Importar, Resultados, Revisão |
-| Semana 5 — Conta e Endurecimento | ADR 018 | Banca, Casas, Configurações, Coleta, e2e, deploy |
+| Semana 3 — Telas Centrais        | ADR 016 | Apostas, Aposta (detalhe), Painel                       |
+| Semana 4 — Fluxos de Entrada     | ADR 017 | Enviar, Prints, Importar, Resultados, Revisão           |
+| Semana 5 — Conta e Endurecimento | ADR 018 | Banca, Casas, Configurações, Coleta, e2e, deploy        |
 
 ## Convenções
 
