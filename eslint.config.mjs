@@ -28,6 +28,9 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       ...jsxA11y.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'error',
+      // TODO: Implementar regra de lint de paleta (Issue #4)
+      // Proibir literais de cor (#hex, rgb(, hsl() fora de src/styles/tokens.css
+      // conforme ADR 006 e AGENTS regra 13
     },
   },
 );
