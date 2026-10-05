@@ -13,6 +13,8 @@ coverage/
 playwright-report/
 test-results/
 .vite/
+*.tsbuildinfo
+.pnpm-store/
 
 # OS/editor
 .DS_Store

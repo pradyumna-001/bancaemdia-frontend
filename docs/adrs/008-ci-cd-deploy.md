@@ -1,6 +1,7 @@
 # ADR 008: CI/CD e Deploy — GH Actions lint→typecheck→test→build, SPA Deploy, Rollback
 
 ## Status
+
 Proposed
 
 ## Context
@@ -10,6 +11,7 @@ O backend tem GitHub Actions `test → build → deploy` e rollback < 5min como 
 ## Decision
 
 ### CI (toda PR)
+
 1. `lint` (eslint + prettier --check + lint de paleta/ícone)
 2. `typecheck` (`tsc --noEmit`)
 3. `unit + component` (vitest, coverage gate)
@@ -18,15 +20,18 @@ O backend tem GitHub Actions `test → build → deploy` e rollback < 5min como 
 6. e2e Playwright shardado: gate de merge.
 
 ### CD (main)
+
 - Deploy automático para **staging**; canário manual/percentual para produção se a plataforma escolhida suportar (espelho do backend PR→staging→canary→prod).
 - Releases versionados por tag `v0.x.y`; `dist/` nomeado com hash de commit para rollback instantâneo.
 - Rollback: republicar artefato anterior **<7 min** (runbook `docs/runbooks/rollback.md`).
 
 ### Headers (servidor estático)
+
 - `Content-Security-Policy` estrita (sem CDN de script/fonte; conexões apenas para `VITE_API_URL`/emissor de auth), `X-Content-Type-Options`, `Referrer-Options`, cache imutável em assets com hash, `index.html` sem cache.
 - SPA fallback: todas as rotas → `index.html` (404 real apenas via UI — ADR 005).
 
 ### Configuração por ambiente
+
 - Sem rebuild entre staging/prod quando possível — env injetado em runtime via `public/config.json` ou build separado por ambiente (decisão na implementação; preferir config runtime para facilitar rollback).
 
 ## Consequences
