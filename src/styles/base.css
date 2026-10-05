@@ -1,0 +1,8 @@
+/* Base mínima; sistema visual completo chega nas Issues 4-7. */
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--tinta);
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+}

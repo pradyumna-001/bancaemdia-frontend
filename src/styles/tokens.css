@@ -1,0 +1,30 @@
+/* Tokens da paleta C1 "azul contido" (ADR 006) — ÚNICO lugar com cor no repo.
+ * Detalhamento completo: Issue 4 (ADR 014). */
+
+:root,
+[data-tema="escuro"] {
+  --tinta: #e8ecf4;
+  --fundo: #0d1117;
+  --superficie: #161d27;
+  --borda: #2a3542;
+  --lucro: #3ad698;
+  --perda: #ff6f61;
+  --foco: #6ba3ff;
+
+  --espaco-1: 4px;
+  --espaco-2: 8px;
+  --espaco-3: 16px;
+  --espaco-4: 24px;
+  --espaco-5: 32px;
+  --raio: 14px;
+}
+
+[data-tema="claro"] {
+  --tinta: #1a2332;
+  --fundo: #f7f8fa;
+  --superficie: #ffffff;
+  --borda: #d9e0ea;
+  --lucro: #0e7a55;
+  --perda: #c5372c;
+  --foco: #2f6fdb;
+}
