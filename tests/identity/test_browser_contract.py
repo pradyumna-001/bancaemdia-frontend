@@ -174,7 +174,9 @@ async def harness(banco, engine_admin, tmp_path, monkeypatch):
 @pytest.mark.parametrize(
     "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
 )
-async def test_public_spa_real_identity_cookie_contract(harness, viewport):
+async def test_public_spa_real_identity_cookie_contract(
+    harness, engine_admin, viewport
+):
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch()
         contexts = [await browser.new_context(viewport=viewport) for _ in range(2)]
@@ -242,6 +244,48 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
         assert (await browser_request(pages[1], "/api/v1/apostas/" + key))[
             "status"
         ] == 404
+        # Job observation is an authorized read. Seed only disposable job metadata:
+        # no upload, worker, extraction call, money or processing-cost approval.
+        job_ids = []
+        async with engine_admin.begin() as conn:
+            for job_status, processed, failed in (
+                ("pending", 0, 0),
+                ("processing", 0, 0),
+                ("completed", 2, 1),
+                ("completed", 0, 0),
+                ("failed", 0, 0),
+            ):
+                job_id = uuid4()
+                job_ids.append(str(job_id))
+                await conn.execute(
+                    text(
+                        "INSERT INTO uploads "
+                        "(job_id, usuario_id, filename, status, bets_processed, bets_failed) "
+                        "VALUES (:job, :owner, 'descartavel.json', :state, :processed, :failed)"
+                    ),
+                    {
+                        "job": job_id,
+                        "owner": live["usuario_id"],
+                        "state": job_status,
+                        "processed": processed,
+                        "failed": failed,
+                    },
+                )
+        for job_id, expected_status in zip(
+            job_ids, ("pending", "processing", "completed", "completed", "failed")
+        ):
+            path = "/api/v1/upload/" + job_id
+            own = await browser_request(pages[0], path)
+            assert own["status"] == 200
+            assert own["data"]["job_id"] == job_id
+            assert own["data"]["status"] == expected_status
+            assert isinstance(own["data"]["progress"]["percent"], (int, float))
+            assert (await browser_request(pages[1], path))["status"] == 404
+        partial = await browser_request(pages[0], "/api/v1/upload/" + job_ids[2])
+        assert partial["data"]["bets_processed"] == 2
+        assert partial["data"]["bets_failed"] == 1
+        empty = await browser_request(pages[0], "/api/v1/upload/" + job_ids[3])
+        assert empty["data"]["bets_processed"] == 0
         # The actual provider now owns cookie/CSRF lookup, clearing and confirmation.
         await pages[0].goto(backend.FRONT + "/sair")
         await pages[0].get_by_role("button", name="Confirmar saída").click()
@@ -250,6 +294,9 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
         ).to_be_visible()
         assert (await browser_request(pages[0], "/auth/session"))["status"] == 401
         assert (await browser_request(pages[0], "/api/v1/apostas"))["status"] == 401
+        assert (await browser_request(pages[0], "/api/v1/upload/" + job_ids[0]))[
+            "status"
+        ] == 401
         assert (await browser_request(pages[1], "/auth/session"))["status"] == 200
         cache_control = (await browser_request(pages[1], "/auth/session"))["headers"][
             "cache-control"

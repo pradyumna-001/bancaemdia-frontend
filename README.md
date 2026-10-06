@@ -76,6 +76,8 @@ Cada rota tem recuperação com mensagem segura, SVG próprio e retorno contextu
 
 O `QueryClientProvider` compartilha um cliente por aplicação. Listas ficam frescas por 30 segundos, `painel`/`metricas` por 60 e `revisao` por zero. GETs seguros: 500 permite uma repetição; 503 três; 429 duas; rede/timeout uma, com backoff e Retry-After. Mutations/cancelamentos não repetem. O contador de Revisão usa API tipada e contexto atual. Troca/logout limpa queries e mutations e remonta dados privados; responses anteriores são descartadas mesmo após parsing. Renovação é serializada entre abas, com consulta dentro da trava e no máximo uma recuperação de GET da mesma pessoa/família.
 
+`src/features/enviar/useJob.ts` acompanha um UUID de upload conhecido, com consulta tipada e um loop compartilhado por sessão, backoff, limites e retomada explícita. Encerrar a observação não cancela o processamento nem reenvia arquivo. A projeção preserva progresso/parcial/vazio e exclui custos/estimativas/erro bruto; logout/troca limpa todos os observadores. [Contrato da #15](docs/contracts/jobs-upload.md). A tela de Enviar continua na #24; não há mudança visual nesta base técnica.
+
 As evidências de testes, navegação e nginx estão em [docs/router-validation.md](docs/router-validation.md).
 
 ## Estrutura e testes

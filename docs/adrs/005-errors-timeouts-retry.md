@@ -30,3 +30,7 @@ A #13 (02/10/2026) complementa a recuperação com [páginas de erro e limites d
 ## Implementação #10 — 30/09/2026
 
 [Contrato de recuperação](../contracts/recuperacao.md): `recuperacaoErro`/`ErroApi`, projeção segura de campos 422, paginação gerada do snapshot, QueryClient e `useRetryAfter`. HTTP429 tem até duas tentativas extras; rede/timeout de leitura até uma. Prazo automático acima de 60s termina em recuperação explícita, sem antecipar Retry-After. Mutations e resultados desconhecidos nunca entram em retry. Conflito sem motivo publicado mantém orientação conservadora; contexto de estado/prévia/idempotência exige prova na consumidora. Sessão/billing/telas continuam com as respectivas issues; demonstração visual somente no build de testes.
+
+## Implementação #15 — 06/10/2026
+
+[Acompanhamento de jobs](../contracts/jobs-upload.md) usa essas mesmas políticas de leitura/retry em um observador compartilhado por UUID e sessão. Consulta inicial em 1s, backoff por estabilidade até 30s, janela de 300 consultas/15min e retomada explícita respeitando Retry-After. Último unmount cancela GET/timers; logout/troca limpa projeções e descarta callbacks antigos. Estados terminais encerram a observação; parcial/limite/zero apostas e percentual ausente são preservados. Não reenvia upload, cancela processamento remoto ou cria aviso/aprovação de gasto. Integração da tela pertence à #24.
