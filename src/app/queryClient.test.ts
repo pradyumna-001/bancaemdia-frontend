@@ -43,7 +43,7 @@ it.each([
   [409, 1],
   [413, 1],
   [422, 1],
-  [429, 1],
+  [429, 3],
   [undefined, 1],
 ])(
   'limita tentativas reais de consulta no status %s a %s',

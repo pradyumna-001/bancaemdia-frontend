@@ -1,0 +1,43 @@
+.erro-api {
+  margin-block: var(--espaco-24);
+  padding: var(--espaco-24);
+  border: 1px solid var(--borda-controle);
+  border-inline-start: var(--espaco-4) solid var(--atencao);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+  overflow-wrap: anywhere;
+}
+.erro-api p {
+  max-width: 65ch;
+  color: var(--tinta-secundaria);
+}
+.erro-api ul {
+  padding-inline-start: var(--espaco-24);
+}
+.erro-api li button {
+  border: 0;
+  background: var(--transparente);
+  color: var(--acao);
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-align: start;
+}
+.erro-api .acoes:empty {
+  display: none;
+}
+.erro-api .acoes button:disabled {
+  background: var(--superficie-secundaria);
+  color: var(--tinta-secundaria);
+  border-color: var(--borda-controle);
+}
+.erro-api-contexto {
+  margin-inline-start: var(--espaco-4);
+  font-weight: var(--peso-normal);
+}
+@media (max-width: 35rem) {
+  .erro-api {
+    padding: var(--espaco-16);
+  }
+}

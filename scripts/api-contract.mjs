@@ -60,3 +60,32 @@ export function operationPolicies(schema) {
   }
   return { idempotent, uploads };
 }
+
+export function paginationPolicies(schema) {
+  const policies = {};
+  for (const [path, item] of Object.entries(schema.paths)) {
+    if (!item.get) continue;
+    const parameters = [
+      ...(item.parameters ?? []),
+      ...(item.get.parameters ?? []),
+    ];
+    const rule = {};
+    for (const name of ['page', 'page_size']) {
+      const parameter = parameters.find(
+        (p) => p.in === 'query' && p.name === name,
+      );
+      const value = parameter?.schema;
+      if (value?.type !== 'integer' || !Number.isSafeInteger(value.default))
+        continue;
+      rule[name] = {
+        default: value.default,
+        minimum: value.minimum ?? 1,
+        ...(value.maximum === undefined
+          ? {}
+          : { maximum: Math.min(value.maximum, Number.MAX_SAFE_INTEGER) }),
+      };
+    }
+    if (rule.page && rule.page_size) policies[`GET ${path}`] = rule;
+  }
+  return policies;
+}

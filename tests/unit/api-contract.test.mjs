@@ -5,6 +5,7 @@ import { expect, it } from 'vitest';
 import {
   contractSource,
   operationPolicies,
+  paginationPolicies,
   verifiedSchema,
 } from '../../scripts/api-contract.mjs';
 
@@ -38,6 +39,42 @@ it('só aceita commit completo, caminho e SHA-256 fixados', () => {
   ]) {
     expect(() => contractSource({ ...pin, ...changes })).toThrow();
   }
+});
+it('limites de paginação vêm do snapshot e respeitam a precisão do runtime', () => {
+  expect(
+    paginationPolicies({
+      paths: {
+        '/example': {
+          get: {
+            parameters: [
+              {
+                in: 'query',
+                name: 'page',
+                schema: { type: 'integer', default: 1, maximum: 1e20 },
+              },
+              {
+                in: 'query',
+                name: 'page_size',
+                schema: {
+                  type: 'integer',
+                  default: 50,
+                  minimum: 1,
+                  maximum: 100,
+                },
+              },
+            ],
+          },
+        },
+        '/not-paged': { get: {} },
+        '/write': { post: {} },
+      },
+    }),
+  ).toEqual({
+    'GET /example': {
+      page: { default: 1, minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+      page_size: { default: 50, minimum: 1, maximum: 100 },
+    },
+  });
 });
 it('não gera contrato quando bytes mudam sob a mesma referência', () => {
   expect(verifiedSchema(pin, bytes).openapi).toBe('3.1.0');

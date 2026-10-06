@@ -39,7 +39,7 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 18. Tipos gerados do OpenAPI da API (`openapi-typescript`) — código de domínio nunca declara shape de resposta à mão. `config/api-contract.json` fixa commit e SHA-256; tipos e políticas de upload/idempotência são gerados do mesmo documento e ambos têm gate de drift. Atualização exige versão integrada/revisão, sem URL flutuante ou união de branches.
 19. Query params inválidos **nunca quebram a tela**: inválido → valor padrão (a API devolve 422, mas a UI já deve cair para defaults antes, como o monólito fazia).
 20. Operation 202 de upload/extração é assíncrona: UI faz polling de `/api/v1/upload/{job_id}` (1s, exponencial depois), com estados reais da API. Pausar/autorizar/recusar gasto depende de contrato específico antes do processamento sujeito a consentimento; não inventar estado de job nem iniciar gasto para simular uma prévia.
-21. Rate limit (429) e 503 têm copy própria e retry com backoff; nunca laço infinito de tentativa.
+21. Rate limit (429) e 503 têm copy própria e retry com backoff; nunca laço infinito de tentativa. Queries são somente GETs seguros: 500 até 1 retry, 503 até 3, 429 até 2, rede/timeout até 1, respeitando Retry-After. Prazo >60s encerra retry automático sem antecipar o prazo manual. Mutations/cancelamento/resultado desconhecido não são repetidos. Não remover filtro válido após recusa; campo 422 usa projeção segura de loc e labels locais, sem input/msg/ctx. Ver ADR005/#10.
 
 ## Segurança
 
@@ -49,7 +49,7 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 
 ## Fluxo de trabalho
 
-25. Issue → branch `feat/<n>-descricao` → PR pequeno → revisão → merge. PRs referenciam a issue e o ADR (`Closes #N`, `Implements ADR-0XX`).
+25. Issue → branch `feat/<n>-descricao` → PR contra `main` → revisão → merge. Não abrir PRs empilhadas. Dependências ainda abertas não impedem abrir a PR contra `main`: declarar os PRs necessários, separar o escopo próprio do código herdado no texto/revisão e reconciliar a branch após integração ou alterações nas dependências. Não fazer merge para contornar essa regra. PRs referenciam a issue e o ADR (`Closes #N`, `Implements ADR-0XX`).
 26. `make lint && make typecheck && make test` verde local antes de push; e2e no CI.
 27. Toda mudança estrutural relevante atualiza este arquivo e/ou ADR.
 28. **PR só pode ser entregue como pronto fora de rascunho e com todos os testes/checks verdes no commit final.** Rascunho temporário durante o trabalho é permitido, mas deve ser convertido antes da entrega. Após o último push, aguardar os checks terminarem e conferir o SHA validado; ausência de checks, estado pendente ou sucesso em commit anterior não equivalem a aprovação. Não remover workflows, desabilitar testes ou enfraquecer gates para obter verde. Se um impedimento externo estiver fora do controle do agente, informar explicitamente o impedimento e o estado real, sem declarar o PR pronto.

@@ -6,6 +6,28 @@ export type ApiErrorKind =
   | 'invalid_response'
   | 'invalid_request';
 
+// Projection of ValidationIssueResponse.loc, never its input/msg/ctx payload.
+export type InvalidField = Readonly<{ scope: 'body' | 'query'; field: string }>;
+
+function invalidFields(body: unknown): readonly InvalidField[] {
+  const detail = record(body)?.detail;
+  if (!Array.isArray(detail)) return [];
+  const fields: InvalidField[] = [];
+  for (const issue of detail.slice(0, 100)) {
+    const loc = record(issue)?.loc;
+    if (!Array.isArray(loc)) continue;
+    const [scope, field] = loc;
+    if (
+      (scope === 'body' || scope === 'query') &&
+      typeof field === 'string' &&
+      /^[A-Za-z_][A-Za-z0-9_]{0,79}$/.test(field) &&
+      !fields.some((item) => item.scope === scope && item.field === field)
+    )
+      fields.push(Object.freeze({ scope, field }));
+  }
+  return Object.freeze(fields);
+}
+
 const messages: Record<ApiErrorKind, string> = {
   http: 'Não foi possível concluir o pedido. Tente novamente.',
   network: 'Não foi possível conectar. Confira sua conexão e tente novamente.',
@@ -85,6 +107,7 @@ export class ApiError extends Error {
   readonly retryAfterMs?: number;
   readonly requestId?: string;
   readonly outcomeUnknown: boolean;
+  readonly invalidFields: readonly InvalidField[];
 
   constructor(
     readonly kind: ApiErrorKind,
@@ -93,6 +116,7 @@ export class ApiError extends Error {
       code?: string;
       headers?: Headers;
       mutation?: boolean;
+      validationBody?: unknown;
     } = {},
   ) {
     super(
@@ -101,6 +125,8 @@ export class ApiError extends Error {
         : messages[kind],
     );
     this.status = options.status ?? 0;
+    this.invalidFields =
+      this.status === 422 ? invalidFields(options.validationBody) : [];
     this.code =
       options.code && knownCodes.has(options.code) ? options.code : undefined;
     this.retryAfterMs = retryAfterMs(
@@ -130,5 +156,6 @@ export function httpError(
     headers: response.headers,
     code: typeof candidate === 'string' ? candidate : undefined,
     mutation,
+    validationBody: body,
   });
 }
