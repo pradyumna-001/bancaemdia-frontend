@@ -9,7 +9,7 @@
     "number": 9,
     "title": "[ADR-019] Cliente tipado — versão da API, erros e idempotência",
     "file": "009.md",
-    "dependencies": "#8; #50; #48"
+    "dependencies": "#8; contratos específicos da #50; #48; transporte definido pela #49"
   },
   {
     "number": 10,

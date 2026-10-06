@@ -36,7 +36,7 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 
 ## API e resiliência
 
-18. Tipos gerados do OpenAPI da API (`openapi-typescript`) — código de domínio nunca declara shape de resposta à mão.
+18. Tipos gerados do OpenAPI da API (`openapi-typescript`) — código de domínio nunca declara shape de resposta à mão. `config/api-contract.json` fixa commit e SHA-256; tipos e políticas de upload/idempotência são gerados do mesmo documento e ambos têm gate de drift. Atualização exige versão integrada/revisão, sem URL flutuante ou união de branches.
 19. Query params inválidos **nunca quebram a tela**: inválido → valor padrão (a API devolve 422, mas a UI já deve cair para defaults antes, como o monólito fazia).
 20. Operation 202 de upload/extração é assíncrona: UI faz polling de `/api/v1/upload/{job_id}` (1s, exponencial depois), com estados reais da API. Pausar/autorizar/recusar gasto depende de contrato específico antes do processamento sujeito a consentimento; não inventar estado de job nem iniciar gasto para simular uma prévia.
 21. Rate limit (429) e 503 têm copy própria e retry com backoff; nunca laço infinito de tentativa.
@@ -60,4 +60,4 @@ Regras invioláveis herdadas do monólito (`Planilhador-apostas`) e adaptadas pa
 32. Sessão e acesso comercial são separados: 401 reautentica, 402 preserva leitura/exportação e entrada. Permissão por operação vem do contrato/servidor, não apenas do verbo HTTP. Titular, conta, casa e banca não são sinônimos; atribuição e troca temporal são decisões da API.
 33. Resumo/gráfico/lista/exportação precisam de população compatível ou escopo explícito. `incluir_apagadas` não significa somente apagadas; não filtrar uma página para simular o conjunto. Refetch/fresh não força refresh de MV; valores nulos/desconhecidos não viram zero. Freebet mantém valor de face da entrada, com custo próprio decidido pelo servidor.
 
-34. CI preserva budget JS inicial <=200.000 bytes gzip e cobertura >=80% por arquivo de lib/features nas quatro métricas; arquivos não importados entram. Lighthouse mede build público mobile/desktop, sem confundir baseline com gates de release/INP. Publicar apenas dist e CSP do mesmo SHA, nunca fixture; ver ADR008.
+34. CI preserva budget JS inicial <=200.000 bytes gzip e cobertura >=80% por arquivo de lib/features/api nas quatro métricas; arquivos não importados entram. Lighthouse mede build público mobile/desktop, sem confundir baseline com gates de release/INP. Publicar apenas dist e CSP do mesmo SHA, nunca fixture; ver ADR008.
