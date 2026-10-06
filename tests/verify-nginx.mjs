@@ -20,12 +20,7 @@ for (const [name, browserType] of Object.entries({
           document.documentElement.dataset.cspFailure = 'true';
         });
       });
-      for (const path of [
-        '/tutorial',
-        '/extensao',
-        '/criar-conta',
-        '/redefinir-senha',
-      ]) {
+      for (const path of ['/tutorial', '/extensao']) {
         await page.goto(`http://127.0.0.1:8080${path}`);
         await expect(
           page.getByText('Esta página está em preparação.'),
@@ -34,6 +29,40 @@ for (const [name, browserType] of Object.entries({
         await expect(
           page.getByText('Esta página está em preparação.'),
         ).toBeVisible();
+      }
+      for (const [path, title, action] of [
+        ['/login', 'Entrar', 'Entrar com minha conta'],
+        ['/criar-conta', 'Criar conta', 'Continuar para criar conta'],
+        [
+          '/esqueci-senha',
+          'Esqueci minha senha',
+          'Continuar para recuperar senha',
+        ],
+        ['/confirmar-email', 'Confirmar e-mail', 'Continuar confirmação'],
+        ['/redefinir-senha', 'Redefinir senha', 'Recomeçar recuperação'],
+      ]) {
+        await page.goto(`http://127.0.0.1:8080${path}`);
+        for (const reload of [false, true]) {
+          if (reload) await page.reload();
+          await expect(
+            page.getByRole('heading', { name: title, exact: true }),
+          ).toBeVisible();
+          await expect(
+            page.getByRole('heading', {
+              name: 'O serviço está temporariamente indisponível',
+              exact: true,
+            }),
+          ).toBeVisible();
+          await expect(
+            page.getByRole('button', { name: action, exact: true }),
+          ).toBeDisabled();
+          await expect(
+            page.getByRole('button', { name: 'Tentar novamente', exact: true }),
+          ).toBeEnabled();
+          await expect(
+            page.locator('input[type="password"],input[type="email"]'),
+          ).toHaveCount(0);
+        }
       }
       await page.goto('http://127.0.0.1:8080/aposta/abc?apagadas=1#foto');
       await expect(

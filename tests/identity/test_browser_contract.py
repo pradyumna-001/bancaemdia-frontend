@@ -13,7 +13,7 @@ import secrets
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlsplit
 from uuid import uuid4
 
 import httpx
@@ -374,3 +374,211 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         assert await pa.evaluate("Object.keys(localStorage).length") == 0
         assert not await pa.evaluate("document.cookie")
         await browser.close()
+
+
+async def start_public_registration(page, email, destination):
+    from urllib.parse import urlencode
+
+    await page.goto(
+        backend.FRONT + "/criar-conta?" + urlencode({"destino": destination})
+    )
+    await page.get_by_role("button", name="Continuar para criar conta").click()
+    await page.get_by_role("link", name="Register", exact=True).click()
+    await page.locator("#email").fill(email)
+    await page.locator("#firstName").fill("Disposable")
+    await page.locator("#lastName").fill("Acceptance")
+    assert await page.locator("#password").count() == 0
+    await page.locator('input[type="submit"],button[type="submit"]').click()
+    return await backend.mail_link(email)
+
+
+@pytest.mark.parametrize(
+    "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
+)
+async def test_public_spa_account_registration_and_recovery(
+    harness, engine_admin, viewport
+):
+    """Actual SPA actions, issuer forms, confirmation SMTP and recovery revocation."""
+    from urllib.parse import urlencode
+
+    try:
+        async with async_playwright() as playwright:
+            browser = await playwright.chromium.launch()
+            original = await browser.new_context(viewport=viewport)
+            recovering = await browser.new_context(viewport=viewport)
+            repeated = await browser.new_context(viewport=viewport)
+            page, recovery, repeat = (
+                await original.new_page(),
+                await recovering.new_page(),
+                await repeated.new_page(),
+            )
+            email = uuid4().hex + "@example.org"
+            password, changed = (secrets.token_urlsafe(24) for _ in range(2))
+            destination = "/painel?apagadas=1#serie"
+            confirmation, message = await start_public_registration(
+                page, email, destination
+            )
+            async with engine_admin.connect() as conn:
+                count = await conn.scalar(
+                    text("SELECT count(*) FROM usuarios WHERE email=:email"),
+                    {"email": email},
+                )
+                assert count == 0, "Unconfirmed signup must not provision an API user"
+            await page.goto(confirmation)
+            await page.locator("#password-new").fill(password)
+            await page.locator("#password-confirm").fill(password)
+            await page.locator('input[type="submit"],button[type="submit"]').click()
+            await page.wait_for_url(backend.FRONT + destination)
+            await expect(
+                page.get_by_role("heading", name="Painel", exact=True)
+            ).to_be_visible()
+            first = await browser_request(page, "/auth/session")
+            assert first["status"] == 200
+            person = first["data"]["usuario_id"]
+            async with engine_admin.connect() as conn:
+                assert (
+                    await conn.scalar(
+                        text("SELECT count(*) FROM usuarios WHERE email=:email"),
+                        {"email": email},
+                    )
+                    == 1
+                )
+            # An already consumed email action cannot create another API session.
+            await repeat.goto(confirmation)
+            await repeat.goto(backend.FRONT + "/confirmar-email")
+            await expect(
+                repeat.get_by_role("button", name="Continuar confirmação")
+            ).to_be_enabled()
+            assert (await browser_request(repeat, "/auth/session"))["status"] == 401
+            # An interrupted recovery changes neither password nor existing local session.
+            recover_url = (
+                backend.FRONT + "/esqueci-senha?" + urlencode({"destino": destination})
+            )
+            await recovery.goto(recover_url)
+            await recovery.get_by_role(
+                "button", name="Continuar para recuperar senha"
+            ).click()
+            await recovery.get_by_role(
+                "link", name="Forgot Password?", exact=True
+            ).click()
+            await recovery.goto(recover_url)
+            assert (await browser_request(page, "/auth/session"))["status"] == 200
+            await recovery.get_by_role(
+                "button", name="Continuar para recuperar senha"
+            ).click()
+            await recovery.get_by_role(
+                "link", name="Forgot Password?", exact=True
+            ).click()
+            await recovery.locator("#username").fill(email)
+            await recovery.locator('input[type="submit"],button[type="submit"]').click()
+            reset, _ = await backend.mail_link(email, {message})
+            await recovery.goto(reset)
+            await recovery.locator("#password-new").fill(changed)
+            await recovery.locator("#password-confirm").fill(changed)
+            await recovery.locator('input[type="submit"],button[type="submit"]').click()
+            await recovery.wait_for_url(backend.FRONT + destination)
+            await expect(
+                recovery.get_by_role("heading", name="Painel", exact=True)
+            ).to_be_visible()
+            recovered = await browser_request(recovery, "/auth/session")
+            assert recovered["status"] == 200
+            assert recovered["data"]["usuario_id"] == person
+            assert (await browser_request(page, "/auth/session"))["status"] == 401
+            await page.goto(backend.FRONT + "/painel")
+            await expect(
+                page.get_by_role("heading", name="Entrar", exact=True)
+            ).to_be_visible()
+            for current in (page, recovery, repeat):
+                assert await current.evaluate("Object.keys(sessionStorage).length") == 0
+                assert await current.evaluate("Object.keys(localStorage).length") == 0
+                assert not await current.evaluate("document.cookie")
+                assert not {"code", "state", "key", "token"}.intersection(
+                    dict(parse_qsl(urlsplit(current.url).query))
+                )
+            await browser.close()
+    except BrowserError:
+        pytest.fail("Public account journey did not complete", pytrace=False)
+
+
+@pytest.fixture
+async def short_email_lifetime():
+    """Only this disposable issuer; restore its setting even on a rejected action."""
+    # Keycloak 26.7.4 VerifyEmail.java reads the realm's user-action lifetime.
+    async with httpx.AsyncClient(timeout=15) as client:
+        token = await client.post(
+            "http://127.0.0.1:58080/realms/master/protocol/openid-connect/token",
+            data={
+                "grant_type": "password",
+                "client_id": "admin-cli",
+                "username": os.environ["KC_BOOTSTRAP_ADMIN_USERNAME"],
+                "password": os.environ["KC_BOOTSTRAP_ADMIN_PASSWORD"],
+            },
+        )
+        assert token.status_code == 200, "Sandbox issuer administration unavailable"
+        headers = {"Authorization": "Bearer " + token.json()["access_token"]}
+        endpoint = "http://127.0.0.1:58080/admin/realms/bancaemdia-acceptance"
+        realm = await client.get(endpoint, headers=headers)
+        assert realm.status_code == 200
+        previous = realm.json()["actionTokenGeneratedByUserLifespan"]
+        result = await client.put(
+            endpoint, headers=headers, json={"actionTokenGeneratedByUserLifespan": 1}
+        )
+        assert result.status_code == 204
+        try:
+            yield
+        finally:
+            restored = await client.put(
+                endpoint,
+                headers=headers,
+                json={"actionTokenGeneratedByUserLifespan": previous},
+            )
+            assert restored.status_code == 204
+
+
+@pytest.mark.parametrize(
+    "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
+)
+async def test_public_spa_expired_confirmation(
+    harness, engine_admin, short_email_lifetime, viewport
+):
+    """Real expired issuer mail, not a modified/synthetic token or a frozen clock."""
+    try:
+        async with async_playwright() as playwright:
+            browser = await playwright.chromium.launch()
+            context = await browser.new_context(viewport=viewport)
+            page = await context.new_page()
+            email = uuid4().hex + "@example.org"
+            confirmation, _ = await start_public_registration(page, email, "/painel")
+            await asyncio.sleep(2)
+            await page.goto(confirmation)
+            if "expired" not in (await page.locator("body").inner_text()).lower():
+                pytest.fail(
+                    "Issuer did not reject the expired email action", pytrace=False
+                )
+            async with engine_admin.connect() as conn:
+                assert (
+                    await conn.scalar(
+                        text("SELECT count(*) FROM usuarios WHERE email=:email"),
+                        {"email": email},
+                    )
+                    == 0
+                )
+            await page.goto(backend.FRONT + "/confirmar-email")
+            await expect(
+                page.get_by_role("heading", name="Confirmar e-mail", exact=True)
+            ).to_be_visible()
+            await expect(
+                page.get_by_role("button", name="Continuar confirmação")
+            ).to_be_enabled()
+            assert (await browser_request(page, "/auth/session"))["status"] == 401
+            await page.get_by_text("Não conseguiu continuar?").click()
+            await expect(
+                page.get_by_text("Se o link expirou", exact=False)
+            ).to_be_visible()
+            await page.get_by_role("link", name="Recomeçar cadastro").click()
+            await expect(
+                page.get_by_role("heading", name="Criar conta", exact=True)
+            ).to_be_visible()
+            await browser.close()
+    except BrowserError:
+        pytest.fail("Expired account action recovery did not complete", pytrace=False)

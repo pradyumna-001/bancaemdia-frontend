@@ -48,7 +48,7 @@ const stats = (total = 0) => ({
   idade_maxima_segundos: 0,
 });
 
-test('páginas públicas não consultam identidade; login inicia a conferência necessária', async ({
+test('ajuda pública não consulta identidade; páginas de conta conferem o acesso necessário', async ({
   page,
   context,
 }) => {
@@ -57,12 +57,7 @@ test('páginas públicas não consultam identidade; login inicia a conferência 
     if (new URL(route.request().url()).pathname === '/auth/session') reads++;
     await respond(route, { code: 'not_authenticated' }, 401);
   });
-  for (const path of [
-    '/tutorial',
-    '/extensao',
-    '/criar-conta',
-    '/redefinir-senha',
-  ]) {
+  for (const path of ['/tutorial', '/extensao']) {
     await page.goto(path);
     await expect(
       page.getByText('Esta página está em preparação.'),
@@ -79,6 +74,11 @@ test('páginas públicas não consultam identidade; login inicia a conferência 
     page.getByRole('button', { name: 'Entrar com minha conta' }),
   ).toBeEnabled();
   expect(reads).toBe(1);
+  for (const path of ['/criar-conta', '/redefinir-senha']) {
+    await page.goto(path);
+    await expect(page.locator('.conta-acoes button')).toBeEnabled();
+  }
+  expect(reads).toBe(3);
 });
 
 test('sem sessão, URL/storage não liberam rota e login hospedado recebe destino sem hash', async ({
