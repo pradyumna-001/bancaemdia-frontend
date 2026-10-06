@@ -16,7 +16,7 @@ Vitest/Testing Library para regras de apresentação e componentes; fixtures/MSW
 4. Filtros/pílulas/URL/reload, página e somente apagadas; resumo da mesma população.
 5. Detalhe/correção, apagar/restaurar, freebet com face preservada e concorrência.
 6. Resultados: 20 simples em 20 toques; duplo toque seguro, desfazer sem sobrescrever alteração recente.
-7. Upload Telegram, consentimento conforme contrato, progresso/parcial/limite; prints e XLSX prévia/confirmar sem duplicidade.
+7. Upload Telegram → progresso → resultado, parcial/limite/zero apostas, sem estimativa/aviso de custo de processamento nem aprovação de gasto (ADR019, decisão de 06/10/2026); prints e XLSX prévia/confirmar sem duplicidade.
 8. Revisão por motivo: leitura com/sem foto, conta, par e zerar fila mantendo saída.
 9. Caixa: depósito/retry, transferência atômica, saldo desconhecido, extrato e conta alheia.
 10. Bot: código/vínculo/expiração/revogação; extensão: instalações independentes e credenciais temporárias. Matching/v2 só quando contratos integrados.
@@ -35,3 +35,4 @@ Vitest/Testing Library para regras de apresentação e componentes; fixtures/MSW
 - Dependência backend ausente permanece bloqueio, não um cenário skipped que aprova release. Adiamento exige decisão explícita do escopo.
 - #49 acrescenta CI de contrato com uma versão completa pinada do backend PR #168, Keycloak/SMTP/PostgreSQL/Chromium reais e dist/CSP públicos da SPA nos dois viewports. Gates exigem zero skips; não promove schema de PR aos tipos públicos. Valida transporte e contrato, mantendo sessão/telas da #11/#12 e homologação do emissor produtivo como entregas distintas. Ver [prova e limites](../identity-validation.md).
 - #9 estende os mesmos gates por arquivo (quatro métricas >=80%) a `src/api/`, excluindo testes e `.d.ts`. MSW verifica transporte sobre paths/shapes da versão integrada, incluindo cancelamento, deadlines, bytes/multipart e chave estável. Testar HTTP402 não declara billing integrado; fixtures não comprovam sessão ou contratos ausentes. Hash do OpenAPI e políticas geradas têm gates próprios sem relaxar a CI existente.
+- #15 testa o observador compartilhado/cliente tipado com timers, concorrência, estado/progresso inválidos, parcial/limite/vazio, Retry-After, StrictMode e isolamento/limpeza. O aceite real de cookie existente também consulta metadados descartáveis dos quatro estados de upload, parcial/vazio, recusa de outro usuário e logout nos dois viewports, mantendo zero skips. Essa prova usa banco/API/emissor reais; semear um job não comprova envio/extrator/IA nem substitui a jornada da #24. [Contrato e limites](../contracts/jobs-upload.md).

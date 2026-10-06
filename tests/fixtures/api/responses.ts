@@ -60,7 +60,7 @@ export const partialUpload = {
   cost_usd: 0,
   erro: null,
   progress: {
-    read: 3,
+    read: 2,
     total: 3,
     pending: 0,
     failed: 1,
