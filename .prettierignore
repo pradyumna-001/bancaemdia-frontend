@@ -10,3 +10,6 @@ pnpm-lock.yaml
 .husky/_/
 
 reports/
+.staging-artifact/
+.staging-release/
+.staging-ssh/
