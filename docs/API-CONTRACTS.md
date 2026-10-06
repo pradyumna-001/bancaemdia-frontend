@@ -1,82 +1,66 @@
-# API Contracts — Tela → Endpoint
+# Contratos do produto — capacidade, versão e dependência
 
-Mapeamento das telas v2 (ADR 013) para `/api/v1` conforme `docs/API.md` do backend (pradyumna-001/bancaemdia-api). Status:
+Atualização 30/09/2026, ADR019 / #48 / #49. Esta matriz substitui o inventário baseado apenas no monólito. Código/contrato foram lidos na main `bd055417459f796fed960b5b37efb33a9744419f` e em PRs com SHA no [inventário](audits/inventario-contratos.md). Identidade foi revalidada no PR #168 em `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`. Nenhum PR abaixo é tratado como deploy. O frontend ainda gera tipos dessa main; uma versão integrada deve ser adotada antes de consumir a expansão.
 
-- ✅ coberto pela API atual
-- ⚠️ parcial / confirmar comportamento exato com backend
-- ❌ lacuna — abrir issue em `bancaemdia-api` antes da semana consumidora
+## Estados
 
-## Apostas
+- **Main:** contrato implementado na referência acima, não prova de produção.
+- **PR:** código identificado em branch aberta, sujeito a integração/revisão.
+- **Planejado:** escopo aprovado em issue backend, sem contrato implementado identificado.
+- **Lacuna:** jornada desejada sem suporte completo; #50 acompanha entregas específicas. Resolver a parcela usada por cada consumidora, sem bloquear capacidades independentes já contratadas.
 
-| Tela/fluxo                              | Endpoint                                      | Status | Nota                                                                                                                                                                                                                |
-| --------------------------------------- | --------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Lista com filtros e paginação           | `GET /api/v1/apostas`                         | ⚠️     | Confirmar filtros exatos (casa, tipster, grupo, banca, estado, origem, de/ate), cursor/"mostrar mais", projeção de resumo (lucro/ROI da capa) e mini-séries para os 3 mini-gráficos (`painel/metricas` pode servir) |
-| Visão de apagadas                       | `GET /api/v1/apostas?apagadas=1`              | ⚠️     | Confirmar filtro/flag na API                                                                                                                                                                                        |
-| Aviso de foto duplicada / dúvida de par | campos em lista/`{chave}`                     | ⚠️     | Confirmar campos (`midia_hash`, `duvida_de_par`, `parceira_chave`) na listagem                                                                                                                                      |
-| Detalhe + foto                          | `GET /api/v1/apostas/{chave}` + mídia         | ⚠️     | Endpoint de foto por hash (`/foto/{hash}` antigo) — confirmar equivalente                                                                                                                                           |
-| Corrigir campos allowlist               | `PATCH /api/v1/apostas/{chave}`               | ✅     | UI limita aos campos do allowlist (`CAMPOS_DA_APOSTA`)                                                                                                                                                              |
-| Apagar / restaurar                      | `DELETE /{chave}` / `POST /{chave}/restaurar` | ✅     | Soft delete; pílulas preservam `apagadas=1`                                                                                                                                                                         |
-| Registrar resultado                     | `POST /api/v1/apostas/{chave}/resultado`      | ✅     | Estados: GREEN/RED/ANULADA/CASHOUT/MEIO_GREEN/MEIO_RED                                                                                                                                                              |
-| Resolver dúvida de par (`/par` antigo)  | —                                             | ❌     | Confirmar se PATCH/endpoint dedicado cobre "É a mesma"/"São diferentes"                                                                                                                                             |
-| Nova aposta manual com freebet          | `POST /api/v1/apostas`                        | ✅     | Validar regra `freebet XOR stake` vem do backend                                                                                                                                                                    |
-| Importar planilha com prévia            | `POST /api/v1/apostas/importar-planilha`      | ⚠️     | Confirmar fluxo de dois passos (prévia de mapeamento → confirmar)                                                                                                                                                   |
+## Matriz
 
-## Painel
+| Capacidade                  | Contrato observado                                                                                                                         | Estado                                          | Consumidor/ação                                                                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Identidade                  | Main: JWT/JWKS numérico. PR #168: OIDC hospedado, vínculo idempotente, cookie HttpOnly, session/refresh/logout e revogação                 | PR #168 / backend #167; sandbox sem deploy      | #49 [contrato](contracts/identidade.md); #9/#11/#12 adotam versão integrada; emissor/origens produtivos pendentes     |
+| Lista de apostas            | GET `/api/v1/apostas`; page/page_size; desde/ate, estado,casa_id,tipster_id,mercado_id,competicao_id,origem,revisao_grave,incluir_apagadas | Main + lacunas                                  | #17/#18; campos textuais da lista podem ser nulos; precisa projeção legível                                           |
+| Somente apagadas            | incluir_apagadas=true retorna também ativas; não há filtro somente apagadas                                                                | Lacuna                                          | #50/#17/#18; URL web apagadas=1 preservada, sem filtrar só uma página local                                           |
+| Filtros/resumo equivalentes | Painel não aceita todos os filtros da lista; grupo/banca/titular/conta ausentes na lista main                                              | Lacuna                                          | #50/#17/#18; não mostrar ROI de população diferente                                                                   |
+| Catálogos de seletores      | IDs e tabelas internas não equivalem a APIs de opções                                                                                      | Lacuna                                          | #50/#17/#29/#32; definir catálogos RLS-safe necessários                                                               |
+| Detalhe/correção            | GET/PATCH/DELETE `/apostas/{chave}`, POST `/restaurar`                                                                                     | Main                                            | #19; omitido preserva, null só permitido; histórico e eventos                                                         |
+| Resultado                   | POST `/apostas/{chave}/resultado`, PENDENTE aceito pelo domínio                                                                            | Main + lacuna de concorrência/ordem             | #27; lista decrescente não atende mais-antiga-primeiro; desfazer exige política segura                                |
+| Manual/freebet              | POST `/apostas`, freebet + stake_unidades; API separa custo zero e face                                                                    | Main / expansão de atribuição PR #136           | #29; não zerar valor de face da freebet                                                                               |
+| Revisão/par legado          | GET `/revisao`, `/stats`, `/{id}`, `/{id}/foto`; POST `/{id}/resolver` com CORRIGIR/DESCARTAR/MESMA                                        | Main                                            | #19/#28; CORRIGIR confirma distinta no caso legado de dúvida; não criar rota de par duplicada                         |
+| Foto fora de revisão        | Foto existente exige revisão autorizada/aberta; sem mídia genérica de aposta por hash                                                      | Lacuna                                          | #22/#50; autorização por recurso, inclusive após resolução                                                            |
+| Caixa                       | GET/POST `/caixa`; GET `/saldo`, `/extrato`; PATCH `/contas/{id}/banca`                                                                    | Main                                            | #31; POST com Idempotency-Key; transferência atômica origem/destino; BONUS só leitura, AJUSTE aceito na escrita       |
+| Saldos/extrato              | Conta/banca e parte conhecida; null/contas sem saldo confiável; feed sem horário real de liquidação/saldo corrido por linha                | Main                                            | #31/#20; nunca fabricar zero, liquidação ou saldo por linha                                                           |
+| Banca e unidade             | Associação banca_id existe; CRUD/capital/mode e escrita de unidade temporal não estão completos para o site                                | Lacuna                                          | #50/#31/#33; não confundir vínculo de conta com modo conjunto/separado                                                |
+| Painel básico               | GET `/painel`, `/painel/metricas`, `/painel/export`; período+casa/tipster/mercado                                                          | Main                                            | #20/#35; resumo, por_casa/tipster/mercado e evolução; não árvore grupo→tipster presumida                              |
+| Grupo → tipsters            | `por_tipster` plano não define vínculo/atribuição hierárquica nem total por grupo                                                          | Lacuna obrigatória                              | #50/#20; total por grupo e filhos no servidor, sem dupla contagem e sem atribuição explícita                          |
+| Lucro por dia               | Evolução expõe lucro_periodo_centavos; granularidade pode ser dia/semana/mes                                                               | Main + validação/complemento do contrato diário | #20/#50; série diária para todo período, critério de data/fuso explícitos, valores visíveis; não derivar do acumulado |
+| Frescor                     | atualizado_em, MV/réplica; fresh=true lê primário sem atualizar MV                                                                         | Main                                            | #9/#20/#31; refetch não garante agregado instantâneo                                                                  |
+| Análises                    | GET `/painel/analises`, evolução ampliada com caixa                                                                                        | PR #158 / backend #105                          | #56; odds, heatmap, esporte, quartis, progressão, média/fator; null/desconhecido explícitos                           |
+| Metas/fuso                  | CRUD `/painel/metas`, GET/PATCH `/painel/preferencias`                                                                                     | PR #158                                         | #57; progresso da API, DELETE arquiva                                                                                 |
+| Financeiro titular/conta    | GET `/titulares/financeiro`, desde/ate/casa/titular/conta                                                                                  | PR #136                                         | #32/#56; não atribuídas e contas sem titular continuam visíveis                                                       |
+| Titulares/contas            | `/titulares` CRUD, matrizes, contas criar/editar/ativar                                                                                    | PR #136 / backend #94–96                        | #32; ações válidas/histórico, uma conta em uso por casa por instante                                                  |
+| Troca                       | POST `/titulares/trocas/preview` e `/trocas`, Idempotency-Key, efetiva_em/estado_origem                                                    | PR #136                                         | #53; prévia e aplicação, revisão se atribuição ambígua                                                                |
+| Billing                     | GET `/billing/status`, POST `/subscribe`, `/portal`, `/cancel`                                                                             | PR #154, cadeia #150–155                        | #51/#52; cartão obrigatório, 168h desde confirmação; preço publicado pela API                                         |
+| Acesso                      | FULL_WRITE/READ_ONLY; 402 account_read_only                                                                                                | PR #154 + ensaio #155                           | #52/#10; leituras/exportação mantidas, exceções por operação; não inferir por verbo HTTP                              |
+| Bot Telegram                | POST `/telegram/link-codes`, GET/DELETE `/telegram/link`                                                                                   | PR #162, cadeia #137–141                        | #54; código único 30min, vínculo/revogação; sem endpoints web de conversa presumidos                                  |
+| Export Telegram             | POST `/upload` 202; GET `/upload/{job_id}`; file ZIP/result.json                                                                           | Main                                            | #15/#24; diretório exige adaptação definida; progresso/limites reais                                                  |
+| Consentimento de IA         | Estimativa/limites internos existem; protocolo autorizar/recusar/pausar job não encontrado                                                 | Lacuna                                          | #50/#15/#24/#25; não enfileirar gasto sujeito a consentimento antes da aprovação                                      |
+| Prints no site              | Bot aceita foto, mas não há endpoint web equivalente publicado                                                                             | Lacuna                                          | #50/#25; contrato e idempotência próprios                                                                             |
+| XLSX                        | POST `/apostas/importar-planilha` grava e exige origem_id; criadas/atualizadas/ignoradas                                                   | Main + lacuna                                   | #26/#50; prévia/remapeamento/confirmar requer API adicional                                                           |
+| Instalações                 | `/coleta/pairing-codes`, `/installations`, `/installations/{id}/rotate`, DELETE instalação                                                 | PR #163 / backend #107                          | #34; vários dispositivos, último uso não é presença online                                                            |
+| Cliente de coleta           | pairing-exchange e `/coleta/status` usam credencial de instalação; POST coleta já existe na main                                           | Main/PR #163                                    | Não chamar como usuário JWT para simular extensão                                                                     |
+| Coleta v2                   | Sessão/fronteira/ACK por item e estado terminal                                                                                            | Planejado backend #108                          | #34/#50; site só expõe leituras autorizadas; outbox da extensão                                                       |
+| Matching/consolidação       | Casa financeira + Telegram contextual, um fato, revisão por evidência                                                                      | Planejado backend #109–112                      | #19/#28/#36; nunca duplicar/somar ou consolidar no cliente                                                            |
+| Cobertura de casas          | Catálogo exact-host/suporte independente de evidência regulatória, projeção para instalação                                                | Planejado backend #113–117                      | #34/#35/#50; não presumir catálogo web JWT nem permissão de browser                                                   |
+| Calculadoras                | POST `/calculadoras/mercado-justo`, `/distribuir-entre-resultados`, `/cobertura-ao-vivo`, `/percentual-banca`                              | PR #156 / backend #103                          | #55; quatro operações, servidor Decimal; nenhuma calculadora de linhas                                                |
+| Hipotética                  | Nenhum endpoint encontrado                                                                                                                 | Lacuna / bloqueada                              | #21/#50; manter intenção sem cálculo local ou promessa disponível                                                     |
+| Privacidade                 | GET `/usuario/me/export` com formato `json` ou `xlsx`; DELETE `/usuario/me`                                                                | PR #130 e descendentes                          | #58; sem binários; 409 exclusão assistida; não é reset de dados mantendo cadastro                                     |
+| Preferências                | Tema local; fuso PR #158; odd/unidade/e-mail exigem contrato/emissor                                                                       | Parcial                                         | #33/#49/#50/#57                                                                                                       |
 
-| Tela/fluxo                                                       | Endpoint                       | Status | Nota                                                                                       |
-| ---------------------------------------------------------------- | ------------------------------ | ------ | ------------------------------------------------------------------------------------------ |
-| Capa, odd média, fator de lucro, faixas de stake                 | `GET /api/v1/painel`           | ✅     | Períodos 7/30/90/tudo                                                                      |
-| Série de evolução + barras grupo→tipster + mini-gráficos da home | `GET /api/v1/painel/metricas`  | ⚠️     | Confirmar séries: lucro/dia, lucro/tipster, resultado de ontem, n por barra (espessura=√n) |
-| Tabela completa por grupo                                        | `GET /api/v1/painel` (?tabela) | ⚠️     | Confirmar flag/seção                                                                       |
-| Hipotética `/e-se`                                               | —                              | ❌     | Endpoint de projeção hipotética (stake do tipster) não consta na API.md                    |
-| Exportar Excel                                                   | `GET /api/v1/painel/export`    | ✅     | Download autenticado de blob                                                               |
+Prefixo das rotas abreviadas: `/api/v1`. Rotas web/nomes de área não precisam reproduzir nomes de endpoints.
 
-## Caixa / Banca
+## Regras de integração
 
-| Tela/fluxo                        | Endpoint                                  | Status                                                  | Nota                                            |
-| --------------------------------- | ----------------------------------------- | ------------------------------------------------------- | ----------------------------------------------- |
-| Lançar depósito/saque             | `POST /api/v1/caixa`                      | ✅                                                      |                                                 |
-| Listar movimentos / extrato       | `GET /api/v1/caixa`, `GET /caixa/extrato` | ✅                                                      |                                                 |
-| Saldos por casa/banca             | `GET /api/v1/caixa/saldo`                 | ✅                                                      |                                                 |
-| Transferência entre casas         | ⚠️                                        | Confirmar se é `POST /caixa` duplo ou endpoint dedicado |                                                 |
-| Vincular conta à banca            | `PATCH /caixa/contas/{id}/banca`          | ✅                                                      | Modo conjunta/separada por grupo (capital mode) |
-| Capital inicial, apelidos de casa | —                                         | ❌                                                      | Confirmar cobertura na API                      |
-
-## Revisão
-
-| Tela/fluxo              | Endpoint                                  | Status | Nota                            |
-| ----------------------- | ----------------------------------------- | ------ | ------------------------------- |
-| Fila + contador do menu | `GET /api/v1/revisao`, `/revisao/stats`   | ✅     | Contador alimenta a aba Revisão |
-| Bilhete com foto        | `GET /revisao/{id}`, `/revisao/{id}/foto` | ✅     |                                 |
-| Resolver com correções  | `POST /revisao/{id}/resolver`             | ✅     |                                 |
-
-## Entrada assíncrona
-
-| Tela/fluxo                                      | Endpoint                                             | Status | Nota                                                                                           |
-| ----------------------------------------------- | ---------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------- |
-| Upload exportação Telegram                      | `POST /api/v1/upload` (202) + `GET /upload/{job_id}` | ✅     | Polling (ADR 003)                                                                              |
-| Cartão de autorização de gasto (cartão do pode) | estado no job                                        | ⚠️     | Confirmar estados do job: `aguardando_autorizacao`, proveniência de preço, caminho "Agora não" |
-| Upload de prints (drag-drop, dedupe por hash)   | —                                                    | ❌     | Confirmar endpoint de prints / campo no upload                                                 |
-
-## Coleta / Extensão
-
-| Tela/fluxo                                      | Endpoint | Status | Nota                                                                                                     |
-| ----------------------------------------------- | -------- | ------ | -------------------------------------------------------------------------------------------------------- |
-| Hub: status, criar/rotacionar token, instalação | —        | ❌     | Endpoints de gestão de token de coleta não constam na API.md (o `POST /coleta` é da extensão, não da UI) |
-| Download `extensao.zip`                         | —        | ❌     | Decidir: asset estático do frontend ou servido pela API                                                  |
-
-## Conta / Configurações
-
-| Tela/fluxo                                  | Endpoint               | Status | Nota                                                                                                                               |
-| ------------------------------------------- | ---------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Login/signup/senha/confirmar e-mail/convite | provedor de identidade | ❌     | API só valida JWT por JWKS; escolher provedor (Cognito/Supabase/Auth0/próprio) — **primeira lacuna a resolver** (Semana 2 depende) |
-| "Onde eu tenho conta" (casas desde/até)     | —                      | ❌     | Endpoint de contas_casa com vigência                                                                                               |
-| Unidade temporal, formato de odd, tema      | —                      | ❌     | Endpoints de preferências/config do usuário (tema pode ser local)                                                                  |
-| Apagar tudo                                 | —                      | ❌     | Endpoint destrutivo com confirmação pesada                                                                                         |
-| Fotos por hash                              | —                      | ⚠️     | Confirmar rota de mídia com token                                                                                                  |
-
-## Regras de trabalho sobre lacunas
-
-1. Lacuna ❌/⚠️ vira issue em `pradyumna-001/bancaemdia-api` no formato dos ADRs de lá — a UI nunca implementa contorno local.
-2. Sintoma 422 em navegação indica contrato mal mapeado aqui — corrigir este documento junto.
-3. Regenerar tipos (`make gen-types`) em cada mudança aceita de contrato (ADR 003).
+1. Contrato pinado com SHA/hash e estado da capacidade; nenhuma resposta de domínio definida manualmente para antecipar API.
+2. Não usar read model de outro filtro para preencher cabeçalho financeiro, nem sumarizar páginas/grupos no cliente.
+3. `Idempotency-Key` conforme endpoint/intenção; timeout após envio não prova falha de gravação. Retry não cria nova intenção.
+4. Diferenciar sem dado, desconhecido, não aplicável, pendência de revisão, dado antigo e zero válido.
+5. Existe ensaio de integração no backend #155 com patches/SHAs e testes de billing/metas; ele não é release. Preservar esse trabalho ao adotar a API integrada e testar experiência web separadamente.
+6. Não adicionar URLs secretas/códigos/tokens a logs, query params ou snapshots. Sessões de demonstração só em fixture isolada.
+7. Issue #50 coordena lacunas por unidade; antes de abrir backend issue, verificar implementação/issue vigente para não duplicar função existente.
+8. Browser autentica por cookie HttpOnly (`credentials: include`), CSRF apenas em memória; não recebe/injeta JWT externo. O PR #168 reutiliza validação numérica no servidor. Proxy deve encaminhar `/auth/*` e `/api/*`; ver [ADR003](adrs/003-api-client-typing-session.md) e [prova/pendências](identity-validation.md). Não promover schema de PR ao cliente público como contrato integrado.

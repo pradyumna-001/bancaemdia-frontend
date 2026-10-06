@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-security/
+dist-shell-fixture/
 dist-ssr/
 *.local
 .env
@@ -22,3 +24,7 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+reports/
+.identity-api/
+__pycache__/

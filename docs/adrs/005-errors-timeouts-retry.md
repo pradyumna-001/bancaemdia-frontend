@@ -1,44 +1,24 @@
-# ADR 005: Erros, Timeouts e Retry — Fallbacks de Query Params, 429/503, Páginas de Erro
+# ADR 005: Erros, acesso e recuperação
 
 ## Status
 
-Proposed
-
-## Context
-
-Espelho client-side do backend ADR-008 (circuit breakers, timeouts, rate limiting). A UI antiga tinha páginas estilizadas 404/405/500 em pt-BR e nunca 422 por query param (inválido caía para default). O SPA precisa do equivalente com Error Boundaries e regras explícitas por status.
+Revisado pelo ADR019 em 29/09/2026. Implementação #10/#13.
 
 ## Decision
 
-### Hierarquia de falha
+| Estado                | Comportamento                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 401                   | Renovar/reautenticar sem loop; destino interno validado                                                                         |
+| 402 account_read_only | Manter sessão, consulta/exportação e formulário; explicar bloqueio e abrir Assinatura; não reenviar após pagamento sem intenção |
+| 403/404               | Recurso indisponível com retorno contextual, sem revelar dados alheios                                                          |
+| 409                   | Explicar código de conflito/estado/idempotência; nova prévia ou recarga quando pertinente, preservando entrada                  |
+| 413                   | Limite informado e como reduzir arquivo                                                                                         |
+| 422                   | Erros por campo; query inválida conhecida normaliza antes; filtro válido não é removido por fallback silencioso                 |
+| 429                   | Respeitar Retry-After no recurso/ação afetado; não bloquear consulta independente sem necessidade                               |
+| 500                   | Leitura idempotente pode tentar uma vez; erro persistente com saída útil                                                        |
+| 503                   | Leitura segura com backoff/jitter até três tentativas; depois tentativa explícita                                               |
+| Rede/timeout          | Preservar entrada; escrita pode ter ocorrido, reconciliar pelo contrato antes de repetir                                        |
 
-1. **Erro de componente** → React Error Boundary por rota: página estilizada "deu errado" com ação "tentar de novo" e link para início; erro logado (console + provider futuro).
-2. **Erro de rota** → 404 estilizado ("não achei"), espelho de `nao_achei.html`.
-3. **Erro de API** por status (via `ApiError` do ADR 003):
+GET10s, POST15s, upload60s. Abort de observação não cancela job remoto. Retentativa automática não transforma POST em operação segura; chave estável só onde contratada. Mensagens pt-BR, sem códigos internos/JSON/stack apresentados como copy.
 
-| Status             | Comportamento da UI                                                                                                                                                         |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 401                | Reautenticar → login com `destino` interno                                                                                                                                  |
-| 403/404 de recurso | Página/card estilizado, link de volta                                                                                                                                       |
-| 409 (conflito)     | Mensagem de domínio ("aposta já alterada") + botão "Recarregar dados"                                                                                                       |
-| 413                | "Arquivo grande demais" com limite informado                                                                                                                                |
-| 422                | Tratado como inválido de formulário **apenas em formulário**; em navegação/query param, fallback para default (o 422 da API em navegação indica bug — telemetria, não tela) |
-| 429                | Banner "Muitas requisições, tente em Xs" usando `Retry-After`; botões de ação bloqueados durante a janela                                                                   |
-| 500                | Página "deu errado"; GETs idempotentes retentam 1× automático                                                                                                               |
-| 503                | Banner de manutenção/indisponível; GETs idempotentes retentam com backoff (máx. 3, exponencial + jitter) e depois param                                                     |
-| Rede/offline       | Indicador "sem conexão"; formulários desabilitados; retry manual                                                                                                            |
-
-4. **Nunca**: JSON cru, stack trace, spinner eterno, tela branca.
-
-### Timeouts
-
-- GET: 10s; POST leve: 15s; upload/arquivo: 60s. Timeout é erro de primeira classe (mensagem "demorou demais — tente de novo"), abortável pelo usuário.
-
-### Tela de carregamento
-
-- Estados de loading têm skeleton com espaço reservado (regra CLS, ADR 001); polling de job mostra progresso real (ADR 003).
-
-## Consequences
-
-- Matriz status→comportamento revisada em PRs que tocam `client.ts`.
-- e2e (ADR 007) simula 429/503/offline com MSW para garantir as regras.
+Error Boundaries e 404/405/500 têm ações acessíveis. Carregamento reserva espaço quando pertinente; formulário estático não ganha skeleton obrigatório. Foco/anúncio acompanham erro, sem spinner infinito e sem repetir anúncios a cada polling. A matriz de acesso por operação é #52; calculadoras POST não implicam mutação financeira.

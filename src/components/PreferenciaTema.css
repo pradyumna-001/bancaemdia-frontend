@@ -1,0 +1,36 @@
+.preferencia-tema {
+  border: 0;
+  padding: 0;
+  margin: var(--espaco-32) 0 0;
+  min-inline-size: 0;
+}
+.preferencia-tema legend {
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-pequena);
+  margin-block-end: var(--espaco-8);
+  padding: 0;
+}
+.preferencia-tema-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-8);
+}
+.preferencia-tema label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-8);
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-12);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  cursor: pointer;
+}
+.preferencia-tema label:has(:checked) {
+  background: var(--superficie-secundaria);
+  border-color: var(--acao);
+  font-weight: var(--peso-destaque);
+}
+.preferencia-tema input {
+  margin: 0;
+  accent-color: var(--acao);
+}

@@ -1,61 +1,45 @@
-# ADR 013: Escopo do Frontend — Paridade com o Monólito, 5 Semanas
+# ADR 013: Escopo do frontend — tarefas do produto vigente
 
 ## Status
 
-Proposed
+Revisado em 29/09/2026 pelo ADR019. Substitui o limite anterior de paridade com o monólito em cinco semanas.
 
-## Context
+## Objetivo
 
-**Objetivo**: recriar em 5 semanas (dev único, AI-assisted) o frontend do Planilhador como SPA desacoplado (`bancaemdia-frontend`), consumindo `bancaemdia-api` `/api/v1`, com **paridade de funcionalidade e de qualidade de tela** com `planilhador/web/` do monólito original, como definido em SITE.md e DESIGN.md.
+Permitir registrar, conferir e entender apostas e dinheiro por conta/titular, conectar canais de entrada e gerir acesso/privacidade com os contratos reais de bancaemdia-api. A [pesquisa visual](../research/visual-direction.md) e ADR006 continuam vigentes; simplicidade organiza a informação, não elimina capacidades.
 
-**Inventário de paridade** (rotas/telas da UI antiga → escopo v2). Onde a API atual ainda não cobre a tela, a lacuna vai para `docs/API-CONTRACTS.md` como issue do backend — a UI não implementa workaround.
+## Inventário
 
-### Abas principais (fonte única `ABAS`)
+| Área                | Tarefas                                                         | Issues                        |
+| ------------------- | --------------------------------------------------------------- | ----------------------------- |
+| Fundação            | configuração, rotas, marca, shell, gráficos, CI                 | #1–8; correção #48            |
+| Identidade e acesso | usuário interno, cadastro/login, erros, assinatura e leitura    | #9–14, #49, #51–52            |
+| Contas e titulares  | pessoas, contas por casa, matriz, histórico, ativar e trocar    | #32, #53                      |
+| Apostas             | filtros, lista, detalhe, origem, correções, manual e resultados | #16–19, #22, #27, #29         |
+| Revisão             | leitura, atribuição de conta, pares e evidências                | #28; #19                      |
+| Caixa               | saldo/exposição, movimentos, transferência atômica e banca      | #31                           |
+| Painel              | resumo, séries, análises, metas e fuso                          | #20, #56–57                   |
+| Ferramentas         | quatro calculadoras com resultado da API                        | #55                           |
+| Entrada             | arquivo Telegram, prints web, XLSX com prévia, acompanhamento   | #15, #24–26                   |
+| Conexões            | vínculo bot, instalações da extensão e coleta                   | #34, #54                      |
+| Conta               | preferências, assinatura, exportação pessoal, encerramento      | #33, #51, #58                 |
+| Ajuda/primeiro uso  | orientação contextual, canais, download, Excel do Painel        | #35, #59                      |
+| Qualidade/release   | e2e, budgets/a11y, auditoria de cobertura e deploy              | #23, #30, #36–39              |
+| Contratos pendentes | lacunas rastreadas e capacidade por versão                      | #50; #21 Hipotética bloqueada |
 
-| Tela antiga            | Rotas antigas                                                                                         | Escopo v2                                                                                                                                                                                                                                                                                                                    | Semana |
-| ---------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| **Apostas**            | `/`, `?apagadas=1`                                                                                    | Lista com cabeçalho de números (lucro, ROI), 3 mini-gráficos (lucro/dia, lucro/tipster, ontem), filtros por `<details>` (casa, tipster, grupo, banca, estado, origem, período), pílulas removíveis, atalhos de período (7/30 dias, este mês), "Mostrar mais", cartões de aviso (foto duplicada, dúvida de par), estado vazio | 3      |
-| **Aposta (detalhe)**   | `/aposta/{chave}`, `/apagar`, `/restaurar`, `/par`                                                    | Foto com espaço reservado, par com tipster (rastreabilidade), nota de freebet, correção de campos allowlist, apagar com restaurar, resolver dúvida de par ("É a mesma"/"São diferentes")                                                                                                                                     | 3      |
-| **Nova aposta manual** | `/nova`                                                                                               | Formulário com checkbox freebet (stake zero, valor de face no denominador do ROI — explicado inline)                                                                                                                                                                                                                         | 4      |
-| **Painel**             | `/painel`, `?tabela`                                                                                  | Pílulas de período (7/30/90/tudo), capa, odd média, fator de lucro, faixas de stake, barras grupo→tipster (espessura=√n), linha de evolução, tabela completa sob demanda                                                                                                                                                     | 3      |
-| **Hipotética**         | `/e-se`                                                                                               | Visão escondida "e se eu seguisse a stake do tipster?" — nunca na capa                                                                                                                                                                                                                                                       | 3      |
-| **Enviar**             | `/enviar`, `/enviar/andamento`                                                                        | Upload de exportação Telegram (pasta/.zip), progresso via polling do job 202, cartão de autorização de gasto de IA com proveniência de preço ("Agora não" é caminho completo), links tutorial/prints/importar                                                                                                                | 4      |
-| **Prints**             | `/prints`                                                                                             | Drag-and-drop de prints com dedupe por hash de conteúdo; mesmo cartão de orçamento                                                                                                                                                                                                                                           | 4      |
-| **Importar**           | `/importar`, `/previa`, `/confirmar`                                                                  | Planilha com prévia de mapeamento de colunas (pickers próprios) antes de confirmar                                                                                                                                                                                                                                           | 4      |
-| **Resultados**         | `/resultados`                                                                                         | Mobile-first, um toque = um resultado, GREEN/RED grandes, "Outro…" revela ANULADA/CASHOUT/MEIO_GREEN/MEIO_RED, desfazer da sessão                                                                                                                                                                                            | 4      |
-| **Revisão**            | `/revisao`                                                                                            | Fila de bilhetes com leitura incorreta; cartão bilhete-inteiro: foto (sticky) + legenda mono do tipster + campos de correção; contador no menu só quando há fila                                                                                                                                                             | 4      |
-| **Banca**              | `/banca`                                                                                              | Caixa por casa: depósito/saque, transferência entre casas, capital inicial, modo conjunta/separada por grupo, apelidos                                                                                                                                                                                                       | 5      |
-| **Casas**              | `/casas`                                                                                              | "Onde eu tenho conta": marcar casas nunca/até-data; recado numérico explícito do que sai da apuração                                                                                                                                                                                                                         | 5      |
-| **Configurações**      | `/configuracoes`, `/email`, `/unidade`, `/apagar-tudo`                                                | Tela padrão-ouro: valor da unidade (temporal), formato de odd, tema, e-mail, apagar tudo com confirmação pesada                                                                                                                                                                                                              | 5      |
-| **Coleta**             | `/coleta`, `/coleta/novo`                                                                             | Hub da extensão: status de conexão em primeiro lugar, gestão/rotação de token, passos de instalação                                                                                                                                                                                                                          | 5      |
-| **Tutorial/Extensão**  | `/tutorial`, `/extensao`, `/extensao.zip`                                                             | Onboarding com ilustrações SVG próprias; download do ZIP da extensão (asset servido pelo backend ou estático)                                                                                                                                                                                                                | 5      |
-| **Auth**               | `/login`, `/criar-conta`, `/senha`, `/esqueci-senha`, `/redefinir-senha`, `/confirmar-email`, `/sair` | Fluxo de conta contra provedor de identidade (ADR 003); código de convite se o provedor o suportar; lockout/ratelimit do lado dele                                                                                                                                                                                           | 2      |
-| **Erros**              | 404/405/500                                                                                           | Páginas estilizadas pt-BR (ADR 005)                                                                                                                                                                                                                                                                                          | 2      |
-| **Sistema**            | `/sistema`, `/quem`                                                                                   | Página interna do sistema visual (storybook mínimo) — Semana 1                                                                                                                                                                                                                                                               | 1      |
-| **Exportar**           | `/exportar.xlsx`                                                                                      | Download via `/api/v1/painel/export`                                                                                                                                                                                                                                                                                         | 5      |
-| **Fotos**              | `/foto/{hash}`                                                                                        | `<img>` contra endpoint de mídia da API com reserva de espaço                                                                                                                                                                                                                                                                | 3      |
+## Arquitetura de informação
 
-## Non-goals das 5 semanas
+ABAS define destinos e apresentação desktop/mobile. Apostas/Painel/Enviar diretos no celular; Revisão só com fila; Mais para os demais. Contas e titulares, Calculadoras, Assinatura e Configurações ficam no menu secundário também no desktop. Análises/Metas são detalhes do Painel; Conexões/Privacidade pertencem a Configurações. Caixa mantém `/banca`; domínio banca é distinto de titular/conta/casa.
 
-- Billing/Stripe UI, portal de cliente (M4 do backend)
-- Publicação da extensão na Web Store, mudanças na extensão em si
-- Bot Telegram de qualquer espécie
-- PWA/offline-first (além do banner offline do ADR 005), notificações push
-- SEO/SSR, blog/marketing site
-- Novas funcionalidades além do inventário acima
+## Limites
 
-## Plano de 5 Semanas
+- Nenhum cálculo financeiro, parsing de captura, matching, controle de saldo ou atribuição de conta no cliente.
+- Conversa/rascunho do bot permanece no Telegram; site conecta e orienta. Captura/outbox/permissões pertencem à extensão, não à SPA.
+- Infra/CLI/admin não viram telas comuns. Operações recebendo apostas/fundos não fazem parte do produto.
+- Calculadora de linhas não implementável enquanto pesquisa backend #104 está No-Go.
+- Hipotética não é removida silenciosamente, mas requer contrato/prioridade; não integra lançamento por um placeholder.
+- PWA/offline financeiro, notificações push, marketing/SSR e novas capacidades não descritas continuam fora do escopo desta revisão.
 
-| Semana                    | Entrega                                                                                                                                           | ADR |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| 1 — Fundação              | Scaffold Vite/TS strict, toolchain completa, tokens do sistema visual, shell com 7 abas de fonte única, CI verde (lint→typecheck→test→build)      | 014 |
-| 2 — Auth e Cliente da API | `ProvedorAuth` + telas de conta, client tipado via OpenAPI, Error Boundaries e páginas de erro, config de ambientes                               | 015 |
-| 3 — Telas Centrais        | Apostas (lista/filtros/pílulas/mini-gráficos), Aposta detalhe com correções e par, Painel com gráficos SVG, Hipotética                            | 016 |
-| 4 — Fluxos de Entrada     | Enviar (202 polling + cartão do pode), Prints, Importar com prévia, Resultados (1 toque, desfazer), Revisão (cartões bilhete), Nova aposta manual | 017 |
-| 5 — Conta e Endurecimento | Banca, Casas, Configurações, Coleta/extensão hub, Tutorial, Exportar; e2e completo, auditoria perf/a11y, deploy prod + runbooks                   | 018 |
+## Dependências e saída
 
-**Critério de saída global**: todo o inventário acima operando contra a API real em produção, com os 8 fluxos e2e do ADR 007 verdes e todos os budgets do ADR 001 dentro do alvo.
-
-## Dependências do backend (lacunas)
-
-Ver `docs/API-CONTRACTS.md` — em resumo: provedor de identidade e telas de conta; exatidão dos filtros (casa/tipster/grupo/banca/estado/origem/período); endpoint de foto por hash; proveniência de preço no job de upload (cartão do pode); endpoints de casas ("onde tenho conta"), configurações (unidade temporal, formato de odd, tema), token de coleta da extensão e download do ZIP. Cada lacuna vira issue em `pradyumna-001/bancaemdia-api` **antes** da semana do frontend que a consome.
+[API-CONTRACTS](../API-CONTRACTS.md) distingue main, PR e lacuna. [ADR019](019-current-product-backend-alignment.md) define precedência e ordem; [backlog](../backlog/README.md) contém aceites. A saída é cobertura do produto selecionado com contratos integrados, evidências nos dois viewports e bloqueios/adiamentos explicitamente aprovados. Não basta reproduzir rotas antigas ou obter mock verde.
