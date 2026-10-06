@@ -202,7 +202,10 @@ for (const outcome of ['rede', 'timeout'] as const) {
     });
     await page.goto(fixture);
     await page.getByLabel('Odd', { exact: true }).fill('4.50');
-    await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+    // Ativação nativa por teclado torna determinístico o início do prazo.
+    await page
+      .getByRole('button', { name: 'Enviar', exact: true })
+      .press('Enter');
     await expect.poll(() => committed).toBe(1);
     if (outcome === 'timeout') await page.clock.runFor(15000);
     await expect(
