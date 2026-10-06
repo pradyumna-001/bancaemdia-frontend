@@ -8,6 +8,7 @@ import { createAppRoutes } from '../../../src/app/routes';
 import { createAppQueryClient } from '../../../src/app/queryClient';
 import '../../../src/styles/base.css';
 import { RecoveryPage } from './RecoveryPage';
+import { routeFailures } from './routeFailures';
 
 const client = createClient<paths>({ baseUrl: location.origin });
 const consultar = async () => {
@@ -25,7 +26,7 @@ createRoot(document.getElementById('root')!).render(
   <App
     router={createBrowserRouter([
       { path: '/testes/recuperacao', element: <RecoveryPage /> },
-      ...createAppRoutes(() => true, consultar),
+      ...routeFailures(createAppRoutes(() => true, consultar)),
     ])}
     queryClient={createAppQueryClient()}
     ambiente={ambiente}

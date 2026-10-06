@@ -12,6 +12,10 @@ export default defineConfig({
     {
       name: 'fila-simulada-apenas-na-demonstracao',
       configurePreviewServer(server) {
+        server.middlewares.use('/testes/rota', (_req, res) => {
+          res.setHeader('Content-Type', 'application/json');
+          res.end('{}');
+        });
         server.middlewares.use('/api/v1/revisao/stats', (_req, res) => {
           res.setHeader('Content-Type', 'application/json');
           res.end(

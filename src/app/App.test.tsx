@@ -135,7 +135,9 @@ it.each(['loader', 'componente'])(
     };
     open('/falha?apagadas=1', true, [route]);
     expect(
-      await screen.findByRole('heading', { name: 'Deu errado' }),
+      await screen.findByRole('heading', {
+        name: 'Não foi possível abrir esta página',
+      }),
     ).toBeVisible();
     expect(screen.queryByText(/segredo interno/)).not.toBeInTheDocument();
     failing = false;
@@ -163,7 +165,12 @@ it.each([404, 405, 500])(
     ]);
     expect(
       await screen.findByRole('heading', {
-        name: status === 404 ? 'Não achei esta página' : 'Deu errado',
+        name:
+          status === 404
+            ? 'Este recurso não está disponível'
+            : status === 405
+              ? 'Esta ação não está disponível'
+              : 'Não foi possível abrir esta página',
       }),
     ).toBeVisible();
     expect(screen.queryByText(/secret|raw/)).not.toBeInTheDocument();
