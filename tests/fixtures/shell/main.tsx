@@ -9,6 +9,7 @@ import { createAppQueryClient } from '../../../src/app/queryClient';
 import '../../../src/styles/base.css';
 import { RecoveryPage } from './RecoveryPage';
 import { routeFailures } from './routeFailures';
+import { ValoresPage } from './ValoresPage';
 
 const client = createClient<paths>({ baseUrl: location.origin });
 const consultar = async () => {
@@ -26,6 +27,7 @@ createRoot(document.getElementById('root')!).render(
   <App
     router={createBrowserRouter([
       { path: '/testes/recuperacao', element: <RecoveryPage /> },
+      { path: '/testes/valores', element: <ValoresPage /> },
       ...routeFailures(createAppRoutes(() => true, consultar)),
     ])}
     queryClient={createAppQueryClient()}

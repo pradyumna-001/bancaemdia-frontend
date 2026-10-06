@@ -36,6 +36,8 @@ Dependência em #50 significa resolver o contrato específico usado pela issue, 
 
 ## Consequences
 
+Apresentação de valores (#16, 06/10/2026): `src/lib/format.ts` centraliza escala/unidade de valores já decididos pelo servidor; `src/lib/termos.ts` centraliza nomes e estados tipados pelo OpenAPI. Ausência não é zero; preço publicado não é tabela local; data civil não é instante. Componentes de valor mantêm face, custo próprio, retorno, lucro e saldo independentes. Contrato e limites em [formatação](../contracts/formatacao.md), com guarda AST e ensaio isolado de apresentação. Não altera a referência de tipos nem declara identidade/ambiente produtivos.
+
 Novas unidades #49–59 completam o planejamento sem duplicar implementação financeira. A fundação visual continua conforme ADR006 e pesquisa aprovada. Toda issue de tela contém objetivo, contrato/versionamento, disponibilidade, dependências, tarefas e aceite desktop/mobile. Release exige API integrada, ambiente real e evidências; ensaio de backend #155 é útil, mas não prova experiência web nem produção.
 
 ## Fluxo de correção dos primeiros PRs
