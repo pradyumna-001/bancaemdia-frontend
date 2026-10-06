@@ -46,7 +46,7 @@ const result = await client.POST('/api/v1/upload', {
 });
 ```
 
-Na planilha, usar campos `arquivo` e `origem_id` contratados. Não criar protocolo de prévia/consentimento/prints para contornar lacunas da #50. Aceite 202 conserva `job_id`/`status_url`; falhas parciais do status não são convertidas em sucesso total ou cancelamento remoto.
+Na planilha, usar campos `arquivo` e `origem_id` contratados. Não criar protocolo de prévia/prints para contornar lacunas da #50. Aceite 202 conserva `job_id`/`status_url`; falhas parciais do status não são convertidas em sucesso total ou cancelamento remoto. O upload inicia processamento e o site acompanha o resultado, sem estimativa/aviso de custo de processamento ou aprovação de gasto (ADR019, decisão de 06/10/2026). Eventual campo de estimativa retornado pela API não cria etapa visual; limites máximos de gasto por usuário permanecem no backend.
 
 ## Erros e evidência
 
