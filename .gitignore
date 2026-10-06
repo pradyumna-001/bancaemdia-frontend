@@ -28,3 +28,6 @@ Thumbs.db
 reports/
 .identity-api/
 __pycache__/
+.staging-artifact/
+.staging-release/
+.staging-ssh/

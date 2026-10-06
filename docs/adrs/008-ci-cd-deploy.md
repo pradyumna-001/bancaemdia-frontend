@@ -34,7 +34,7 @@ CSP continua estrita: script próprio + hash exato do tema, fontes próprias, se
 
 HTML, assets e configuração nginx com hash CSP formam uma unidade imutável. Releases futuros usam tag/SHA e imagem por digest; promoção/rollback preservam a unidade, com configuração runtime do ambiente versionada separadamente. SLA de rollback <7min é meta a ensaiar em #14/#38, não prova de operação existente. Ver runbooks de deploy e rollback.
 
-Não há CD automático neste PR. Homologação depende de #14; produção, de #38 e aceite #39. Merge em main não provisiona infraestrutura nem publica o site.
+A #14 acrescenta [promoção manual para homologação](../contracts/homologacao.md) do artefato já aprovado da main, por digest, com configuração validada, transação, restauração e smoke real nos dois viewports. O workflow depende de ativação/configuração do operador e API/identidade integradas; não há publicação por merge/tag, provisionamento ou deploy público comprovado. Produção continua na #38 e aceite #39. Os ensaios Docker descartáveis não fecham o gate de ambiente público.
 
 ## Proteção de branch
 

@@ -168,4 +168,4 @@ O [ADR 019](docs/adrs/019-current-product-backend-alignment.md) substitui o plan
 
 ## Qualidade e hospedagem
 
-A #8 acrescenta cobertura por arquivo, budget de JavaScript e medição Lighthouse à CI permanente. Relatórios ficam nos artifacts; build público e nginx/CSP são guardados juntos por SHA. Não há deploy automático. Plataforma Fase 1, limites da medição e impedimento administrativo de proteção de branch estão em [ADR008](docs/adrs/008-ci-cd-deploy.md) e [validação](docs/ci-budgets-validation.md).
+A #8 acrescenta cobertura por arquivo, budget de JavaScript e medição Lighthouse à CI permanente. Relatórios ficam nos artifacts; build público e nginx/CSP são guardados juntos por SHA. A #14 prepara [promoção manual para homologação](docs/contracts/homologacao.md) do mesmo artefato aprovado, por digest, com config validada, restauração e smoke real mobile/desktop. Ativação do servidor/API/identidade continua pendente; merge não implanta o site. Plataforma Fase 1, limites da medição e impedimento administrativo de proteção de branch estão em [ADR008](docs/adrs/008-ci-cd-deploy.md) e [validação](docs/ci-budgets-validation.md).

@@ -48,7 +48,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -e '.identity-api[dev]'
-      - run: ruff check tests/identity && ruff format --check tests/identity
+      - run: ruff check tests/identity deploy/staging tests/staging && ruff format --check tests/identity deploy/staging tests/staging
       - run: python -m playwright install --with-deps chromium
       - name: Gerar credenciais exclusivamente descartáveis e mascaradas
         shell: bash
