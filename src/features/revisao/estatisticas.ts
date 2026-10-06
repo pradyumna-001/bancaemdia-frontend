@@ -2,11 +2,13 @@ import type { paths } from '../../api/schema';
 
 export type EstatisticasRevisao =
   paths['/api/v1/revisao/stats']['get']['responses'][200]['content']['application/json'];
-export type ConsultarRevisao = () => Promise<EstatisticasRevisao>;
+export type ConsultarRevisao = (
+  signal?: AbortSignal,
+) => Promise<EstatisticasRevisao>;
 export const CHAVE_REVISAO = ['revisao', 'stats'] as const;
 
-// Mock transitório da #6. O cliente autenticado da #10 substituirá esta função.
-// Não inicia requests sem transporte de sessão definido.
+// Fallback de testes/fixture do shell. main.tsx fornece a consulta real autenticada.
+// Não libera sessão nem substitui respostas da API no aplicativo público.
 export const revisaoSimuladaVazia: ConsultarRevisao = async () => ({
   total: 0,
   por_motivo: {},

@@ -6,6 +6,7 @@ import {
   UPLOAD_OPERATIONS,
 } from './operations.generated';
 import type { paths } from './schema';
+import type { RequestContext } from '../auth/session';
 
 export const API_TIMEOUTS = Object.freeze({
   read: 10_000,
@@ -19,6 +20,8 @@ const reads = new Set(['GET', 'HEAD', 'OPTIONS']);
 export interface ApiClientOptions {
   readonly getCsrfToken?: () => string | undefined;
   readonly fetcher?: (request: Request) => Promise<Response>;
+  readonly captureSession?: () => RequestContext;
+  readonly onUnauthorized?: (error: ApiError) => void;
 }
 
 export function createIdempotencyKey(): string {
@@ -32,7 +35,7 @@ export function createApiClient(
 ) {
   const metadata = new WeakMap<
     Request,
-    { operation: string; parseAs: string }
+    { operation: string; parseAs: string; context?: RequestContext }
   >();
   const fetcher = options.fetcher ?? globalThis.fetch;
 
@@ -41,6 +44,8 @@ export function createApiClient(
     if (!policy) throw new ApiError('invalid_request');
     const mutation = !reads.has(request.method);
     if (request.signal.aborted) throw new ApiError('cancelled');
+    if (policy.context && !policy.context.isCurrent())
+      throw new ApiError('cancelled');
     const controller = new AbortController();
     let rejectAbort: (error: ApiError) => void = () => {};
     const aborted = new Promise<never>((_resolve, reject) => {
@@ -52,6 +57,7 @@ export function createApiClient(
     };
     const cancel = () => stop('cancelled');
     request.signal.addEventListener('abort', cancel, { once: true });
+    policy.context?.signal.addEventListener('abort', cancel, { once: true });
     const deadline = uploads.has(policy.operation)
       ? API_TIMEOUTS.upload
       : mutation
@@ -68,6 +74,8 @@ export function createApiClient(
           // The deadline includes receiving the body, not only receiving HTTP headers.
           // Current downloads are finite files; streaming is not this client's contract.
           const bytes = await response.arrayBuffer();
+          if (policy.context && !policy.context.isCurrent())
+            throw new ApiError('cancelled', { mutation });
           const mime = response.headers
             .get('Content-Type')
             ?.split(';')[0]
@@ -101,7 +109,11 @@ export function createApiClient(
                 throw new ApiError('invalid_response', { mutation });
             }
           }
-          if (!response.ok) throw httpError(response, body, mutation);
+          if (!response.ok) {
+            const error = httpError(response, body, mutation);
+            if (error.status === 401) options.onUnauthorized?.(error);
+            throw error;
+          }
           const noBody =
             request.method === 'HEAD' ||
             response.status === 204 ||
@@ -119,6 +131,26 @@ export function createApiClient(
             headers: response.headers,
           });
           Object.defineProperty(buffered, 'url', { value: response.url });
+          if (policy.context) {
+            // openapi-fetch parses after transport returns; re-check at consumption too.
+            for (const method of [
+              'json',
+              'text',
+              'arrayBuffer',
+              'blob',
+              'formData',
+            ] as const) {
+              const consume = buffered[method].bind(buffered);
+              Object.defineProperty(buffered, method, {
+                value: async () => {
+                  const result: unknown = await consume();
+                  if (!policy.context?.isCurrent())
+                    throw new ApiError('cancelled', { mutation });
+                  return result;
+                },
+              });
+            }
+          }
           return buffered;
         })(),
       ]);
@@ -128,6 +160,7 @@ export function createApiClient(
     } finally {
       clearTimeout(timer);
       request.signal.removeEventListener('abort', cancel);
+      policy.context?.signal.removeEventListener('abort', cancel);
       metadata.delete(request);
     }
   };
@@ -155,9 +188,10 @@ export function createApiClient(
         throw new ApiError('invalid_request');
       }
       const headers = new Headers(request.headers);
+      const context = options.captureSession?.();
       headers.delete('X-CSRF-Token');
       if (!reads.has(request.method)) {
-        const csrf = options.getCsrfToken?.();
+        const csrf = context?.csrfToken ?? options.getCsrfToken?.();
         if (csrf) headers.set('X-CSRF-Token', csrf);
       }
       const protectedRequest = new Request(request, {
@@ -169,6 +203,7 @@ export function createApiClient(
       metadata.set(protectedRequest, {
         operation,
         parseAs: requestOptions.parseAs,
+        context,
       });
       return protectedRequest;
     },

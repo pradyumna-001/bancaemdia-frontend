@@ -15,7 +15,7 @@ make dev            # Vite em http://localhost:5173
 make lint           # eslint + prettier --check
 make typecheck      # tsc --noEmit
 make test           # vitest run (sem watch)
-make test:coverage  # suíte + mínimo 80% por arquivo em lib/features
+make test:coverage  # suíte + mínimo 80% por arquivo em lib/features/api/auth
 pnpm exec playwright install --with-deps  # browsers e dependências de Linux
 make test:e2e       # build + preview + Playwright (3 browsers × 2 viewports)
 make build          # produção (dist/)
@@ -33,7 +33,7 @@ No Windows, use GNU Make 4.4.1 (por exemplo, o pacote `make` do Chocolatey) no P
 
 ## Configuração por ambiente
 
-O boot valida a configuração em `src/lib/config.ts` antes de montar a aplicação. Para desenvolvimento, basta um `.env` com `VITE_API_URL=http://127.0.0.1:8000`. Reinicie o Vite após editar o arquivo. Integração da API e sistema visual pertencem às próximas issues; não há cálculos financeiros, dados fictícios de domínio ou autenticação real nesta etapa.
+O boot valida a configuração em `src/lib/config.ts` antes de montar a aplicação. Para desenvolvimento, basta um `.env` com `VITE_API_URL=http://127.0.0.1:8000`. Reinicie o Vite após editar o arquivo. O provedor consulta a sessão real da API; sem backend de identidade configurado, permanece anônimo com recuperação segura. Páginas de domínio ainda estão em preparação; não há cálculos financeiros ou dados fictícios no produto. Publicação depende das integrações descritas no [contrato de sessão](docs/contracts/sessao.md).
 
 | Variável              | Validação                                                    | Padrão quando omitida                            |
 | --------------------- | ------------------------------------------------------------ | ------------------------------------------------ |
@@ -47,19 +47,19 @@ Em um **build publicado**, o boot busca `/config.json` e aplica seus campos sobr
 
 ```json
 {
-  "VITE_API_URL": "https://api.example.com",
+  "VITE_API_URL": "https://bancaemdia.example",
   "VITE_APP_ENV": "production",
   "VITE_UPLOAD_POLL_MS": 1000
 }
 ```
 
-Somente essas três chaves são aceitas no JSON. O artefato pode ser compilado sem URL, desde que ela seja fornecida no runtime. O modo dev não busca esse arquivo. Clientes futuros acessam `getConfig()` após o boot; não leem variáveis diretamente.
+Somente essas três chaves são aceitas no JSON. Em produção, a URL é a origem do próprio SPA, com proxy para `/auth/*` e `/api/*`. O artefato pode ser compilado sem URL, desde que ela seja fornecida no runtime. O modo dev não busca esse arquivo. Clientes acessam `getConfig()` após o boot; não leem variáveis diretamente.
 
 O nginx serve `/config.json` com `Cache-Control: no-store`, sem fallback para HTML. A busca tem limite de cinco segundos e não repete automaticamente. Arquivo indisponível, JSON inválido ou variável inválida interrompem o boot com mensagem em português e botão **Tentar novamente**, sem montar a aplicação ou revelar o conteúdo recebido. Veja a decisão no [ADR 008](docs/adrs/008-ci-cd-deploy.md).
 
 A validação local e em Linux, incluindo 42 e2e e promoção da mesma imagem entre ambientes, está registrada em [docs/config-validation.md](docs/config-validation.md).
 
-## Rotas e sessão provisória
+## Rotas e sessão
 
 O data router e o shell usam ABAS em src/app/nav.ts. Os sete destinos principais e os novos destinos secundários têm elegibilidade desktop/mobile; Contas e titulares, Calculadoras, Assinatura e Configurações ficam em Opções/Mais. Rotas filhas de Painel e Configurações permanecem na respectiva área. As páginas de domínio continuam em preparação, sem operações simuladas. URL desconhecida mostra 404 recuperável.
 
@@ -68,13 +68,13 @@ O data router e o shell usam ABAS em src/app/nav.ts. Os sete destinos principais
 | Protegido | `/`, `/painel`, `/enviar`, `/coleta`, `/banca`, `/resultados`, `/revisao`, `/aposta/:chave`, `/configuracoes`, `/configuracoes/conexoes`, `/configuracoes/privacidade`, `/contas`, `/contas/:titularId`, `/assinatura`, `/calculadoras`, `/painel/analises`, `/painel/metas`, `/sistema`, `/senha`, `/sair` |
 | Público   | `/tutorial`, `/extensao`, `/login`, `/criar-conta`, `/esqueci-senha`, `/redefinir-senha`, `/confirmar-email`                                                                                                                                                                                                |
 
-O provedor de sessão ainda não foi integrado: abrir `/` leva a `/login?destino=%2F`. Nenhum login ou logout real é executado. A função de consulta de sessão pode ser injetada nos testes; o build usa sempre o estado sem sessão e não contém atalho por URL, storage ou variável de ambiente.
+ProvedorAuth consulta `/auth/session` por cookie e só libera o guard após identidade válida. Sem sessão, abrir `/` leva a `/login?destino=%2F`. Nas páginas existentes, **Entrar com minha conta** inicia login hospedado e **Confirmar saída** chama logout real com CSRF; telas completas são #12. URL, storage e variáveis públicas não liberam sessão simulada. Consultas injetadas pertencem somente aos testes/fixture isolados.
 
-O destino mantém filtros e fragmento, mas precisa passar por `src/auth/destinoInterno.ts`: somente rotas internas de conteúdo cadastradas são aceitas. Caminhos de autenticação, URLs externas e caminhos ambíguos caem em `/`. O loader do login entrega o destino já validado para a futura tela de conta.
+O destino mantém filtros e fragmento, mas precisa passar por `src/auth/destinoInterno.ts`: somente rotas internas de conteúdo cadastradas são aceitas. Caminhos de autenticação, URLs externas e caminhos ambíguos caem em `/`. O fragmento fica transitoriamente em sessionStorage, sem token/prova, por até dez minutos e é consumido uma vez; a API recebe apenas caminho/query.
 
 Cada rota tem um error boundary com mensagem segura, tentativa explícita e links de retorno. Tokens, fontes, temas e marca já são compartilhados. Ilustrações finais de erro permanecem na #13. Assinatura e sessão serão integradas separadamente; acesso somente de leitura não deve ser tratado como logout.
 
-O `QueryClientProvider` compartilha um cliente por aplicação. Listas ficam frescas por 30 segundos, `painel`/`metricas` por 60 e `revisao` por zero. Queries representam GETs idempotentes: 500 permite uma repetição; 503, três com backoff exponencial e jitter; outros erros não repetem automaticamente. Mutations não repetem. A integração de erros HTTP, `Retry-After` e banners será feita na #10 sem duplicar a camada de retry.
+O `QueryClientProvider` compartilha um cliente por aplicação. Listas ficam frescas por 30 segundos, `painel`/`metricas` por 60 e `revisao` por zero. GETs seguros: 500 permite uma repetição; 503 três; 429 duas; rede/timeout uma, com backoff e Retry-After. Mutations/cancelamentos não repetem. O contador de Revisão usa API tipada e contexto atual. Troca/logout limpa queries e mutations e remonta dados privados; responses anteriores são descartadas mesmo após parsing. Renovação é serializada entre abas, com consulta dentro da trava e no máximo uma recuperação de GET da mesma pessoa/família.
 
 As evidências de testes, navegação e nginx estão em [docs/router-validation.md](docs/router-validation.md).
 
@@ -82,7 +82,7 @@ As evidências de testes, navegação e nginx estão em [docs/router-validation.
 
 - `src/main.tsx` e `src/app/App.tsx`: boot validado, data router e QueryClientProvider.
 - `src/app/routes.tsx`, `paths.ts` e `nav.ts`: rotas provisórias e catálogo único das abas.
-- `src/auth/`: consulta provisória de sessão, guard e validação de destino interno.
+- `src/auth/`: ProvedorAuth, controle de sessão/isolamento, transporte validado e destino interno.
 - `src/api/schema.d.ts`: tipos gerados, sem cliente ou shapes manuais.
 - `tests/setup.ts`: Testing Library/jsdom; testes de componente ficam junto do código.
 - `tests/e2e/`: Playwright contra o **build de produção**, Chromium/Firefox/WebKit em 390×844 e 1440×900. Verifica configuração, rotas públicas/protegidas, URL de retorno, 404, teclado, axe e overflow. Testes de componente cobrem todas as páginas com sessão injetada, falhas de loader/componente e recuperação. A fixture isolada do shell simula sessão e contador para validar apresentação; o build público não pode liberar essa sessão. Isso não comprova integração da API.
@@ -134,9 +134,9 @@ curl -f http://127.0.0.1:8080/rota-de-smoke # fallback para index.html
 docker stop bancaemdia-frontend-smoke
 ```
 
-O Dockerfile compila com Node/pnpm e serve somente `dist/` com nginx unprivileged na porta 8080. A imagem define `USER 101:101`, healthcheck, CSP restrita à mesma origem, proteção contra MIME sniffing, referrer policy, index sem cache e assets com hash/cache imutável. Um asset inexistente retorna 404. A allowlist de conexão da API será configurada junto da integração; não há `unsafe-inline`, CDN ou curingas de conexão no scaffold.
+O Dockerfile compila com Node/pnpm e serve somente `dist/` com nginx unprivileged na porta 8080. A imagem define `USER 101:101`, healthcheck, CSP restrita à mesma origem, proteção contra MIME sniffing, referrer policy, index sem cache e assets com hash/cache imutável. Um asset inexistente retorna 404. A publicação usa proxy de mesma origem para API/identidade; não há `unsafe-inline`, CDN ou curingas de conexão.
 
-`docker compose up -d --build` inicia apenas o SPA em `http://127.0.0.1:8080`, com filesystem somente leitura e `/tmp` temporário. Monta `config/local.json` como configuração pública local. Para outro ambiente, defina `FRONTEND_CONFIG_FILE` com o caminho absoluto de um JSON existente antes de executar o Compose; o arquivo é montado somente para leitura. Essa variável pertence ao Compose e não entra no bundle. Em produção, a origem da API também deve estar na allowlist da CSP do servidor quando a integração for implementada; o JSON não altera políticas de segurança.
+`docker compose up -d --build` inicia apenas o SPA em `http://127.0.0.1:8080`, com filesystem somente leitura e `/tmp` temporário. Monta `config/local.json` apontando à mesma origem para preservar CSP `connect-src 'self'`. Sem proxy/API, `/auth/*` e `/api/*` retornam 503 JSON/no-store, nunca HTML da SPA; a entrada oferece tentar novamente sem navegar para um serviço indisponível. Para outro ambiente, defina `FRONTEND_CONFIG_FILE` com o caminho absoluto de um JSON existente antes de executar o Compose; o arquivo é montado somente para leitura. Essa variável pertence ao Compose e não entra no bundle. Em produção, configurar o proxy de mesma origem para ambos os prefixos; o JSON não altera políticas de segurança.
 
 Para iniciar também a stack **existente** da API:
 
@@ -145,7 +145,7 @@ Para iniciar também a stack **existente** da API:
 make up API_DIR=../bancaemdia-api
 ```
 
-`API_DIR` pode ser absoluto (útil em worktrees). O alvo usa o Compose e `.env` daquele checkout antes de subir o frontend; não gera, copia ou altera segredos. Para encerrar, use `docker compose down` neste repo e no backend, sem `-v` para preservar dados. Isso prepara a execução local, sem implementar conexão, auth ou telas da API.
+`API_DIR` pode ser absoluto (útil em worktrees). O alvo usa o Compose e `.env` daquele checkout antes de subir o frontend; não gera, copia ou altera segredos. Para encerrar, use `docker compose down` neste repo e no backend, sem `-v` para preservar dados. O proxy de mesma origem ainda precisa ser configurado para conectar essas duas stacks; subir processos não comprova a integração de identidade.
 
 ## Documentação
 

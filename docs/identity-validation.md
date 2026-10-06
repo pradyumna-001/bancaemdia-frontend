@@ -1,6 +1,12 @@
-# Validação de identidade — #49
+# Validação de identidade — #49 e #11
 
-Esta revisão verifica o contrato do backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, e sua compatibilidade com o build público do frontend. [Contrato e gates restantes](contracts/identidade.md), [ADR003](adrs/003-api-client-typing-session.md). Não há alteração visual nem implementação de ProvedorAuth/telas completas; #11/#12 permanecem próprias.
+Esta revisão verifica o contrato do backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, e sua compatibilidade com o build público do frontend. [Contrato e gates restantes](contracts/identidade.md), [ADR003](adrs/003-api-client-typing-session.md). A #49 verificou transporte sem ProvedorAuth; a #11 acrescenta o provedor real e as ações mínimas nas rotas existentes. Telas completas permanecem na #12.
+
+## Extensão da prova pela #11
+
+O gate atual exige **quatro** cenários SPA, sem failures/errors/skips: contrato cookie/CSRF/RLS e ciclo completo da sessão, cada um em 390×844 e 1440×900, além dos nove aceites backend. O guard agora libera o Painel após identidade real; logout é iniciado por **Confirmar saída** na aplicação, sem helper que substitua o provedor. A prova do ciclo renova entre duas abas com exatamente um grant, troca para o segundo usuário com o cache de Revisão aberto, verifica isolamento da API e sai/entra pelo fluxo hospedado preservando query/fragmento.
+
+Esses testes continuam usando dist/CSP públicos, PostgreSQL/Keycloak/SMTP reais e descartáveis, sem injetar sessão ou guardar credenciais em artifacts. E2E com backend HTTP controlado verificam comportamento e acessibilidade nos três browsers/dois viewports, mas não substituem essa integração. Os números e limites históricos da #49 abaixo pertencem àquela revisão; a implementação atual está em [sessão](contracts/sessao.md). Todos os checks devem aprovar o SHA final da #11 antes da entrega.
 
 ## Evidência existente revalidada
 
@@ -14,9 +20,9 @@ Código conferido: claims e nonce em `auth/oidc.py`, provisionamento/locks/revog
 
 Depois, `tests/identity/test_browser_contract.py` reutiliza os fixtures de processos/emissor, substituindo o servidor mínimo de retorno pelo **dist público e CSP gerada desse mesmo build**. Cada viewport recebe um banco descartável próprio, migrado pelo fixture backend: chaves novas de um harness não devem consumir ciphertext/outbox de outro. A criação/remoção fica restrita ao PostgreSQL de loopback desse Compose. Proxy de teste encaminha `/auth/*` e `/api/*`, mantendo headers/cookies/origem e CSP estrita. Não emite JWT, injeta sessão, mocka respostas ou inclui código de teste no bundle. Apenas `/config.json` público aponta à origem loopback. Não grava HAR, traces, capturas, cookies, provas CSRF, links de confirmação ou senhas em artifacts.
 
-Dois cenários obrigatórios, 390×844 e 1440×900, criam duas identidades pelo cadastro/confirmação do emissor real; verificam usuário interno distinto, API autorizada por cookie, isolamento RLS, 403 sem CSRF, refresh real/versionamento, logout e recusa posterior, preservação da outra sessão, armazenamento vazio/HttpOnly/no-store e ausência de violação CSP/erro de página. O guard público continua provisório: mesmo com cookie real o Painel ainda volta a Entrar. Isso comprova **compatibilidade do transporte/proxy/contrato**, não implementação de sessão/cache/UI da #11.
+Na revisão original da #49, dois cenários obrigatórios, 390×844 e 1440×900, criaram duas identidades pelo cadastro/confirmação do emissor real; verificaram usuário interno distinto, API autorizada por cookie, isolamento RLS, 403 sem CSRF, refresh real/versionamento, logout e recusa posterior, preservação da outra sessão, armazenamento vazio/HttpOnly/no-store e ausência de violação CSP/erro de página. Naquele momento o guard ainda era provisório: Painel voltava a Entrar mesmo com cookie. A extensão #11 acima substitui essa expectativa pela sessão real.
 
-O gate `tests/identity/check_results.py` exige exatamente os dois cenários, zero failures/errors/skips. Relatórios JUnit são artifacts separados do artifact público da CI existente. `dist-shell-fixture` e ferramentas Python nunca são publicados.
+O gate `tests/identity/check_results.py` exige atualmente exatamente os quatro cenários, zero failures/errors/skips. Relatórios JUnit são artifacts separados do artifact público da CI existente. `dist-shell-fixture` e ferramentas Python nunca são publicados.
 
 ### Reprodução local em Linux com Docker
 
@@ -47,7 +53,7 @@ Docker local não está disponível; provas que exigem containers são obrigató
 | Conta/confirmar/recuperar/renovar/sair         | Emissor real + backend; recuperação externa fora do fluxo tem limitação documentada                   |
 | Token inválido/expirado/inativo/não confirmado | Aceites backend obrigatórios sem skips                                                                |
 | Transporte, CSRF e isolamento                  | Prova adicional nos dois viewports com dist/CSP públicos, cookies/requests reais                      |
-| Limpeza de cache/respostas antigas             | Especificada para #11; não implementada ou aprovada por fixture como comportamento do app             |
+| Limpeza de cache/respostas antigas             | #11 implementa fences, limpeza e remontagem; ciclo real obrigatório verifica troca com cache aberto   |
 | Sessão versus assinatura                       | ADR003/matriz/backlog; billing permanece em PR separado, sem simulação local                          |
 | Publicação do contrato                         | **Pendente** revisão/merge backend, emissor aprovado e homologação/deploy conjunto; donos no contrato |
 

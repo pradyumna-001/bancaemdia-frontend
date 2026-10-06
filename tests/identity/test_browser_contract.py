@@ -10,6 +10,7 @@ import mimetypes
 import os
 import re
 import secrets
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -17,6 +18,7 @@ from uuid import uuid4
 
 import httpx
 import pytest
+from playwright.async_api import Error as BrowserError
 from playwright.async_api import async_playwright, expect
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
@@ -115,6 +117,25 @@ async def browser_request(page, path, *, method="GET", csrf=None, body=None):
         }""",
         {"path": path, "method": method, "csrf": csrf, "body": body},
     )
+
+
+async def complete_hosted_entry(page, email, password, destination):
+    # Keycloak can remember a different SSO account and show password-only. The
+    # hosted "reset-login" action selects another account without altering cookies.
+    # Source: keycloak/keycloak 26.7.4, base/login/template.ftl.
+    try:
+        await page.locator("#kc-form-login").wait_for()
+        if not await page.locator("#username").is_visible():
+            await page.locator("#reset-login").click()
+        await page.locator("#username").fill(email)
+        if not await page.locator("#password").count():
+            await page.locator("#kc-login").click()
+        await page.locator("#password").fill(password)
+        await page.locator("#kc-login").click()
+        await page.wait_for_url(destination, timeout=30000)
+    except BrowserError:
+        # Playwright diagnostics can contain protocol URLs or filled credentials.
+        pytest.fail("Hosted account entry did not complete", pytrace=False)
 
 
 @pytest.fixture
@@ -221,22 +242,135 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
         assert (await browser_request(pages[1], "/api/v1/apostas/" + key))[
             "status"
         ] == 404
-        logout = await browser_request(
-            pages[0], "/auth/logout", method="POST", csrf=live["csrf_token"]
-        )
-        assert logout["status"] == 200 and logout["data"]["logged_out"] is True
+        # The actual provider now owns cookie/CSRF lookup, clearing and confirmation.
+        await pages[0].goto(backend.FRONT + "/sair")
+        await pages[0].get_by_role("button", name="Confirmar saída").click()
+        await expect(
+            pages[0].get_by_role("heading", name="Entrar", exact=True)
+        ).to_be_visible()
         assert (await browser_request(pages[0], "/auth/session"))["status"] == 401
         assert (await browser_request(pages[0], "/api/v1/apostas"))["status"] == 401
         assert (await browser_request(pages[1], "/auth/session"))["status"] == 200
-        assert "no-store" in logout["headers"]["cache-control"]
+        cache_control = (await browser_request(pages[1], "/auth/session"))["headers"][
+            "cache-control"
+        ]
+        assert "no-store" in cache_control
         for context, page in zip(contexts, pages):
             assert not await page.evaluate("window.__identityCspFailure === true")
             assert all(c["httpOnly"] for c in await context.cookies(backend.FRONT))
-            # Public guard is still provisional: this proof never enables #11 in the bundle.
             await page.goto(backend.FRONT + "/painel")
             await expect(
-                page.get_by_role("heading", name="Entrar", exact=True)
+                page.get_by_role(
+                    "heading",
+                    name="Entrar" if page == pages[0] else "Painel",
+                    exact=True,
+                )
             ).to_be_visible()
             assert not await page.evaluate("window.__identityCspFailure === true")
         assert not violations
+        await browser.close()
+
+
+@pytest.mark.parametrize(
+    "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
+)
+async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
+    """Real provider, Web Locks across tabs, cache switch and hosted return; no mock."""
+    import jwt
+
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch()
+        a, b = [await browser.new_context(viewport=viewport) for _ in range(2)]
+        pa, pb = await a.new_page(), await b.new_page()
+        email_a, email_b = (uuid4().hex + "@example.org" for _ in range(2))
+        password_a, password_b = (secrets.token_urlsafe(24) for _ in range(2))
+        sa, _ = await backend.register(pa, email_a, password_a, harness=harness)
+        sb, _ = await backend.register(pb, email_b, password_b, harness=harness)
+        assert sa["usuario_id"] != sb["usuario_id"]
+        live = (await browser_request(pa, "/auth/session"))["data"]
+        created = await browser_request(
+            pa,
+            "/api/v1/apostas",
+            method="POST",
+            csrf=live["csrf_token"],
+            body={"casa": "betano", "odd": 2, "stake_unidades": 1, "freebet": False},
+        )
+        assert created["status"] == 201
+        # Add one disposable pending review, to distinguish the real per-user caches.
+        async with engine_admin.begin() as conn:
+            result = await conn.execute(
+                text(
+                    "INSERT INTO revisao_pendente (usuario_id, motivo) VALUES (:id, 'sandbox')"
+                ),
+                {"id": sa["usuario_id"]},
+            )
+            assert result.rowcount == 1
+        await pa.goto(backend.FRONT + "/painel?apagadas=1#serie")
+        await expect(
+            pa.get_by_role("heading", name="Painel", exact=True)
+        ).to_be_visible()
+        await expect(
+            pa.get_by_role("link", name=re.compile(r"Revisão.*1 pendências")).first
+        ).to_be_visible()
+        second = await a.new_page()
+        await second.goto(backend.FRONT + "/painel")
+        await expect(
+            second.get_by_role("heading", name="Painel", exact=True)
+        ).to_be_visible()
+        _, credentials = await harness.credentials(a)
+        expiration = jwt.decode(
+            credentials["internal"], options={"verify_signature": False}
+        )["exp"]
+        await asyncio.sleep(max(0, expiration - time.time()) + 1)
+        grants = harness.network.token_requests
+        await asyncio.gather(
+            pa.goto(backend.FRONT + "/painel?apagadas=1#serie"),
+            second.goto(backend.FRONT + "/painel"),
+        )
+        for page in (pa, second):
+            await expect(
+                page.get_by_role("heading", name="Painel", exact=True)
+            ).to_be_visible()
+        assert harness.network.token_requests == grants + 1
+        refresh_required = (await browser_request(pa, "/auth/session"))["data"][
+            "refresh_required"
+        ]
+        assert refresh_required is False
+        # Log in as B in one tab; the other mounted SPA must discard A's private cache.
+        await second.goto(backend.FRONT + "/login?destino=%2Fpainel")
+        await second.get_by_role("button", name="Entrar com minha conta").click()
+        await complete_hosted_entry(
+            second, email_b, password_b, backend.FRONT + "/painel"
+        )
+        await expect(
+            pa.get_by_role("link", name=re.compile(r"Revisão.*1 pendências"))
+        ).to_have_count(0)
+        await expect(
+            pa.get_by_role("heading", name="Painel", exact=True)
+        ).to_be_visible()
+        current_person = (await browser_request(pa, "/auth/session"))["data"][
+            "usuario_id"
+        ]
+        assert current_person == sb["usuario_id"]
+        assert (await browser_request(pa, "/api/v1/apostas"))["data"]["pagination"][
+            "total"
+        ] == 0
+        await pa.goto(backend.FRONT + "/sair")
+        await pa.get_by_role("button", name="Confirmar saída").click()
+        await expect(
+            pa.get_by_role("heading", name="Entrar", exact=True)
+        ).to_be_visible()
+        assert (await browser_request(second, "/auth/session"))["status"] == 401
+        # A fresh hosted entry initiated by the real SPA preserves filters and hash.
+        await pa.goto(backend.FRONT + "/login?destino=%2Fpainel%3Fapagadas%3D1%23serie")
+        await pa.get_by_role("button", name="Entrar com minha conta").click()
+        await complete_hosted_entry(
+            pa, email_a, password_a, backend.FRONT + "/painel?apagadas=1#serie"
+        )
+        await expect(
+            pa.get_by_role("heading", name="Painel", exact=True)
+        ).to_be_visible()
+        assert await pa.evaluate("Object.keys(sessionStorage).length") == 0
+        assert await pa.evaluate("Object.keys(localStorage).length") == 0
+        assert not await pa.evaluate("document.cookie")
         await browser.close()

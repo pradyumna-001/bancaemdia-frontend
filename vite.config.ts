@@ -18,6 +18,7 @@ export default defineConfig({
         'src/lib/**/*.{ts,tsx}',
         'src/features/**/*.{ts,tsx}',
         'src/api/**/*.ts',
+        'src/auth/**/*.{ts,tsx}',
       ],
       exclude: ['**/*.test.{ts,tsx}', '**/*.d.ts'],
       reporter: ['text', 'json-summary', 'html', 'lcov'],

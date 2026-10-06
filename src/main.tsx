@@ -8,6 +8,11 @@ import { createBrowserRouter } from 'react-router-dom';
 import { createAppRoutes } from './app/routes';
 import { createAppQueryClient } from './app/queryClient';
 import { Logo } from './components/Logo';
+import { ProvedorAuth } from './auth/ProvedorAuth';
+import { browserExclusive, createSession } from './auth/session';
+import { initializeApiClient } from './api/client';
+import { restoreLoginFragment } from './auth/returnDestination';
+import { ApiError } from './api/error';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Não foi possível iniciar a aplicação.');
@@ -25,14 +30,49 @@ application.render(
 initializeConfig().then(
   () => {
     const queryClient = createAppQueryClient();
-    const router = createBrowserRouter(createAppRoutes());
+    let storage: Storage | undefined;
+    try {
+      storage = window.sessionStorage;
+    } catch {
+      /* Fragment restoration is optional. */
+    }
+    restoreLoginFragment(location, history, storage);
+    let channel: BroadcastChannel | undefined;
+    try {
+      if (typeof BroadcastChannel === 'function')
+        channel = new BroadcastChannel('bancaemdia:identity');
+    } catch {
+      /* Web Locks still serialize refresh; secrets never use channel storage. */
+    }
+    const auth = createSession({
+      baseUrl: getConfig().apiUrl,
+      queryClient,
+      exclusive: browserExclusive(),
+      storage,
+      channel,
+    });
+    const api = initializeApiClient({
+      captureSession: auth.capture,
+      onUnauthorized: auth.unauthorized,
+    });
+    const consultarRevisao = (signal?: AbortSignal) =>
+      auth.read(async () => {
+        const result = await api.GET('/api/v1/revisao/stats', { signal });
+        if (!result.data) throw new ApiError('invalid_response');
+        return result.data;
+      });
+    const router = createBrowserRouter(
+      createAppRoutes(auth.resume, consultarRevisao),
+    );
     application.render(
       <StrictMode>
-        <App
-          router={router}
-          queryClient={queryClient}
-          ambiente={getConfig().appEnv}
-        />
+        <ProvedorAuth service={auth}>
+          <App
+            router={router}
+            queryClient={queryClient}
+            ambiente={getConfig().appEnv}
+          />
+        </ProvedorAuth>
       </StrictMode>,
     );
   },
