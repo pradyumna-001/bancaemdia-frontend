@@ -95,8 +95,13 @@ export function EnviarPage() {
       invalid
     )
       return;
-    const scope = auth?.service.capture();
+    const service = auth?.service;
+    if (!service || service.getSnapshot().phase !== 'authenticated') return;
+    const scope = service.capture();
     if (!scope?.isCurrent()) return;
+    const epoch = service.getSnapshot().privateEpoch;
+    const samePrivateContext = () =>
+      alive.current && service.getSnapshot().privateEpoch === epoch;
     const controller = new AbortController();
     upload.current = controller;
     setBusy(true);
@@ -111,8 +116,11 @@ export function EnviarPage() {
         },
         signal: controller.signal,
       });
-      if (!alive.current || !scope.isCurrent() || controller.signal.aborted)
+      if (!samePrivateContext() || controller.signal.aborted) return;
+      if (!scope.isCurrent()) {
+        setError(new ApiError('cancelled', { mutation: true }));
         return;
+      }
       const accepted =
         result.response.status === 202 && jobIdValido(result.data?.job_id);
       if (!accepted) throw new ApiError('invalid_response', { mutation: true });
@@ -120,11 +128,13 @@ export function EnviarPage() {
       setFile(undefined);
       if (input.current) input.current.value = '';
     } catch (cause) {
-      if (alive.current && scope.isCurrent() && !controller.signal.aborted)
+      if (samePrivateContext() && !controller.signal.aborted)
         setError(
-          cause instanceof ApiError
-            ? cause
-            : new ApiError('invalid_response', { mutation: true }),
+          !scope.isCurrent()
+            ? new ApiError('cancelled', { mutation: true })
+            : cause instanceof ApiError
+              ? cause
+              : new ApiError('invalid_response', { mutation: true }),
         );
     } finally {
       if (upload.current === controller) upload.current = undefined;
@@ -134,14 +144,19 @@ export function EnviarPage() {
 
   async function checkResult() {
     if (reading.current) return;
-    const scope = auth?.service.capture();
+    const service = auth?.service;
+    if (!service || service.getSnapshot().phase !== 'authenticated') return;
+    const scope = service.capture();
     if (!scope?.isCurrent()) return;
+    const epoch = service.getSnapshot().privateEpoch;
+    const samePrivateContext = () =>
+      alive.current && service.getSnapshot().privateEpoch === epoch;
     const controller = new AbortController();
     reading.current = controller;
     setChecking(true);
     setCheckError(undefined);
     try {
-      const result = await auth!.service.read(async () => {
+      const result = await service.read(async () => {
         const { data } = await getApiClient().GET('/api/v1/apostas', {
           params: { query: { page: 1, page_size: 1, incluir_apagadas: true } },
           signal: controller.signal,
@@ -154,10 +169,9 @@ export function EnviarPage() {
           throw new ApiError('invalid_response');
         return data.pagination.total;
       });
-      if (alive.current && scope.isCurrent() && !controller.signal.aborted)
-        setTotal(result);
+      if (samePrivateContext() && !controller.signal.aborted) setTotal(result);
     } catch (cause) {
-      if (alive.current && scope.isCurrent() && !controller.signal.aborted)
+      if (samePrivateContext() && !controller.signal.aborted)
         setCheckError(cause);
     } finally {
       if (reading.current === controller) reading.current = undefined;

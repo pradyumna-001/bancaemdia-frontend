@@ -282,3 +282,33 @@ test('pausar e voltar acompanham somente GET, sem cancelamento remoto', async ({
   ).toBeVisible();
   expect(writes).toBe(0);
 });
+
+test('consulta da mesma sessão durante POST bloqueia reenvio e descarta confirmação tardia', async ({
+  page,
+}) => {
+  await identity(page);
+  let writes = 0;
+  let finish!: () => void;
+  await page.route('**/api/v1/upload', async (route) => {
+    writes++;
+    await new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    await route.fulfill({ status: 202, json: acceptedUpload });
+  });
+  await page.goto(fixture);
+  await select(page);
+  await page.getByRole('button', { name: 'Enviar export' }).click();
+  await expect.poll(() => writes).toBe(1);
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(
+    page.getByRole('heading', { name: 'Confira se o pedido foi concluído' }),
+  ).toBeVisible();
+  finish();
+  await expect(
+    page.getByRole('button', { name: 'Enviar export' }),
+  ).toBeDisabled();
+  await expect(page.getByText('Arquivo escolhido: result.json')).toBeVisible();
+  expect(new URL(page.url()).searchParams.has('envio')).toBe(false);
+  expect(writes).toBe(1);
+});
