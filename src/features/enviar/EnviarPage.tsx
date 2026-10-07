@@ -202,7 +202,9 @@ export function EnviarPage() {
               ? RESULTADOS[current.resultado]
               : paused
                 ? 'Acompanhamento pausado'
-                : (current?.etapa ?? 'Consultando envio…')}
+                : current?.fase === 'interrompido'
+                  ? 'Acompanhamento interrompido'
+                  : (current?.etapa ?? 'Consultando envio…')}
           </h2>
           <p>
             Fechar esta página ou pausar o acompanhamento não cancela o
@@ -316,28 +318,31 @@ export function EnviarPage() {
               result.json. O JSON sozinho não inclui as fotos armazenadas em
               outros arquivos.
             </p>
-            <input
-              ref={input}
-              id="enviar-arquivo"
-              type="file"
-              accept=".zip,.json"
-              disabled={busy || unknown}
-              aria-describedby="enviar-ajuda enviar-validacao"
-              aria-invalid={!!validation}
-              onChange={(event) => {
-                const selected = event.target.files?.[0];
-                const invalidFile =
-                  selected &&
-                  (!/\.(zip|json)$/i.test(selected.name) ||
-                    selected.size === 0);
-                setFile(invalidFile ? undefined : selected);
-                setValidation(
-                  invalidFile
-                    ? 'Escolha um arquivo ZIP ou JSON que não esteja vazio.'
-                    : '',
-                );
-              }}
-            />
+            <div className="enviar-seletor">
+              <span aria-hidden="true">Escolher arquivo</span>
+              <input
+                ref={input}
+                id="enviar-arquivo"
+                type="file"
+                accept=".zip,.json"
+                disabled={busy || unknown}
+                aria-describedby="enviar-ajuda enviar-validacao"
+                aria-invalid={!!validation}
+                onChange={(event) => {
+                  const selected = event.target.files?.[0];
+                  const invalidFile =
+                    selected &&
+                    (!/\.(zip|json)$/i.test(selected.name) ||
+                      selected.size === 0);
+                  setFile(invalidFile ? undefined : selected);
+                  setValidation(
+                    invalidFile
+                      ? 'Escolha um arquivo ZIP ou JSON que não esteja vazio.'
+                      : '',
+                  );
+                }}
+              />
+            </div>
             <p id="enviar-validacao" role={validation ? 'alert' : undefined}>
               {validation}
             </p>

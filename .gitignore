@@ -6,6 +6,9 @@ dist-acesso-fixture/
 dist-filtros-fixture/
 dist-filtros-security/
 dist-enviar-fixture/
+dist-assinatura-fixture/
+dist-calculadoras-fixture/
+dist-telegram-fixture/
 dist-ssr/
 *.local
 .env

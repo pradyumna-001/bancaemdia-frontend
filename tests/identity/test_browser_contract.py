@@ -343,7 +343,7 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
                     (
                         await conn.execute(
                             text(
-                                "SELECT usuario_id,chat_id,message_id,casa,odd FROM apostas"
+                                "SELECT usuario_id,chat_id,message_id,chave,odd FROM apostas"
                             )
                         )
                     )
@@ -351,8 +351,18 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
                     .one()
                 )
                 assert row["usuario_id"] == owner and row["chat_id"] == 555
-                assert row["message_id"] == 71 and row["casa"].lower() == "betano"
+                assert row["message_id"] == 71
                 assert float(row["odd"]) == 1.82
+                created = (
+                    await conn.execute(
+                        text(
+                            "SELECT payload_json FROM eventos WHERE usuario_id=:owner "
+                            "AND aposta_chave=:key AND tipo='APOSTA_CRIADA'"
+                        ),
+                        {"owner": owner, "key": row["chave"]},
+                    )
+                ).scalar_one()
+                assert created["casa"].lower() == "betano"
             await pages[0].reload()
             await expect(
                 pages[0].get_by_role("heading", name="Importação concluída", exact=True)
