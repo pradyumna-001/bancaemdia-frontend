@@ -2,6 +2,7 @@ node_modules/
 dist/
 dist-security/
 dist-shell-fixture/
+dist-enviar-fixture/
 dist-ssr/
 *.local
 .env

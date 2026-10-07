@@ -11,6 +11,7 @@ export default tseslint.config(
       'dist/**',
       'dist-security/**',
       'dist-shell-fixture/**',
+      'dist-enviar-fixture/**',
       'coverage/**',
       'reports/**',
       'playwright-report/**',

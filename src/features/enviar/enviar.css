@@ -12,22 +12,33 @@
 .enviar-pagina summary {
   font-weight: var(--peso-destaque);
 }
-.enviar-pagina input[type='file'] {
-  display: block;
-  width: 100%;
-  padding: var(--espaco-8);
-  border: 1px solid var(--borda-controle);
-  border-radius: var(--raio-controle);
+.enviar-seletor {
+  position: relative;
   min-height: var(--alvo-toque);
-}
-.enviar-pagina input::file-selector-button {
-  font: inherit;
-  min-height: var(--alvo-toque);
+  padding: var(--espaco-12) var(--espaco-16);
   background: var(--superficie-secundaria);
   color: var(--tinta);
   border: 1px solid var(--borda-controle);
   border-radius: var(--raio-controle);
+  text-align: center;
+}
+.enviar-seletor:focus-within {
+  outline: 3px solid var(--foco);
+  outline-offset: 3px;
+}
+.enviar-seletor:has(input:disabled) {
+  opacity: 0.65;
+}
+.enviar-seletor input[type='file'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
   cursor: pointer;
+}
+.enviar-seletor input:disabled {
+  cursor: not-allowed;
 }
 .enviar-pagina button {
   min-height: var(--alvo-toque);

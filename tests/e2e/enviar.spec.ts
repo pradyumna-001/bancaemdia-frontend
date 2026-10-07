@@ -6,7 +6,7 @@ import {
   betsWithUnknownValues,
 } from '../fixtures/api/responses';
 
-const fixture = 'http://127.0.0.1:4175/enviar?estado=GREEN&apagadas=1';
+const fixture = 'http://127.0.0.1:4176/enviar?estado=GREEN&apagadas=1';
 async function identity(page: Page) {
   const session = {
     usuario_id: 1,
