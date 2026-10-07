@@ -20,7 +20,7 @@ Timeout, rede, resposta 5xx ou 202 ilegível deixam o resultado desconhecido. O 
 
 Limitação real: essa versão não publica lista/reconciliação de uploads quando a resposta se perde antes de entregar UUID. O frontend explica essa ausência, não inventa identificador nem repete POST. Consulta não conclusiva continua sendo não conclusiva, inclusive total zero.
 
-Logout/troca limpa arquivo e consultas pelo registro de limpeza da sessão; unmount aborta esperas locais. Resposta tardia, inclusive depois do parsing, não instala UUID/dados em outra sessão. Navegação não salva arquivo ou sessão em storage. Os outros canais (bot, prints web, planilha) têm texto que os distingue, sem botão funcional que leve a tela ainda indisponível.
+Logout/troca limpa arquivo e consultas pelo registro de limpeza da sessão; unmount aborta esperas locais. Resposta tardia, inclusive depois do parsing, não instala UUID/dados em outra sessão. Se uma consulta/renovação da mesma sessão interrompe o POST, o arquivo preservado fica com resultado desconhecido e envio bloqueado; descartar uma resposta antiga não permite replay. Leitura pode usar a recuperação limitada da mesma sessão, sem confundir renovação com troca de usuário. Navegação não salva arquivo ou sessão em storage. Os outros canais (bot, prints web, planilha) têm texto que os distingue, sem botão funcional que leve a tela ainda indisponível.
 
 ## Provas
 

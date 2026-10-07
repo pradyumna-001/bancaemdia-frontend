@@ -381,3 +381,31 @@ it('saída limpa arquivo privado e impede resposta tardia de instalar UUID', asy
   ).not.toBeInTheDocument();
   expect(screen.getByTestId('url')).not.toHaveTextContent('envio=');
 });
+
+it('nova consulta da mesma sessão interrompe POST como resultado desconhecido e bloqueia replay', async () => {
+  let complete!: (r: Response) => void;
+  const fetcher = vi.fn(
+    () =>
+      new Promise<Response>((resolve) => {
+        complete = resolve;
+      }),
+  );
+  const view = await setup(fetcher);
+  select();
+  submit();
+  await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+  await act(async () => {
+    await view.service.resume();
+    complete(json(acceptedUpload, 202));
+  });
+  expect(
+    screen.getByText('Arquivo escolhido: result.json'),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Enviar export' })).toBeDisabled();
+  expect(
+    screen.getByRole('heading', { name: 'Confira se o pedido foi concluído' }),
+  ).toBeInTheDocument();
+  expect(screen.getByTestId('url')).not.toHaveTextContent('envio=');
+  submit();
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
