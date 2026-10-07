@@ -14,6 +14,7 @@ import { Shell } from './Shell';
 import { SistemaPage } from '../features/sistema/SistemaPage';
 import type { ConsultarRevisao } from '../features/revisao/estatisticas';
 import { AccountPage } from '../features/conta/AccountPage';
+import { EnviarPage } from '../features/enviar/EnviarPage';
 
 export function loginLoader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -49,7 +50,9 @@ export function createAppRoutes(
     ...ROTAS_PROTEGIDAS.map(({ path, title }) =>
       protectedRoute(
         path,
-        path === '/sistema' ? (
+        path === '/enviar' ? (
+          <EnviarPage />
+        ) : path === '/sistema' ? (
           <SistemaPage />
         ) : (
           <Placeholder title={title} interna />

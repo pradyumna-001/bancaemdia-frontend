@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 root = ET.parse(sys.argv[1]).getroot()
 cases = root.findall(".//testcase")
-assert len(cases) == 8, (
+assert len(cases) == 10, (
     "Cookie, lifecycle, account and expired-mail proofs are required on mobile and desktop"
 )
 expected = {
@@ -15,6 +15,7 @@ expected = {
         "test_public_spa_session_lifecycle",
         "test_public_spa_account_registration_and_recovery",
         "test_public_spa_expired_confirmation",
+        "test_public_spa_telegram_import",
     )
     for index in range(2)
 }
