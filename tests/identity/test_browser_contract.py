@@ -101,6 +101,7 @@ def serve_public_build():
 
         do_GET = handle_request
         do_POST = handle_request
+        do_DELETE = handle_request
 
     return ThreadingHTTPServer(("127.0.0.1", 58001), PublicBuild)
 
