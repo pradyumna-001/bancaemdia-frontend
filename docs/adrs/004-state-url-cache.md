@@ -16,6 +16,10 @@ Revisado pelo ADR019 em 29/09/2026; issues #17/#9 e consumidoras.
 8. Otimismo só para feedback de ação autorizado, com rollback; totais financeiros continuam da API. Fila de desfazer em sessionStorage é por usuário/sessão, limpa no logout e exige reconciliação de versão/concorrência antes de escrever.
 9. Destrutivas têm confirmação ou desfazer conforme contrato. Encerrar conta, remover aposta e reset de dados são operações diferentes; não substituir uma pela outra.
 
+## Implementação #17 — 06/10/2026
+
+[Codec, adapters, controles e bloqueios reais](../contracts/filtros-url.md): URL amigável por capacidade do contrato integrado adotado, páginas reais e normalização antes de consultar. Mudanças explícitas resetam somente a página; navegação preserva contexto e identifica dimensões não aplicadas. Calendário próprio usa dias civis de São Paulo, início inclusivo/fim exclusivo no servidor, inclusive DST histórico. Catálogos são projeções autorizadas da consumidora, sem opções simuladas no produto. `apagadas=1` bloqueia GET enquanto faltar filtro somente apagadas; não traduzi-lo como incluir ativas, remover silenciosamente ou filtrar uma página local. A main API `78b322ad7a2b27eae782d89404f85e7b30021864` tem OpenAPI inválido e não é promovida. Preparação frontend não conclui os contratos da #50 nem fecha #17; integração às páginas em #18/#20.
+
 ## Consequences
 
 Histórico, pílulas e links são reproduzíveis sem filtros silenciosos. Um número válido porém antigo é apresentado com seu contexto, não substituído por cálculo do navegador.

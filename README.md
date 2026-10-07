@@ -1,5 +1,7 @@
 # bancaemdia-frontend
 
+A #17 prepara filtros compartilháveis com codec/adapters em `src/lib/params.ts` e componentes em `src/components/filtros/`. [Contrato e bloqueios](docs/contracts/filtros-url.md): páginas reais, calendário no fuso de São Paulo, contexto preservado e dimensões não aplicadas explícitas. Integração às páginas em #18/#20; contratos ainda ausentes continuam na #50, e a preparação não fecha #17.
+
 Refatoração do frontend do Planilhador de Apostas. Single-page application **React + Vite + TypeScript (strict)** que consome a API versionada [`bancaemdia-api`](https://github.com/pradyumna-001/bancaemdia-api) (`/api/v1`, contratos em `docs/API.md` do backend).
 
 SPA para as tarefas atuais de bancaemdia-api: apostas, contas/titulares, caixa, revisão, entrada, assinatura, análises e ferramentas. Preserva vocabulário pt-BR e qualidade de tela; o monólito é referência histórica, não limite de escopo. Ver ADR 019 e docs/backlog.

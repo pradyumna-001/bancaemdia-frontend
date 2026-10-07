@@ -232,7 +232,12 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
             "/api/v1/apostas",
             method="POST",
             csrf=live["csrf_token"],
-            body={"casa": "betano", "odd": 2, "stake_unidades": 1},
+            body={
+                "casa": "betano",
+                "odd": 2,
+                "stake_unidades": 1,
+                "data_aposta": "2026-10-06T12:00:00-03:00",
+            },
         )
         assert created["status"] == 201
         key = created["data"]["aposta"]["chave"]
@@ -242,6 +247,52 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
         assert (await browser_request(pages[1], "/api/v1/apostas/" + key))[
             "status"
         ] == 404
+        # #17 uses pages and inclusive/exclusive instants; never filters a page locally.
+        selected = await browser_request(
+            pages[0],
+            "/api/v1/apostas?estado=PENDENTE&page=1&page_size=1"
+            "&desde=2026-10-06T03%3A00%3A00Z&ate=2026-10-07T03%3A00%3A00Z",
+        )
+        assert selected["status"] == 200
+        assert selected["data"]["pagination"] == {"page": 1, "page_size": 1, "total": 1}
+        assert selected["data"]["data"][0]["chave"] == key
+        for query in (
+            "estado=RED",
+            "desde=2026-10-07T03%3A00%3A00Z",
+            "ate=2026-10-06T15%3A00%3A00Z",
+        ):
+            empty = await browser_request(pages[0], "/api/v1/apostas?" + query)
+            assert empty["status"] == 200 and empty["data"]["pagination"]["total"] == 0
+        exact_start = await browser_request(
+            pages[0], "/api/v1/apostas?desde=2026-10-06T15%3A00%3A00Z"
+        )
+        assert (
+            exact_start["status"] == 200
+            and exact_start["data"]["pagination"]["total"] == 1
+        )
+        second = await browser_request(pages[0], "/api/v1/apostas?page=2&page_size=1")
+        assert (
+            second["data"]["data"] == [] and second["data"]["pagination"]["total"] == 1
+        )
+        other = await browser_request(pages[1], "/api/v1/apostas?estado=PENDENTE")
+        assert other["status"] == 200 and other["data"]["pagination"]["total"] == 0
+        removed = await browser_request(
+            pages[0], "/api/v1/apostas/" + key, method="DELETE", csrf=live["csrf_token"]
+        )
+        assert removed["status"] == 200
+        active = await browser_request(pages[0], "/api/v1/apostas")
+        included = await browser_request(
+            pages[0], "/api/v1/apostas?incluir_apagadas=true"
+        )
+        assert active["data"]["pagination"]["total"] == 0
+        assert included["data"]["pagination"]["total"] == 1
+        restored = await browser_request(
+            pages[0],
+            "/api/v1/apostas/" + key + "/restaurar",
+            method="POST",
+            csrf=live["csrf_token"],
+        )
+        assert restored["status"] == 200
         # The actual provider now owns cookie/CSRF lookup, clearing and confirmation.
         await pages[0].goto(backend.FRONT + "/sair")
         await pages[0].get_by_role("button", name="Confirmar saída").click()

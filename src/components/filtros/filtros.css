@@ -1,0 +1,89 @@
+.filtros {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.filtro-controles {
+  display: grid;
+  align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--espaco-16);
+}
+.filtro-escolha {
+  display: grid;
+  gap: var(--espaco-4);
+}
+.filtros button,
+.filtro-dialog button {
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-12);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--tinta);
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+.filtros button:hover,
+.filtro-dialog button:hover {
+  background: var(--superficie-secundaria);
+}
+.filtros button:disabled {
+  color: var(--tinta-secundaria);
+}
+.filtro-dialog {
+  width: min(32rem, calc(100vw - var(--espaco-32)));
+  max-height: calc(100dvh - var(--espaco-32));
+  padding: var(--espaco-16);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+  color: var(--tinta);
+  overflow: auto;
+}
+.filtro-dialog::backdrop {
+  background: var(--sombra-modal);
+}
+.filtro-opcoes {
+  display: grid;
+  gap: var(--espaco-8);
+  margin-block-end: var(--espaco-16);
+}
+.filtro-dialog button[aria-pressed='true'] {
+  background: var(--acao);
+  color: var(--sobre-acao);
+  border-color: var(--acao);
+}
+.filtro-mes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-8);
+  margin-block-end: var(--espaco-16);
+}
+.filtro-calendario {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--espaco-4);
+  text-align: center;
+}
+.filtro-calendario button {
+  padding: var(--espaco-4);
+  text-align: center;
+}
+.filtro-calendario .dia-vizinho:not([aria-pressed='true']) {
+  color: var(--tinta-secundaria);
+}
+.filtro-atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-8);
+  margin-block-start: var(--espaco-16);
+}
+.filtro-pilulas {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  gap: var(--espaco-8);
+}
