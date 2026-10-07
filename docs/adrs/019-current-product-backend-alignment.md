@@ -36,6 +36,10 @@ Dependência em #50 significa resolver o contrato específico usado pela issue, 
 
 ## Consequences
 
+### Entrega de Enviar (#24)
+
+Importação web restaura somente UUID de job pela URL, preservando filtros/fragmento. Arquivo fica em memória; aceitação 202 não é conclusão. POST não ganha replay automático nem idempotência inventada. Sem UUID após uma resposta perdida, consulta de apostas é explicitamente não conclusiva; nova intenção exige nova seleção. Pausa afeta somente observação. A prova completa acrescenta worker/Redis/materialização reais no sandbox de identidade, usando cache de extração sintético e sem inserir resultados finais. Ver [contrato de Enviar](../contracts/enviar.md).
+
 Novas unidades #49–59 completam o planejamento sem duplicar implementação financeira. A fundação visual continua conforme ADR006 e pesquisa aprovada. Toda issue de tela contém objetivo, contrato/versionamento, disponibilidade, dependências, tarefas e aceite desktop/mobile. Release exige API integrada, ambiente real e evidências; ensaio de backend #155 é útil, mas não prova experiência web nem produção.
 
 ## Fluxo de correção dos primeiros PRs
