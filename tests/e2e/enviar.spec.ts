@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import { billingStatus } from '../fixtures/acesso';
 import { expect, test, type Page } from '@playwright/test';
 import {
   acceptedUpload,
@@ -8,6 +9,10 @@ import {
 
 const fixture = 'http://127.0.0.1:4176/enviar?estado=GREEN&apagadas=1';
 async function identity(page: Page) {
+  let access: 'FULL_WRITE' | 'READ_ONLY' = 'FULL_WRITE';
+  await page.route('**/api/v1/billing/status', (route) =>
+    route.fulfill({ json: { ...billingStatus, access } }),
+  );
   const session = {
     usuario_id: 1,
     nome: 'Teste',
@@ -21,6 +26,11 @@ async function identity(page: Page) {
   await page.route('**/auth/session', (route) =>
     route.fulfill({ json: session }),
   );
+  return {
+    readOnly: () => {
+      access = 'READ_ONLY';
+    },
+  };
 }
 async function select(page: Page, name = 'result.json') {
   await page.getByLabel('Arquivo do export', { exact: true }).setInputFiles({
@@ -158,17 +168,23 @@ test('resposta perdida exige consulta GET e nova seleção; nenhum replay ao rec
 test('413, formato, 422, leitura e cooldown preservam entrada e têm recuperação', async ({
   page,
 }) => {
-  await identity(page);
+  const permission = await identity(page);
   let status = 413,
     writes = 0;
   await page.route('**/api/v1/upload', (route) => {
+    if (status === 402) permission.readOnly();
     writes++;
     return route.fulfill({
       status,
       headers: status === 429 ? { 'Retry-After': '300' } : {},
-      json: {
-        detail: [{ loc: ['body', 'file'], input: 'PRIVATE', msg: 'TRACE' }],
-      },
+      json:
+        status === 402
+          ? { detail: 'account_read_only' }
+          : {
+              detail: [
+                { loc: ['body', 'file'], input: 'PRIVATE', msg: 'TRACE' },
+              ],
+            },
     });
   });
   await page.goto(fixture);

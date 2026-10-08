@@ -28,7 +28,11 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['tests/fixtures/shell/*.tsx', 'tests/fixtures/acesso/*.tsx'],
+    files: [
+      'tests/fixtures/shell/*.tsx',
+      'tests/fixtures/acesso/*.tsx',
+      'tests/fixtures/telegram/*.tsx',
+    ],
     languageOptions: { globals: globals.browser },
   },
   {

@@ -6,13 +6,16 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import * as api from '../../api/client';
 import * as config from '../../lib/config';
 import { parseConfig } from '../../lib/config';
 import { ApiError } from '../../api/error';
 import { ProvedorAuth } from '../../auth/ProvedorAuth';
+import { createAccessController } from '../acesso/controller';
+import { ProvedorAcesso } from '../acesso/ProvedorAcesso';
+import { billingStatus } from '../../../tests/fixtures/acesso';
 import { createSession, type SessionService } from '../../auth/session';
 import { sessionContext } from '../../auth/protocol';
 import {
@@ -27,6 +30,7 @@ import { projetarJob } from './job';
 vi.mock('./useJob', () => ({ useJob: vi.fn() }));
 const settings = parseConfig({ VITE_API_URL: 'https://site.example.org' });
 const services: SessionService[] = [];
+const cleanupAccess: Array<() => void> = [];
 const resume = vi.fn(() => true);
 beforeEach(() => {
   vi.spyOn(config, 'getConfig').mockReturnValue(settings);
@@ -34,6 +38,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   services.splice(0).forEach((s) => s.dispose());
+  cleanupAccess.splice(0).forEach((fn) => fn());
   vi.restoreAllMocks();
   vi.useRealTimers();
 });
@@ -53,6 +58,7 @@ async function setup(
   fetcher: (r: Request) => Promise<Response> = async () =>
     json(acceptedUpload, 202),
   path = '/enviar?estado=GREEN&apagadas=1',
+  accessState: 'FULL_WRITE' | 'READ_ONLY' = 'FULL_WRITE',
 ) {
   const person = sessionContext({
     usuario_id: 1,
@@ -64,9 +70,12 @@ async function setup(
     access_expires_at: '2030-01-01T00:00:00Z',
     session_expires_at: '2030-01-02T00:00:00Z',
   });
+  const queries = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: 30_000 } },
+  });
   const service = createSession({
     baseUrl: settings.apiUrl,
-    queryClient: new QueryClient(),
+    queryClient: queries,
     exclusive: async (_signal, work) => work(),
     transport: {
       read: async () => person,
@@ -76,15 +85,33 @@ async function setup(
   });
   services.push(service);
   await service.resume();
-  vi.spyOn(api, 'getApiClient').mockReturnValue(
-    api.createApiClient(settings, { captureSession: service.capture, fetcher }),
-  );
+  const client = api.createApiClient(settings, {
+    captureSession: service.capture,
+    fetcher: (r) =>
+      new URL(r.url).pathname === '/api/v1/billing/status'
+        ? Promise.resolve(json({ ...billingStatus, access: accessState }))
+        : fetcher(r),
+  });
+  const access = createAccessController(service, queries);
+  await queries.fetchQuery({
+    queryKey: access.key(),
+    queryFn: ({ signal }) => access.consult(client, signal),
+  });
+  cleanupAccess.push(() => {
+    access.dispose();
+    queries.clear();
+  });
+  vi.spyOn(api, 'getApiClient').mockReturnValue(client);
   const view = render(
     <ProvedorAuth service={service}>
-      <MemoryRouter initialEntries={[path]}>
-        <EnviarPage />
-        <Location />
-      </MemoryRouter>
+      <QueryClientProvider client={queries}>
+        <ProvedorAcesso controller={access} client={client}>
+          <MemoryRouter initialEntries={[path]}>
+            <EnviarPage />
+            <Location />
+          </MemoryRouter>
+        </ProvedorAcesso>
+      </QueryClientProvider>
     </ProvedorAuth>,
   );
   return { ...view, service };
@@ -97,6 +124,21 @@ function select(name = 'result.json', contents = '{}') {
 function submit() {
   fireEvent.submit(document.querySelector('form')!);
 }
+
+it('em leitura mantém arquivo/contexto e atalho do bot, sem enviar upload', async () => {
+  const fetcher = vi.fn(async () => json(acceptedUpload, 202));
+  await setup(fetcher, '/enviar?casa=7&apagadas=1', 'READ_ONLY');
+  select();
+  submit();
+  expect(fetcher).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Enviar export' })).toBeDisabled();
+  expect(
+    screen.getByRole('link', { name: 'confira a conexão com o Telegram' }),
+  ).toHaveAttribute('href', '/configuracoes/conexoes?casa=7&apagadas=1');
+  expect(
+    screen.getByText('Arquivo escolhido: result.json', { exact: true }),
+  ).toBeVisible();
+});
 
 it('envia multipart e CSRF uma vez, persiste somente UUID e preserva filtros', async () => {
   const fetcher = vi.fn(async (request: Request) => {

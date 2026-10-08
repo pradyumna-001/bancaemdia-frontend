@@ -49,3 +49,7 @@ O PR de #48 é incremental sobre `feat/7-graficos-svg`; não reescreve commits a
 ## Revalidação de acesso — 08/10/2026 (#52)
 
 A main backend b916f54 integra billing/acesso e é a única fonte pinada desta PR. #52 precede #18/#32 na ordem de dependências. O aviso é contextual, mantém leitura/exportação e encaminha a Assinatura; não implementa checkout (#51). Status desconhecido fecha escrita, e recuperação exige uma nova intenção explícita. A matriz de operações e prova real estão em [acesso](../contracts/acesso.md). Reconciliar a formatação herdada da #16/PR #69 e os consumidores de escrita das PRs #73/#75 na integração; nenhum PR é empilhado. O candidato de filtros #184 continua exclusivo da entrega autorizada #17 e não é promovido por esta PR.
+
+## Conexão Telegram — #54
+
+O contrato de vínculo está integrado em b916f54. A página em Configurações e o atalho em Enviar usam código transitório, polling finito e revogação confirmada; READ_ONLY preserva as exceções de privacidade publicadas e bloqueia upload. O dono autorizou entregar sem endereço público do bot e pediu link fictício em 08/10/2026: âncora interna identificada, endereço real e percurso externo pendentes de lançamento. Prova obrigatória usa SPA/API/banco reais e transporte privado IncomingCommand local; não certifica Telegram externo. Ver [contrato Telegram](../contracts/telegram.md). Dependências frontend #69/#76/#75 declaradas, PR independente contra main; futuro Configurações #33 preserva Conexões.

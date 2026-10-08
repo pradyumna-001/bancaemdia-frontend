@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom';
 import { getApiClient } from '../../api/client';
 import { ApiError } from '../../api/error';
 import { useAuth } from '../../auth/ProvedorAuth';
+import { useAcesso } from '../acesso/ProvedorAcesso';
 import { ErroApi } from '../../components/ErroApi';
 import { decimal } from '../../lib/format';
 import { useRetryAfter } from '../../lib/useRetryAfter';
@@ -19,6 +25,7 @@ const RESULTADOS = {
 
 export function EnviarPage() {
   const auth = useAuth();
+  const access = useAcesso();
   const location = useLocation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -91,6 +98,7 @@ export function EnviarPage() {
       waiting ||
       unknown ||
       readOnly ||
+      !access?.can('POST /api/v1/upload') ||
       id ||
       invalid
     )
@@ -107,15 +115,17 @@ export function EnviarPage() {
     setBusy(true);
     setError(undefined);
     try {
-      const result = await getApiClient().POST('/api/v1/upload', {
-        body: { file: file.name },
-        bodySerializer: () => {
-          const form = new FormData();
-          form.append('file', file);
-          return form;
-        },
-        signal: controller.signal,
-      });
+      const result = await access.run('POST /api/v1/upload', () =>
+        getApiClient().POST('/api/v1/upload', {
+          body: { file: file.name },
+          bodySerializer: () => {
+            const form = new FormData();
+            form.append('file', file);
+            return form;
+          },
+          signal: controller.signal,
+        }),
+      );
       if (!samePrivateContext() || controller.signal.aborted) return;
       if (!scope.isCurrent()) {
         setError(new ApiError('cancelled', { mutation: true }));
@@ -366,7 +376,14 @@ export function EnviarPage() {
             <button
               className="enviar-principal"
               type="submit"
-              disabled={!file || busy || waiting || unknown || readOnly}
+              disabled={
+                !file ||
+                busy ||
+                waiting ||
+                unknown ||
+                readOnly ||
+                !access?.can('POST /api/v1/upload')
+              }
             >
               {busy ? 'Enviando arquivo…' : 'Enviar export'}
             </button>
@@ -474,9 +491,14 @@ export function EnviarPage() {
         </a>
       </details>
       <p className="enviar-outros">
-        Este envio importa o histórico do Telegram. Envio de fotos pelo bot,
-        prints pelo site e importação de planilha terão suas próprias instruções
-        quando estiverem disponíveis.
+        Este envio importa o histórico do Telegram. Para enviar uma foto pelo
+        bot,
+        <Link to={`/configuracoes/conexoes${location.search}`}>
+          {' '}
+          confira a conexão com o Telegram
+        </Link>
+        . Prints pelo site e importação de planilha terão suas próprias
+        instruções quando estiverem disponíveis.
       </p>
     </main>
   );

@@ -56,6 +56,11 @@
 .enviar-pagina button:disabled {
   opacity: 0.65;
 }
+.enviar-pagina button:hover:not(:disabled) {
+  background: var(--acao-hover);
+  color: var(--sobre-acao);
+  border-color: var(--acao-hover);
+}
 .enviar-pagina progress {
   display: block;
   width: 100%;

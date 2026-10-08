@@ -107,6 +107,7 @@ def serve_public_build():
 
         do_GET = handle_request
         do_POST = handle_request
+        do_DELETE = handle_request
 
     return ThreadingHTTPServer(("127.0.0.1", 58001), PublicBuild)
 
@@ -893,6 +894,113 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
             body={"outcomes": [{"name": "A", "odd": "2"}, {"name": "B", "odd": "2"}]},
         )
         assert calculated["status"] == 200
+        # Real UI, cookie/CSRF, issuance/expiry/redemption/revocation under READ_ONLY.
+        # The private Telegram transport is represented by IncomingCommand locally;
+        # no live bot, photo, external Telegram request or paid provider is used.
+        from types import SimpleNamespace
+        from unittest.mock import patch
+
+        from bancaemdia.services import telegram_link as links
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        async def redeem(code):
+            factory = async_sessionmaker(engine_admin, expire_on_commit=False)
+            with patch.object(
+                links,
+                "get_settings",
+                return_value=SimpleNamespace(
+                    COLETA_TOKEN_SECRET=harness.env["COLETA_TOKEN_SECRET"]
+                ),
+            ):
+                async with factory() as database:
+                    await database.execute(
+                        text("SELECT set_config('app.current_user_id', :uid, true)"),
+                        {"uid": str(uid)},
+                    )
+                    return await links.redeem_command(
+                        database,
+                        links.IncomingCommand(
+                            chat_type="private",
+                            sender_user_id=1000000 + uid,
+                            chat_id=1000000 + uid,
+                            text="/vincular " + code,
+                        ),
+                    )
+
+        await page.goto(backend.FRONT + "/configuracoes/conexoes?casa=7&apagadas=1")
+        await expect(
+            page.get_by_role("heading", name="Telegram não conectado", exact=True)
+        ).to_be_visible()
+        async with page.expect_response(
+            lambda r: r.url.endswith("/telegram/link-codes")
+        ) as pending:
+            await page.get_by_role("button", name="Gerar código temporário").click()
+        issued = await pending.value
+        assert issued.status == 201
+        first_code = (await issued.json())["code"]
+        if os.environ.get("GITHUB_ACTIONS"):
+            print("::add-mask::" + first_code)
+        await expect(page.locator(".telegram-comando")).to_be_visible()
+        async with engine_admin.begin() as database:
+            await database.execute(
+                text(
+                    "UPDATE telegram_link_codes SET expires_at=clock_timestamp()-interval '1 second' "
+                    "WHERE usuario_id=:uid AND consumed_at IS NULL"
+                ),
+                {"uid": uid},
+            )
+        accepted = await redeem(first_code)
+        assert accepted is False
+        await page.get_by_role("button", name="Ocultar código e parar consulta").click()
+        await page.get_by_role("button", name="Preparar novo código").click()
+        async with page.expect_response(
+            lambda r: r.url.endswith("/telegram/link-codes")
+        ) as pending:
+            await page.get_by_role("button", name="Confirmar novo código").click()
+        issued = await pending.value
+        assert issued.status == 201
+        second_code = (await issued.json())["code"]
+        if os.environ.get("GITHUB_ACTIONS"):
+            print("::add-mask::" + second_code)
+        accepted = await redeem(second_code)
+        assert accepted is True
+        duplicate = await redeem(second_code)
+        assert duplicate is False
+        await page.get_by_role("button", name="Consultar vínculo").click()
+        await expect(
+            page.get_by_role("heading", name="Telegram conectado", exact=True)
+        ).to_be_visible()
+        await expect(page.locator(".telegram-comando")).to_have_count(0)
+        fresh = (await browser_request(page, "/auth/session"))["data"]
+        extra = await browser_request(
+            page,
+            "/api/v1/telegram/link-codes",
+            method="POST",
+            csrf=fresh["csrf_token"],
+        )
+        assert extra["status"] == 201
+        pending_code = extra["data"]["code"]
+        if os.environ.get("GITHUB_ACTIONS"):
+            print("::add-mask::" + pending_code)
+        await page.get_by_role("button", name="Revogar vínculo", exact=True).click()
+        async with page.expect_response(
+            lambda r: r.url.endswith("/telegram/link") and r.request.method == "DELETE"
+        ) as pending:
+            await page.get_by_role("button", name="Confirmar revogação").click()
+        revoked = await pending.value
+        assert revoked.status == 200
+        assert (await revoked.json())["revoked"] is True
+        await expect(
+            page.get_by_role("heading", name="Telegram não conectado", exact=True)
+        ).to_be_visible()
+        accepted = await redeem(pending_code)
+        assert accepted is False
+        assert (await browser_request(page, "/api/v1/apostas"))["data"]["pagination"][
+            "total"
+        ] == 1
+        await expect(
+            page.get_by_role("link", name="Importar histórico em Enviar")
+        ).to_have_attribute("href", "/enviar?casa=7&apagadas=1")
         # Simulate the sandbox provider's confirmed paid period; never a live checkout.
         async with engine_admin.begin() as conn:
             price = await conn.scalar(
