@@ -7,6 +7,7 @@ import {
   operationPolicies,
   paginationPolicies,
   verifiedSchema,
+  requireIntegratedContract,
 } from '../../scripts/api-contract.mjs';
 
 const bytes = Buffer.from(
@@ -99,9 +100,28 @@ it('deriva políticas de headers e multipart do próprio contrato', () => {
     uploads: [],
   });
 });
-it('referência versionada usa somente o snapshot oficial integrado', async () => {
+it('referência versionada usa somente o snapshot oficial imutável, com estado explícito', async () => {
   const actual = JSON.parse(await readFile('config/api-contract.json', 'utf8'));
   expect(contractSource(actual)).toMatch(
     /raw\.githubusercontent\.com\/pradyumna-001\/bancaemdia-api\/[a-f0-9]{40}\/tests\/contract\/schemas\/openapi\.json$/,
   );
+});
+it('candidato autenticado não se passa por contrato integrado nem pode publicar', () => {
+  const candidate = {
+    ...pin,
+    availability: {
+      kind: 'pull_request',
+      url: 'https://github.com/pradyumna-001/bancaemdia-api/pull/184',
+      integratedBaseline: 'b'.repeat(40),
+    },
+  };
+  expect(contractSource(candidate)).toContain(pin.commit);
+  expect(() => requireIntegratedContract(candidate)).toThrow('merge backend');
+  expect(() => requireIntegratedContract(pin)).not.toThrow();
+  for (const availability of [
+    { ...candidate.availability, url: 'https://example.org/184' },
+    { ...candidate.availability, integratedBaseline: 'main' },
+    { ...candidate.availability, kind: 'integrated' },
+  ])
+    expect(() => contractSource({ ...pin, availability })).toThrow('candidato');
 });

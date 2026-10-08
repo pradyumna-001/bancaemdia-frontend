@@ -297,6 +297,9 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         )
         assert created["status"] == 201
         # Add one disposable pending review, to distinguish the real per-user caches.
+        initial_reviews = await browser_request(pa, "/api/v1/revisao/stats")
+        assert initial_reviews["status"] == 200
+        expected_total = initial_reviews["data"]["total"] + 1
         async with engine_admin.begin() as conn:
             result = await conn.execute(
                 text(
@@ -305,13 +308,15 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
                 {"id": sa["usuario_id"]},
             )
             assert result.rowcount == 1
+        actual_reviews = await browser_request(pa, "/api/v1/revisao/stats")
+        assert actual_reviews["status"] == 200
+        assert actual_reviews["data"]["total"] == expected_total
+        review_name = re.compile(rf"Revisão.*{expected_total} pendências")
         await pa.goto(backend.FRONT + "/painel?apagadas=1#serie")
         await expect(
             pa.get_by_role("heading", name="Painel", exact=True)
         ).to_be_visible()
-        await expect(
-            pa.get_by_role("link", name=re.compile(r"Revisão.*1 pendências")).first
-        ).to_be_visible()
+        await expect(pa.get_by_role("link", name=review_name).first).to_be_visible()
         second = await a.new_page()
         await second.goto(backend.FRONT + "/painel")
         await expect(
@@ -342,9 +347,7 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         await complete_hosted_entry(
             second, email_b, password_b, backend.FRONT + "/painel"
         )
-        await expect(
-            pa.get_by_role("link", name=re.compile(r"Revisão.*1 pendências"))
-        ).to_have_count(0)
+        await expect(pa.get_by_role("link", name=review_name)).to_have_count(0)
         await expect(
             pa.get_by_role("heading", name="Painel", exact=True)
         ).to_be_visible()
@@ -582,3 +585,213 @@ async def test_public_spa_expired_confirmation(
             await browser.close()
     except BrowserError:
         pytest.fail("Expired account action recovery did not complete", pytrace=False)
+
+
+@pytest.mark.parametrize(
+    "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
+)
+async def test_public_spa_commercial_access(harness, engine_admin, viewport, request):
+    """Real server expiry and read-only SPA, no payment or production data."""
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch()
+        context = await browser.new_context(viewport=viewport)
+        page = await context.new_page()
+        violations = []
+        hosted_diagnostics = []
+
+        def document_error(_error):
+            origin = urlsplit(page.url).netloc
+            if origin == urlsplit(backend.FRONT).netloc:
+                violations.append("public pageerror")
+            elif origin == urlsplit(backend.ISSUER).netloc:
+                # Keep numeric issuer diagnostics without protocol URLs/credentials.
+                hosted_diagnostics.append("hosted document pageerror")
+            else:
+                violations.append("unexpected document pageerror")
+
+        page.on("pageerror", document_error)
+        session, _ = await backend.register(
+            page,
+            uuid4().hex + "@example.org",
+            secrets.token_urlsafe(24),
+            harness=harness,
+        )
+        uid = session["usuario_id"]
+        async with engine_admin.begin() as conn:
+            await conn.execute(text("SELECT billing_activate_rollout()"))
+            await conn.execute(
+                text(
+                    "WITH bounds AS (SELECT clock_timestamp()+interval '45 seconds' AS finish) "
+                    "UPDATE assinaturas SET trial_confirmed=true, trial_ends_at=bounds.finish, "
+                    "trial_started_at=bounds.finish-interval '168 hours' FROM bounds WHERE usuario_id=:uid"
+                ),
+                {"uid": uid},
+            )
+        await page.goto(backend.FRONT + "/painel?casa=7&apagadas=1")
+        await expect(
+            page.get_by_role("heading", name="Painel", exact=True)
+        ).to_be_visible()
+        current = await browser_request(page, "/auth/session")
+        status = await browser_request(page, "/api/v1/billing/status")
+        assert status["status"] == 200 and status["data"]["access"] == "FULL_WRITE"
+        await expect(page.get_by_role("region", name="Acesso à conta")).to_have_count(0)
+        created = await browser_request(
+            page,
+            "/api/v1/apostas",
+            method="POST",
+            csrf=current["data"]["csrf_token"],
+            body={"casa": "betano", "odd": 2, "stake_unidades": 1},
+        )
+        assert created["status"] == 201
+        from datetime import datetime
+
+        expiry = datetime.fromisoformat(status["data"]["trial_ends_at"]).timestamp()
+        await asyncio.sleep(max(0, expiry - time.time()) + 1)
+        # The actual database clock ends access; browser dates never grant trial.
+        await page.reload()
+        await expect(
+            page.get_by_role("heading", name="Sua conta está em modo de leitura")
+        ).to_be_visible()
+        await expect(
+            page.get_by_role("link", name="Ver assinatura", exact=True)
+        ).to_have_attribute("href", "/assinatura?casa=7&apagadas=1")
+        live = (await browser_request(page, "/auth/session"))["data"]
+        assert live["usuario_id"] == uid
+        refused = await browser_request(
+            page,
+            "/api/v1/apostas",
+            method="POST",
+            csrf=live["csrf_token"],
+            body={"casa": "betano", "odd": 2, "stake_unidades": 1},
+        )
+        assert (
+            refused["status"] == 402
+            and refused["data"]["detail"] == "account_read_only"
+        )
+        assert (await browser_request(page, "/api/v1/apostas"))["data"]["pagination"][
+            "total"
+        ] == 1
+        exported = await browser_request(page, "/api/v1/usuario/me/export?formato=json")
+        assert exported["status"] == 200
+        calculated = await browser_request(
+            page,
+            "/api/v1/calculadoras/mercado-justo",
+            method="POST",
+            csrf=live["csrf_token"],
+            body={"outcomes": [{"name": "A", "odd": "2"}, {"name": "B", "odd": "2"}]},
+        )
+        assert calculated["status"] == 200
+        # The actual SPA uses each authenticated, stateless operation in READ_ONLY.
+        await page.goto(backend.FRONT + "/calculadoras?casa=7&apagadas=1")
+        await expect(
+            page.get_by_role("heading", name="Calculadoras", exact=True)
+        ).to_be_visible()
+        await page.get_by_label("Nome do resultado 1").fill("A")
+        await page.get_by_label("Nome do resultado 2").fill("B")
+        await page.get_by_label("Odd do resultado 1").fill("2")
+        await page.get_by_label("Odd do resultado 2").fill("2")
+        await page.get_by_role("checkbox").check()
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/mercado-justo")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["outcomes"][0][
+            "fair_probability"
+        ] == "0.50000000"
+        await page.get_by_role(
+            "link", name="Distribuir entre resultados", exact=True
+        ).click()
+        await page.get_by_label("Odd do resultado 1").fill("2,1")
+        await page.get_by_label("Odd do resultado 2").fill("2,1")
+        await page.get_by_label("Entrada total (R$)").fill("100,00")
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/distribuir-entre-resultados")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["minimum_profit_centavos"] == 500
+        await page.get_by_role("link", name="Cobertura ao vivo", exact=True).click()
+        await page.get_by_label("Entrada original (R$)").fill("100,00")
+        await page.get_by_label("Odd original", exact=True).fill("1,5")
+        await page.get_by_label("Odd oposta", exact=True).fill("3")
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/cobertura-ao-vivo")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["hedge_stake_centavos"] == 5000
+        await page.get_by_role("link", name="Percentual da banca", exact=True).click()
+        await page.get_by_label("Banca informada (R$)").fill("100,00")
+        await page.get_by_label("Percentual (%)", exact=True).fill("1,25")
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/percentual-banca")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["stake_centavos"] == 125
+        await expect(
+            page.get_by_role("link", name="Voltar para Apostas")
+        ).to_have_attribute(
+            "href", "/apostas?casa=7&apagadas=1&ferramenta=percentual-banca"
+        )
+        # Simulate the sandbox provider's confirmed paid period; never a live checkout.
+        async with engine_admin.begin() as conn:
+            price = await conn.scalar(
+                text(
+                    "INSERT INTO billing_prices(amount_cents,currency,frequency,valid_from,published) "
+                    "VALUES (12345,'BRL','MONTHLY',clock_timestamp(),false) RETURNING id"
+                )
+            )
+            await conn.execute(
+                text(
+                    "UPDATE assinaturas SET status='ACTIVE', price_id=:price, "
+                    "current_period_started_at=clock_timestamp()-interval '1 minute', "
+                    "current_period_ends_at=clock_timestamp()+interval '1 hour' WHERE usuario_id=:uid"
+                ),
+                {"uid": uid, "price": price},
+            )
+        await page.get_by_role("button", name="Conferir acesso", exact=True).click()
+        await expect(page.get_by_role("region", name="Acesso à conta")).to_have_count(0)
+        assert (await browser_request(page, "/api/v1/billing/status"))["data"][
+            "access"
+        ] == "FULL_WRITE"
+        # Revalidation does not replay the previously denied intent.
+        assert (await browser_request(page, "/api/v1/apostas"))["data"]["pagination"][
+            "total"
+        ] == 1
+        assert all(
+            cookie["httpOnly"] for cookie in await context.cookies(backend.FRONT)
+        )
+        assert not await page.evaluate(
+            "Boolean(document.cookie) || Object.keys(localStorage).length > 0"
+        )
+        request.node.user_properties.append(
+            ("hosted_document_pageerrors", str(len(hosted_diagnostics)))
+        )
+        assert not violations
+        await browser.close()

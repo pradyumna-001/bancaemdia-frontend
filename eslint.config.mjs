@@ -11,6 +11,12 @@ export default tseslint.config(
       'dist/**',
       'dist-security/**',
       'dist-shell-fixture/**',
+      'dist-acesso-fixture/**',
+      'dist-assinatura-fixture/**',
+      'dist-calculadoras-fixture/**',
+      'dist-filtros-fixture/**',
+      'dist-filtros-security/**',
+      'dist-enviar-fixture/**',
       'coverage/**',
       'reports/**',
       'playwright-report/**',
@@ -21,7 +27,11 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['tests/fixtures/shell/*.tsx'],
+    files: [
+      'tests/fixtures/shell/*.tsx',
+      'tests/fixtures/acesso/*.tsx',
+      'tests/fixtures/calculadoras/*.tsx',
+    ],
     languageOptions: { globals: globals.browser },
   },
   {
