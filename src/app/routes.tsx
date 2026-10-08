@@ -14,6 +14,7 @@ import { Shell } from './Shell';
 import { SistemaPage } from '../features/sistema/SistemaPage';
 import type { ConsultarRevisao } from '../features/revisao/estatisticas';
 import { AccountPage } from '../features/conta/AccountPage';
+import { AssinaturaPage } from '../features/assinatura/AssinaturaPage';
 
 export function loginLoader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -23,8 +24,10 @@ export function loginLoader({ request }: LoaderFunctionArgs) {
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
   consultarRevisao?: ConsultarRevisao,
+  billingReturning = false,
 ): RouteObject[] {
   const guard = exigirSessao(consultarSessao);
+  let billingReturnPending = billingReturning;
   const protectedRoute = (path: string, element: ReactNode): RouteObject => ({
     path,
     caseSensitive: true,
@@ -49,7 +52,14 @@ export function createAppRoutes(
     ...ROTAS_PROTEGIDAS.map(({ path, title }) =>
       protectedRoute(
         path,
-        path === '/sistema' ? (
+        path === '/assinatura' ? (
+          <AssinaturaPage
+            returning={() => billingReturnPending}
+            onReturnHandled={() => {
+              billingReturnPending = false;
+            }}
+          />
+        ) : path === '/sistema' ? (
           <SistemaPage />
         ) : (
           <Placeholder title={title} interna />

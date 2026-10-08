@@ -681,6 +681,21 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
             body={"outcomes": [{"name": "A", "odd": "2"}, {"name": "B", "odd": "2"}]},
         )
         assert calculated["status"] == 200
+        await page.goto(backend.FRONT + "/assinatura?casa=7&apagadas=1")
+        await expect(
+            page.get_by_role("heading", name="Assinatura", exact=True)
+        ).to_be_visible()
+        await expect(
+            page.get_by_text("Assinatura indisponível para novos pedidos", exact=True)
+        ).to_be_visible()
+        assert (
+            await page.get_by_role("button", name="Continuar para assinatura").count()
+            == 0
+        )
+        await expect(
+            page.get_by_role("link", name="Voltar para Apostas")
+        ).to_have_attribute("href", "/?casa=7&apagadas=1")
+        # Prices and checkout remain unavailable in this actual no-payment sandbox.
         # Simulate the sandbox provider's confirmed paid period; never a live checkout.
         async with engine_admin.begin() as conn:
             price = await conn.scalar(
@@ -702,6 +717,7 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
         assert (await browser_request(page, "/api/v1/billing/status"))["data"][
             "access"
         ] == "FULL_WRITE"
+        await expect(page.get_by_text("Assinatura ativa", exact=True)).to_be_visible()
         # Revalidation does not replay the previously denied intent.
         assert (await browser_request(page, "/api/v1/apostas"))["data"]["pagination"][
             "total"

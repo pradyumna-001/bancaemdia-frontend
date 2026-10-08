@@ -3,6 +3,7 @@ dist/
 dist-security/
 dist-shell-fixture/
 dist-acesso-fixture/
+dist-assinatura-fixture/
 dist-filtros-fixture/
 dist-filtros-security/
 dist-enviar-fixture/

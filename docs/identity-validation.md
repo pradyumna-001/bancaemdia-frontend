@@ -4,6 +4,8 @@ A prova original verificou o contrato do backend [PR #168](https://github.com/pr
 
 ## Extensão pela #52 e referência atual
 
+A #51 estende o cenário comercial existente passando pela tela pública de Assinatura: catálogo real sem oferta/Checkout, contexto de filtros, READ_ONLY e recuperação ACTIVE após confirmação no banco descartável. Permanecem dez casos SPA e nove backend sem skips. Checkout/portal/cancelamento são testes de contrato HTTP separados, sem cartão ou cobrança live.
+
 O workflow adota a main backend integrada `b916f54331f14cf47a3800324bd61d8638043c06`, mesma árvore única dos tipos e políticas do cliente. O gate exige **dez cenários SPA** e nove backend, zero failures/errors/skips. A #52 mantém os oito cenários anteriores e acrescenta acesso comercial em ambos os viewports: expiração real do trial no servidor, sessão preservada, leitura/exportação/calculadora, recusa 402 e reconfirmação de período pago descartável sem repetir escrita. Não cobra nem provisiona serviços reais.
 
 O observador exige zero erros de página na SPA e registra somente a contagem de diagnósticos do documento hospedado do emissor; não grava mensagens, stack ou URLs de protocolo. Evidência de sandbox não afirma deploy. As seções seguintes registram a evolução e os limites históricos; o estado vigente está em [sessão](contracts/sessao.md) e [acesso](contracts/acesso.md).

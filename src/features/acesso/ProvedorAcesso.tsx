@@ -62,7 +62,7 @@ function useAccessState(
     checking: query.isFetching,
     waiting,
     refresh: () => {
-      if (!waiting && !query.isFetching) void query.refetch();
+      if (!waiting && !query.isFetching) return query.refetch();
     },
     can: (operation: AccessOperation) =>
       !!authenticated && (!operationNeedsWrite(operation) || phase === 'write'),

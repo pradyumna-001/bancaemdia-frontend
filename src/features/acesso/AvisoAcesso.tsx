@@ -56,7 +56,7 @@ export function AvisoAcesso() {
             {access.checking ? 'Conferindo acesso…' : 'Conferir acesso'}
           </button>
         )}
-        {!checking && (
+        {!checking && location.pathname !== '/assinatura' && (
           <Link to={{ pathname: '/assinatura', search: location.search }}>
             Ver assinatura
           </Link>

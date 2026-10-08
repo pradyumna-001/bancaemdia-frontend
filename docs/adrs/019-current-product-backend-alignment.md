@@ -42,6 +42,10 @@ Novas unidades #49–59 completam o planejamento sem duplicar implementação fi
 
 O PR de #48 é incremental sobre `feat/7-graficos-svg`; não reescreve commits anteriores nem faz merge administrativo. As #1–7 recebem nota de auditoria do que foi preservado/corrigido. Tipos, tokens, fontes, marca e gráficos da fundação não são descartados para reproduzir outra vez o monólito. Gates existentes permanecem obrigatórios no SHA final.
 
+## Página de Assinatura — 08/10/2026 (#51)
+
+A #51 completa o destino do aviso da #52 com o read model integrado e páginas hospedadas. Preço/status/datas/access continuam decididos pelo servidor. Cartão nunca atravessa a SPA; retorno não concede acesso e faz apenas consultas GET limitadas. Cancelar exige confirmação e novo status, com recusa/resultado desconhecido sem replay. A versão Stripe integrada aceita teste; ativação live segue gate operacional próprio. Ver [assinatura](../contracts/assinatura.md). PR contra main, dependências #76/#69 declaradas e código herdado separado; reconciliação/merge pertencem ao administrador. A #18 permanece com lacuna de projeção legível do backend já prevista na #50, confirmada antes desta escolha de ordem.
+
 ## Revalidação de acesso — 08/10/2026 (#52)
 
 A main backend b916f54 integra billing/acesso e é a única fonte pinada desta PR. #52 precede #18/#32 na ordem de dependências. O aviso é contextual, mantém leitura/exportação e encaminha a Assinatura; não implementa checkout (#51). Status desconhecido fecha escrita, e recuperação exige uma nova intenção explícita. A matriz de operações e prova real estão em [acesso](../contracts/acesso.md). Reconciliar a formatação herdada da #16/PR #69 e os consumidores de escrita das PRs #73/#75 na integração; nenhum PR é empilhado. O candidato de filtros #184 continua exclusivo da entrega autorizada #17 e não é promovido por esta PR.

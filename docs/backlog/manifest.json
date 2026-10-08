@@ -207,7 +207,7 @@
     "number": 51,
     "title": "[ADR-019] Assinatura — teste gratuito, Checkout e gestão",
     "file": "051.md",
-    "dependencies": "#9, #10, #11, #12; #52; pradyumna-001/bancaemdia-api#89–93"
+    "dependencies": "#9, #10, #11, #12 integradas; #52/PR #76; #16/PR #69; backend #89–93 integradas em b916f54"
   },
   {
     "number": 52,
