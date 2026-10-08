@@ -1,6 +1,6 @@
 # Backlog vigente — ADR019
 
-Revisão de produto autorizada em 29/09/2026. Corpos abaixo são canônicos e espelhados integralmente no GitHub; `manifest.json` associa número, título e dependências. Histórico dos textos anteriores permanece no Git/GitHub.
+Revisão de produto autorizada em 29/09/2026, com correção de 06/10/2026 nas #15/#24/#25/#30/#35/#50: envio → processamento → resultado, sem estimativa/aviso de custo de processamento ou aprovação de gasto pelo usuário; controles de gasto ficam no backend. Corpos abaixo são canônicos e espelhados integralmente no GitHub; `manifest.json` associa número, título e dependências. Histórico dos textos anteriores permanece no Git/GitHub.
 
 [Fundação #1–7](revisao-fundacao.md) · [Correção #48](https://github.com/pradyumna-001/bancaemdia-frontend/issues/48) · [Contratos](../API-CONTRACTS.md) · [Ordem de implementação](../adrs/019-current-product-backend-alignment.md)
 
@@ -15,7 +15,7 @@ Revisão de produto autorizada em 29/09/2026. Corpos abaixo são canônicos e es
 | [#12](https://github.com/pradyumna-001/bancaemdia-frontend/issues/12) | [Telas de conta — cadastro e recuperação com contrato real](012.md)     | #11; #49                                                                  |
 | [#13](https://github.com/pradyumna-001/bancaemdia-frontend/issues/13) | [Páginas de erro e recuperação contextual](013.md)                      | #3, #10; #48                                                              |
 | [#14](https://github.com/pradyumna-001/bancaemdia-frontend/issues/14) | [Ambiente de integração e deploy de homologação](014.md)                | #8, #9, #11; #49                                                          |
-| [#15](https://github.com/pradyumna-001/bancaemdia-frontend/issues/15) | [Jobs de upload — estados reais e retomada de observação](015.md)       | #9, #10; #50                                                              |
+| [#15](https://github.com/pradyumna-001/bancaemdia-frontend/issues/15) | [Jobs de upload — estados reais e retomada de observação](015.md)       | #9, #10                                                                   |
 | [#16](https://github.com/pradyumna-001/bancaemdia-frontend/issues/16) | [Formatadores e termos — domínio financeiro e assinatura](016.md)       | #9; #48                                                                   |
 | [#17](https://github.com/pradyumna-001/bancaemdia-frontend/issues/17) | [Filtros na URL — capacidade por recurso e paginação real](017.md)      | #9, #16; #50                                                              |
 | [#18](https://github.com/pradyumna-001/bancaemdia-frontend/issues/18) | [Apostas — lista operacional com resumo coerente](018.md)               | #9, #10, #16, #17; #32; #52; #50                                          |
@@ -24,7 +24,7 @@ Revisão de produto autorizada em 29/09/2026. Corpos abaixo são canônicos e es
 | [#21](https://github.com/pradyumna-001/bancaemdia-frontend/issues/21) | [Hipotética — dependência de contrato e prioridade explícita](021.md)   | #50; #20                                                                  |
 | [#22](https://github.com/pradyumna-001/bancaemdia-frontend/issues/22) | [Mídia de aposta — autorização e estabilidade visual](022.md)           | #9, #11; #50                                                              |
 | [#23](https://github.com/pradyumna-001/bancaemdia-frontend/issues/23) | [E2E central — filtros, contas, revisão e resumos](023.md)              | #18, #19, #20, #22; #32; #52                                              |
-| [#24](https://github.com/pradyumna-001/bancaemdia-frontend/issues/24) | [Enviar — exportação Telegram e consentimento de gasto](024.md)         | #15, #16; #52; #50                                                        |
+| [#24](https://github.com/pradyumna-001/bancaemdia-frontend/issues/24) | [Enviar — importação de export do Telegram](024.md)                     | #15, #16; #52                                                             |
 | [#25](https://github.com/pradyumna-001/bancaemdia-frontend/issues/25) | [Prints web — envio múltiplo e recuperação parcial](025.md)             | #15, #22, #24; #52; #50                                                   |
 | [#26](https://github.com/pradyumna-001/bancaemdia-frontend/issues/26) | [Planilha — prévia, remapeamento e confirmação](026.md)                 | #9, #10, #16; #52; #50                                                    |
 | [#27](https://github.com/pradyumna-001/bancaemdia-frontend/issues/27) | [Resultados — um toque com ordem e desfazer seguro](027.md)             | #18, #19; #52; #50                                                        |

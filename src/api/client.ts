@@ -16,12 +16,26 @@ export const API_TIMEOUTS = Object.freeze({
 const idempotent = new Set<string>(IDEMPOTENT_OPERATIONS);
 const uploads = new Set<string>(UPLOAD_OPERATIONS);
 const reads = new Set(['GET', 'HEAD', 'OPTIONS']);
+export type ApiOperation = {
+  [Path in keyof paths]: {
+    [
+      Method in Extract<
+        keyof paths[Path],
+        'get' | 'post' | 'patch' | 'delete' | 'put'
+      >
+    ]: paths[Path][Method] extends undefined
+      ? never
+      : `${Uppercase<Method>} ${Path}`;
+  }[Extract<keyof paths[Path], 'get' | 'post' | 'patch' | 'delete' | 'put'>];
+}[keyof paths];
 
 export interface ApiClientOptions {
   readonly getCsrfToken?: () => string | undefined;
   readonly fetcher?: (request: Request) => Promise<Response>;
   readonly captureSession?: () => RequestContext;
   readonly onUnauthorized?: (error: ApiError) => void;
+  readonly onAccessDenied?: () => void;
+  readonly beforeMutation?: (operation: ApiOperation) => Promise<void>;
 }
 
 export function createIdempotencyKey(): string {
@@ -112,6 +126,12 @@ export function createApiClient(
           if (!response.ok) {
             const error = httpError(response, body, mutation);
             if (error.status === 401) options.onUnauthorized?.(error);
+            if (
+              error.status === 402 &&
+              error.code === 'account_read_only' &&
+              policy.operation !== 'GET /api/v1/billing/status'
+            )
+              options.onAccessDenied?.();
             throw error;
           }
           const noBody =
@@ -173,7 +193,7 @@ export function createApiClient(
     cache: 'no-store',
   });
   client.use({
-    onRequest({ request, schemaPath, options: requestOptions }) {
+    async onRequest({ request, schemaPath, options: requestOptions }) {
       if (
         requestOptions.baseUrl !== config.apiUrl ||
         requestOptions.fetch !== transport ||
@@ -189,6 +209,10 @@ export function createApiClient(
       }
       const headers = new Headers(request.headers);
       const context = options.captureSession?.();
+      if (!reads.has(request.method) && options.beforeMutation)
+        await options.beforeMutation(operation as ApiOperation);
+      if (request.signal.aborted || (context && !context.isCurrent()))
+        throw new ApiError('cancelled');
       headers.delete('X-CSRF-Token');
       if (!reads.has(request.method)) {
         const csrf = context?.csrfToken ?? options.getCsrfToken?.();

@@ -10,7 +10,26 @@ export function contractSource(pin) {
     throw new Error(
       'A referência OpenAPI deve fixar repositório, commit completo e SHA-256.',
     );
+  if (
+    pin.availability &&
+    (pin.availability.kind !== 'pull_request' ||
+      !/^https:\/\/github\.com\/pradyumna-001\/bancaemdia-api\/pull\/[1-9][0-9]*$/.test(
+        pin.availability.url ?? '',
+      ) ||
+      !/^[a-f0-9]{40}$/.test(pin.availability.integratedBaseline ?? ''))
+  )
+    throw new Error(
+      'Contrato candidato exige PR e baseline integrado imutáveis.',
+    );
   return `https://raw.githubusercontent.com/${pin.repository}/${pin.commit}/${pin.schemaPath}`;
+}
+
+export function requireIntegratedContract(pin) {
+  contractSource(pin);
+  if (pin.availability?.kind === 'pull_request')
+    throw new Error(
+      'O contrato depende de merge backend. Reconcile o pin integrado antes de publicar.',
+    );
 }
 
 export function verifiedSchema(pin, bytes) {

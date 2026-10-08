@@ -24,6 +24,12 @@ export default defineConfig({
   ),
   webServer: [
     {
+      command:
+        'pnpm exec vite build --config tests/fixtures/acesso.vite.config.ts && pnpm exec vite preview --config tests/fixtures/acesso.vite.config.ts --host 127.0.0.1 --port 4178 --strictPort',
+      url: 'http://127.0.0.1:4178',
+      reuseExistingServer: false,
+    },
+    {
       env: {
         VITE_API_URL: 'http://127.0.0.1:8000',
         VITE_APP_ENV: 'production',

@@ -1,18 +1,26 @@
-# Validação de identidade — #49, #11 e #12
+# Validação de identidade — #49, #11, #12 e #52
 
-Esta revisão verifica o contrato do backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, e sua compatibilidade com o build público do frontend. [Contrato e gates restantes](contracts/identidade.md), [ADR003](adrs/003-api-client-typing-session.md). A #49 verificou transporte sem ProvedorAuth; a #11 acrescenta o provedor real e as ações mínimas nas rotas existentes; a #12 implementa as [telas de conta](contracts/conta.md).
+A prova original verificou o contrato do backend [PR #168](https://github.com/pradyumna-001/bancaemdia-api/pull/168), SHA `ad7cd9fb095ee6b1b9855504a42e23d25341dee2`, e sua compatibilidade com o build público do frontend. [Contrato e gates restantes](contracts/identidade.md), [ADR003](adrs/003-api-client-typing-session.md). A #49 verificou transporte sem ProvedorAuth; a #11 acrescentou o provedor real e as ações mínimas nas rotas existentes; a #12 implementou as [telas de conta](contracts/conta.md).
+
+## Extensão pela #52 e referência atual
+
+A #51 estende o cenário comercial existente passando pela tela pública de Assinatura: catálogo real sem oferta/Checkout, contexto de filtros, READ_ONLY e recuperação ACTIVE após confirmação no banco descartável. Permanecem dez casos SPA e nove backend sem skips. Checkout/portal/cancelamento são testes de contrato HTTP separados, sem cartão ou cobrança live.
+
+O workflow adota a main backend integrada `b916f54331f14cf47a3800324bd61d8638043c06`, mesma árvore única dos tipos e políticas do cliente. O gate exige **dez cenários SPA** e nove backend, zero failures/errors/skips. A #52 mantém os oito cenários anteriores e acrescenta acesso comercial em ambos os viewports: expiração real do trial no servidor, sessão preservada, leitura/exportação/calculadora, recusa 402 e reconfirmação de período pago descartável sem repetir escrita. Não cobra nem provisiona serviços reais.
+
+O observador exige zero erros de página na SPA e registra somente a contagem de diagnósticos do documento hospedado do emissor; não grava mensagens, stack ou URLs de protocolo. Evidência de sandbox não afirma deploy. As seções seguintes registram a evolução e os limites históricos; o estado vigente está em [sessão](contracts/sessao.md) e [acesso](contracts/acesso.md).
 
 ## Extensão pela #12
 
-O gate exige agora **oito cenários SPA** mais nove backend, zero failures/errors/skips. Mantém os quatro da #11 e acrescenta cadastro/recuperação iniciados pelo aplicativo e confirmação expirada, em mobile/desktop. Confirmação usa SMTP real e provisionamento único; repetir o link não cria nova sessão. Interromper a recuperação preserva o acesso anterior; concluir intent=recover revoga as sessões anteriores sem mudar o usuário interno. Expiração usa lifetime temporário somente no realm descartável, restaurado em finally, sem token adulterado nem relógio congelado. Nenhuma evidência do emissor com credenciais é capturada/publicada. Os números das seções históricas abaixo não substituem o gate atual.
+Na #12, o gate passou a **oito cenários SPA** mais nove backend, zero failures/errors/skips. Mantém os quatro da #11 e acrescenta cadastro/recuperação iniciados pelo aplicativo e confirmação expirada, em mobile/desktop. Confirmação usa SMTP real e provisionamento único; repetir o link não cria nova sessão. Interromper a recuperação preserva o acesso anterior; concluir intent=recover revoga as sessões anteriores sem mudar o usuário interno. Expiração usa lifetime temporário somente no realm descartável, restaurado em finally, sem token adulterado nem relógio congelado. Nenhuma evidência do emissor com credenciais é capturada/publicada. Os números das seções históricas abaixo não substituem o gate atual.
 
 ## Extensão da prova pela #11
 
-O gate atual exige **quatro** cenários SPA, sem failures/errors/skips: contrato cookie/CSRF/RLS e ciclo completo da sessão, cada um em 390×844 e 1440×900, além dos nove aceites backend. O guard agora libera o Painel após identidade real; logout é iniciado por **Confirmar saída** na aplicação, sem helper que substitua o provedor. A prova do ciclo renova entre duas abas com exatamente um grant, troca para o segundo usuário com o cache de Revisão aberto, verifica isolamento da API e sai/entra pelo fluxo hospedado preservando query/fragmento.
+Na #11, o gate passou a **quatro** cenários SPA, sem failures/errors/skips: contrato cookie/CSRF/RLS e ciclo completo da sessão, cada um em 390×844 e 1440×900, além dos nove aceites backend. O guard agora libera o Painel após identidade real; logout é iniciado por **Confirmar saída** na aplicação, sem helper que substitua o provedor. A prova do ciclo renova entre duas abas com exatamente um grant, troca para o segundo usuário com o cache de Revisão aberto, verifica isolamento da API e sai/entra pelo fluxo hospedado preservando query/fragmento.
 
 Esses testes continuam usando dist/CSP públicos, PostgreSQL/Keycloak/SMTP reais e descartáveis, sem injetar sessão ou guardar credenciais em artifacts. E2E com backend HTTP controlado verificam comportamento e acessibilidade nos três browsers/dois viewports, mas não substituem essa integração. Os números e limites históricos da #49 abaixo pertencem àquela revisão; a implementação atual está em [sessão](contracts/sessao.md). Todos os checks devem aprovar o SHA final da #11 antes da entrega.
 
-## Evidência existente revalidada
+## Evidência histórica da #49
 
 Backend ainda tem main `bd055417459f796fed960b5b37efb33a9744419f`. PR #168 está aberto, fora de rascunho, sem merge. [Run no HEAD examinado](https://github.com/pradyumna-001/bancaemdia-api/actions/runs/36656838463): lint, formato, tipos, contratos, testes, segurança, Docker e jornada real verdes. Log do job de identidade: **9 passed, zero skips**; Keycloak/SMTP/Chromium/PostgreSQL reais, sem emissor/token de fixture. Staging k6 é inaplicável sem ambiente e não dispensa essa prova.
 
@@ -26,7 +34,7 @@ Depois, `tests/identity/test_browser_contract.py` reutiliza os fixtures de proce
 
 Na revisão original da #49, dois cenários obrigatórios, 390×844 e 1440×900, criaram duas identidades pelo cadastro/confirmação do emissor real; verificaram usuário interno distinto, API autorizada por cookie, isolamento RLS, 403 sem CSRF, refresh real/versionamento, logout e recusa posterior, preservação da outra sessão, armazenamento vazio/HttpOnly/no-store e ausência de violação CSP/erro de página. Naquele momento o guard ainda era provisório: Painel voltava a Entrar mesmo com cookie. A extensão #11 acima substitui essa expectativa pela sessão real.
 
-O gate `tests/identity/check_results.py` exige atualmente exatamente os oito cenários, zero failures/errors/skips. Relatórios JUnit são artifacts separados do artifact público da CI existente. `dist-shell-fixture` e ferramentas Python nunca são publicados.
+O gate `tests/identity/check_results.py` exige atualmente exatamente os dez cenários, zero failures/errors/skips. Relatórios JUnit são artifacts separados do artifact público da CI existente. Builds de fixtures e ferramentas Python nunca são publicados.
 
 ### Reprodução local em Linux com Docker
 
@@ -48,7 +56,7 @@ Windows desta sessão: runtime fornecia Node24/pnpm11.25.0; foram usadas as vers
 
 Docker local não está disponível; provas que exigem containers são obrigatórias na CI Linux, não apresentadas como executadas localmente. CI permanente da #8 continua inteira: cobertura por arquivo, budget, OpenAPI main sem drift, Lighthouse, 120 E2E nos três browsers/dois viewports, pre-commit, Docker/nginx/CSP e GitGuardian, no HEAD final.
 
-## Auditoria do aceite
+## Auditoria histórica do aceite da #49
 
 | Requisito                                      | Evidência / limite                                                                                    |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
