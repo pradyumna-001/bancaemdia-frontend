@@ -45,7 +45,7 @@
     "number": 15,
     "title": "[ADR-019] Jobs de upload — estados reais e retomada de observação",
     "file": "015.md",
-    "dependencies": "#9, #10; #50"
+    "dependencies": "#9, #10"
   },
   {
     "number": 16,
@@ -97,9 +97,9 @@
   },
   {
     "number": 24,
-    "title": "[ADR-019] Enviar — exportação Telegram e consentimento de gasto",
+    "title": "[ADR-019] Enviar — importação de export do Telegram",
     "file": "024.md",
-    "dependencies": "#15, #16; #52; #50"
+    "dependencies": "#15, #16; #52"
   },
   {
     "number": 25,
@@ -213,7 +213,7 @@
     "number": 52,
     "title": "[ADR-019] Estado de acesso — conta com permissão somente de leitura",
     "file": "052.md",
-    "dependencies": "#9, #10, #11; pradyumna-001/bancaemdia-api#93"
+    "dependencies": "#9, #10, #11 integradas; #16/PR #69; backend #93 integrada em b916f54"
   },
   {
     "number": 53,
@@ -225,7 +225,7 @@
     "number": 54,
     "title": "[ADR-019] Telegram — conectar, consultar e revogar vínculo",
     "file": "054.md",
-    "dependencies": "#9, #10, #11; #52; pradyumna-001/bancaemdia-api#97–102"
+    "dependencies": "#9, #10, #11; #16/PR #69; #52/PR #76; #24/PR #75; backend #97–102 integrado b916f54; endereço do bot pendente de lançamento"
   },
   {
     "number": 55,

@@ -16,7 +16,7 @@ Revisado pela #49/#11/#12, última revisão em 02/10/2026, conforme ADR019. Cont
 - Sessão não implica permissão comercial. 401 reautentica; 402 account_read_only preserva consulta/exportação e oferece Assinatura. Capacidade vem do servidor; não depende só do verbo HTTP.
 - Idempotency-Key por intenção quando exigido (ex.: Caixa, Checkout, troca); não aplicar retry automático genérico a mutações. Timeout pode deixar resultado desconhecido, exigindo reconciliação.
 - Paginação conforme endpoint, atualmente page/page_size nas listas principais; Mostrar mais pode acumular páginas sem inventar cursor.
-- Job 202 usa status/progresso reais. Cancelar polling não cancela processamento. Autorização/recusa de gasto depende de contrato ainda ausente (#50), antes de executar fluxo que exige consentimento.
+- Job 202 usa status/progresso reais. Cancelar polling não cancela processamento. Conforme decisão de 06/10/2026 no ADR019, o usuário envia o export e acompanha o resultado, sem estimativa/aviso de custo de processamento nem aprovação de gasto. Limites máximos de gasto por usuário são internos ao backend; não há dependência de novo protocolo de aprovação na #50.
 
 ## Consequences
 

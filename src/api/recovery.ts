@@ -34,7 +34,7 @@ export function recuperacaoErro(
     );
   if (safe.status === 402)
     return result(
-      'Sua conta está em modo de leitura',
+      'Este pedido foi bloqueado para escrita',
       'Você pode consultar e exportar seus dados. O formulário foi preservado; conferir a assinatura não reenvia este pedido.',
       'assinatura',
     );
