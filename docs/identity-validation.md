@@ -68,3 +68,7 @@ Docker local não está disponível; provas que exigem containers são obrigató
 | Publicação do contrato                         | **Pendente** revisão/merge backend, emissor aprovado e homologação/deploy conjunto; donos no contrato |
 
 A #49 pode apresentar esta implementação de contrato e prova descartável para revisão; **não está concluída como integração publicada**. Não realizar merge/fechamento enquanto o gate do aceite mantido estiver bloqueado. Frontend #11/#12 podem avançar contra essa referência com limites explícitos; CI verde do sandbox não cria ambiente produtivo.
+
+## Calculadoras #55
+
+A prova comercial herdada percorre as quatro ferramentas pela SPA pública em READ_ONLY nos dois viewports, com cookie/CSRF e respostas reais da API b916f54. Confere probabilidades/distribuição/cobertura/percentual decididos no servidor; segue verificando entrada/leitura/exportação, recuperação de acesso sem replay e zero erros da SPA. Mantém dez cenários SPA/nove backend sem skips; somente CI verde do SHA final comprova essa extensão.

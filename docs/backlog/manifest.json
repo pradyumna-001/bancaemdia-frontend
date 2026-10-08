@@ -231,7 +231,7 @@
     "number": 55,
     "title": "[ADR-019] Calculadoras — quatro ferramentas com resultados da API",
     "file": "055.md",
-    "dependencies": "#9, #10, #11, #16; #52; pradyumna-001/bancaemdia-api#103"
+    "dependencies": "#9/#10/#11 integradas; #52/PR #76; #16/PR #69; arquivo PR #70; backend #103/PR #156 integrado em b916f54"
   },
   {
     "number": 56,

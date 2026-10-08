@@ -45,3 +45,7 @@ O PR de #48 é incremental sobre `feat/7-graficos-svg`; não reescreve commits a
 ## Revalidação de acesso — 08/10/2026 (#52)
 
 A main backend b916f54 integra billing/acesso e é a única fonte pinada desta PR. #52 precede #18/#32 na ordem de dependências. O aviso é contextual, mantém leitura/exportação e encaminha a Assinatura; não implementa checkout (#51). Status desconhecido fecha escrita, e recuperação exige uma nova intenção explícita. A matriz de operações e prova real estão em [acesso](../contracts/acesso.md). Reconciliar a formatação herdada da #16/PR #69 e os consumidores de escrita das PRs #73/#75 na integração; nenhum PR é empilhado. O candidato de filtros #184 continua exclusivo da entrega autorizada #17 e não é promovido por esta PR.
+
+## Calculadoras — #55, 08/10/2026
+
+As quatro operações estão integradas em b916f54 (backend #103/PR #156), com sessão real e autorização de consulta em READ_ONLY, sem gravar apostas. A #55 apresenta inputs/outputs exatos sem fórmula financeira local; [contrato](../contracts/calculadoras.md) registra validação do JsonValue gerado, concorrência, limites e provas. Tipos/políticas herdados da #52; PR independente com dependências #76/#69/#70 declaradas, sem #184. Linhas permanece arquivada para pós-lançamento.

@@ -61,6 +61,26 @@ export function moeda(centavos: InteiroExato | null, sinal = false): string {
   return moedaMenor(centavos, 'BRL', sinal, 2);
 }
 
+/** Entrada monetária pt-BR para centavos exatos, sem float ou arredondamento. */
+export function centavosDaEntrada(texto: string): number {
+  const valor = texto.trim();
+  const partes = /^(0|[1-9]\d{0,10})(?:,([0-9]{1,2}))?$/.exec(valor);
+  if (!partes)
+    throw new Error(
+      'Informe o valor em reais, com até duas casas após a vírgula.',
+    );
+  const centavos =
+    BigInt(partes[1]!) * 100n + BigInt((partes[2] ?? '').padEnd(2, '0'));
+  if (centavos > 1_000_000_000_000n)
+    throw new Error('O valor ultrapassa o limite aceito pelo serviço.');
+  return Number(centavos);
+}
+
+/** Centavos decimais ideais publicados pelo servidor; não arredonda a decisão. */
+export function moedaCentavosDecimais(valor: string, sinal = false): string {
+  return `R$ ${numeroDecimal(valor, -2, 2, sinal)}`;
+}
+
 /** Preço recebido da API Stripe: cadência e escala não definem um plano local. */
 export function precoAssinatura(
   amountMinor: InteiroExato | null,

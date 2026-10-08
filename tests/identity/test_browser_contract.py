@@ -681,6 +681,84 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
             body={"outcomes": [{"name": "A", "odd": "2"}, {"name": "B", "odd": "2"}]},
         )
         assert calculated["status"] == 200
+        # The actual SPA uses each authenticated, stateless operation in READ_ONLY.
+        await page.goto(backend.FRONT + "/calculadoras?casa=7&apagadas=1")
+        await expect(
+            page.get_by_role("heading", name="Calculadoras", exact=True)
+        ).to_be_visible()
+        await page.get_by_label("Nome do resultado 1").fill("A")
+        await page.get_by_label("Nome do resultado 2").fill("B")
+        await page.get_by_label("Odd do resultado 1").fill("2")
+        await page.get_by_label("Odd do resultado 2").fill("2")
+        await page.get_by_role("checkbox").check()
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/mercado-justo")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["outcomes"][0][
+            "fair_probability"
+        ] == "0.50000000"
+        await page.get_by_role(
+            "link", name="Distribuir entre resultados", exact=True
+        ).click()
+        await page.get_by_label("Odd do resultado 1").fill("2,1")
+        await page.get_by_label("Odd do resultado 2").fill("2,1")
+        await page.get_by_label("Entrada total (R$)").fill("100,00")
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/distribuir-entre-resultados")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["minimum_profit_centavos"] == 500
+        await page.get_by_role("link", name="Cobertura ao vivo", exact=True).click()
+        await page.get_by_label("Entrada original (R$)").fill("100,00")
+        await page.get_by_label("Odd original", exact=True).fill("1,5")
+        await page.get_by_label("Odd oposta", exact=True).fill("3")
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/cobertura-ao-vivo")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["hedge_stake_centavos"] == 5000
+        await page.get_by_role("link", name="Percentual da banca", exact=True).click()
+        await page.get_by_label("Banca informada (R$)").fill("100,00")
+        await page.get_by_label("Percentual (%)", exact=True).fill("1,25")
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/percentual-banca")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["stake_centavos"] == 125
+        await expect(
+            page.get_by_role("link", name="Voltar para Apostas")
+        ).to_have_attribute(
+            "href", "/apostas?casa=7&apagadas=1&ferramenta=percentual-banca"
+        )
         # Simulate the sandbox provider's confirmed paid period; never a live checkout.
         async with engine_admin.begin() as conn:
             price = await conn.scalar(
