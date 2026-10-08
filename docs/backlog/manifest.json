@@ -63,7 +63,7 @@
     "number": 18,
     "title": "[ADR-019] Apostas — lista operacional com resumo coerente",
     "file": "018.md",
-    "dependencies": "#9, #10, #16, #17; #32; #52; #50"
+    "dependencies": "#9, #10, #16, #17; #32; #52; #50; backend #186 (projeção legível, sem PR; bloqueio confirmado em 08/10/2026)"
   },
   {
     "number": 19,
