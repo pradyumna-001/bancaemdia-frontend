@@ -8,7 +8,7 @@ Revisado em 29/09/2026 pelo [ADR019](019-current-product-backend-alignment.md). 
 
 | GitHub | Escopo canônico                                                              | Estado de planejamento                  |
 | ------ | ---------------------------------------------------------------------------- | --------------------------------------- |
-| #24    | [Enviar — exportação Telegram e consentimento de gasto](../backlog/024.md)   | Contrato/dependências no corpo canônico |
+| #24    | [Enviar — importação de export do Telegram](../backlog/024.md)               | Contrato/dependências no corpo canônico |
 | #25    | [Prints web — envio múltiplo e recuperação parcial](../backlog/025.md)       | Contrato/dependências no corpo canônico |
 | #26    | [Planilha — prévia, remapeamento e confirmação](../backlog/026.md)           | Contrato/dependências no corpo canônico |
 | #27    | [Resultados — um toque com ordem e desfazer seguro](../backlog/027.md)       | Contrato/dependências no corpo canônico |
