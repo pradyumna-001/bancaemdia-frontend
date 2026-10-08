@@ -6,82 +6,86 @@ import {
   trocarPagina,
 } from './params';
 const read = (query: string) => lerFiltros(new URLSearchParams(query));
-it('mapeia somente capacidades publicadas da lista, sem cursor nem dimensões futuras', () => {
-  const visao = read(
-    'casa=002&tipster=3&mercado=4&competicao=5&estado=GREEN&origem=telegram&revisao=0&apagadas=todas&page=2&page_size=10&titular=6&conta=7&grupo=8&banca=9&cursor=PRIVATE',
-  );
-  const result = adaptarFiltros(visao, 'apostas');
-  expect(result.apostas).toMatchObject({
-    casa_id: 2,
-    tipster_id: 3,
-    mercado_id: 4,
-    competicao_id: 5,
-    estado: 'GREEN',
-    origem: 'telegram',
-    revisao_grave: false,
-    incluir_apagadas: true,
-    page: 2,
-    page_size: 10,
-  });
-  expect(result.preservados).toEqual(['titular', 'conta', 'grupo', 'banca']);
-  expect(result.apostas).not.toHaveProperty('cursor');
-  expect(result.apostas).not.toHaveProperty('titular_id');
-  expect(new URLSearchParams(visao.busca).get('cursor')).toBe('PRIVATE');
-  expect(result.painel).toBeUndefined();
-});
-it.each(['painel', 'metricas', 'export'] as const)(
-  'declara população de %s, preservando dimensões sem aplicar',
+it.each(['apostas', 'painel', 'metricas', 'export'] as const)(
+  'aplica a matriz completa e IDs exatos em %s sem repassar contexto arbitrário',
   (resource) => {
-    const result = adaptarFiltros(
-      read(
-        'casa=2&tipster=3&mercado=4&estado=RED&origem=manual&desde=2026-10-01&ate=2026-10-04&apagadas=1&revisao=1&competicao=5&grupo=6&periodo=90d',
-      ),
-      resource,
+    const visao = read(
+      'casa=002&tipster=3&mercado=4&competicao=5&estado=GREEN&origem=telegram&revisao=0&apagadas=todas&page=2&page_size=10&titular=6&conta=7&grupo=8&banca=9007199254740993&cursor=PRIVATE',
     );
-    expect(result.painel).toEqual({
-      casa_id: 2,
-      tipster_id: 3,
-      mercado_id: 4,
-      periodo: '90d',
+    const result = adaptarFiltros(visao, resource);
+    const query = result.apostas ?? result.painel;
+    expect(query).toMatchObject({
+      casa_id: '2',
+      tipster_id: '3',
+      mercado_id: '4',
+      competicao_id: '5',
+      estado: 'GREEN',
+      origem: 'telegram',
+      revisao_grave: false,
+      visibilidade: 'todas',
+      titular_id: '6',
+      conta_casa_id: '7',
+      grupo_id: '8',
+      banca_id: '9007199254740993',
     });
-    expect(result.apostas).toBeUndefined();
+    expect(result.preservados).toEqual([]);
     expect(result.bloqueios).toEqual([]);
-    expect(result.preservados).toEqual(
-      expect.arrayContaining([
-        'estado',
-        'origem',
-        'desde',
-        'ate',
-        'apagadas',
-        'revisao',
-        'grupo',
-        'competicao',
-      ]),
-    );
-    expect(result.escopo).toContain('diferente');
+    expect(query).not.toHaveProperty('incluir_apagadas');
+    expect(query).not.toHaveProperty('cursor');
+    expect(new URLSearchParams(visao.busca).get('cursor')).toBe('PRIVATE');
+    if (resource === 'apostas')
+      expect(query).toMatchObject({ page: 2, page_size: 10 });
+    else {
+      expect(query).not.toHaveProperty('page');
+      expect(result.endpoint).toContain('/painel/filtrado');
+    }
   },
 );
-it('apagadas=1 bloqueia GET em vez de incluir ativas ou filtrar a página local', () => {
-  const visao = read('apagadas=1&estado=GREEN&page=4');
-  expect(adaptarFiltros(visao, 'apostas').apostas).toBeUndefined();
-  expect(adaptarFiltros(visao, 'apostas').bloqueios[0]).toContain(
-    'somente apagadas',
-  );
-  expect(visao.valores).toEqual({ apagadas: '1', estado: 'GREEN' });
-  expect(visao.page).toBe(4);
-});
-it.each(['', 'apagadas=0'])(
-  'ativa padrão e não inventa revisão/percentual/dimensões em %s',
-  (query) => {
-    expect(adaptarFiltros(read(query), 'apostas').apostas).toMatchObject({
-      incluir_apagadas: false,
-      page: 1,
-      page_size: 50,
-      revisao_grave: undefined,
+it.each([
+  ['', 'ativas'],
+  ['apagadas=0', 'ativas'],
+  ['apagadas=1', 'apagadas'],
+  ['apagadas=todas', 'todas'],
+])(
+  'traduz %s sem misturar bool legado com visibilidade',
+  (query, visibility) => {
+    for (const resource of [
+      'apostas',
+      'painel',
+      'metricas',
+      'export',
+    ] as const) {
+      const adapter = adaptarFiltros(read(query), resource);
+      expect(adapter.apostas ?? adapter.painel).toMatchObject({
+        visibilidade: visibility,
+        periodo: undefined,
+      });
+      expect(adapter.bloqueios).toEqual([]);
+    }
+  },
+);
+it.each(['apostas', 'painel', 'metricas', 'export'] as const)(
+  'período e intervalo válidos conflitantes bloqueiam %s sem apagar contexto',
+  (resource) => {
+    const visao = read('periodo=7d&desde=2026-10-01&ate=2026-10-02');
+    const result = adaptarFiltros(visao, resource);
+    expect(result.apostas).toBeUndefined();
+    expect(result.painel).toBeUndefined();
+    expect(result.bloqueios[0]).toContain('Escolha um período ou datas');
+    expect(visao.valores).toEqual({
+      periodo: '7d',
+      desde: '2026-10-01',
+      ate: '2026-10-02',
     });
-    expect(adaptarFiltros(read(query), 'painel').painel?.periodo).toBe('30d');
+    const next = alterarFiltro(new URLSearchParams(visao.busca), 'periodo');
+    expect(adaptarFiltros(lerFiltros(next), resource).bloqueios).toEqual([]);
   },
 );
+it('período publicado é preservado e aplicado também na lista', () => {
+  expect(adaptarFiltros(read('periodo=90d'), 'apostas').apostas?.periodo).toBe(
+    '90d',
+  );
+});
 it('preserva intervalo civil com final inclusivo e limite API exclusivo', () => {
   expect(
     adaptarFiltros(read('desde=2018-11-04&ate=2018-11-04&revisao=1'), 'apostas')
@@ -98,7 +102,7 @@ it('range invertido e último dia do calendário bloqueiam sem apagar datas vál
     expect(visao.busca).toBe(query);
     expect(adaptarFiltros(visao, 'apostas').apostas).toBeUndefined();
     expect(adaptarFiltros(visao, 'apostas').bloqueios).toHaveLength(1);
-    expect(adaptarFiltros(visao, 'painel').painel).toBeDefined();
+    expect(adaptarFiltros(visao, 'painel').painel).toBeUndefined();
   }
 });
 it.each([
@@ -110,6 +114,8 @@ it.each([
   'tipster=1&tipster=2',
   'mercado=',
   'competicao=Infinity',
+  'casa=9223372036854775808',
+  'origem=' + 'x'.repeat(129),
   'estado=toString',
   'estado=green',
   'origem=%00',
@@ -159,17 +165,16 @@ it('origem textual válida permanece literal, inclusive Unicode e pontuação, s
   );
   expect(result.apostas?.origem).toBe('Canal / São Paulo');
 });
-it('ID inteiro maior que precisão JS permanece exato; não consulta outro ID nem elimina o filtro', () => {
-  const visao = read('casa=09007199254740993&titular=9007199254740993');
+it('BIGINT maior que precisão JS permanece texto e o máximo positivo é aplicado sem arredondar', () => {
+  const visao = read('casa=09007199254740993&titular=9223372036854775807');
   expect(visao.valores.casa).toBe('9007199254740993');
   expect(visao.invalidos).toEqual([]);
   for (const resource of ['apostas', 'painel'] as const) {
-    const adapter = adaptarFiltros(visao, resource);
-    expect(adapter.apostas).toBeUndefined();
-    expect(adapter.painel).toBeUndefined();
-    expect(adapter.bloqueios).toHaveLength(1);
+    const result = adaptarFiltros(visao, resource);
+    expect(result.bloqueios).toEqual([]);
+    expect(result.apostas ?? result.painel).toMatchObject({
+      casa_id: '9007199254740993',
+      titular_id: '9223372036854775807',
+    });
   }
-  const future = read('titular=9007199254740993');
-  expect(adaptarFiltros(future, 'apostas').bloqueios).toEqual([]);
-  expect(adaptarFiltros(future, 'apostas').preservados).toContain('titular');
 });

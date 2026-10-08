@@ -133,10 +133,10 @@ it('URL é fonte dos controles, seleção reseta página, Back restaura e remoç
   fireEvent.click(screen.getByRole('link', { name: 'Outra área' }));
   await waitFor(() => expect(router.state.location.pathname).toBe('/painel'));
   expect(router.state.location.search).toContain('grupo=8');
-  expect(screen.getByText(/Esta área não aplica: Grupo/)).toBeVisible();
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Período Últimos 30 dias' }),
+  expect(screen.getByLabelText('Parâmetros')).toHaveTextContent(
+    '"grupo_id":"8"',
   );
+  fireEvent.click(screen.getByRole('button', { name: 'Período Sem filtro' }));
   fireEvent.click(
     within(screen.getByRole('dialog', { name: 'Período' })).getByRole(
       'button',
@@ -147,10 +147,12 @@ it('URL é fonte dos controles, seleção reseta página, Back restaura e remoç
     '"periodo":"all"',
   );
 });
-it('apagadas e dimensões sem contrato permanecem salvas; padrão de paginação não esconde o bloqueio', async () => {
+it('somente apagadas e conta são aplicadas; normalização mantém filtros válidos', async () => {
   const router = mount('apagadas=1&conta=8&page=NaN&page_size=999&extra=keep');
-  expect(screen.getByRole('alert')).toHaveTextContent('somente apagadas');
-  expect(screen.getByLabelText('Parâmetros')).toHaveTextContent('null');
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.getByLabelText('Parâmetros')).toHaveTextContent(
+    '"visibilidade":"apagadas"',
+  );
   expect(
     screen.getByRole('button', { name: 'Remover filtro Conta' }),
   ).toHaveTextContent('nome indisponível');
@@ -163,7 +165,7 @@ it('apagadas e dimensões sem contrato permanecem salvas; padrão de paginação
   );
   expect(screen.queryByRole('alert')).toBeNull();
   expect(screen.getByLabelText('Parâmetros')).toHaveTextContent(
-    '"incluir_apagadas":false',
+    '"visibilidade":"ativas"',
   );
 });
 it('catálogos ausentes, carregando, vazios e recusados não inventam opções', () => {
@@ -182,8 +184,10 @@ it('catálogos ausentes, carregando, vazios e recusados não inventam opções',
   );
   expect(
     screen.getByRole('button', { name: 'Casa Identificador 88' }),
-  ).toBeDisabled();
-  expect(screen.getByText('Carregando opções…')).toBeVisible();
+  ).toBeEnabled();
+  expect(
+    screen.getByText('Carregando opções…', { selector: '.legenda' }),
+  ).toBeVisible();
   expect(
     screen.getByText('Nenhuma opção disponível para sua conta.'),
   ).toBeVisible();
@@ -198,9 +202,9 @@ it('catálogos ausentes, carregando, vazios e recusados não inventam opções',
     expect(
       screen.getByRole('button', { name: 'Remover filtro ' + label }),
     ).toBeVisible();
-  expect(
-    screen.getByRole('button', { name: 'Remover filtro Período' }),
-  ).toHaveTextContent('preservado');
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Escolha um período ou datas',
+  );
 });
 it('opções de origem vêm da consumidora, sem catálogo falso', () => {
   mount('', {

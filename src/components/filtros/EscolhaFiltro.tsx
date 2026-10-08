@@ -1,4 +1,4 @@
-import { useId, useRef } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 export type OpcaoFiltro = Readonly<{ value: string; label: string }>;
 export function EscolhaFiltro({
   label,
@@ -7,6 +7,9 @@ export function EscolhaFiltro({
   onChange,
   disabled = false,
   resetLabel = 'Sem filtro',
+  selectedLabel,
+  busca,
+  children,
 }: {
   label: string;
   value?: string;
@@ -14,10 +17,18 @@ export function EscolhaFiltro({
   onChange: (value?: string) => void;
   disabled?: boolean;
   resetLabel?: string;
+  selectedLabel?: string;
+  busca?: {
+    consulta: string;
+    buscar: (q: string) => void;
+    atualizando?: boolean;
+  };
+  children?: ReactNode;
 }) {
   const id = useId();
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const [texto, setTexto] = useState('');
   function choose(next?: string) {
     onChange(next);
     dialog.current!.close();
@@ -32,10 +43,14 @@ export function EscolhaFiltro({
         aria-labelledby={id + '-label ' + id + '-valor'}
         aria-haspopup="dialog"
         aria-controls={id}
-        onClick={() => dialog.current!.showModal()}
+        onClick={() => {
+          setTexto(busca?.consulta ?? '');
+          dialog.current!.showModal();
+        }}
       >
         <span id={id + '-valor'}>
-          {options.find((option) => option.value === value)?.label ??
+          {selectedLabel ??
+            options.find((option) => option.value === value)?.label ??
             (value ? 'Identificador ' + value : 'Sem filtro')}
         </span>
       </button>
@@ -47,6 +62,26 @@ export function EscolhaFiltro({
         onClose={() => trigger.current!.focus()}
       >
         <h2 id={id + '-titulo'}>{label}</h2>
+        {busca && (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              busca.buscar(texto);
+            }}
+          >
+            <label htmlFor={id + '-busca'}>Buscar {label.toLowerCase()}</label>
+            <input
+              id={id + '-busca'}
+              type="text"
+              maxLength={160}
+              value={texto}
+              onChange={(event) => setTexto(event.target.value)}
+            />
+            <button type="submit" disabled={busca.atualizando}>
+              Buscar
+            </button>
+          </form>
+        )}
         <div className="filtro-opcoes">
           <button type="button" aria-pressed={!value} onClick={() => choose()}>
             {resetLabel}
@@ -62,6 +97,7 @@ export function EscolhaFiltro({
             </button>
           ))}
         </div>
+        {children}
         <button type="button" onClick={() => dialog.current!.close()}>
           Fechar opções
         </button>

@@ -4,7 +4,7 @@ Plataforma Fase 1: nginx estático em Compose atrás de Caddy/TLS, na arquitetur
 
 ## Antes de implantar (#14 / #38)
 
-1. Confirmar ambiente autorizado e capacidade, domínio/TLS, rede e API/emissor compatíveis; registrar versão do contrato por ambiente.
+1. Confirmar ambiente autorizado e capacidade, domínio/TLS, rede e API/emissor compatíveis; registrar versão do contrato por ambiente. Executar `pnpm check:contract-integration` na revisão que será publicada: candidatos com `availability` são recusados. Após merge backend, reconciliar commit/hash e regenerar tipos/políticas; só então remover o estado candidato, comprovando ancestralidade na main backend. O build de desenvolvimento da #17 não autoriza publicar um contrato dependente de PR.
 2. Exigir todos os checks verdes no SHA, incluindo budget, cobertura e segurança. Baixar o artifact `frontend-<SHA>-<evento>` do run correspondente; ele contém `dist/` e `dist-security/` da mesma compilação. Não usar artifact de fixture/relatórios como site.
 3. Preparar release imutável (imagem por digest no fluxo #38), preservar HTML/assets/nginx juntos e registrar o digest anterior para rollback. Não editar/minificar HTML após build: isso invalidaria o hash CSP do tema.
 4. Fornecer `config.json` público validado, montado somente para leitura; segredos nunca entram nele. Usar mesma origem HTTPS: proxy encaminha `/api/*` **e `/auth/*`** ao backend. Callback `/auth/callback` não pode receber HTML da SPA. CSP `connect-src 'self'` cobre o transporte por cookie; emissor é navegação hospedada. Origens/callback/emissor e versão integrada precisam dos gates de [identidade](../contracts/identidade.md) e #14. Não copiar cookie inseguro do sandbox para produção.

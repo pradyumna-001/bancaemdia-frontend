@@ -13,7 +13,7 @@ import secrets
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qsl, urlsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit
 from uuid import uuid4
 
 import httpx
@@ -31,8 +31,8 @@ ROOT = Path(__file__).resolve().parents[2]
 DIST = ROOT / "dist"
 
 
-def serve_public_build():
-    security = (ROOT / "dist-security/default.conf").read_text()
+def serve_public_build(directory=DIST, security_directory=ROOT / "dist-security"):
+    security = (security_directory / "default.conf").read_text()
     csp = re.search(r'add_header Content-Security-Policy "([^"]+)"', security).group(1)
     assert "connect-src 'self'" in csp and "unsafe-inline" not in csp
 
@@ -76,15 +76,15 @@ def serve_public_build():
                 content = json.dumps({"VITE_API_URL": backend.FRONT}).encode()
                 content_type = "application/json"
             else:
-                target = (DIST / path.lstrip("/")).resolve()
-                if not target.is_relative_to(DIST.resolve()):
+                target = (directory / path.lstrip("/")).resolve()
+                if not target.is_relative_to(directory.resolve()):
                     self.send_error(404)
                     return
                 if path.startswith(("/assets/", "/fontes/")) and not target.is_file():
                     self.send_error(404)
                     return
                 if not target.is_file():
-                    target = DIST / "index.html"
+                    target = directory / "index.html"
                 content = target.read_bytes()
                 content_type = (
                     mimetypes.guess_type(target)[0] or "application/octet-stream"
@@ -170,6 +170,207 @@ async def harness(banco, engine_admin, tmp_path, monkeypatch):
     monkeypatch.setattr(backend, "fetch", browser_request)
     async for instance in backend.harness.__wrapped__(banco, engine_admin, tmp_path):
         yield instance
+
+
+@pytest.fixture
+async def harness_filtros(banco, engine_admin, tmp_path, monkeypatch):
+    directory = ROOT / "dist-filtros-fixture"
+    assert (directory / "index.html").is_file(), "Build the isolated exercise"
+    monkeypatch.setattr(
+        backend,
+        "serve_frontend",
+        lambda: serve_public_build(directory, ROOT / "dist-filtros-security"),
+    )
+    monkeypatch.setattr(backend, "fetch", browser_request)
+    async for instance in backend.harness.__wrapped__(banco, engine_admin, tmp_path):
+        yield instance
+
+
+@pytest.mark.parametrize(
+    "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
+)
+async def test_authenticated_filter_components_real_cookie(
+    harness_filtros, engine_admin, viewport
+):
+    """Actual components and disposable input; session, SQL and results are real."""
+    import io
+
+    from bancaemdia import models
+    from openpyxl import load_workbook
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch()
+        contexts = [await browser.new_context(viewport=viewport) for _ in range(2)]
+        pages = [await context.new_page() for context in contexts]
+        sessions = []
+        violations = []
+        for page in pages:
+
+            def page_error(_error, current=page):
+                if urlsplit(current.url).netloc == urlsplit(backend.FRONT).netloc:
+                    violations.append("filter exercise pageerror")
+
+            page.on("pageerror", page_error)
+            await page.add_init_script(
+                "if (location.origin === "
+                + json.dumps(backend.FRONT)
+                + ") { document.addEventListener('securitypolicyviolation', () => { window.__filterCspFailure=true; }); }"
+            )
+            session, _ = await backend.register(
+                page,
+                uuid4().hex + "@example.org",
+                secrets.token_urlsafe(24),
+                harness=harness_filtros,
+            )
+            sessions.append(session)
+        created = await browser_request(
+            pages[0],
+            "/api/v1/apostas",
+            method="POST",
+            csrf=sessions[0]["csrf_token"],
+            body={
+                "casa": "betano",
+                "odd": 2,
+                "stake_unidades": 1,
+                "data_aposta": "2026-10-06T12:00:00-03:00",
+            },
+        )
+        assert created["status"] == 201
+        key = created["data"]["aposta"]["chave"]
+        historic_id = 9007199254740993
+        async with AsyncSession(engine_admin, expire_on_commit=False) as db:
+            group = models.GrupoAposta(
+                id=historic_id,
+                usuario_id=sessions[0]["usuario_id"],
+                nome="Grupo histórico exato",
+                arquivado=True,
+            )
+            db.add(group)
+            await db.flush()
+            aposta = await db.scalar(
+                text("SELECT id FROM apostas WHERE chave=:key AND usuario_id=:user"),
+                {"key": key, "user": sessions[0]["usuario_id"]},
+            )
+            db.add(
+                models.ApostaGrupo(
+                    usuario_id=sessions[0]["usuario_id"],
+                    aposta_id=aposta,
+                    grupo_id=historic_id,
+                )
+            )
+            await db.commit()
+        assert (
+            await browser_request(
+                pages[0],
+                "/api/v1/apostas/" + key,
+                method="DELETE",
+                csrf=sessions[0]["csrf_token"],
+            )
+        )["status"] == 200
+        query = "?grupo=9007199254740993&apagadas=1&estado=PENDENTE&origem=manual&desde=2026-10-06&ate=2026-10-06&page_size=1"
+        reads = []
+
+        def observe(request):
+            if "/api/v1/filtros/" in request.url:
+                reads.append(urlsplit(request.url).path)
+                assert "authorization" not in request.headers
+
+        pages[0].on("request", observe)
+        await pages[0].goto(backend.FRONT + "/testes/filtros-autenticados" + query)
+        await expect(
+            pages[0].get_by_role("button", name="Grupo Grupo histórico exato (inativa)")
+        ).to_be_visible()
+        await expect(pages[0].get_by_label("Resposta da lista")).to_contain_text(key)
+
+        async def output(page, label):
+            await expect(page.get_by_label(label)).not_to_have_text("null")
+            return json.loads(await page.get_by_label(label).inner_text())
+
+        listed = await output(pages[0], "Resposta da lista")
+        summary = await output(pages[0], "Resposta do resumo")
+        assert listed["pagination"]["total"] == 1
+        assert summary["resumo"]["total_apostas"] == 1
+        assert summary["resumo"]["pendentes"] == 1
+        assert summary["resumo"]["lucro_centavos"] == 0
+        assert len(set(reads)) == 9
+        params = await output(pages[0], "Consulta normalizada")
+        assert (
+            params["grupo_id"] == "9007199254740993"
+            and params["visibilidade"] == "apagadas"
+        )
+        assert "incluir_apagadas" not in params and "periodo" not in params
+        common = {k: v for k, v in params.items() if k not in {"page", "page_size"}}
+        metrics = await browser_request(
+            pages[0], "/api/v1/painel/filtrado/metricas?" + urlencode(common)
+        )
+        assert metrics["status"] == 200
+        assert metrics["data"]["total_periodo"]["total_apostas"] == 1
+        assert metrics["data"]["total_periodo"]["lucro_centavos"] == 0
+        # XLSX is authoritative aggregates, not a client-side export of one page.
+        exported = await contexts[0].request.get(
+            backend.FRONT + "/api/v1/painel/filtrado/export?" + urlencode(common)
+        )
+        assert exported.status == 200
+        workbook = load_workbook(io.BytesIO(await exported.body()))
+        assert workbook.sheetnames == [
+            "Resumo",
+            "Por casa",
+            "Por tipster",
+            "Por mercado",
+            "Por periodo",
+            "Evolucao",
+        ]
+        rows = list(workbook["Resumo"].values)
+        exported_summary = dict(zip(rows[0], rows[1]))
+        assert exported_summary["total_apostas"] == 1
+        assert exported_summary["pendentes"] == 1
+        assert exported_summary["lucro_centavos"] == 0
+        await pages[0].get_by_role("button", name="Próxima página", exact=True).click()
+        await expect(pages[0].get_by_label("Resposta da lista")).to_contain_text(
+            '"page":2'
+        )
+        listed = await output(pages[0], "Resposta da lista")
+        assert listed["data"] == [] and listed["pagination"]["total"] == 1
+        await pages[0].reload()
+        await expect(
+            pages[0].get_by_role("button", name="Grupo Grupo histórico exato (inativa)")
+        ).to_be_visible()
+        await pages[1].goto(backend.FRONT + "/testes/filtros-autenticados" + query)
+        listed_other = await output(pages[1], "Resposta da lista")
+        assert listed_other["data"] == [] and listed_other["pagination"]["total"] == 0
+        await expect(
+            pages[1].get_by_role(
+                "button",
+                name="Grupo Identificador 9007199254740993 (nome indisponível)",
+            )
+        ).to_be_visible()
+        await pages[0].get_by_role("button", name="Remover filtro Visibilidade").click()
+        await expect(pages[0].get_by_label("Resposta da lista")).to_contain_text(
+            '"total":0'
+        )
+        await pages[0].get_by_role("link", name="Sair do exercício").click()
+        await pages[0].get_by_role("button", name="Confirmar saída").click()
+        await expect(
+            pages[0].get_by_role("heading", name="Entrar", exact=True)
+        ).to_be_visible()
+        assert (await browser_request(pages[0], "/api/v1/filtros/grupos"))[
+            "status"
+        ] == 401
+        for context, page in zip(contexts, pages):
+            assert not await page.evaluate("window.__filterCspFailure === true")
+            assert all(
+                cookie["httpOnly"] for cookie in await context.cookies(backend.FRONT)
+            )
+            assert await page.evaluate("document.cookie") == ""
+            assert (
+                await page.evaluate(
+                    "Object.keys(localStorage).length + Object.keys(sessionStorage).length"
+                )
+                == 0
+            )
+        assert not violations
+        await browser.close()
 
 
 @pytest.mark.parametrize(

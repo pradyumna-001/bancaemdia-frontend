@@ -1,4 +1,4 @@
-import type { operations, components } from '../api/schema';
+import type { operations, components, paths } from '../api/schema';
 import { paginacaoConsulta } from '../api/query';
 import { ESTADOS_APOSTA } from './termos';
 import { diaValido, deslocarDia, inicioDia } from './datasFiltro';
@@ -31,6 +31,13 @@ export type Filtro =
   | 'apagadas'
   | 'revisao';
 export type RecursoFiltros = 'apostas' | 'painel' | 'metricas' | 'export';
+export const RECURSOS_FILTROS = {
+  apostas: '/api/v1/apostas',
+  painel: '/api/v1/painel/filtrado',
+  metricas: '/api/v1/painel/filtrado/metricas',
+  export: '/api/v1/painel/filtrado/export',
+} as const satisfies Record<RecursoFiltros, keyof paths>;
+const BIGINT_MAX = '9223372036854775807';
 export type VisaoFiltros = Readonly<{
   valores: Readonly<Partial<Record<Filtro, string>>>;
   invalidos: readonly string[];
@@ -57,9 +64,15 @@ export function lerFiltros(search: URLSearchParams): VisaoFiltros {
     const all = search.getAll(key);
     const value = all[0]!;
     let valid = all.length === 1;
-    if (Object.hasOwn(DIMENSOES, key))
-      valid &&= /^\d+$/.test(value) && /[1-9]/.test(value);
-    else if (key === 'estado') valid &&= Object.hasOwn(ESTADOS_APOSTA, value);
+    if (Object.hasOwn(DIMENSOES, key)) {
+      const normalizado = value.replace(/^0+/, '');
+      valid &&=
+        /^\d+$/.test(value) &&
+        normalizado.length > 0 &&
+        (normalizado.length < BIGINT_MAX.length ||
+          (normalizado.length === BIGINT_MAX.length &&
+            normalizado <= BIGINT_MAX));
+    } else if (key === 'estado') valid &&= Object.hasOwn(ESTADOS_APOSTA, value);
     else if (key === 'periodo') valid &&= Object.hasOwn(PERIODOS, value);
     else if (key === 'desde' || key === 'ate') valid &&= diaValido(value);
     else if (key === 'apagadas') valid &&= ['0', '1', 'todas'].includes(value);
@@ -67,6 +80,7 @@ export function lerFiltros(search: URLSearchParams): VisaoFiltros {
     else
       valid &&=
         value.length > 0 &&
+        [...value].length <= 128 &&
         [...value].every((character) => {
           const point = character.codePointAt(0)!;
           return point >= 32 && point !== 127;
@@ -123,62 +137,56 @@ type ApostasQuery = NonNullable<
   operations['listar_apostas_api_v1_apostas_get']['parameters']['query']
 >;
 type PainelQuery = NonNullable<
-  operations['consultar_painel_api_v1_painel_get']['parameters']['query']
+  operations['consultar_painel_filtrado_api_v1_painel_filtrado_get']['parameters']['query']
 >;
 type MetricasQuery = NonNullable<
-  operations['consultar_metricas_api_v1_painel_metricas_get']['parameters']['query']
+  operations['consultar_graficos_filtrados_api_v1_painel_filtrado_metricas_get']['parameters']['query']
 >;
 type ExportQuery = NonNullable<
-  operations['exportar_painel_api_v1_painel_export_get']['parameters']['query']
+  operations['exportar_painel_filtrado_api_v1_painel_filtrado_export_get']['parameters']['query']
 >;
-const COMUNS: readonly Filtro[] = ['casa', 'tipster', 'mercado'];
-const LISTA: readonly Filtro[] = [
-  ...COMUNS,
-  'competicao',
-  'estado',
-  'origem',
-  'desde',
-  'ate',
-  'revisao',
-  'apagadas',
-];
 export function adaptarFiltros(visao: VisaoFiltros, recurso: RecursoFiltros) {
   const valores = visao.valores;
   const list = recurso === 'apostas';
-  const suportados: readonly Filtro[] = list ? LISTA : [...COMUNS, 'periodo'];
-  const preservados = FILTROS.filter(
-    (key) => valores[key] !== undefined && !suportados.includes(key),
-  );
   const bloqueios: string[] = [];
-  for (const key of suportados) {
-    if (
-      Object.hasOwn(DIMENSOES, key) &&
-      valores[key] &&
-      !Number.isSafeInteger(Number(valores[key]))
-    ) {
-      bloqueios.push(
-        'Não é possível aplicar o filtro ' +
-          DIMENSOES[key as Dimensao] +
-          ' com esse identificador. Remova o filtro para consultar ou mantenha a visão salva.',
-      );
-    }
-  }
-  if (list && valores.apagadas === '1')
+  if (valores.periodo && (valores.desde || valores.ate))
     bloqueios.push(
-      'A visão somente apagadas ainda não está disponível. Remova esse filtro para consultar as apostas ativas ou mantenha a visão salva para usar quando estiver disponível.',
+      'Escolha um período ou datas de início e fim. Remova o período para usar as datas, ou remova as datas para usar o período.',
     );
-  if (list && valores.desde && valores.ate && valores.desde > valores.ate)
+  if (valores.desde && valores.ate && valores.desde > valores.ate)
     bloqueios.push(
       'A data inicial deve ser anterior ou igual à final. Corrija o período para consultar.',
     );
-  if (list && valores.ate === '9999-12-31')
+  if (valores.ate === '9999-12-31')
     bloqueios.push(
       'Não é possível usar essa data como final do período. Escolha uma data anterior.',
     );
-  const comuns = {
-    casa_id: valores.casa ? Number(valores.casa) : undefined,
-    tipster_id: valores.tipster ? Number(valores.tipster) : undefined,
-    mercado_id: valores.mercado ? Number(valores.mercado) : undefined,
+  const comuns: PainelQuery & MetricasQuery & ExportQuery = {
+    casa_id: valores.casa,
+    tipster_id: valores.tipster,
+    mercado_id: valores.mercado,
+    competicao_id: valores.competicao,
+    titular_id: valores.titular,
+    conta_casa_id: valores.conta,
+    grupo_id: valores.grupo,
+    banca_id: valores.banca,
+    estado: valores.estado,
+    origem: valores.origem,
+    periodo: valores.periodo as
+      components['schemas']['PeriodoPainel'] | undefined,
+    desde: valores.desde ? inicioDia(valores.desde) : undefined,
+    ate:
+      valores.ate && valores.ate !== '9999-12-31'
+        ? inicioDia(deslocarDia(valores.ate, 1))
+        : undefined,
+    revisao_grave:
+      valores.revisao === undefined ? undefined : valores.revisao === '1',
+    visibilidade:
+      valores.apagadas === '1'
+        ? 'apagadas'
+        : valores.apagadas === 'todas'
+          ? 'todas'
+          : 'ativas',
   };
   const apostas: ApostasQuery | undefined =
     list && !bloqueios.length
@@ -186,30 +194,15 @@ export function adaptarFiltros(visao: VisaoFiltros, recurso: RecursoFiltros) {
           ...comuns,
           page: visao.page,
           page_size: visao.page_size,
-          estado: valores.estado,
-          origem: valores.origem,
-          competicao_id: valores.competicao
-            ? Number(valores.competicao)
-            : undefined,
-          desde: valores.desde ? inicioDia(valores.desde) : undefined,
-          ate: valores.ate ? inicioDia(deslocarDia(valores.ate, 1)) : undefined,
-          revisao_grave:
-            valores.revisao === undefined ? undefined : valores.revisao === '1',
-          incluir_apagadas: valores.apagadas === 'todas',
         }
       : undefined;
-  const painel: PainelQuery & MetricasQuery & ExportQuery = {
-    ...comuns,
-    periodo: (valores.periodo ??
-      '30d') as components['schemas']['PeriodoPainel'],
-  };
   return {
+    endpoint: RECURSOS_FILTROS[recurso],
     apostas: list && !bloqueios.length ? apostas : undefined,
-    painel: !list && !bloqueios.length ? painel : undefined,
-    preservados,
+    painel: !list && !bloqueios.length ? comuns : undefined,
+    preservados: [] as Filtro[],
     bloqueios,
-    escopo: list
-      ? 'Apostas consideradas pela data em que foram feitas. Os filtros valem para todas as páginas.'
-      : 'O Painel e sua exportação usam o mesmo período, casa, tipster e mercado. Os filtros da lista de Apostas podem mostrar um conjunto diferente.',
+    escopo:
+      'Os filtros valem para a lista, o resumo e a exportação. O período considera a data em que as apostas foram feitas, no fuso de São Paulo. Sem período ou datas, inclui todo o histórico. Consultas separadas podem refletir atualizações feitas entre elas.',
   };
 }

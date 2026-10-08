@@ -43,6 +43,16 @@
 .filtro-dialog::backdrop {
   background: var(--sombra-modal);
 }
+.filtro-dialog form {
+  display: grid;
+  gap: var(--espaco-8);
+  margin-block-end: var(--espaco-16);
+}
+.filtro-dialog input {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--alvo-toque);
+}
 .filtro-opcoes {
   display: grid;
   gap: var(--espaco-8);

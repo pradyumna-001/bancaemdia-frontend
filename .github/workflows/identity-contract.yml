@@ -17,7 +17,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
-      IDENTITY_API_SHA: ad7cd9fb095ee6b1b9855504a42e23d25341dee2
+      # Single candidate tree for #184, not a deployment or an integrated pin.
+      IDENTITY_API_SHA: 9b42a3579518a84d348d272afbaeff88f9119825
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -44,6 +45,10 @@ jobs:
           node-version-file: .node-version
       - run: npm install --global pnpm@10.34.6
       - run: make install build
+      - name: Construir exercício autenticado separado e sua CSP exata
+        run: |
+          pnpm exec vite build --config tests/fixtures/filtros.vite.config.ts
+          node scripts/build-csp.mjs dist-filtros-fixture dist-filtros-security
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

@@ -32,11 +32,11 @@ test('filtros, pílulas, histórico, reload e escopo de outra área', async ({
   expect(new URL(page.url()).searchParams.get('page')).toBe('2');
   expect(new URL(page.url()).searchParams.get('grupo')).toBe('8');
   await page.getByRole('link', { name: 'Outra área' }).click();
-  await expect(
-    page.getByText(/Esta área não aplica: Grupo, Estado/),
-  ).toBeVisible();
-  await expect(page.getByLabel('Consulta normalizada')).not.toContainText(
-    'estado',
+  await expect(page.getByLabel('Consulta normalizada')).toContainText(
+    '"grupo_id":"8"',
+  );
+  await expect(page.getByLabel('Consulta normalizada')).toContainText(
+    '"estado":"GREEN"',
   );
   await page.getByRole('button', { name: 'Remover filtro Grupo' }).click();
   expect(new URL(page.url()).searchParams.has('grupo')).toBe(false);
@@ -99,12 +99,16 @@ test('datas próprias, teclado, Escape e fronteira exclusiva no servidor', async
   ).toBeFocused();
   expect(new URL(page.url()).searchParams.get('desde')).toBe('2018-11-04');
 });
-test('somente apagadas bloqueia, sem remover estado silenciosamente; fixture fora do build público', async ({
+test('somente apagadas consulta o conjunto do servidor; fixture fora do build público', async ({
   page,
 }) => {
   await page.goto(fixture + '?apagadas=1&conta=7&origem=telegram');
-  await expect(page.getByRole('alert')).toContainText('somente apagadas');
-  await expect(page.getByLabel('Consulta normalizada')).toHaveText('null');
+  await expect(page.getByLabel('Consulta normalizada')).toContainText(
+    '"visibilidade":"apagadas"',
+  );
+  await expect(page.getByLabel('Consulta normalizada')).toContainText(
+    '"conta_casa_id":"7"',
+  );
   await page.reload();
   expect(new URL(page.url()).searchParams.get('apagadas')).toBe('1');
   await page
@@ -112,7 +116,7 @@ test('somente apagadas bloqueia, sem remover estado silenciosamente; fixture for
     .click();
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.getByLabel('Consulta normalizada')).toContainText(
-    '"incluir_apagadas":false',
+    '"visibilidade":"ativas"',
   );
   await page.goto('/testes/filtros?apagadas=1');
   await expect(

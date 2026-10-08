@@ -17,6 +17,16 @@ export type CatalogoFiltro = Readonly<{
   fase: 'pronto' | 'carregando' | 'erro';
   options: readonly OpcaoFiltro[];
   tentar?: () => void;
+  selecionada?: OpcaoFiltro;
+  erro?: string;
+  selecionadaErro?: string;
+  tentarSelecionada?: () => void;
+  consulta?: string;
+  buscar?: (q: string) => void;
+  pagina?: number;
+  anterior?: () => void;
+  proxima?: () => void;
+  atualizando?: boolean;
 }>;
 export type CatalogosFiltros = Readonly<
   Partial<Record<Dimensao | 'origem', CatalogoFiltro>>
@@ -41,10 +51,9 @@ export function Filtros({
   catalogos?: CatalogosFiltros;
 }) {
   const { visao, adapter, alterar } = useFiltros(recurso);
-  const list = recurso === 'apostas';
-  const dimensoes: Dimensao[] = list
-    ? ['casa', 'tipster', 'mercado', 'competicao']
-    : ['casa', 'tipster', 'mercado'];
+  const dimensoes = [...Object.keys(DIMENSOES), 'origem'] as (
+    Dimensao | 'origem'
+  )[];
   const pillLabels: Readonly<Record<string, string>> = {
     ...DIMENSOES,
     estado: 'Estado',
@@ -56,11 +65,13 @@ export function Filtros({
     revisao: 'Revisão grave',
   };
   const name = (key: Filtro, value: string) => {
-    if (Object.hasOwn(DIMENSOES, key))
+    if (Object.hasOwn(DIMENSOES, key) || key === 'origem')
       return (
-        catalogos[key as Dimensao]?.options.find(
+        catalogos[key as Dimensao | 'origem']?.selecionada?.label ??
+        catalogos[key as Dimensao | 'origem']?.options.find(
           (option) => option.value === value,
-        )?.label ?? 'Identificador ' + value + ' (nome indisponível)'
+        )?.label ??
+        'Identificador ' + value + ' (nome indisponível)'
       );
     if (key === 'estado')
       return ESTADOS_APOSTA[value as keyof typeof ESTADOS_APOSTA];
@@ -95,117 +106,140 @@ export function Filtros({
       <div className="filtro-controles">
         {dimensoes.map((key) => {
           const catalogo = catalogos[key];
+          const label = key === 'origem' ? 'Origem' : DIMENSOES[key];
           return (
             <div key={key}>
               <EscolhaFiltro
-                label={DIMENSOES[key]}
+                label={label}
                 value={visao.valores[key]}
                 options={catalogo?.fase === 'pronto' ? catalogo.options : []}
-                disabled={catalogo?.fase !== 'pronto'}
+                disabled={!catalogo}
+                selectedLabel={catalogo?.selecionada?.label}
+                busca={
+                  catalogo?.buscar
+                    ? {
+                        consulta: catalogo.consulta ?? '',
+                        buscar: catalogo.buscar,
+                        atualizando: catalogo.atualizando,
+                      }
+                    : undefined
+                }
                 onChange={(value) => alterar(key, value)}
-              />
+              >
+                {catalogo?.fase === 'carregando' && (
+                  <p role="status">Carregando opções…</p>
+                )}
+                {catalogo?.fase === 'erro' && (
+                  <p role="alert">
+                    {catalogo.erro ?? 'Não foi possível carregar as opções.'}
+                  </p>
+                )}
+                {catalogo?.fase === 'pronto' && !catalogo.options.length && (
+                  <p>Nenhuma opção corresponde à busca.</p>
+                )}
+                {catalogo?.fase === 'erro' && catalogo.tentar && (
+                  <button type="button" onClick={catalogo.tentar}>
+                    Tentar carregar {label.toLowerCase()}
+                  </button>
+                )}
+                {catalogo?.pagina && (
+                  <div className="filtro-mes">
+                    <button
+                      type="button"
+                      disabled={!catalogo.anterior}
+                      onClick={catalogo.anterior}
+                    >
+                      Opções anteriores
+                    </button>
+                    <span role="status">Página {catalogo.pagina}</span>
+                    <button
+                      type="button"
+                      disabled={!catalogo.proxima}
+                      onClick={catalogo.proxima}
+                    >
+                      Próximas opções
+                    </button>
+                  </div>
+                )}
+              </EscolhaFiltro>
               {(!catalogo || catalogo.fase !== 'pronto') && (
                 <p className="legenda">
                   {!catalogo
                     ? 'Este filtro ainda não está disponível.'
                     : catalogo.fase === 'carregando'
                       ? 'Carregando opções…'
-                      : 'Não foi possível carregar as opções.'}
+                      : (catalogo.erro ??
+                        'Não foi possível carregar as opções.')}
                 </p>
               )}
               {catalogo?.fase === 'pronto' && !catalogo.options.length && (
                 <p className="legenda">
-                  Nenhuma opção disponível para sua conta.
+                  {catalogo.consulta
+                    ? 'Nenhuma opção corresponde à busca.'
+                    : 'Nenhuma opção disponível para sua conta.'}
                 </p>
               )}
               {catalogo?.fase === 'erro' && catalogo.tentar && (
                 <button type="button" onClick={catalogo.tentar}>
-                  Tentar carregar {DIMENSOES[key].toLowerCase()}
+                  Tentar carregar {label.toLowerCase()}
+                </button>
+              )}
+              {catalogo?.selecionadaErro && (
+                <p role="status">{catalogo.selecionadaErro}</p>
+              )}
+              {catalogo?.tentarSelecionada && (
+                <button type="button" onClick={catalogo.tentarSelecionada}>
+                  Consultar nome de {label.toLowerCase()}
                 </button>
               )}
             </div>
           );
         })}
-        {list ? (
-          <>
-            <EscolhaFiltro
-              label="Estado"
-              value={visao.valores.estado}
-              options={entries(ESTADOS_APOSTA)}
-              onChange={(value) => alterar('estado', value)}
-            />
-            <div>
-              <EscolhaFiltro
-                label="Origem"
-                value={visao.valores.origem}
-                options={
-                  catalogos.origem?.fase === 'pronto'
-                    ? catalogos.origem.options
-                    : []
-                }
-                disabled={catalogos.origem?.fase !== 'pronto'}
-                onChange={(value) => alterar('origem', value)}
-              />
-              {catalogos.origem?.fase !== 'pronto' && (
-                <p className="legenda">
-                  {!catalogos.origem
-                    ? 'O filtro de origem ainda não está disponível.'
-                    : catalogos.origem.fase === 'carregando'
-                      ? 'Carregando origens…'
-                      : 'Não foi possível carregar as origens.'}
-                </p>
-              )}
-              {catalogos.origem?.fase === 'erro' && catalogos.origem.tentar && (
-                <button type="button" onClick={catalogos.origem.tentar}>
-                  Tentar carregar origem
-                </button>
-              )}
-              {catalogos.origem?.fase === 'pronto' &&
-                !catalogos.origem.options.length && (
-                  <p className="legenda">
-                    Nenhuma origem disponível para sua conta.
-                  </p>
-                )}
-            </div>
-            <EscolhaFiltro
-              label="Visibilidade"
-              resetLabel="Usar padrão: ativas"
-              value={visao.valores.apagadas ?? '0'}
-              options={[
-                { value: '0', label: 'Ativas' },
-                { value: 'todas', label: 'Ativas e apagadas' },
-              ]}
-              onChange={(value) => alterar('apagadas', value)}
-            />
-            <EscolhaFiltro
-              label="Revisão grave"
-              value={visao.valores.revisao}
-              options={[
-                { value: '1', label: 'Com revisão grave' },
-                { value: '0', label: 'Sem revisão grave' },
-              ]}
-              onChange={(value) => alterar('revisao', value)}
-            />
-            <DataFiltro
-              label="De"
-              value={visao.valores.desde}
-              onChange={(value) => alterar('desde', value)}
-            />
-            <DataFiltro
-              label="Até"
-              value={visao.valores.ate}
-              onChange={(value) => alterar('ate', value)}
-            />
-          </>
-        ) : (
+        <>
+          <EscolhaFiltro
+            label="Estado"
+            value={visao.valores.estado}
+            options={entries(ESTADOS_APOSTA)}
+            onChange={(value) => alterar('estado', value)}
+          />
+          <EscolhaFiltro
+            label="Visibilidade"
+            resetLabel="Usar padrão: ativas"
+            value={visao.valores.apagadas ?? '0'}
+            options={[
+              { value: '0', label: 'Ativas' },
+              { value: '1', label: 'Somente apagadas' },
+              { value: 'todas', label: 'Ativas e apagadas' },
+            ]}
+            onChange={(value) => alterar('apagadas', value)}
+          />
+          <EscolhaFiltro
+            label="Revisão grave"
+            value={visao.valores.revisao}
+            options={[
+              { value: '1', label: 'Com revisão grave' },
+              { value: '0', label: 'Sem revisão grave' },
+            ]}
+            onChange={(value) => alterar('revisao', value)}
+          />
+          <DataFiltro
+            label="De"
+            value={visao.valores.desde}
+            onChange={(value) => alterar('desde', value)}
+          />
+          <DataFiltro
+            label="Até"
+            value={visao.valores.ate}
+            onChange={(value) => alterar('ate', value)}
+          />
           <EscolhaFiltro
             label="Período"
-            resetLabel="Usar padrão: últimos 30 dias"
-            value={visao.valores.periodo ?? '30d'}
+            resetLabel="Sem período definido"
+            value={visao.valores.periodo}
             options={entries(PERIODOS)}
             onChange={(value) => alterar('periodo', value)}
           />
-        )}
+        </>
       </div>
       <ul className="filtro-pilulas" aria-label="Filtros salvos na URL">
         {(Object.entries(visao.valores) as [Filtro, string][]).map(
