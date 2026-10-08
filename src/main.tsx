@@ -16,6 +16,7 @@ import {
   sanitizeProtocolLocation,
 } from './auth/returnDestination';
 import { ApiError } from './api/error';
+import { createAccessController } from './features/acesso/controller';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Não foi possível iniciar a aplicação.');
@@ -55,9 +56,12 @@ initializeConfig().then(
       storage,
       channel,
     });
+    const access = createAccessController(auth, queryClient);
     const api = initializeApiClient({
       captureSession: auth.capture,
       onUnauthorized: auth.unauthorized,
+      onAccessDenied: access.denied,
+      beforeMutation: (operation) => access.run(api, operation, async () => {}),
     });
     const consultarRevisao = (signal?: AbortSignal) =>
       auth.read(async () => {
@@ -75,6 +79,7 @@ initializeConfig().then(
             router={router}
             queryClient={queryClient}
             ambiente={getConfig().appEnv}
+            access={access}
           />
         </ProvedorAuth>
       </StrictMode>,

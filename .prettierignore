@@ -2,6 +2,10 @@ node_modules/
 dist/
 dist-security/
 dist-shell-fixture/
+dist-acesso-fixture/
+dist-filtros-fixture/
+dist-filtros-security/
+dist-enviar-fixture/
 public/fontes/OFL-source-sans-3.md
 coverage/
 playwright-report/

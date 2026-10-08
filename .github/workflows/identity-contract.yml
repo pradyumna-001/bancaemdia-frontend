@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
-      IDENTITY_API_SHA: ad7cd9fb095ee6b1b9855504a42e23d25341dee2
+      IDENTITY_API_SHA: b916f54331f14cf47a3800324bd61d8638043c06
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
