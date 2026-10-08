@@ -139,6 +139,11 @@ export function TelegramPage({
       (action === 'generate' && needsCheck)
     )
       return;
+    if (action === 'generate' && query.data?.linked) {
+      setConfirmation(undefined);
+      setNotice('O Telegram já está conectado. Confira o vínculo atual.');
+      return;
+    }
     const operation =
       action === 'generate'
         ? 'POST /api/v1/telegram/link-codes'

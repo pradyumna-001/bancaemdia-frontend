@@ -425,6 +425,31 @@ it('status fora do contrato não instala comando nem repete a emissão', async (
   expect(generate()).toBeDisabled();
   expect(app.writes).toHaveLength(1);
 });
+it('vínculo confirmado com nova emissão aberta não gera código desnecessário', async () => {
+  const app = await open();
+  await app.user.click(generate());
+  await screen.findByText('/vincular ABCDEFGH');
+  await app.user.click(
+    screen.getByRole('button', { name: 'Ocultar código e parar consulta' }),
+  );
+  await app.user.click(
+    screen.getByRole('button', { name: 'Preparar novo código' }),
+  );
+  app.status(linkedTelegram);
+  await app.user.click(consult());
+  await screen.findByRole('heading', { name: 'Telegram conectado' });
+  await app.user.click(
+    screen.getByRole('button', { name: 'Confirmar novo código' }),
+  );
+  await screen.findByText(
+    'O Telegram já está conectado. Confira o vínculo atual.',
+  );
+  expect(app.writes).toHaveLength(1);
+  expect(screen.queryByText('/vincular ABCDEFGH')).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('heading', { name: 'Gerar um novo código?' }),
+  ).not.toBeInTheDocument();
+});
 it('polling com backoff termina em dois minutos; expiração apaga o segredo', async () => {
   const app = await open();
   focusManager.setFocused(true);
