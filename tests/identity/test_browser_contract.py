@@ -417,6 +417,32 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
             print(
                 f"Worker diagnostics: exit={worker.poll() if worker else None}; classes={classes}; missing_modules={modules}"
             )
+            # Celery deliberately removes private exception text from its log.
+            # Inspect only bounded state/type/source frames, never task values,
+            # arguments, messages, credentials or raw result/traceback content.
+            results = redis.Redis.from_url(harness.env["CELERY_RESULT_BACKEND"])
+            try:
+                for key in results.scan_iter(match="celery-task-meta-*", count=100):
+                    item = json.loads(results.get(key) or "{}")
+                    state = item.get("status")
+                    if state not in {"FAILURE", "RETRY"}:
+                        continue
+                    value = item.get("result")
+                    kind = value.get("exc_type") if isinstance(value, dict) else None
+                    kind = (
+                        kind
+                        if isinstance(kind, str) and re.fullmatch(r"[\w.]+", kind)
+                        else None
+                    )
+                    frames = re.findall(
+                        r'File "[^"\n]*[/\\](bancaemdia[/\\][^"\n]+\.py)", line (\d+), in ([\w<>]+)',
+                        item.get("traceback") or "",
+                    )
+                    print(
+                        f"Worker task state={state}; class={kind}; frames={frames[-8:]}"
+                    )
+            finally:
+                results.close()
             raise
         finally:
             cache.delete(cache_key)
