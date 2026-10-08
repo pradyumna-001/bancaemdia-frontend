@@ -16,6 +16,7 @@ import sys
 import tempfile
 import time
 import zipfile
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
@@ -213,6 +214,7 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
     assert cache.ping()
     photo = b"\xff\xd8\xff\xe0sandbox-upload-input\xff\xd9"
     caption = "1u"
+    posted_at = datetime.fromisoformat("2026-07-24T16:17:52")
     golden = LeituraGuardada(
         cupons=[
             ExtracaoBilhete(
@@ -226,7 +228,11 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
         ],
         modelo="claude-haiku-4-5",
     )
-    cache_key = chave_no_redis(chave_de_imagem(photo, caption), VERSAO_PROMPT)
+    # The pinned backend keys extraction by the exact message minute used in
+    # the prompt, so the golden input must carry the same export timestamp.
+    cache_key = chave_no_redis(
+        chave_de_imagem(photo, caption, postada_em=posted_at), VERSAO_PROMPT
+    )
     cache.set(cache_key, golden.model_dump_json(), ex=300)
     content = io.BytesIO()
     with zipfile.ZipFile(content, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -241,7 +247,7 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
                         {
                             "id": 71,
                             "type": "message",
-                            "date": "2026-07-24T16:17:52",
+                            "date": posted_at.isoformat(),
                             "from": "Teste",
                             "text": caption,
                             "photo": "photos/bilhete.jpg",
