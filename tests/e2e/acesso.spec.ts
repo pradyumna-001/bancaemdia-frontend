@@ -122,8 +122,10 @@ test('402 durante escrita preserva entrada e não repete após confirmação do 
   await expect(save).toBeEnabled();
   expect(writes).toBe(1);
   await expect(
-    page.getByRole('heading', { name: 'Sua conta está em modo de leitura' }),
-  ).toBeVisible(); // The refused form remains for review even after access recovers.
+    page.getByRole('heading', {
+      name: 'Este pedido foi bloqueado para escrita',
+    }),
+  ).toBeVisible(); // The previous refusal is distinct from the current, recovered access.
 });
 test('erro e prazo longo encerram tentativas e mantêm formulário acessível', async ({
   page,

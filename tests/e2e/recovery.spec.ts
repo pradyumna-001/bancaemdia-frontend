@@ -29,7 +29,9 @@ test('401 e 402 mantêm entrada e filtros, com destinos diferentes e sem reenvio
   status = 402;
   await page.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(
-    page.getByRole('heading', { name: 'Sua conta está em modo de leitura' }),
+    page.getByRole('heading', {
+      name: 'Este pedido foi bloqueado para escrita',
+    }),
   ).toBeVisible();
   await expect(
     page.getByRole('link', { name: /Ver assinatura/ }),

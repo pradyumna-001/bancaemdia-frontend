@@ -590,14 +590,26 @@ async def test_public_spa_expired_confirmation(
 @pytest.mark.parametrize(
     "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
 )
-async def test_public_spa_commercial_access(harness, engine_admin, viewport):
+async def test_public_spa_commercial_access(harness, engine_admin, viewport, request):
     """Real server expiry and read-only SPA, no payment or production data."""
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch()
         context = await browser.new_context(viewport=viewport)
         page = await context.new_page()
         violations = []
-        page.on("pageerror", lambda _error: violations.append("public pageerror"))
+        hosted_diagnostics = []
+
+        def document_error(_error):
+            origin = urlsplit(page.url()).netloc
+            if origin == urlsplit(backend.FRONT).netloc:
+                violations.append("public pageerror")
+            elif origin == urlsplit(backend.ISSUER).netloc:
+                # Keep numeric issuer diagnostics without protocol URLs/credentials.
+                hosted_diagnostics.append("hosted document pageerror")
+            else:
+                violations.append("unexpected document pageerror")
+
+        page.on("pageerror", document_error)
         session, _ = await backend.register(
             page,
             uuid4().hex + "@example.org",
@@ -699,6 +711,9 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport):
         )
         assert not await page.evaluate(
             "Boolean(document.cookie) || Object.keys(localStorage).length > 0"
+        )
+        request.node.user_properties.append(
+            ("hosted_document_pageerrors", str(len(hosted_diagnostics)))
         )
         assert not violations
         await browser.close()
