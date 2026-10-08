@@ -13,6 +13,7 @@ import re
 import secrets
 import subprocess
 import sys
+import tempfile
 import time
 import zipfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -260,128 +261,168 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
         ANTHROPIC_BASE_URL=f"http://127.0.0.1:{trap.server_port}",
         ANTHROPIC_MAX_RETRIES="0",
     )
-    try:
-        await harness.restart()
-        worker = await asyncio.to_thread(
-            subprocess.Popen,
-            [
-                sys.executable,
-                "-m",
-                "celery",
-                "-A",
-                "bancaemdia.workers.celery_app:app",
-                "worker",
-                "--pool=solo",
-                "--concurrency=1",
-                "--loglevel=WARNING",
-                "--without-gossip",
-                "--without-mingle",
-            ],
-            cwd=harness.root,
-            env=harness.env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        harness.processes.append(worker)
-        async with async_playwright() as playwright:
-            browser = await playwright.chromium.launch()
-            contexts = [await browser.new_context(viewport=viewport) for _ in range(2)]
-            pages = [await ctx.new_page() for ctx in contexts]
-            for page in pages:
-                await backend.register(
-                    page,
-                    uuid4().hex + "@example.org",
-                    secrets.token_urlsafe(24),
-                    harness=harness,
+    with tempfile.TemporaryFile(mode="w+t") as worker_log:
+        worker = None
+        try:
+            await harness.restart()
+            worker = await asyncio.to_thread(
+                subprocess.Popen,
+                [
+                    sys.executable,
+                    "-m",
+                    "celery",
+                    "-A",
+                    "bancaemdia.workers.celery_app:app",
+                    "worker",
+                    "--pool=solo",
+                    "--concurrency=1",
+                    "--loglevel=WARNING",
+                    "--without-gossip",
+                    "--without-mingle",
+                ],
+                cwd=harness.root,
+                env=harness.env,
+                stdout=worker_log,
+                stderr=subprocess.STDOUT,
+            )
+            harness.processes.append(worker)
+            await asyncio.sleep(2)
+            if worker.poll() is not None:
+                worker_log.seek(0)
+                diagnostics = worker_log.read(65536)
+                classes = sorted(
+                    set(re.findall(r"(?m)^([\w.]+(?:Error|Exception)):", diagnostics))
                 )
-            owner = (await browser_request(pages[0], "/auth/session"))["data"][
-                "usuario_id"
-            ]
-            async with engine_admin.connect() as conn:
-                assert await conn.scalar(text("SELECT count(*) FROM uploads")) == 0
-                assert await conn.scalar(text("SELECT count(*) FROM apostas")) == 0
-            writes = []
-            pages[0].on(
-                "request",
-                lambda request: (
-                    writes.append(1)
-                    if urlsplit(request.url).path == "/api/v1/upload"
-                    and request.method == "POST"
-                    else None
-                ),
-            )
-            await pages[0].goto(backend.FRONT + "/enviar?estado=GREEN&apagadas=1")
-            await (
-                pages[0]
-                .get_by_label("Arquivo do export", exact=True)
-                .set_input_files(
-                    {
-                        "name": "ChatExport.zip",
-                        "mimeType": "application/zip",
-                        "buffer": content.getvalue(),
-                    }
+                modules = sorted(
+                    set(re.findall(r"No module named '([\w.]+)'", diagnostics))
                 )
-            )
-            await (
-                pages[0].get_by_role("button", name="Enviar export", exact=True).click()
-            )
-            await expect(
-                pages[0].get_by_role("heading", name="Importação concluída", exact=True)
-            ).to_be_visible(timeout=60000)
-            job_id = dict(parse_qsl(urlsplit(pages[0].url).query))["envio"]
-            status = await browser_request(pages[0], "/api/v1/upload/" + job_id)
-            assert status["status"] == 200 and status["data"]["bets_processed"] == 1
-            assert status["data"]["status"] == "completed"
-            assert status["data"]["cost_usd"] == 0
-            assert not calls, (
-                "Extraction must use the golden cache, never a paid provider"
-            )
-            assert (await browser_request(pages[1], "/api/v1/upload/" + job_id))[
-                "status"
-            ] == 404
-            async with engine_admin.connect() as conn:
-                row = (
-                    (
-                        await conn.execute(
-                            text(
-                                "SELECT usuario_id,chat_id,message_id,chave,odd FROM apostas"
+                pytest.fail(
+                    f"Worker exited before import: {worker.returncode}; classes={classes}; missing_modules={modules}"
+                )
+            async with async_playwright() as playwright:
+                browser = await playwright.chromium.launch()
+                contexts = [
+                    await browser.new_context(viewport=viewport) for _ in range(2)
+                ]
+                pages = [await ctx.new_page() for ctx in contexts]
+                for page in pages:
+                    await backend.register(
+                        page,
+                        uuid4().hex + "@example.org",
+                        secrets.token_urlsafe(24),
+                        harness=harness,
+                    )
+                owner = (await browser_request(pages[0], "/auth/session"))["data"][
+                    "usuario_id"
+                ]
+                async with engine_admin.connect() as conn:
+                    assert await conn.scalar(text("SELECT count(*) FROM uploads")) == 0
+                    assert await conn.scalar(text("SELECT count(*) FROM apostas")) == 0
+                writes = []
+                pages[0].on(
+                    "request",
+                    lambda request: (
+                        writes.append(1)
+                        if urlsplit(request.url).path == "/api/v1/upload"
+                        and request.method == "POST"
+                        else None
+                    ),
+                )
+                await pages[0].goto(backend.FRONT + "/enviar?estado=GREEN&apagadas=1")
+                await (
+                    pages[0]
+                    .get_by_label("Arquivo do export", exact=True)
+                    .set_input_files(
+                        {
+                            "name": "ChatExport.zip",
+                            "mimeType": "application/zip",
+                            "buffer": content.getvalue(),
+                        }
+                    )
+                )
+                await (
+                    pages[0]
+                    .get_by_role("button", name="Enviar export", exact=True)
+                    .click()
+                )
+                await expect(
+                    pages[0].get_by_role(
+                        "heading", name="Importação concluída", exact=True
+                    )
+                ).to_be_visible(timeout=60000)
+                job_id = dict(parse_qsl(urlsplit(pages[0].url).query))["envio"]
+                status = await browser_request(pages[0], "/api/v1/upload/" + job_id)
+                assert status["status"] == 200 and status["data"]["bets_processed"] == 1
+                assert status["data"]["status"] == "completed"
+                assert status["data"]["cost_usd"] == 0
+                assert not calls, (
+                    "Extraction must use the golden cache, never a paid provider"
+                )
+                assert (await browser_request(pages[1], "/api/v1/upload/" + job_id))[
+                    "status"
+                ] == 404
+                async with engine_admin.connect() as conn:
+                    row = (
+                        (
+                            await conn.execute(
+                                text(
+                                    "SELECT usuario_id,chat_id,message_id,chave,odd FROM apostas"
+                                )
                             )
                         )
+                        .mappings()
+                        .one()
                     )
-                    .mappings()
-                    .one()
+                    assert row["usuario_id"] == owner and row["chat_id"] == 555
+                    assert row["message_id"] == 71
+                    assert float(row["odd"]) == 1.82
+                    created = (
+                        await conn.execute(
+                            text(
+                                "SELECT payload_json FROM eventos WHERE usuario_id=:owner "
+                                "AND aposta_chave=:key AND tipo='APOSTA_CRIADA'"
+                            ),
+                            {"owner": owner, "key": row["chave"]},
+                        )
+                    ).scalar_one()
+                    assert created["casa"].lower() == "betano"
+                await pages[0].reload()
+                await expect(
+                    pages[0].get_by_role(
+                        "heading", name="Importação concluída", exact=True
+                    )
+                ).to_be_visible()
+                assert len(writes) == 1, "Reload resumes GET, never POST"
+                assert (
+                    dict(parse_qsl(urlsplit(pages[0].url).query))["estado"] == "GREEN"
                 )
-                assert row["usuario_id"] == owner and row["chat_id"] == 555
-                assert row["message_id"] == 71
-                assert float(row["odd"]) == 1.82
-                created = (
-                    await conn.execute(
-                        text(
-                            "SELECT payload_json FROM eventos WHERE usuario_id=:owner "
-                            "AND aposta_chave=:key AND tipo='APOSTA_CRIADA'"
-                        ),
-                        {"owner": owner, "key": row["chave"]},
+                assert (
+                    not await pages[0]
+                    .get_by_text(
+                        re.compile("Autorizar|estimativa|custo", re.IGNORECASE)
                     )
-                ).scalar_one()
-                assert created["casa"].lower() == "betano"
-            await pages[0].reload()
-            await expect(
-                pages[0].get_by_role("heading", name="Importação concluída", exact=True)
-            ).to_be_visible()
-            assert len(writes) == 1, "Reload resumes GET, never POST"
-            assert dict(parse_qsl(urlsplit(pages[0].url).query))["estado"] == "GREEN"
-            assert (
-                not await pages[0]
-                .get_by_text(re.compile("Autorizar|estimativa|custo", re.IGNORECASE))
-                .count()
+                    .count()
+                )
+                await browser.close()
+            assert worker.poll() is None, "Actual worker must survive the import"
+        except BaseException:
+            worker_log.seek(0)
+            diagnostics = worker_log.read(65536)
+            classes = sorted(
+                set(re.findall(r"\b([\w.]+(?:Error|Exception)):", diagnostics))
             )
-            await browser.close()
-        assert worker.poll() is None, "Actual worker must survive the import"
-    finally:
-        cache.delete(cache_key)
-        cache.close()
-        await asyncio.to_thread(trap.shutdown)
-        trap.server_close()
+            modules = sorted(
+                set(re.findall(r"No module named '([\w.]+)'", diagnostics))
+            )
+            print(
+                f"Worker diagnostics: exit={worker.poll() if worker else None}; classes={classes}; missing_modules={modules}"
+            )
+            raise
+        finally:
+            cache.delete(cache_key)
+            cache.close()
+            await asyncio.to_thread(trap.shutdown)
+            trap.server_close()
 
 
 @pytest.mark.parametrize(
@@ -944,7 +985,8 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
         async with engine_admin.begin() as database:
             await database.execute(
                 text(
-                    "UPDATE telegram_link_codes SET expires_at=clock_timestamp()-interval '1 second' "
+                    "UPDATE telegram_link_codes SET issued_at=clock_timestamp()-interval '31 minutes', "
+                    "expires_at=clock_timestamp()-interval '1 second' "
                     "WHERE usuario_id=:uid AND consumed_at IS NULL"
                 ),
                 {"uid": uid},
