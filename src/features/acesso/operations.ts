@@ -3,6 +3,9 @@ import type { ApiOperation } from '../../api/client';
 // Explicit exceptions verified in backend b916f54: deps.py and calculators.py.
 // Unknown operations fail closed; the server remains authoritative.
 const exceptions = {
+  // Session controls use SessionService/Web Locks, and never depend on billing.
+  'POST /auth/logout': true,
+  'POST /auth/refresh': true,
   'POST /api/v1/calculadoras/mercado-justo': true,
   'POST /api/v1/calculadoras/distribuir-entre-resultados': true,
   'POST /api/v1/calculadoras/cobertura-ao-vivo': true,
