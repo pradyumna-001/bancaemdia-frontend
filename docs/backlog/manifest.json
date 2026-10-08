@@ -57,7 +57,7 @@
     "number": 17,
     "title": "[ADR-019] Filtros na URL — capacidade por recurso e paginação real",
     "file": "017.md",
-    "dependencies": "#9, #16; #50"
+    "dependencies": "#9, #16; #50; backend PR #184"
   },
   {
     "number": 18,

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { join } from 'node:path';
 
 export function securityConfig(html, template) {
   const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
@@ -22,11 +23,13 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  mkdirSync('dist-security', { recursive: true });
+  const input = process.argv[2] ?? 'dist';
+  const output = process.argv[3] ?? 'dist-security';
+  mkdirSync(output, { recursive: true });
   writeFileSync(
-    'dist-security/default.conf',
+    join(output, 'default.conf'),
     securityConfig(
-      readFileSync('dist/index.html', 'utf8'),
+      readFileSync(join(input, 'index.html'), 'utf8'),
       readFileSync('nginx/default.conf', 'utf8'),
     ),
   );
