@@ -600,7 +600,7 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
         hosted_diagnostics = []
 
         def document_error(_error):
-            origin = urlsplit(page.url()).netloc
+            origin = urlsplit(page.url).netloc
             if origin == urlsplit(backend.FRONT).netloc:
                 violations.append("public pageerror")
             elif origin == urlsplit(backend.ISSUER).netloc:
