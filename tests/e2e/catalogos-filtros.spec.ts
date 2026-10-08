@@ -115,8 +115,15 @@ test('catálogos autenticados: nomes históricos, busca/página, URL e recupera�
     page.getByRole('button', { name: 'Casa Casa histórica (inativa)' }),
   ).toBeFocused();
   await page.getByRole('button', { name: 'Remover filtro Casa' }).click();
+  await expect(page).toHaveURL((url) => !url.searchParams.has('casa'));
+  await expect(
+    page.getByRole('button', { name: 'Remover filtro Casa' }),
+  ).toHaveCount(0);
   expect(new URL(page.url()).searchParams.get('extra')).toBe('keep');
   await page.goBack();
+  await expect(page).toHaveURL(
+    (url) => url.searchParams.get('casa') === '9007199254740993',
+  );
   await expect(
     page.getByRole('button', { name: 'Casa Casa histórica (inativa)' }),
   ).toBeVisible();

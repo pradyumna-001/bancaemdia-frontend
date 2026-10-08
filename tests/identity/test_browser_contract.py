@@ -342,9 +342,15 @@ async def test_authenticated_filter_components_real_cookie(
         await expect(
             pages[1].get_by_role(
                 "button",
-                name="Grupo Identificador 9007199254740993 (nome indisponível)",
+                name="Grupo Identificador 9007199254740993",
             )
         ).to_be_visible()
+        await expect(
+            pages[1].get_by_role("button", name="Remover filtro Grupo")
+        ).to_contain_text("nome indisponível")
+        await expect(
+            pages[1].get_by_text("Grupo histórico exato", exact=False)
+        ).to_have_count(0)
         await pages[0].get_by_role("button", name="Remover filtro Visibilidade").click()
         await expect(pages[0].get_by_label("Resposta da lista")).to_contain_text(
             '"total":0'
@@ -550,6 +556,9 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         )
         assert created["status"] == 201
         # Add one disposable pending review, to distinguish the real per-user caches.
+        initial_reviews = await browser_request(pa, "/api/v1/revisao/stats")
+        assert initial_reviews["status"] == 200
+        expected_total = initial_reviews["data"]["total"] + 1
         async with engine_admin.begin() as conn:
             result = await conn.execute(
                 text(
@@ -558,13 +567,15 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
                 {"id": sa["usuario_id"]},
             )
             assert result.rowcount == 1
+        actual_reviews = await browser_request(pa, "/api/v1/revisao/stats")
+        assert actual_reviews["status"] == 200
+        assert actual_reviews["data"]["total"] == expected_total
+        review_name = re.compile(rf"Revisão.*{expected_total} pendências")
         await pa.goto(backend.FRONT + "/painel?apagadas=1#serie")
         await expect(
             pa.get_by_role("heading", name="Painel", exact=True)
         ).to_be_visible()
-        await expect(
-            pa.get_by_role("link", name=re.compile(r"Revisão.*1 pendências")).first
-        ).to_be_visible()
+        await expect(pa.get_by_role("link", name=review_name).first).to_be_visible()
         second = await a.new_page()
         await second.goto(backend.FRONT + "/painel")
         await expect(
@@ -595,9 +606,7 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         await complete_hosted_entry(
             second, email_b, password_b, backend.FRONT + "/painel"
         )
-        await expect(
-            pa.get_by_role("link", name=re.compile(r"Revisão.*1 pendências"))
-        ).to_have_count(0)
+        await expect(pa.get_by_role("link", name=review_name)).to_have_count(0)
         await expect(
             pa.get_by_role("heading", name="Painel", exact=True)
         ).to_be_visible()
@@ -605,6 +614,9 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
             "usuario_id"
         ]
         assert current_person == sb["usuario_id"]
+        assert (await browser_request(pa, "/api/v1/revisao/stats"))["data"][
+            "total"
+        ] == 0
         assert (await browser_request(pa, "/api/v1/apostas"))["data"]["pagination"][
             "total"
         ] == 0
