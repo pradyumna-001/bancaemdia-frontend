@@ -15,6 +15,7 @@ Revisado pelo ADR019 em 29/09/2026; issues #17/#9 e consumidoras.
 7. Sucesso de escrita depende da resposta autoritativa; invalidar/refetch dados afetados. Refetch não força atualização de MV: `fresh=true` escolhe primário, não refresh. Mostrar confirmação da gravação e frescor/pêndencia de atualização sem spinner eterno ou promessa de agregado instantâneo.
 8. Otimismo só para feedback de ação autorizado, com rollback; totais financeiros continuam da API. Fila de desfazer em sessionStorage é por usuário/sessão, limpa no logout e exige reconciliação de versão/concorrência antes de escrever.
 9. Destrutivas têm confirmação ou desfazer conforme contrato. Encerrar conta, remover aposta e reset de dados são operações diferentes; não substituir uma pela outra.
+10. Na lista #18, mudar os seletores na mesma rota preserva o guard corrente, foco do picker e posição. RequireSession, consultas autenticadas, logout/troca e recuperação de 401 continuam vigentes; abrir outra área, recarregar ou revalidar explicitamente consulta a sessão. Mostrar mais conserva a página inicial da URL, deduplica por chave e não afirma reconstruir uma população estável quando os totais mudam entre respostas. Resumo compatível e seletores disponíveis dependem dos descritores gerados do mesmo contrato oficial; ver `docs/contracts/apostas.md`.
 
 ## Consequences
 

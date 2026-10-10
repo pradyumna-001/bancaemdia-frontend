@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 import { createMemoryRouter } from 'react-router-dom';
 import { App } from '../../app/App';
@@ -9,8 +9,27 @@ import { createSession } from '../../auth/session';
 import { ProvedorAuth } from '../../auth/ProvedorAuth';
 import { sessionContext } from '../../auth/protocol';
 import { ApiError } from '../../api/error';
+import * as api from '../../api/client';
+import { parseConfig } from '../../lib/config';
+import { paginaExemplo } from '../../../tests/fixtures/apostas';
+import { billingStatus } from '../../../tests/fixtures/acesso';
 
 const disposers: Array<() => void> = [];
+beforeEach(() => {
+  vi.spyOn(api, 'getApiClient').mockReturnValue(
+    api.createApiClient(parseConfig({ VITE_API_URL: 'https://site.example' }), {
+      fetcher: async (request) =>
+        new Response(
+          JSON.stringify(
+            new URL(request.url).pathname.endsWith('/billing/status')
+              ? billingStatus
+              : paginaExemplo(1, 50),
+          ),
+          { headers: { 'Content-Type': 'application/json' } },
+        ),
+    }),
+  );
+});
 afterEach(() => {
   disposers.splice(0).forEach((dispose) => dispose());
   vi.restoreAllMocks();

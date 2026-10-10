@@ -1,0 +1,168 @@
+// Generated from the same verified OpenAPI; unavailable routes stay absent.
+export const SITE_READ_CONTRACT = {
+  '/api/v1/apostas': {
+    query: {
+      desde: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      estado: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      casa_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+      titular_id: {
+        anyOf: [{ type: 'integer', minimum: 1 }, { type: 'null' }],
+      },
+      conta_casa_id: {
+        anyOf: [{ type: 'integer', minimum: 1 }, { type: 'null' }],
+      },
+      tipster_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+      mercado_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+      competicao_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+      origem: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      revisao_grave: { anyOf: [{ type: 'boolean' }, { type: 'null' }] },
+      incluir_apagadas: { type: 'boolean' },
+      page: { type: 'integer', minimum: 1 },
+      page_size: { type: 'integer', minimum: 1, maximum: 100 },
+    },
+    response: {
+      type: 'object',
+      required: ['data', 'pagination'],
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'chave',
+              'origem',
+              'estado',
+              'odd',
+              'stake_unidades',
+              'stake_centavos',
+              'valor_aposta_centavos',
+              'retorno_centavos',
+              'lucro_centavos',
+              'freebet',
+              'conta_casa_id',
+              'tipster_id',
+              'time_casa_id',
+              'time_fora_id',
+              'mercado_id',
+              'competicao_id',
+              'data_aposta',
+              'data_jogo',
+              'chat_id',
+              'message_id',
+              'midia_hash',
+              'revisao_grave',
+              'apagada',
+              'casa',
+              'evento',
+              'descricao',
+              'mercado',
+              'criada_em',
+              'atualizada_em',
+            ],
+            properties: {
+              apagada: { type: 'boolean' },
+              atualizada_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              banca_contexto: {
+                anyOf: [
+                  {
+                    type: 'object',
+                    required: ['id', 'nome'],
+                    properties: {
+                      id: { type: 'string', pattern: '^[1-9][0-9]*$' },
+                      nome: { type: 'string' },
+                    },
+                  },
+                  { type: 'null' },
+                ],
+              },
+              casa: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              chat_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              chave: { type: 'string' },
+              competicao_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              conta_atribuicao: {
+                type: 'string',
+                enum: ['ASSIGNED', 'UNASSIGNED'],
+              },
+              conta_casa_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              conta_contexto: {
+                anyOf: [
+                  {
+                    type: 'object',
+                    required: [
+                      'id',
+                      'casa_id',
+                      'apelido',
+                      'ativa',
+                      'estado',
+                      'titular',
+                    ],
+                    properties: {
+                      apelido: {
+                        anyOf: [{ type: 'string' }, { type: 'null' }],
+                      },
+                      ativa: { type: 'boolean' },
+                      casa_id: { type: 'string', pattern: '^[1-9][0-9]*$' },
+                      estado: { type: 'string' },
+                      id: { type: 'string', pattern: '^[1-9][0-9]*$' },
+                      titular: {
+                        anyOf: [
+                          {
+                            type: 'object',
+                            required: ['id', 'nome', 'arquivado'],
+                            properties: {
+                              arquivado: { type: 'boolean' },
+                              id: { type: 'string', pattern: '^[1-9][0-9]*$' },
+                              nome: { type: 'string' },
+                            },
+                          },
+                          { type: 'null' },
+                        ],
+                      },
+                    },
+                  },
+                  { type: 'null' },
+                ],
+              },
+              criada_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              data_aposta: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              data_jogo: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              descricao: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              estado: { type: 'string' },
+              evento: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              freebet: { type: 'boolean' },
+              lucro_centavos: {
+                anyOf: [{ type: 'integer' }, { type: 'null' }],
+              },
+              mercado: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              mercado_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              message_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              midia_hash: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              odd: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+              origem: { type: 'string' },
+              retorno_centavos: {
+                anyOf: [{ type: 'integer' }, { type: 'null' }],
+              },
+              revisao_grave: { type: 'boolean' },
+              stake_centavos: { type: 'integer' },
+              stake_unidades: { type: 'number' },
+              time_casa_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              time_fora_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              tipster_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              valor_aposta_centavos: { type: 'integer' },
+            },
+          },
+        },
+        pagination: {
+          type: 'object',
+          required: ['page', 'page_size', 'total'],
+          properties: {
+            page: { type: 'integer', minimum: 1 },
+            page_size: { type: 'integer', minimum: 1 },
+            total: { type: 'integer', minimum: 0 },
+          },
+        },
+      },
+    },
+  },
+} as const;
