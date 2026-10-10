@@ -1136,12 +1136,15 @@ async def test_public_spa_timezone_preference(harness, engine_admin, viewport):
             await conn.execute(text("SELECT billing_activate_rollout()"))
             await conn.execute(
                 text(
-                    "WITH bounds AS (SELECT clock_timestamp()+interval '10 minutes' AS finish) "
+                    "WITH bounds AS (SELECT clock_timestamp()+interval '60 seconds' AS finish) "
                     "UPDATE assinaturas SET trial_confirmed=true, trial_ends_at=bounds.finish, "
                     "trial_started_at=bounds.finish-interval '168 hours' FROM bounds WHERE usuario_id=:uid"
                 ),
                 {"uid": uid},
             )
+        access = await browser_request(page, "/api/v1/billing/status")
+        assert access["status"] == 200 and access["data"]["access"] == "FULL_WRITE"
+        expiry = datetime.fromisoformat(access["data"]["trial_ends_at"]).timestamp()
         await page.goto(backend.FRONT + "/configuracoes?casa=7&apagadas=1")
         await expect(
             page.get_by_role("heading", name="Configurações", exact=True)
@@ -1194,15 +1197,8 @@ async def test_public_spa_timezone_preference(harness, engine_admin, viewport):
         assert (await browser_request(page, "/api/v1/painel/preferencias"))["data"] == {
             "fuso_horario": "UTC"
         }
-        async with engine_admin.begin() as conn:
-            await conn.execute(
-                text(
-                    "WITH bounds AS (SELECT clock_timestamp()-interval '1 second' AS finish) "
-                    "UPDATE assinaturas SET trial_confirmed=true, trial_ends_at=bounds.finish, "
-                    "trial_started_at=bounds.finish-interval '168 hours' FROM bounds WHERE usuario_id=:uid"
-                ),
-                {"uid": uid},
-            )
+        # Trial grants are immutable; the real server clock ends this grant.
+        await asyncio.sleep(max(0, expiry - time.time()) + 1)
         await page.reload()
         await expect(
             page.get_by_role("heading", name="Sua conta está em modo de leitura")
