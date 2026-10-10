@@ -24,6 +24,18 @@ export default defineConfig({
   ),
   webServer: [
     {
+      command:
+        'pnpm exec vite build --config tests/fixtures/configuracoes.vite.config.ts && pnpm exec vite preview --config tests/fixtures/configuracoes.vite.config.ts --host 127.0.0.1 --port 4179 --strictPort',
+      url: 'http://127.0.0.1:4179',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/acesso.vite.config.ts && pnpm exec vite preview --config tests/fixtures/acesso.vite.config.ts --host 127.0.0.1 --port 4178 --strictPort',
+      url: 'http://127.0.0.1:4178',
+      reuseExistingServer: false,
+    },
+    {
       env: {
         VITE_API_URL: 'http://127.0.0.1:8000',
         VITE_APP_ENV: 'production',
@@ -38,6 +50,12 @@ export default defineConfig({
       command:
         'pnpm exec vite build --config tests/fixtures/shell.vite.config.ts && pnpm exec vite preview --config tests/fixtures/shell.vite.config.ts --host 127.0.0.1 --port 4175 --strictPort',
       url: 'http://127.0.0.1:4175',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/enviar.vite.config.ts && pnpm exec vite preview --config tests/fixtures/enviar.vite.config.ts --host 127.0.0.1 --port 4176 --strictPort',
+      url: 'http://127.0.0.1:4176',
       reuseExistingServer: false,
     },
   ],

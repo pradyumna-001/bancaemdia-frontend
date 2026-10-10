@@ -5,19 +5,27 @@ own disposable PostgreSQL/OIDC/SMTP. This server stands in for the same-origin p
 """
 
 import asyncio
+import io
 import json
 import mimetypes
 import os
 import re
 import secrets
+import subprocess
+import sys
+import tempfile
 import time
+import zipfile
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import Thread
 from urllib.parse import parse_qsl, urlsplit
 from uuid import uuid4
 
 import httpx
 import pytest
+import redis
 from playwright.async_api import Error as BrowserError
 from playwright.async_api import async_playwright, expect
 from sqlalchemy import text
@@ -101,6 +109,8 @@ def serve_public_build():
 
         do_GET = handle_request
         do_POST = handle_request
+        do_PATCH = handle_request
+        do_DELETE = handle_request
 
     return ThreadingHTTPServer(("127.0.0.1", 58001), PublicBuild)
 
@@ -169,6 +179,283 @@ async def harness(banco, engine_admin, tmp_path, monkeypatch):
     monkeypatch.setattr(backend, "fetch", browser_request)
     async for instance in backend.harness.__wrapped__(banco, engine_admin, tmp_path):
         yield instance
+
+
+@pytest.mark.parametrize(
+    "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
+)
+async def test_public_spa_telegram_import(harness, engine_admin, viewport):
+    """Real file, queue, worker, materialization and RLS; only extraction input is cached.
+
+    No jobs, status, progress or final bets are inserted by the test. No paid IA is called.
+    Cache misses hit an owned local trap and fail this proof instead of using a provider.
+    """
+    from bancaemdia.cache.extracao_cache import (
+        LeituraGuardada,
+        chave_de_imagem,
+        chave_no_redis,
+    )
+    from bancaemdia.extracao.cliente import VERSAO_PROMPT
+    from bancaemdia.extracao.modelos import ExtracaoBilhete, Selecao
+
+    calls = []
+
+    class ProviderTrap(BaseHTTPRequestHandler):
+        def log_message(self, *_args):
+            pass
+
+        def do_POST(self):
+            calls.append("unexpected provider request")
+            self.send_error(503)
+
+    trap = ThreadingHTTPServer(("127.0.0.1", 0), ProviderTrap)
+    Thread(target=trap.serve_forever, daemon=True).start()
+    cache = redis.Redis.from_url("redis://127.0.0.1:56379/2")
+    # Redis belongs only to upload-compose.yml in this ephemeral CI job.
+    assert cache.ping()
+    photo = b"\xff\xd8\xff\xe0sandbox-upload-input\xff\xd9"
+    caption = "1u"
+    posted_at = datetime.fromisoformat("2026-07-24T16:17:52")
+    golden = LeituraGuardada(
+        cupons=[
+            ExtracaoBilhete(
+                casa="Betano",
+                tipo="simples",
+                evento="Velez x Instituto",
+                selecoes=[Selecao(mercado="Handicap", escolha="Instituto", odd=1.82)],
+                odd_total=1.82,
+                confianca=0.99,
+            )
+        ],
+        modelo="claude-haiku-4-5",
+    )
+    # The pinned backend keys extraction by the exact message minute used in
+    # the prompt, so the golden input must carry the same export timestamp.
+    cache_key = chave_no_redis(
+        chave_de_imagem(photo, caption, postada_em=posted_at), VERSAO_PROMPT
+    )
+    cache.set(cache_key, golden.model_dump_json(), ex=300)
+    content = io.BytesIO()
+    with zipfile.ZipFile(content, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            "ChatExport/result.json",
+            json.dumps(
+                {
+                    "name": "Canal descartável",
+                    "type": "channel",
+                    "id": 555,
+                    "messages": [
+                        {
+                            "id": 71,
+                            "type": "message",
+                            "date": posted_at.isoformat(),
+                            "from": "Teste",
+                            "text": caption,
+                            "photo": "photos/bilhete.jpg",
+                        }
+                    ],
+                }
+            ),
+        )
+        archive.writestr("ChatExport/photos/bilhete.jpg", photo)
+    harness.env.update(
+        REDIS_URL="redis://127.0.0.1:56379/2",
+        CELERY_BROKER_URL="redis://127.0.0.1:56379/0",
+        CELERY_RESULT_BACKEND="redis://127.0.0.1:56379/1",
+        API_INTERNAL_URL=backend.API,
+        UPLOAD_WEBHOOK_SECRET=secrets.token_urlsafe(32),
+        ANTHROPIC_API_KEY="sandbox-no-provider-credential",
+        ANTHROPIC_BASE_URL=f"http://127.0.0.1:{trap.server_port}",
+        ANTHROPIC_MAX_RETRIES="0",
+    )
+    with tempfile.TemporaryFile(mode="w+t") as worker_log:
+        worker = None
+        try:
+            await harness.restart()
+            worker = await asyncio.to_thread(
+                subprocess.Popen,
+                [
+                    sys.executable,
+                    "-m",
+                    "celery",
+                    "-A",
+                    "bancaemdia.workers.celery_app:app",
+                    "worker",
+                    "--pool=solo",
+                    "--concurrency=1",
+                    "--loglevel=WARNING",
+                    "--without-gossip",
+                    "--without-mingle",
+                ],
+                cwd=harness.root,
+                env=harness.env,
+                stdout=worker_log,
+                stderr=subprocess.STDOUT,
+            )
+            harness.processes.append(worker)
+            await asyncio.sleep(2)
+            if worker.poll() is not None:
+                worker_log.seek(0)
+                diagnostics = worker_log.read(65536)
+                classes = sorted(
+                    set(re.findall(r"(?m)^([\w.]+(?:Error|Exception)):", diagnostics))
+                )
+                modules = sorted(
+                    set(re.findall(r"No module named '([\w.]+)'", diagnostics))
+                )
+                pytest.fail(
+                    f"Worker exited before import: {worker.returncode}; classes={classes}; missing_modules={modules}"
+                )
+            async with async_playwright() as playwright:
+                browser = await playwright.chromium.launch()
+                contexts = [
+                    await browser.new_context(viewport=viewport) for _ in range(2)
+                ]
+                pages = [await ctx.new_page() for ctx in contexts]
+                for page in pages:
+                    await backend.register(
+                        page,
+                        uuid4().hex + "@example.org",
+                        secrets.token_urlsafe(24),
+                        harness=harness,
+                    )
+                owner = (await browser_request(pages[0], "/auth/session"))["data"][
+                    "usuario_id"
+                ]
+                async with engine_admin.connect() as conn:
+                    assert await conn.scalar(text("SELECT count(*) FROM uploads")) == 0
+                    assert await conn.scalar(text("SELECT count(*) FROM apostas")) == 0
+                writes = []
+                pages[0].on(
+                    "request",
+                    lambda request: (
+                        writes.append(1)
+                        if urlsplit(request.url).path == "/api/v1/upload"
+                        and request.method == "POST"
+                        else None
+                    ),
+                )
+                await pages[0].goto(backend.FRONT + "/enviar?estado=GREEN&apagadas=1")
+                await (
+                    pages[0]
+                    .get_by_label("Arquivo do export", exact=True)
+                    .set_input_files(
+                        {
+                            "name": "ChatExport.zip",
+                            "mimeType": "application/zip",
+                            "buffer": content.getvalue(),
+                        }
+                    )
+                )
+                await (
+                    pages[0]
+                    .get_by_role("button", name="Enviar export", exact=True)
+                    .click()
+                )
+                await expect(
+                    pages[0].get_by_role(
+                        "heading", name="Importação concluída", exact=True
+                    )
+                ).to_be_visible(timeout=60000)
+                job_id = dict(parse_qsl(urlsplit(pages[0].url).query))["envio"]
+                status = await browser_request(pages[0], "/api/v1/upload/" + job_id)
+                assert status["status"] == 200 and status["data"]["bets_processed"] == 1
+                assert status["data"]["status"] == "completed"
+                assert status["data"]["cost_usd"] == 0
+                assert not calls, (
+                    "Extraction must use the golden cache, never a paid provider"
+                )
+                assert (await browser_request(pages[1], "/api/v1/upload/" + job_id))[
+                    "status"
+                ] == 404
+                async with engine_admin.connect() as conn:
+                    row = (
+                        (
+                            await conn.execute(
+                                text(
+                                    "SELECT usuario_id,chat_id,message_id,chave,odd FROM apostas"
+                                )
+                            )
+                        )
+                        .mappings()
+                        .one()
+                    )
+                    assert row["usuario_id"] == owner and row["chat_id"] == 555
+                    assert row["message_id"] == 71
+                    assert float(row["odd"]) == 1.82
+                    created = (
+                        await conn.execute(
+                            text(
+                                "SELECT payload_json FROM eventos WHERE usuario_id=:owner "
+                                "AND aposta_chave=:key AND tipo='APOSTA_CRIADA'"
+                            ),
+                            {"owner": owner, "key": row["chave"]},
+                        )
+                    ).scalar_one()
+                    assert created["casa"].lower() == "betano"
+                await pages[0].reload()
+                await expect(
+                    pages[0].get_by_role(
+                        "heading", name="Importação concluída", exact=True
+                    )
+                ).to_be_visible()
+                assert len(writes) == 1, "Reload resumes GET, never POST"
+                assert (
+                    dict(parse_qsl(urlsplit(pages[0].url).query))["estado"] == "GREEN"
+                )
+                assert (
+                    not await pages[0]
+                    .get_by_text(
+                        re.compile("Autorizar|estimativa|custo", re.IGNORECASE)
+                    )
+                    .count()
+                )
+                await browser.close()
+            assert worker.poll() is None, "Actual worker must survive the import"
+        except BaseException:
+            worker_log.seek(0)
+            diagnostics = worker_log.read(65536)
+            classes = sorted(
+                set(re.findall(r"\b([\w.]+(?:Error|Exception)):", diagnostics))
+            )
+            modules = sorted(
+                set(re.findall(r"No module named '([\w.]+)'", diagnostics))
+            )
+            print(
+                f"Worker diagnostics: exit={worker.poll() if worker else None}; classes={classes}; missing_modules={modules}"
+            )
+            # Celery deliberately removes private exception text from its log.
+            # Inspect only bounded state/type/source frames, never task values,
+            # arguments, messages, credentials or raw result/traceback content.
+            results = redis.Redis.from_url(harness.env["CELERY_RESULT_BACKEND"])
+            try:
+                for key in results.scan_iter(match="celery-task-meta-*", count=100):
+                    item = json.loads(results.get(key) or "{}")
+                    state = item.get("status")
+                    if state not in {"FAILURE", "RETRY"}:
+                        continue
+                    value = item.get("result")
+                    kind = value.get("exc_type") if isinstance(value, dict) else None
+                    kind = (
+                        kind
+                        if isinstance(kind, str) and re.fullmatch(r"[\w.]+", kind)
+                        else None
+                    )
+                    frames = re.findall(
+                        r'File "[^"\n]*[/\\](bancaemdia[/\\][^"\n]+\.py)", line (\d+), in ([\w<>]+)',
+                        item.get("traceback") or "",
+                    )
+                    print(
+                        f"Worker task state={state}; class={kind}; frames={frames[-8:]}"
+                    )
+            finally:
+                results.close()
+            raise
+        finally:
+            cache.delete(cache_key)
+            cache.close()
+            await asyncio.to_thread(trap.shutdown)
+            trap.server_close()
 
 
 @pytest.mark.parametrize(
@@ -297,6 +584,9 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         )
         assert created["status"] == 201
         # Add one disposable pending review, to distinguish the real per-user caches.
+        initial_reviews = await browser_request(pa, "/api/v1/revisao/stats")
+        assert initial_reviews["status"] == 200
+        expected_total = initial_reviews["data"]["total"] + 1
         async with engine_admin.begin() as conn:
             result = await conn.execute(
                 text(
@@ -305,13 +595,15 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
                 {"id": sa["usuario_id"]},
             )
             assert result.rowcount == 1
+        actual_reviews = await browser_request(pa, "/api/v1/revisao/stats")
+        assert actual_reviews["status"] == 200
+        assert actual_reviews["data"]["total"] == expected_total
+        review_name = re.compile(rf"Revisão.*{expected_total} pendências")
         await pa.goto(backend.FRONT + "/painel?apagadas=1#serie")
         await expect(
             pa.get_by_role("heading", name="Painel", exact=True)
         ).to_be_visible()
-        await expect(
-            pa.get_by_role("link", name=re.compile(r"Revisão.*1 pendências")).first
-        ).to_be_visible()
+        await expect(pa.get_by_role("link", name=review_name).first).to_be_visible()
         second = await a.new_page()
         await second.goto(backend.FRONT + "/painel")
         await expect(
@@ -342,9 +634,7 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         await complete_hosted_entry(
             second, email_b, password_b, backend.FRONT + "/painel"
         )
-        await expect(
-            pa.get_by_role("link", name=re.compile(r"Revisão.*1 pendências"))
-        ).to_have_count(0)
+        await expect(pa.get_by_role("link", name=review_name)).to_have_count(0)
         await expect(
             pa.get_by_role("heading", name="Painel", exact=True)
         ).to_be_visible()
@@ -582,3 +872,359 @@ async def test_public_spa_expired_confirmation(
             await browser.close()
     except BrowserError:
         pytest.fail("Expired account action recovery did not complete", pytrace=False)
+
+
+@pytest.mark.parametrize(
+    "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
+)
+async def test_public_spa_commercial_access(harness, engine_admin, viewport, request):
+    """Real server expiry and read-only SPA, no payment or production data."""
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch()
+        context = await browser.new_context(viewport=viewport)
+        page = await context.new_page()
+        violations = []
+        hosted_diagnostics = []
+
+        def document_error(_error):
+            origin = urlsplit(page.url).netloc
+            if origin == urlsplit(backend.FRONT).netloc:
+                violations.append("public pageerror")
+            elif origin == urlsplit(backend.ISSUER).netloc:
+                # Keep numeric issuer diagnostics without protocol URLs/credentials.
+                hosted_diagnostics.append("hosted document pageerror")
+            else:
+                violations.append("unexpected document pageerror")
+
+        page.on("pageerror", document_error)
+        session, _ = await backend.register(
+            page,
+            uuid4().hex + "@example.org",
+            secrets.token_urlsafe(24),
+            harness=harness,
+        )
+        uid = session["usuario_id"]
+        async with engine_admin.begin() as conn:
+            await conn.execute(text("SELECT billing_activate_rollout()"))
+            await conn.execute(
+                text(
+                    "WITH bounds AS (SELECT clock_timestamp()+interval '45 seconds' AS finish) "
+                    "UPDATE assinaturas SET trial_confirmed=true, trial_ends_at=bounds.finish, "
+                    "trial_started_at=bounds.finish-interval '168 hours' FROM bounds WHERE usuario_id=:uid"
+                ),
+                {"uid": uid},
+            )
+        await page.goto(backend.FRONT + "/painel?casa=7&apagadas=1")
+        await expect(
+            page.get_by_role("heading", name="Painel", exact=True)
+        ).to_be_visible()
+        current = await browser_request(page, "/auth/session")
+        status = await browser_request(page, "/api/v1/billing/status")
+        assert status["status"] == 200 and status["data"]["access"] == "FULL_WRITE"
+        await expect(page.get_by_role("region", name="Acesso à conta")).to_have_count(0)
+        created = await browser_request(
+            page,
+            "/api/v1/apostas",
+            method="POST",
+            csrf=current["data"]["csrf_token"],
+            body={"casa": "betano", "odd": 2, "stake_unidades": 1},
+        )
+        assert created["status"] == 201
+        from datetime import datetime
+
+        expiry = datetime.fromisoformat(status["data"]["trial_ends_at"]).timestamp()
+        await asyncio.sleep(max(0, expiry - time.time()) + 1)
+        # The actual database clock ends access; browser dates never grant trial.
+        await page.reload()
+        await expect(
+            page.get_by_role("heading", name="Sua conta está em modo de leitura")
+        ).to_be_visible()
+        await expect(
+            page.get_by_role("link", name="Ver assinatura", exact=True)
+        ).to_have_attribute("href", "/assinatura?casa=7&apagadas=1")
+        live = (await browser_request(page, "/auth/session"))["data"]
+        assert live["usuario_id"] == uid
+        refused = await browser_request(
+            page,
+            "/api/v1/apostas",
+            method="POST",
+            csrf=live["csrf_token"],
+            body={"casa": "betano", "odd": 2, "stake_unidades": 1},
+        )
+        assert (
+            refused["status"] == 402
+            and refused["data"]["detail"] == "account_read_only"
+        )
+        assert (await browser_request(page, "/api/v1/apostas"))["data"]["pagination"][
+            "total"
+        ] == 1
+        exported = await browser_request(page, "/api/v1/usuario/me/export?formato=json")
+        assert exported["status"] == 200
+        calculated = await browser_request(
+            page,
+            "/api/v1/calculadoras/mercado-justo",
+            method="POST",
+            csrf=live["csrf_token"],
+            body={"outcomes": [{"name": "A", "odd": "2"}, {"name": "B", "odd": "2"}]},
+        )
+        assert calculated["status"] == 200
+        # Real UI, cookie/CSRF, issuance/expiry/redemption/revocation under READ_ONLY.
+        # The private Telegram transport is represented by IncomingCommand locally;
+        # no live bot, photo, external Telegram request or paid provider is used.
+        from types import SimpleNamespace
+        from unittest.mock import patch
+
+        from bancaemdia.services import telegram_link as links
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        async def redeem(code):
+            factory = async_sessionmaker(engine_admin, expire_on_commit=False)
+            with patch.object(
+                links,
+                "get_settings",
+                return_value=SimpleNamespace(
+                    COLETA_TOKEN_SECRET=harness.env["COLETA_TOKEN_SECRET"]
+                ),
+            ):
+                async with factory() as database:
+                    await database.execute(
+                        text("SELECT set_config('app.current_user_id', :uid, true)"),
+                        {"uid": str(uid)},
+                    )
+                    return await links.redeem_command(
+                        database,
+                        links.IncomingCommand(
+                            chat_type="private",
+                            sender_user_id=1000000 + uid,
+                            chat_id=1000000 + uid,
+                            text="/vincular " + code,
+                        ),
+                    )
+
+        await page.goto(backend.FRONT + "/configuracoes/conexoes?casa=7&apagadas=1")
+        await expect(
+            page.get_by_role("heading", name="Telegram não conectado", exact=True)
+        ).to_be_visible()
+        async with page.expect_response(
+            lambda r: r.url.endswith("/telegram/link-codes")
+        ) as pending:
+            await page.get_by_role("button", name="Gerar código temporário").click()
+        issued = await pending.value
+        assert issued.status == 201
+        first_code = (await issued.json())["code"]
+        if os.environ.get("GITHUB_ACTIONS"):
+            print("::add-mask::" + first_code)
+        await expect(page.locator(".telegram-comando")).to_be_visible()
+        async with engine_admin.begin() as database:
+            await database.execute(
+                text(
+                    "UPDATE telegram_link_codes SET issued_at=clock_timestamp()-interval '31 minutes', "
+                    "expires_at=clock_timestamp()-interval '1 second' "
+                    "WHERE usuario_id=:uid AND consumed_at IS NULL"
+                ),
+                {"uid": uid},
+            )
+        accepted = await redeem(first_code)
+        assert accepted is False
+        await page.get_by_role("button", name="Ocultar código e parar consulta").click()
+        await page.get_by_role("button", name="Preparar novo código").click()
+        async with page.expect_response(
+            lambda r: r.url.endswith("/telegram/link-codes")
+        ) as pending:
+            await page.get_by_role("button", name="Confirmar novo código").click()
+        issued = await pending.value
+        assert issued.status == 201
+        second_code = (await issued.json())["code"]
+        if os.environ.get("GITHUB_ACTIONS"):
+            print("::add-mask::" + second_code)
+        accepted = await redeem(second_code)
+        assert accepted is True
+        duplicate = await redeem(second_code)
+        assert duplicate is False
+        await page.get_by_role("button", name="Consultar vínculo").click()
+        await expect(
+            page.get_by_role("heading", name="Telegram conectado", exact=True)
+        ).to_be_visible()
+        await expect(page.locator(".telegram-comando")).to_have_count(0)
+        fresh = (await browser_request(page, "/auth/session"))["data"]
+        extra = await browser_request(
+            page,
+            "/api/v1/telegram/link-codes",
+            method="POST",
+            csrf=fresh["csrf_token"],
+        )
+        assert extra["status"] == 201
+        pending_code = extra["data"]["code"]
+        if os.environ.get("GITHUB_ACTIONS"):
+            print("::add-mask::" + pending_code)
+        await page.get_by_role("button", name="Revogar vínculo", exact=True).click()
+        async with page.expect_response(
+            lambda r: r.url.endswith("/telegram/link") and r.request.method == "DELETE"
+        ) as pending:
+            await page.get_by_role("button", name="Confirmar revogação").click()
+        revoked = await pending.value
+        assert revoked.status == 200
+        assert (await revoked.json())["revoked"] is True
+        await expect(
+            page.get_by_role("heading", name="Telegram não conectado", exact=True)
+        ).to_be_visible()
+        accepted = await redeem(pending_code)
+        assert accepted is False
+        assert (await browser_request(page, "/api/v1/apostas"))["data"]["pagination"][
+            "total"
+        ] == 1
+        await expect(
+            page.get_by_role("link", name="Importar histórico em Enviar")
+        ).to_have_attribute("href", "/enviar?casa=7&apagadas=1")
+        # Simulate the sandbox provider's confirmed paid period; never a live checkout.
+        async with engine_admin.begin() as conn:
+            price = await conn.scalar(
+                text(
+                    "INSERT INTO billing_prices(amount_cents,currency,frequency,valid_from,published) "
+                    "VALUES (12345,'BRL','MONTHLY',clock_timestamp(),false) RETURNING id"
+                )
+            )
+            await conn.execute(
+                text(
+                    "UPDATE assinaturas SET status='ACTIVE', price_id=:price, "
+                    "current_period_started_at=clock_timestamp()-interval '1 minute', "
+                    "current_period_ends_at=clock_timestamp()+interval '1 hour' WHERE usuario_id=:uid"
+                ),
+                {"uid": uid, "price": price},
+            )
+        await page.get_by_role("button", name="Conferir acesso", exact=True).click()
+        await expect(page.get_by_role("region", name="Acesso à conta")).to_have_count(0)
+        assert (await browser_request(page, "/api/v1/billing/status"))["data"][
+            "access"
+        ] == "FULL_WRITE"
+        # Revalidation does not replay the previously denied intent.
+        assert (await browser_request(page, "/api/v1/apostas"))["data"]["pagination"][
+            "total"
+        ] == 1
+        assert all(
+            cookie["httpOnly"] for cookie in await context.cookies(backend.FRONT)
+        )
+        assert not await page.evaluate(
+            "Boolean(document.cookie) || Object.keys(localStorage).length > 0"
+        )
+        request.node.user_properties.append(
+            ("hosted_document_pageerrors", str(len(hosted_diagnostics)))
+        )
+        assert not violations
+        await browser.close()
+
+
+@pytest.mark.parametrize(
+    "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
+)
+async def test_public_spa_timezone_preference(harness, engine_admin, viewport):
+    """Actual preference PATCH/GET, cookie/CSRF, persistence and tenant isolation."""
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch()
+        context = await browser.new_context(viewport=viewport)
+        other_context = await browser.new_context(viewport=viewport)
+        page = await context.new_page()
+        other = await other_context.new_page()
+        session, _ = await backend.register(
+            page,
+            uuid4().hex + "@example.org",
+            secrets.token_urlsafe(24),
+            harness=harness,
+        )
+        uid = session["usuario_id"]
+        async with engine_admin.begin() as conn:
+            await conn.execute(text("SELECT billing_activate_rollout()"))
+            await conn.execute(
+                text(
+                    "WITH bounds AS (SELECT clock_timestamp()+interval '10 minutes' AS finish) "
+                    "UPDATE assinaturas SET trial_confirmed=true, trial_ends_at=bounds.finish, "
+                    "trial_started_at=bounds.finish-interval '168 hours' FROM bounds WHERE usuario_id=:uid"
+                ),
+                {"uid": uid},
+            )
+        await page.goto(backend.FRONT + "/configuracoes?casa=7&apagadas=1")
+        await expect(
+            page.get_by_role("heading", name="Configurações", exact=True)
+        ).to_be_visible()
+        picker = page.get_by_label("Fuso das análises", exact=True)
+        await expect(picker).to_be_enabled()
+        await picker.click()
+        await page.get_by_label("Buscar cidade ou região").fill("UTC")
+        await page.get_by_role("button", name="UTC", exact=True).click()
+        async with page.expect_response(
+            lambda r: (
+                r.url.endswith("/painel/preferencias") and r.request.method == "PATCH"
+            )
+        ) as pending:
+            await page.get_by_role("button", name="Salvar fuso", exact=True).click()
+        result = await pending.value
+        assert result.status == 200 and (await result.json()) == {"fuso_horario": "UTC"}
+        assert "no-store" in result.headers["cache-control"]
+        assert "x-csrf-token" in result.request.headers
+        assert "authorization" not in result.request.headers
+        await expect(page.get_by_text("Fuso salvo: UTC.", exact=False)).to_be_visible()
+        await page.reload()
+        await expect(picker).to_contain_text("UTC")
+        current = (await browser_request(page, "/auth/session"))["data"]
+        invalid = await browser_request(
+            page,
+            "/api/v1/painel/preferencias",
+            method="PATCH",
+            csrf=current["csrf_token"],
+            body={"fuso_horario": "America/Inventada"},
+        )
+        assert invalid["status"] == 422
+        no_csrf = await browser_request(
+            page,
+            "/api/v1/painel/preferencias",
+            method="PATCH",
+            body={"fuso_horario": "UTC"},
+        )
+        assert no_csrf["status"] == 403
+        await backend.register(
+            other,
+            uuid4().hex + "@example.org",
+            secrets.token_urlsafe(24),
+            harness=harness,
+        )
+        other_fuso = await browser_request(other, "/api/v1/painel/preferencias")
+        assert other_fuso["status"] == 200 and other_fuso["data"] == {
+            "fuso_horario": "America/Sao_Paulo"
+        }
+        assert (await browser_request(page, "/api/v1/painel/preferencias"))["data"] == {
+            "fuso_horario": "UTC"
+        }
+        async with engine_admin.begin() as conn:
+            await conn.execute(
+                text(
+                    "WITH bounds AS (SELECT clock_timestamp()-interval '1 second' AS finish) "
+                    "UPDATE assinaturas SET trial_confirmed=true, trial_ends_at=bounds.finish, "
+                    "trial_started_at=bounds.finish-interval '168 hours' FROM bounds WHERE usuario_id=:uid"
+                ),
+                {"uid": uid},
+            )
+        await page.reload()
+        await expect(
+            page.get_by_role("heading", name="Sua conta está em modo de leitura")
+        ).to_be_visible()
+        await expect(picker).to_be_disabled()
+        await expect(
+            page.get_by_role("button", name="Salvar fuso", exact=True)
+        ).to_be_disabled()
+        assert (await browser_request(page, "/api/v1/painel/preferencias"))[
+            "status"
+        ] == 200
+        refused = await browser_request(
+            page,
+            "/api/v1/painel/preferencias",
+            method="PATCH",
+            csrf=current["csrf_token"],
+            body={"fuso_horario": "America/Manaus"},
+        )
+        assert refused["status"] == 402
+        await expect(
+            page.get_by_role("link", name="Conexões", exact=True)
+        ).to_have_attribute("href", "/configuracoes/conexoes?casa=7&apagadas=1")
+        await context.close()
+        await other_context.close()
+        await browser.close()

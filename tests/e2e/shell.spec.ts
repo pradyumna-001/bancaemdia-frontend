@@ -153,11 +153,16 @@ test('fila vazia, erro e recuperação não fabricam contador nem bloqueiam nave
 });
 
 test('build público não permite abrir a sessão simulada', async ({ page }) => {
-  await page.goto('/tests/fixtures/shell/index.html');
-  await expect(
-    page.getByRole('heading', { name: 'Não achei esta página' }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('navigation', { name: 'Navegação principal', exact: true }),
-  ).toHaveCount(0);
+  for (const fixture of ['shell', 'enviar']) {
+    await page.goto(`/tests/fixtures/${fixture}/index.html`);
+    await expect(
+      page.getByRole('heading', { name: 'Não achei esta página' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('navigation', {
+        name: 'Navegação principal',
+        exact: true,
+      }),
+    ).toHaveCount(0);
+  }
 });

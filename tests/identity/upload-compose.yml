@@ -1,0 +1,11 @@
+name: bancaemdia-frontend-upload-acceptance
+services:
+  redis:
+    # Same image as the immutable API sandbox; no persistence or shared Redis.
+    image: redis:7-alpine
+    ports: ['127.0.0.1:56379:6379']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 5s
+      retries: 30

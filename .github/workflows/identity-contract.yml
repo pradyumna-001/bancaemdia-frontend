@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
-      IDENTITY_API_SHA: ad7cd9fb095ee6b1b9855504a42e23d25341dee2
+      IDENTITY_API_SHA: b916f54331f14cf47a3800324bd61d8638043c06
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -66,6 +66,7 @@ jobs:
           echo "DATABASE_URL_REPLICA=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
       - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d --wait postgres mailpit
       - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d issuer
+      - run: docker compose -f tests/identity/upload-compose.yml up -d --wait redis
       - name: Comprovar jornada do emissor e invariantes de provisionamento
         working-directory: .identity-api
         run: |
@@ -86,4 +87,6 @@ jobs:
             .identity-api/browser-contract.xml
       - name: Encerrar somente o sandbox deste job
         if: always()
-        run: docker compose -f .identity-api/tests/identity/docker-compose.yml down
+        run: |
+          docker compose -f tests/identity/upload-compose.yml down
+          docker compose -f .identity-api/tests/identity/docker-compose.yml down
