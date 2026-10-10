@@ -4,14 +4,15 @@ test('marca e favicon são consistentes no login, cabeçalho e erros', async ({
   page,
 }, testInfo) => {
   for (const theme of ['claro', 'escuro'] as const) {
+    await page.emulateMedia({
+      colorScheme: theme === 'claro' ? 'light' : 'dark',
+    });
     for (const route of ['/login', '/tutorial', '/nao-existe']) {
       await page.goto(route);
-      await page
-        .getByRole('radio', {
-          name: theme === 'claro' ? 'Claro' : 'Escuro',
-          exact: true,
-        })
-        .check();
+      await expect(page.locator('html')).toHaveAttribute('data-tema', theme);
+      if (route === '/login') {
+        await expect(page.getByRole('radio')).toHaveCount(0);
+      }
       await expect(
         page
           .locator('header')
