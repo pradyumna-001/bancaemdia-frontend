@@ -1,0 +1,193 @@
+.aposta-detalhe {
+  max-width: 72rem;
+}
+.aposta-voltar {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo-toque);
+  margin-bottom: var(--espaco-16);
+}
+.aposta-detalhe-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: var(--espaco-24);
+  margin-bottom: var(--espaco-24);
+}
+.aposta-detalhe-topo h1 {
+  margin-block: var(--espaco-8);
+}
+.aposta-detalhe-topo > div {
+  min-width: 0;
+}
+.aposta-detalhe-topo > .aposta-estado {
+  flex-shrink: 0;
+}
+.aposta-detalhe-valores {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--espaco-16);
+  padding: var(--espaco-24);
+  margin-block: var(--espaco-24);
+  background: var(--superficie-secundaria);
+  border-radius: var(--raio-painel);
+}
+.aposta-detalhe-valores dd {
+  font-size: var(--fonte-secao);
+  font-weight: var(--peso-destaque);
+}
+.aposta-detalhe dt {
+  color: var(--tinta-secundaria);
+}
+.aposta-detalhe dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.aposta-detalhe-grid,
+.aposta-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-24);
+}
+.aposta-secao {
+  margin-block: var(--espaco-24);
+  padding: var(--espaco-24);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  min-width: 0;
+}
+.aposta-detalhe-grid .aposta-secao {
+  margin: 0;
+}
+.aposta-secao h2 {
+  margin-top: 0;
+}
+.aposta-secao > summary {
+  cursor: pointer;
+  min-height: var(--alvo-toque);
+  font-weight: var(--peso-destaque);
+  display: list-item;
+}
+.aposta-registro {
+  display: grid;
+  gap: var(--espaco-16);
+}
+.aposta-alerta {
+  background: var(--atencao-fundo);
+  color: var(--atencao);
+  border: 1px solid var(--borda);
+  padding: var(--espaco-16);
+  border-radius: var(--raio-controle);
+}
+.aposta-detalhe button,
+.aposta-detalhe input[type='text'] {
+  min-height: var(--alvo-toque);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--tinta);
+  padding: var(--espaco-8) var(--espaco-12);
+}
+.aposta-detalhe button {
+  cursor: pointer;
+}
+.aposta-detalhe label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-8);
+}
+.aposta-detalhe input[type='text'] {
+  width: 100%;
+}
+.aposta-detalhe fieldset {
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  margin: 0;
+}
+.aposta-detalhe fieldset > legend {
+  margin-bottom: var(--espaco-12);
+  font-weight: var(--peso-destaque);
+}
+.aposta-detalhe .aposta-checkbox,
+.aposta-resultados label,
+.aposta-escolhas label {
+  flex-direction: row;
+  align-items: center;
+  min-height: var(--alvo-toque);
+}
+.aposta-resultados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-8) var(--espaco-24);
+}
+.aposta-dialog {
+  color: var(--tinta);
+  background: var(--superficie);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-painel);
+  padding: var(--espaco-24);
+  width: min(40rem, calc(100% - var(--espaco-32)));
+  max-height: 85dvh;
+}
+.aposta-dialog::backdrop {
+  background: var(--sombra-modal);
+}
+.aposta-escolhas {
+  display: grid;
+  gap: var(--espaco-8);
+  margin-block: var(--espaco-16);
+}
+.aposta-escolhas button {
+  text-align: left;
+}
+.aposta-escolhas [aria-pressed='true'] {
+  font-weight: var(--peso-destaque);
+  border: 2px solid var(--acao);
+}
+.aposta-escolhas small {
+  display: block;
+  color: var(--tinta-secundaria);
+}
+.aposta-historico {
+  padding-left: var(--espaco-24);
+}
+.aposta-historico > li {
+  padding-block: var(--espaco-16);
+  border-bottom: 1px solid var(--borda);
+}
+.aposta-historico h3 {
+  margin: 0;
+}
+.aposta-midia-espaco {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espaco-16);
+  background: var(--superficie-secundaria);
+  margin-block: var(--espaco-16);
+}
+.aposta-midia-espaco img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+@media (max-width: 48rem) {
+  .aposta-detalhe-topo {
+    flex-direction: column;
+    gap: var(--espaco-8);
+  }
+  .aposta-detalhe-valores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: var(--espaco-16);
+  }
+  .aposta-detalhe-grid,
+  .aposta-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .aposta-secao {
+    padding: var(--espaco-16);
+  }
+}

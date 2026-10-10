@@ -22,11 +22,19 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  mkdirSync('dist-security', { recursive: true });
+  const directory = process.argv[2] ?? 'dist';
+  const securityDirectory = process.argv[3] ?? 'dist-security';
+  if (!(
+    (directory === 'dist' && securityDirectory === 'dist-security') ||
+    (directory === 'dist-apostas-fixture' &&
+      securityDirectory === 'dist-apostas-security')
+  ))
+    throw new Error('Destino CSP não reconhecido.');
+  mkdirSync(securityDirectory, { recursive: true });
   writeFileSync(
-    'dist-security/default.conf',
+    `${securityDirectory}/default.conf`,
     securityConfig(
-      readFileSync('dist/index.html', 'utf8'),
+      readFileSync(`${directory}/index.html`, 'utf8'),
       readFileSync('nginx/default.conf', 'utf8'),
     ),
   );

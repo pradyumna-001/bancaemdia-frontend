@@ -16,9 +16,11 @@ Revisado pela #49/#11/#12, última revisão em 02/10/2026, conforme ADR019. Cont
 - Sessão não implica permissão comercial. 401 reautentica; 402 account_read_only preserva consulta/exportação e oferece Assinatura. Capacidade vem do servidor; não depende só do verbo HTTP.
 - Idempotency-Key por intenção quando exigido (ex.: Caixa, Checkout, troca); não aplicar retry automático genérico a mutações. Timeout pode deixar resultado desconhecido, exigindo reconciliação.
 - Paginação conforme endpoint, atualmente page/page_size nas listas principais; Mostrar mais pode acumular páginas sem inventar cursor.
-- Job 202 usa status/progresso reais. Cancelar polling não cancela processamento. Autorização/recusa de gasto depende de contrato ainda ausente (#50), antes de executar fluxo que exige consentimento.
+- Job 202 usa status/progresso reais. Cancelar polling não cancela processamento. Conforme decisão de 06/10/2026 no ADR019, o usuário envia o export e acompanha o resultado, sem estimativa/aviso de custo de processamento nem aprovação de gasto. Limites máximos de gasto por usuário são internos ao backend; não há dependência de novo protocolo de aprovação na #50.
 
 ## Consequences
+
+Na retomada autorizada da #18 (10/10/2026), `gen-types` também gera descritores de rotas/query e validadores compactos de resposta do mesmo OpenAPI completo verificado. A projeção visual recebe `unknown` na fronteira de capacidades futuras somente após validar com esse descritor, sem DTO de domínio manual. A candidata única #187 é identificada como `pull_request` no manifesto; o gate de publicação exige integração e reconciliação. Provas de #184 ficam em build de testes separado. A integração das duas dependências deve gerar um único documento oficial, sem união de branches; ver `docs/contracts/apostas.md`.
 
 A #12 substitui os placeholders de conta por páginas que encaminham os intents login/signup/recover, com ações explícitas e retorno validado. Credenciais, confirmação, labels/validação de campos e reenvios ficam no emissor hospedado. Criar conta não ativa assinatura; não há formulário/endpoints locais de senha nem convite inventado. Parâmetros transitórios de protocolo saem da URL antes da renderização e dos destinos antes de navegação/persistência do fragmento. Recuperação interrompida não anuncia revogação; somente conclusão de intent=recover o faz. Detalhes e limites de documentos externos em `docs/contracts/conta.md`.
 

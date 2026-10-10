@@ -16,7 +16,7 @@ Vitest/Testing Library para regras de apresentação e componentes; fixtures/MSW
 4. Filtros/pílulas/URL/reload, página e somente apagadas; resumo da mesma população.
 5. Detalhe/correção, apagar/restaurar, freebet com face preservada e concorrência.
 6. Resultados: 20 simples em 20 toques; duplo toque seguro, desfazer sem sobrescrever alteração recente.
-7. Upload Telegram, consentimento conforme contrato, progresso/parcial/limite; prints e XLSX prévia/confirmar sem duplicidade.
+7. Upload Telegram → progresso → resultado, parcial/limite/zero apostas, sem estimativa/aviso de custo de processamento nem aprovação de gasto (ADR019, decisão de 06/10/2026); prints e XLSX prévia/confirmar sem duplicidade.
 8. Revisão por motivo: leitura com/sem foto, conta, par e zerar fila mantendo saída.
 9. Caixa: depósito/retry, transferência atômica, saldo desconhecido, extrato e conta alheia.
 10. Bot: código/vínculo/expiração/revogação; extensão: instalações independentes e credenciais temporárias. Matching/v2 só quando contratos integrados.
@@ -27,6 +27,8 @@ Vitest/Testing Library para regras de apresentação e componentes; fixtures/MSW
 15. Sistema/Claro/Escuro, sem flash, storage bloqueado, teclado, zoom, foco, reflow320 e alternativas dos gráficos.
 
 ## Gates e evidência
+
+A #18 preserva todas as provas de identidade e acrescenta lista operacional na versão única backend #187. Um job separado usa a versão única #184 e build de testes isolado para filtros/população/resumo com cookies, PostgreSQL e emissor reais. Validar cada relatório com contagem exata e zero skips. A prova separada não é deploy conjunto; publicação depende de um único contrato integrado e do gate de ancestralidade. E2E de apresentação permanece nos três browsers e nos dois viewports, incluindo teste negativo da aplicação pública contra overrides URL/storage.
 
 - Antes de push: make lint, typecheck e test. CI completa e segurança verdes no SHA final; PR fora de rascunho. Não remover gates nem pular falhas para declarar pronto.
 - E2E nos três browsers e dois viewports, capturas e traces sem segredos. Axe nos cenários pertinentes e revisão manual complementar; não confundir com certificação completa ou teste com participantes.

@@ -17,7 +17,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
-      IDENTITY_API_SHA: ad7cd9fb095ee6b1b9855504a42e23d25341dee2
+      # One reviewed candidate, not an integrated contract or a deployment.
+      IDENTITY_API_SHA: 186be7482437eb5dd4b70914843dc6c5f90395f1
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -66,6 +67,7 @@ jobs:
           echo "DATABASE_URL_REPLICA=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
       - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d --wait postgres mailpit
       - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d issuer
+      - run: docker compose -f tests/identity/upload-compose.yml up -d --wait redis
       - name: Comprovar jornada do emissor e invariantes de provisionamento
         working-directory: .identity-api
         run: |
@@ -74,7 +76,7 @@ jobs:
       - name: Comprovar cookie/CSRF/isolamento com SPA pública e CSP exata
         working-directory: .identity-api
         run: |
-          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_browser_contract.py --junitxml=browser-contract.xml --tb=short -v
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_browser_contract.py -k 'not authenticated_bet_filters' --junitxml=browser-contract.xml --tb=short -v
           python ../tests/identity/check_results.py browser-contract.xml
       - uses: actions/upload-artifact@v4
         if: always()
@@ -86,4 +88,90 @@ jobs:
             .identity-api/browser-contract.xml
       - name: Encerrar somente o sandbox deste job
         if: always()
-        run: docker compose -f .identity-api/tests/identity/docker-compose.yml down
+        run: |
+          docker compose -f tests/identity/upload-compose.yml down
+          docker compose -f .identity-api/tests/identity/docker-compose.yml down
+
+  filters:
+    name: Filtros reais (${{ github.event_name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      # One reviewed candidate, not an integrated contract or a deployment.
+      IDENTITY_API_SHA: 9b42a3579518a84d348d272afbaeff88f9119825
+      APP_ENV: testing
+      JWT_ALGORITHM: RS256
+      JWT_AUDIENCE: bancaemdia-api
+      JWT_ISSUER: bancaemdia-api
+      JWT_SECRET_KEY: unused-for-rs256-acceptance
+      REDIS_URL: redis://localhost:6379/0
+      RATE_LIMIT_STORAGE: memory://
+      OTEL_EXPORTER_OTLP_ENDPOINT: ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: pradyumna-001/bancaemdia-api
+          ref: ${{ env.IDENTITY_API_SHA }}
+          path: .identity-api
+          persist-credentials: false
+      - name: Conferir versão única do backend de sandbox
+        run: test "$(git -C .identity-api rev-parse HEAD)" = "$IDENTITY_API_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm install --global pnpm@10.34.6
+      - run: make install build
+      - name: Construir somente o exercício de filtros e sua CSP
+        run: |
+          pnpm exec vite build --config tests/fixtures/apostas.vite.config.ts
+          node scripts/build-csp.mjs dist-apostas-fixture dist-apostas-security
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e '.identity-api[dev]'
+      - run: ruff check tests/identity && ruff format --check tests/identity
+      - run: python -m playwright install --with-deps chromium
+      - name: Gerar credenciais exclusivamente descartáveis e mascaradas
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_password=$(openssl rand -hex 24)
+          admin_password=$(openssl rand -hex 24)
+          echo "::add-mask::$db_password"
+          echo "::add-mask::$admin_password"
+          echo "POSTGRES_PASSWORD=$db_password" >> "$GITHUB_ENV"
+          echo "KC_BOOTSTRAP_ADMIN_USERNAME=identity-admin-$(openssl rand -hex 8)" >> "$GITHUB_ENV"
+          echo "KC_BOOTSTRAP_ADMIN_PASSWORD=$admin_password" >> "$GITHUB_ENV"
+          echo "TEST_DATABASE_URL=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+          echo "DATABASE_URL_REPLICA=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+      - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d --wait postgres mailpit
+      - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d issuer
+      - run: docker compose -f tests/identity/upload-compose.yml up -d --wait redis
+      - name: Comprovar jornada do emissor e invariantes de provisionamento
+        working-directory: .identity-api
+        run: |
+          pytest -n 0 tests/identity/journey.py tests/integration/test_identity_db.py --junitxml=identity-results.xml --tb=short -v
+          python scripts/check_identity_results.py identity-results.xml
+      - name: Comprovar cookie/CSRF/isolamento com SPA pública e CSP exata
+        working-directory: .identity-api
+        run: |
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_browser_contract.py -k authenticated_bet_filters --junitxml=filters-browser.xml --tb=short -v
+          python ../tests/identity/check_results.py filters-browser.xml filters
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: filters-contract-${{ github.event_name }}-${{ github.run_id }}
+          if-no-files-found: error
+          path: |
+            .identity-api/identity-results.xml
+            .identity-api/filters-browser.xml
+      - name: Encerrar somente o sandbox deste job
+        if: always()
+        run: |
+          docker compose -f tests/identity/upload-compose.yml down
+          docker compose -f .identity-api/tests/identity/docker-compose.yml down

@@ -95,3 +95,7 @@ Inventário do OpenAPI versionado; main e oito snapshots de PR. Não é uma API 
 | GET    | `/api/v1/titulares/{titular_id}/matriz`                   | PR #136, PR #162                            |
 | DELETE | `/api/v1/usuario/me`                                      | PR #130, PR #136, PR #154, PR #158, PR #162 |
 | GET    | `/api/v1/usuario/me/export`                               | PR #130, PR #136, PR #154, PR #158, PR #162 |
+
+## Revalidação da #19 — 10/10/2026
+
+O inventário acima preserva a auditoria histórica de setembro. Na base integrada b916f54, titulares/matrizes, atribuição e matching/consolidação #109/#110 já existem. API-CONTRACTS e corpos #19/#28 passam a usar essa disponibilidade; projeção legível candidata #187 e filtros #184 continuam dependências distintas. Fonte: docs/contracts/consolidacao-apostas.md e models/aposta_consolidacao.py da árvore backend 186be7482437eb5dd4b70914843dc6c5f90395f1; estados active/unlinked/rejected e data do jogo por padrão. Ver ../contracts/detalhe-aposta.md.
