@@ -20,7 +20,7 @@ from datetime import UTC, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
-from urllib.parse import parse_qsl, urlsplit
+from urllib.parse import parse_qsl, unquote, urlsplit
 from uuid import uuid4
 
 import httpx
@@ -1461,7 +1461,8 @@ async def test_public_spa_operational_bets(harness, engine_admin, viewport):
             "request",
             lambda req: (
                 ui_writes.append(req)
-                if req.method == "PATCH" and urlsplit(req.url).path.endswith(key)
+                if req.method == "PATCH"
+                and unquote(urlsplit(req.url).path) == "/api/v1/apostas/" + key
                 else None
             ),
         )
