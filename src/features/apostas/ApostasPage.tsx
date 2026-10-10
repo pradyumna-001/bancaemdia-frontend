@@ -6,6 +6,8 @@ import { SITE_READ_CONTRACT } from '../../api/site-read.generated';
 import type { ContratoLeitura } from '../../api/readContract';
 import { useAuth } from '../../auth/ProvedorAuth';
 import { ErroApi } from '../../components/ErroApi';
+import { Icone } from '../../components/Icone';
+import { NAO_INFORMADO } from '../../lib/format';
 import { Filtros, useFiltros } from '../../components/filtros/Filtros';
 import { adaptarFiltros, serializarConsulta } from '../../lib/params';
 import { useRetryAfter } from '../../lib/useRetryAfter';
@@ -31,9 +33,11 @@ function LinhaAposta({ item, compacta }: { item: Aposta; compacta: boolean }) {
         aria-label={view.evento}
       >
         <div className="aposta-contexto">
-          <span className="legenda">{view.casa}</span>
+          <span className="legenda aposta-casa" title={view.casa}>
+            {view.casa}
+          </span>
           <h3>{view.evento}</h3>
-          <p>{view.descricao}</p>
+          <p title={view.descricao}>{view.descricao}</p>
           <p className="legenda">{view.mercado}</p>
           <p className="legenda">Aposta: {view.data}</p>
         </div>
@@ -42,32 +46,54 @@ function LinhaAposta({ item, compacta }: { item: Aposta; compacta: boolean }) {
             {view.estado}
           </span>
           {item.apagada && (
-            <span className="aposta-aviso">Apagada — fora da apuração</span>
+            <span className="aposta-aviso" title="Apagada — fora da apuração">
+              Apagada — fora da apuração
+            </span>
           )}
           {item.revisao_grave && (
-            <span className="aposta-aviso">Revisão necessária</span>
+            <span className="aposta-aviso" title="Revisão necessária">
+              Revisão necessária
+            </span>
           )}
           {item.freebet && (
-            <span className="aposta-aviso">Freebet — valor de face</span>
+            <span className="aposta-aviso" title="Freebet — valor de face">
+              Freebet — valor de face
+            </span>
           )}
           <span className="legenda">Origem: {view.origem}</span>
         </div>
         <dl className="aposta-valores">
           <div>
-            <dt>{item.freebet ? 'Valor de face' : 'Valor'}</dt>
-            <dd className="numero">{view.valor}</dd>
+            <dt aria-label={item.freebet ? 'Valor de face' : 'Valor'}>
+              Valor
+              {item.freebet && (
+                <span className="aposta-face-label"> de face</span>
+              )}
+            </dt>
+            <dd className="numero" title={view.valor} aria-label={view.valor}>
+              {compacta && view.valor === NAO_INFORMADO ? '—' : view.valor}
+            </dd>
           </div>
           <div>
             <dt>Odd</dt>
-            <dd className="numero">{view.odd}</dd>
+            <dd className="numero" title={view.odd} aria-label={view.odd}>
+              {compacta && view.odd === NAO_INFORMADO ? '—' : view.odd}
+            </dd>
           </div>
           <div>
             <dt>Lucro</dt>
-            <dd className="numero">{view.lucro}</dd>
+            <dd className="numero" title={view.lucro} aria-label={view.lucro}>
+              {compacta && view.lucro === NAO_INFORMADO ? '—' : view.lucro}
+            </dd>
           </div>
         </dl>
         <details className="aposta-detalhes">
-          <summary>Informações da aposta</summary>
+          <summary title="Informações da aposta">
+            <span className={compacta ? 'somente-leitor' : undefined}>
+              Informações da aposta
+            </span>
+            {compacta && <Icone nome="expandir" />}
+          </summary>
           <dl>
             <div>
               <dt>Conta atribuída</dt>
@@ -437,6 +463,20 @@ export function ApostasPage({
                 A lista mudou durante a consulta. Atualize a visão para
                 conferir.
               </p>
+            )}
+            {compacta && (
+              <p className="legenda">— indica dado não informado.</p>
+            )}
+            {compacta && (
+              <div className="apostas-colunas" aria-hidden="true">
+                <span>Aposta</span>
+                <span>Estado e avisos</span>
+                <div className="aposta-valores">
+                  <span>Valor</span>
+                  <span>Odd</span>
+                  <span>Lucro</span>
+                </div>
+              </div>
             )}
             <ul
               className={`apostas-itens${compacta ? ' apostas-itens--compactos' : ''}`}

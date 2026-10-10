@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { temaInicial } from '../../scripts/tema-vite';
 import { billingStatus } from './acesso';
-import { paginaExemplo, resumoExemplo } from './apostas';
+import { paginaDensaExemplo, resumoDenso } from './apostas';
 
 export default defineConfig({
   root: fileURLToPath(new URL('./apostas/', import.meta.url)),
@@ -56,13 +56,13 @@ export default defineConfig({
             });
           if (url.pathname === '/api/v1/apostas')
             return send(
-              paginaExemplo(
+              paginaDensaExemplo(
                 Number(url.searchParams.get('page') ?? 1),
                 Number(url.searchParams.get('page_size') ?? 50),
               ),
             );
           if (url.pathname === '/api/v1/painel/filtrado')
-            return send(resumoExemplo);
+            return send(resumoDenso);
           if (url.pathname.startsWith('/api/v1/filtros/'))
             return send({
               dimensao: url.pathname.split('/').at(-1),

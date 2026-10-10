@@ -169,6 +169,22 @@ async function open({
 const listRequests = (requests: Request[]) =>
   requests.filter((req) => new URL(req.url).pathname === '/api/v1/apostas');
 
+it('compacta abrevia valores desconhecidos com nome acessível e cartões conservam o texto', async () => {
+  await open();
+  const pending = within(
+    await screen.findByRole('article', { name: 'Corinthians × Santos' }),
+  );
+  expect(pending.getAllByLabelText('Não informado')).toHaveLength(2);
+  pending
+    .getAllByLabelText('Não informado')
+    .forEach((value) => expect(value).toHaveTextContent('—'));
+  expect(pending.getByText('R$ 1,00')).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Cartões' }));
+  pending
+    .getAllByLabelText('Não informado')
+    .forEach((value) => expect(value).toHaveTextContent('Não informado'));
+});
+
 it('alterna visualizações pela URL sem refetch nem perder páginas, filtros ou histórico', async () => {
   const app = await open({
     search: '?page_size=2&casa=7&apagadas=todas&x=1&x=2',

@@ -97,3 +97,98 @@ export function paginaExemplo(page = 1, pageSize = 2) {
     },
   } satisfies components['schemas']['BetsPageResponse'];
 }
+
+// Static fictional values: no financial calculation or real user records.
+const eventosDensos = [
+  ['São Paulo × Cruzeiro', 'Mais de 1,5 gols'],
+  ['Botafogo × Vasco', 'Ambas marcam'],
+  ['Bahia × Fortaleza', 'Vitória do Bahia'],
+  ['Atlético-MG × Athletico-PR', 'Menos de 3,5 gols'],
+  ['Fluminense × Vitória', 'Fluminense ou empate'],
+  ['Ceará × Sport', 'Mais de 8,5 escanteios'],
+  ['Juventude × Bragantino', 'Mais de 4,5 cartões'],
+  ['Santos × Grêmio', 'Empate no primeiro tempo'],
+  ['Real Madrid × Barcelona', 'Ambas marcam'],
+  ['Atlético de Madrid × Sevilla', 'Menos de 2,5 gols'],
+  ['Valencia × Villarreal', 'Vitória do Villarreal'],
+  ['Betis × Athletic Bilbao', 'Mais de 1,5 gols'],
+  ['Arsenal × Chelsea', 'Vitória do Arsenal'],
+  ['Liverpool × Manchester City', 'Mais de 2,5 gols'],
+  ['Manchester United × Tottenham', 'Ambas marcam'],
+  ['Newcastle × Aston Villa', 'Mais de 9,5 escanteios'],
+  ['Brighton × Everton', 'Menos de 3,5 gols'],
+  ['Bayern × Dortmund', 'Mais de 2,5 gols'],
+  ['Leverkusen × Frankfurt', 'Leverkusen ou empate'],
+  ['Leipzig × Stuttgart', 'Ambas marcam'],
+  ['Inter × Milan', 'Menos de 3,5 gols'],
+  ['Juventus × Napoli', 'Empate'],
+  ['Roma × Lazio', 'Mais de 5,5 cartões'],
+  ['Atalanta × Fiorentina', 'Mais de 1,5 gols'],
+  ['PSG × Marseille', 'Vitória do PSG'],
+  ['Lyon × Monaco', 'Ambas marcam'],
+  ['Porto × Benfica', 'Mais de 2,5 gols'],
+] as const;
+const cenariosDensos = [
+  apostaExemplo,
+  {
+    ...apostaExemplo,
+    casa: 'bet365',
+    estado: 'RED',
+    lucro_centavos: -5000,
+    retorno_centavos: 0,
+  },
+  {
+    ...apostaExemplo,
+    casa: 'Betfair',
+    estado: 'PENDENTE',
+    lucro_centavos: null,
+    retorno_centavos: null,
+  },
+  {
+    ...apostaExemplo,
+    estado: 'ANULADA',
+    lucro_centavos: 0,
+    retorno_centavos: 5000,
+  },
+  {
+    ...apostaExemplo,
+    casa: 'Sportingbet',
+    estado: 'CASHOUT',
+    lucro_centavos: 500,
+    retorno_centavos: 5500,
+  },
+  {
+    ...apostaExemplo,
+    estado: 'MEIO_GREEN',
+    lucro_centavos: 750,
+    retorno_centavos: 5750,
+  },
+] satisfies components['schemas']['BetResponse'][];
+export const apostasDensas = [
+  apostaExemplo,
+  apostaPendente,
+  apostaApagada,
+  ...eventosDensos.map(([evento, descricao], index) => ({
+    ...cenariosDensos[index % cenariosDensos.length]!,
+    chave: `densa-${index + 4}`,
+    evento,
+    descricao,
+  })),
+] satisfies components['schemas']['BetResponse'][];
+export const resumoDenso = {
+  ...resumoExemplo,
+  resumo: {
+    ...resumoExemplo.resumo,
+    total_apostas: 30,
+    pendentes: 6,
+    greens: 10,
+    reds: 6,
+    anuladas: 4,
+  },
+};
+export function paginaDensaExemplo(page = 1, pageSize = 50) {
+  return {
+    data: apostasDensas.slice((page - 1) * pageSize, page * pageSize),
+    pagination: { page, page_size: pageSize, total: 30 },
+  } satisfies components['schemas']['BetsPageResponse'];
+}

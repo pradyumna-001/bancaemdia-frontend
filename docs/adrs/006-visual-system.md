@@ -26,6 +26,8 @@ Preservamos a disciplina de tokens, acessibilidade e consistência, substituindo
 
 Revisão do responsável em 10/10/2026: #18 prioriza leitura densa com Lista compacta padrão e Cartões alternativos, mantendo resumo e detalhes. A correção #82 da #12 usa painel de acesso centralizado, marca/título/ação/links claros e ajuda sob demanda, sem seletor de aparência nas telas públicas de conta. O tema continua seguindo sistema/preferência existente. As credenciais continuam no emissor hospedado conforme o contrato, sem formulário local fictício.
 
+Segunda revisão de #18: a apresentação compacta usa linhas operacionais, aproximadamente 44px desktop e 64px mobile, controle de expansão de 44px e dados principais em fonte mínima de 14px. A demonstração de 30 apostas deve comportar ao menos quatro vezes mais linhas completas que cartões na mesma faixa de 600px. Avisos continuam reconhecíveis e informações completas ficam disponíveis na expansão.
+
 A #12 aplica esta fundação às telas de conta: painel único de leitura, título por tarefa, próximo passo hospedado explícito, ação principal única, links secundários e ajuda expansível. Aparência permanece Sistema/Claro/Escuro, sem nova paleta/fontes. E-mail e senha são preenchidos no emissor; não desenhar formulários locais que prometam operações inexistentes. Ver `docs/contracts/conta.md` para rotas, limites e evidências mobile/desktop.
 
 - A #4 aplica a fundação às páginas provisórias e erros existentes. Não inventa telas financeiras nem libera acesso às rotas protegidas.

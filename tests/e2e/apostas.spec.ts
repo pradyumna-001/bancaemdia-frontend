@@ -1,9 +1,107 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { billingStatus } from '../fixtures/acesso';
-import { paginaExemplo, resumoExemplo } from '../fixtures/apostas';
+import {
+  paginaExemplo,
+  resumoExemplo,
+  paginaDensaExemplo,
+  resumoDenso,
+} from '../fixtures/apostas';
 
 const exercise = 'http://127.0.0.1:4180';
+
+test('30 apostas cabem em linhas operacionais: ao menos quatro vezes mais na mesma altura', async ({
+  page,
+}, info) => {
+  const app = await api(page);
+  app.list((route) => {
+    const query = new URL(route.request().url()).searchParams;
+    return route.fulfill({
+      json: paginaDensaExemplo(
+        Number(query.get('page') ?? 1),
+        Number(query.get('page_size') ?? 50),
+      ),
+    });
+  });
+  app.summary((route) => route.fulfill({ json: resumoDenso }));
+  await page.goto(exercise + '/?page_size=50&apagadas=todas');
+  await expect(page.getByRole('article')).toHaveCount(30);
+  await page.evaluate(() => document.fonts.ready);
+  const list = page.locator('.apostas-itens');
+  const measure = () =>
+    page.getByRole('article').evaluateAll((rows) => {
+      const top = rows[0]!.getBoundingClientRect().top;
+      return {
+        complete: rows.filter(
+          (row) => row.getBoundingClientRect().bottom <= top + 600,
+        ).length,
+        firstHeight: rows[0]!.getBoundingClientRect().height,
+      };
+    });
+  const compact = await measure();
+  expect(compact.firstHeight).toBeLessThanOrEqual(
+    info.project.name.endsWith('mobile') ? 72 : 48,
+  );
+  expect(compact.complete).toBeGreaterThanOrEqual(
+    info.project.name.endsWith('mobile') ? 8 : 12,
+  );
+  const reads = app.requests.length;
+  await page.getByRole('button', { name: 'Cartões', exact: true }).click();
+  await expect(page.getByRole('article').first()).not.toHaveClass(
+    /aposta-linha--compacta/,
+  );
+  const cards = await measure();
+  expect(compact.complete).toBeGreaterThanOrEqual(cards.complete * 4);
+  const heights = { compact, cards };
+  await info.attach('densidade-600px', {
+    body: JSON.stringify(heights),
+    contentType: 'application/json',
+  });
+  for (const mode of ['cartoes', 'lista']) {
+    await page
+      .getByRole('button', {
+        name: mode === 'lista' ? 'Lista compacta' : 'Cartões',
+        exact: true,
+      })
+      .click();
+    await expect(
+      page.getByRole('button', {
+        name: mode === 'lista' ? 'Lista compacta' : 'Cartões',
+        exact: true,
+      }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    for (const theme of ['claro', 'escuro']) {
+      await page.evaluate(
+        (value) => document.documentElement.setAttribute('data-tema', value),
+        theme,
+      );
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+      await list.scrollIntoViewIfNeeded();
+      await page.evaluate(() =>
+        document.querySelector('.apostas-lista-cabecalho')!.scrollIntoView(),
+      );
+      await page.screenshot({
+        path: info.outputPath(`30-apostas-${mode}-${theme}.png`),
+      });
+    }
+  }
+  expect(app.requests).toHaveLength(reads);
+  await page.setViewportSize({ width: 320, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  const first = page.getByRole('article').first();
+  await first.locator('summary').focus();
+  await first.locator('summary').press('Enter');
+  await expect(first.getByText('Conta principal (inativa)')).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
 async function api(page: Page, access = 'FULL_WRITE') {
   const session = {
     usuario_id: 1,
@@ -83,7 +181,7 @@ test('Apostas tem dois temas, contexto legível, teclado, contraste e reflow de 
   await expect(page.getByText('R$ 923,45')).toBeVisible();
   const detail = page
     .getByRole('article', { name: 'Flamengo × Palmeiras' })
-    .getByText('Informações da aposta');
+    .locator('summary', { hasText: 'Informações da aposta' });
   await detail.focus();
   await detail.press('Enter');
   await expect(
@@ -167,7 +265,7 @@ test('Lista compacta mostra mais apostas; Cartões preserva dados, páginas, fil
   ).toHaveAttribute('aria-pressed', 'true');
   expect(new URL(page.url()).searchParams.get('casa')).toBe('7');
   const cardsHeight = (await list.boundingBox())!.height;
-  expect(compactHeight).toBeLessThan(cardsHeight * 0.65);
+  expect(compactHeight).toBeLessThan(cardsHeight * 0.3);
   await expect(page.getByRole('article')).toHaveCount(3);
   expect(app.requests).toHaveLength(reads);
   for (const mode of ['lista', 'cartoes']) {
@@ -198,7 +296,7 @@ test('Lista compacta mostra mais apostas; Cartões preserva dados, páginas, fil
   await page.setViewportSize({ width: 320, height: 844 });
   const details = page
     .getByRole('article', { name: 'Flamengo × Palmeiras' })
-    .getByText('Informações da aposta');
+    .locator('summary', { hasText: 'Informações da aposta' });
   await details.click();
   await expect(
     page
