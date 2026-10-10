@@ -36,6 +36,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanups.splice(0).forEach((fn) => fn());
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 const json = (
@@ -477,9 +478,15 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
       ? Promise.resolve(json({}, 429, { 'Retry-After': '70' }))
       : defaultResponse(req),
   );
-  await userEvent.type(within(dialog).getByRole('textbox'), 'limit');
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Buscar' }));
-  expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+  vi.useFakeTimers();
+  fireEvent.change(within(dialog).getByRole('textbox'), {
+    target: { value: 'limit' },
+  });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Buscar' }));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10);
+  });
+  expect(within(dialog).getByRole('alert')).toHaveTextContent(
     'Muitas tentativas. Aguarde para tentar novamente. Seu filtro foi preservado.',
   );
   expect(
@@ -491,12 +498,39 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
   const catalogReads = app.reads.filter((req) =>
     new URL(req.url).pathname.includes('/filtros/'),
   ).length;
-  await act(() => app.router.navigate('/?page_size=2&casa=8'));
-  await screen.findByText(
-    'Não foi possível consultar o nome. O identificador foi preservado.',
-  );
+  await act(async () => {
+    await app.router.navigate('/?page_size=2&casa=8');
+    await vi.advanceTimersByTimeAsync(10);
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10);
+  });
+  expect(
+    screen.getByText(
+      'Não foi possível consultar o nome. O identificador foi preservado.',
+    ),
+  ).toBeInTheDocument();
   expect(
     app.reads.filter((req) => new URL(req.url).pathname.includes('/filtros/')),
   ).toHaveLength(catalogReads);
   expect(app.router.state.location.search).toContain('casa=8');
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(71000);
+  });
+  expect(
+    app.reads.filter((req) => new URL(req.url).pathname.includes('/filtros/')),
+  ).toHaveLength(catalogReads);
+  app.respond(defaultResponse);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Consultar nome de casa' }),
+  );
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10);
+  });
+  expect(
+    screen.getByRole('button', { name: 'Casa Opção histórica (inativa)' }),
+  ).toBeInTheDocument();
+  expect(
+    app.reads.filter((req) => new URL(req.url).pathname.includes('/filtros/')),
+  ).toHaveLength(catalogReads + 1);
 });

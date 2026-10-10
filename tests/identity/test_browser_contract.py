@@ -1285,6 +1285,12 @@ async def test_public_spa_operational_bets(harness, engine_admin, viewport):
                 page, path, method=method, csrf=live["csrf_token"], body=body
             )
 
+        # The disposable database has no published house catalog. Seed only its
+        # label; account creation and temporal attribution still go through API.
+        async with engine_admin.begin() as conn:
+            house_id = await conn.scalar(
+                insert(models.Casa).values(nome="Betano").returning(models.Casa.id)
+            )
         first = await write(
             "/api/v1/apostas",
             {
@@ -1297,6 +1303,7 @@ async def test_public_spa_operational_bets(harness, engine_admin, viewport):
             },
         )
         assert first["status"] == 201
+        assert first["data"]["casa_id"] == house_id
         titular = await write("/api/v1/titulares", {"nome": "Titular da aposta"})
         assert titular["status"] == 201
         tid = titular["data"]["id"]

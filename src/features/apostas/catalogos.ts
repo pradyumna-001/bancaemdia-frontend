@@ -102,7 +102,10 @@ export function useCatalogos(
           enabled: enabled && (!selected || !!id),
           retryOnMount: false,
           queryFn: async ({ signal }: { signal: AbortSignal }) => {
-            if (embargo.deadline > Date.now()) throw new ApiError('cancelled');
+            // Keep the original safe-read recovery after the shared deadline.
+            // No request is sent while blocked, and the timer is not restarted.
+            if (embargo.deadline > Date.now())
+              throw embargo.error ?? new ApiError('cancelled');
             try {
               return await auth!.service.read(async () => {
                 // The path and its validator must exist in the same generated contract.
