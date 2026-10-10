@@ -12,6 +12,8 @@ Após integração de #187 e #184, reconciliar as dependências frontend, escolh
 
 ## Apresentação e população
 
+Decisão visual de 10/10/2026: Lista compacta é o padrão; Cartões conserva a visualização detalhada. `visualizacao=lista|cartoes` é estado de apresentação na URL, nunca parâmetro da API nem parte da chave das consultas. Alternar preserva filtros, posição, histórico e páginas carregadas, sem refetch. Valor inválido/repetido cai para Lista compacta. Cada aposta mantém detalhes expansíveis, inclusive textos completos; o resumo não depende da apresentação.
+
 `GET /api/v1/apostas` fornece textos e contextos em lote. Nenhum GET de detalhe é feito por item. Evento, descrição, mercado, casa e contextos nulos recebem orientação honesta. Referências de conta/banca são as registradas na aposta; nomes são atuais, titular arquivado e conta inativa são identificados. A banca da aposta não é substituída pela banca atual da conta. IDs textuais BIGINT permanecem exatos.
 
 Valor, lucro, retorno, odd e ROI são formatados dos valores da API. Não há soma, inferência de lucro, saldo, custo ou ROI. Freebet exibe valor de face. Resumo usa todos os mesmos seletores, sem paginação; timestamp da API deixa explícitas possíveis alterações entre consultas. Se não houver resumo compatível, os valores individuais continuam disponíveis e o resumo indisponível é informado, sem zero fabricado.

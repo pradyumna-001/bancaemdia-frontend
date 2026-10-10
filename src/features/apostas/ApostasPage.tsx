@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { getApiClient, type createApiClient } from '../../api/client';
 import { recuperacaoErro } from '../../api/recovery';
 import { SITE_READ_CONTRACT } from '../../api/site-read.generated';
@@ -21,12 +21,15 @@ import {
 } from './projecao';
 import './apostas.css';
 
-function LinhaAposta({ item }: { item: Aposta }) {
+function LinhaAposta({ item, compacta }: { item: Aposta; compacta: boolean }) {
   const view = projetarAposta(item);
   const account = item.conta_contexto;
   return (
     <li>
-      <article className="aposta-linha" aria-label={view.evento}>
+      <article
+        className={`aposta-linha${compacta ? ' aposta-linha--compacta' : ''}`}
+        aria-label={view.evento}
+      >
         <div className="aposta-contexto">
           <span className="legenda">{view.casa}</span>
           <h3>{view.evento}</h3>
@@ -126,7 +129,13 @@ export function ApostasPage({
   const auth = useAuth();
   const access = useAcesso();
   const location = useLocation();
+  const [search, setSearch] = useSearchParams();
+  const compacta =
+    search.getAll('visualizacao').length !== 1 ||
+    search.get('visualizacao') !== 'cartoes';
   const { visao, adapter } = useFiltros('apostas', contrato);
+  const querySearch = new URLSearchParams(visao.busca);
+  querySearch.delete('visualizacao');
   const summaryAdapter = adaptarFiltros(visao, 'painel', contrato);
   const catalogos = useCatalogos(contrato, api, visao);
   const enabled = auth?.state.phase === 'authenticated';
@@ -136,7 +145,7 @@ export function ApostasPage({
       'apostas',
       ...identity,
       adapter.query,
-      visao.busca,
+      querySearch.toString(),
       visao.page,
       visao.page_size,
     ],
@@ -319,7 +328,34 @@ export function ApostasPage({
         aria-label="Lista de apostas"
         aria-busy={list.isFetching}
       >
-        <h2>Lista de apostas</h2>
+        <div className="apostas-lista-cabecalho">
+          <h2>Lista de apostas</h2>
+          <div
+            className="apostas-visualizacao"
+            role="group"
+            aria-label="Visualização de apostas"
+          >
+            {(['lista', 'cartoes'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                aria-pressed={mode === 'lista' ? compacta : !compacta}
+                onClick={() =>
+                  setSearch(
+                    (current) => {
+                      const next = new URLSearchParams(current);
+                      next.set('visualizacao', mode);
+                      return next;
+                    },
+                    { preventScrollReset: true },
+                  )
+                }
+              >
+                {mode === 'lista' ? 'Lista compacta' : 'Cartões'}
+              </button>
+            ))}
+          </div>
+        </div>
         {!!adapter.bloqueios.length && (
           <div role="alert">
             <p>
@@ -402,9 +438,11 @@ export function ApostasPage({
                 conferir.
               </p>
             )}
-            <ul className="apostas-itens">
+            <ul
+              className={`apostas-itens${compacta ? ' apostas-itens--compactos' : ''}`}
+            >
               {rows.map((item) => (
-                <LinhaAposta key={item.chave} item={item} />
+                <LinhaAposta key={item.chave} item={item} compacta={compacta} />
               ))}
             </ul>
             <div className="apostas-paginacao">

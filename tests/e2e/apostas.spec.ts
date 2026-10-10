@@ -86,7 +86,11 @@ test('Apostas tem dois temas, contexto legível, teclado, contraste e reflow de 
     .getByText('Informações da aposta');
   await detail.focus();
   await detail.press('Enter');
-  await expect(page.getByText('Conta principal (inativa)')).toBeVisible();
+  await expect(
+    page
+      .getByRole('article', { name: 'Flamengo × Palmeiras' })
+      .getByText('Conta principal (inativa)'),
+  ).toBeVisible();
   await expect(page.getByText('Ana (arquivado)')).toBeVisible();
   await expect(page.getByText('9007199254740995')).toBeVisible();
   for (const theme of ['claro', 'escuro']) {
@@ -141,6 +145,71 @@ test('Mostrar mais mantém filtros/posição e elimina duplicata sem GET de deta
   expect(new URL(page.url()).searchParams.get('grupo')).toBe(
     '9007199254740993',
   );
+});
+
+test('Lista compacta mostra mais apostas; Cartões preserva dados, páginas, filtros e histórico', async ({
+  page,
+}, info) => {
+  const app = await api(page);
+  await page.goto(exercise + '/?page_size=2&apagadas=todas&casa=7');
+  await expect(
+    page.getByRole('heading', { name: 'Flamengo × Palmeiras' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Mostrar mais' }).click();
+  await expect(page.getByRole('article')).toHaveCount(3);
+  const list = page.locator('.apostas-itens');
+  const compactHeight = (await list.boundingBox())!.height;
+  const reads = app.requests.length;
+  await page.getByRole('button', { name: 'Cartões', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(
+    page.getByRole('button', { name: 'Cartões', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(new URL(page.url()).searchParams.get('casa')).toBe('7');
+  const cardsHeight = (await list.boundingBox())!.height;
+  expect(compactHeight).toBeLessThan(cardsHeight * 0.65);
+  await expect(page.getByRole('article')).toHaveCount(3);
+  expect(app.requests).toHaveLength(reads);
+  for (const mode of ['lista', 'cartoes']) {
+    await page
+      .getByRole('button', {
+        name: mode === 'lista' ? 'Lista compacta' : 'Cartões',
+        exact: true,
+      })
+      .click();
+    for (const theme of ['claro', 'escuro']) {
+      await page.evaluate(
+        (value) => document.documentElement.setAttribute('data-tema', value),
+        theme,
+      );
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+      await page.screenshot({
+        path: info.outputPath(`apostas-${mode}-${theme}.png`),
+        fullPage: true,
+      });
+    }
+  }
+  await page.goBack();
+  await expect(
+    page.getByRole('button', { name: 'Lista compacta', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('article')).toHaveCount(3);
+  expect(app.requests).toHaveLength(reads);
+  await page.setViewportSize({ width: 320, height: 844 });
+  const details = page
+    .getByRole('article', { name: 'Flamengo × Palmeiras' })
+    .getByText('Informações da aposta');
+  await details.click();
+  await expect(
+    page
+      .getByRole('article', { name: 'Flamengo × Palmeiras' })
+      .getByText('Conta principal (inativa)'),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
 });
 test('Filtros removíveis conservam histórico, resumo equivalente e retorno por teclado', async ({
   page,

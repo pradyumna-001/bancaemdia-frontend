@@ -24,6 +24,8 @@ Preservamos a disciplina de tokens, acessibilidade e consistência, substituindo
 
 ## Consequências e limites
 
+Revisão do responsável em 10/10/2026: #18 prioriza leitura densa com Lista compacta padrão e Cartões alternativos, mantendo resumo e detalhes. A correção #82 da #12 usa painel de acesso centralizado, marca/título/ação/links claros e ajuda sob demanda, sem seletor de aparência nas telas públicas de conta. O tema continua seguindo sistema/preferência existente. As credenciais continuam no emissor hospedado conforme o contrato, sem formulário local fictício.
+
 A #12 aplica esta fundação às telas de conta: painel único de leitura, título por tarefa, próximo passo hospedado explícito, ação principal única, links secundários e ajuda expansível. Aparência permanece Sistema/Claro/Escuro, sem nova paleta/fontes. E-mail e senha são preenchidos no emissor; não desenhar formulários locais que prometam operações inexistentes. Ver `docs/contracts/conta.md` para rotas, limites e evidências mobile/desktop.
 
 - A #4 aplica a fundação às páginas provisórias e erros existentes. Não inventa telas financeiras nem libera acesso às rotas protegidas.
