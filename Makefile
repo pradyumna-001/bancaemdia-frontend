@@ -1,5 +1,6 @@
 .DEFAULT_GOAL := install
 PNPM ?= pnpm
+TEST_ARGS ?=
 API_DIR ?= ../bancaemdia-api
 OPENAPI_SOURCE ?=
 
@@ -18,7 +19,7 @@ typecheck:
 	$(PNPM) typecheck
 
 test:
-	$(PNPM) test
+	$(PNPM) test $(TEST_ARGS)
 
 test\:coverage:
 	$(PNPM) test:coverage

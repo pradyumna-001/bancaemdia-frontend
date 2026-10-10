@@ -19,7 +19,7 @@ A auditoria comparou main, cadeias abertas do backend e as 39 issues frontend. O
 7. Titular, casa, conta e banca são entidades distintas. Uso temporal decide atribuição no servidor. Uma conta em uso por casa por instante na versão atual; nunca primeira conta arbitrária ou exclusão silenciosa de não atribuídas.
 8. Lucro, ROI, saldo, progresso de meta e resultados de calculadoras vêm da API. Formatar e desenhar não autoriza somar dinheiro. Filtros/resumos/exports devem compartilhar população ou explicitar diferença. Refetch não força refresh de MV.
 9. Stripe Checkout/Billing, cartão obrigatório, teste único de 168 horas após confirmação do cartão pelo servidor; sem tiers/preços inventados. Quatro calculadoras aprovadas; pesquisa de linhas No-Go. Decisões recentes registradas substituem ADRs históricos conflitantes do backend, mas dependência continua bloqueada enquanto o código/contrato não acompanhar.
-10. Upload de prints, prévia XLSX, consentimento de gasto, mídia de aposta, catálogos, preferências e hipotética têm lacunas explícitas em #50/consumidoras. Mock não satisfaz integração nem autoriza processamento sem consentimento.
+10. Upload de prints, prévia XLSX, mídia de aposta, catálogos, preferências e hipotética têm lacunas explícitas em #50/consumidoras. Mock não satisfaz integração. **Correção do titular em 06/10/2026:** o usuário envia o export e acompanha o resultado, sem estimativa/aviso de custo de processamento nem etapa Autorizar/Agora não. Limites máximos de gasto por usuário são controlados exclusivamente pelo backend. Aprovação de gasto não é requisito, lacuna de contrato ou bloqueio de #15/#24/#25. Prévia/confirmação de dados da planilha e confirmação de apostas são jornadas distintas e mantêm seus requisitos próprios.
 11. Após revisão dos gráficos iniciais, o titular tornou obrigatórios: lucro por grupo com tipsters dentro do grupo (#20/#50), lucro por esporte (#56) e lucro por dia com data/valor de cada dia legíveis sem hover (#20/#50). Os componentes da #7 não limitam o catálogo visual. Ausência de contrato da hierarquia exige ampliar a API, não retirar a jornada; agregados continuam exclusivos do servidor. Diário não é linha acumulada nem mapa por dia da semana. Propostas visuais serão validadas nos dois viewports antes de implementar essas jornadas.
 
 ## Ordem por dependências
@@ -36,8 +36,24 @@ Dependência em #50 significa resolver o contrato específico usado pela issue, 
 
 ## Consequences
 
+### Entrega de Enviar (#24)
+
+Importação web restaura somente UUID de job pela URL, preservando filtros/fragmento. Arquivo fica em memória; aceitação 202 não é conclusão. POST não ganha replay automático nem idempotência inventada. Sem UUID após uma resposta perdida, consulta de apostas é explicitamente não conclusiva; nova intenção exige nova seleção. Pausa afeta somente observação. A prova completa acrescenta worker/Redis/materialização reais no sandbox de identidade, usando cache de extração sintético e sem inserir resultados finais. Ver [contrato de Enviar](../contracts/enviar.md).
+
 Novas unidades #49–59 completam o planejamento sem duplicar implementação financeira. A fundação visual continua conforme ADR006 e pesquisa aprovada. Toda issue de tela contém objetivo, contrato/versionamento, disponibilidade, dependências, tarefas e aceite desktop/mobile. Release exige API integrada, ambiente real e evidências; ensaio de backend #155 é útil, mas não prova experiência web nem produção.
 
 ## Fluxo de correção dos primeiros PRs
 
 O PR de #48 é incremental sobre `feat/7-graficos-svg`; não reescreve commits anteriores nem faz merge administrativo. As #1–7 recebem nota de auditoria do que foi preservado/corrigido. Tipos, tokens, fontes, marca e gráficos da fundação não são descartados para reproduzir outra vez o monólito. Gates existentes permanecem obrigatórios no SHA final.
+
+## Revalidação de acesso — 08/10/2026 (#52)
+
+A main backend b916f54 integra billing/acesso e é a única fonte pinada desta PR. #52 precede #18/#32 na ordem de dependências. O aviso é contextual, mantém leitura/exportação e encaminha a Assinatura; não implementa checkout (#51). Status desconhecido fecha escrita, e recuperação exige uma nova intenção explícita. A matriz de operações e prova real estão em [acesso](../contracts/acesso.md). Reconciliar a formatação herdada da #16/PR #69 e os consumidores de escrita das PRs #73/#75 na integração; nenhum PR é empilhado. O candidato de filtros #184 continua exclusivo da entrega autorizada #17 e não é promovido por esta PR.
+
+## Conexão Telegram — #54
+
+O contrato de vínculo está integrado em b916f54. A página em Configurações e o atalho em Enviar usam código transitório, polling finito e revogação confirmada; READ_ONLY preserva as exceções de privacidade publicadas e bloqueia upload. O dono autorizou entregar sem endereço público do bot e pediu link fictício em 08/10/2026: âncora interna identificada, endereço real e percurso externo pendentes de lançamento. Prova obrigatória usa SPA/API/banco reais e transporte privado IncomingCommand local; não certifica Telegram externo. Ver [contrato Telegram](../contracts/telegram.md). Dependências frontend #69/#76/#75 declaradas, PR independente contra main; futuro Configurações #33 preserva Conexões.
+
+## Retomada de #18 — 10/10/2026
+
+Lista operacional autorizada em PR independente contra main, dependente da emergência backend #186/PR #187 e dos filtros #183/PR #184. A projeção legível não substitui a população filtrada. A candidata única pública é #187; #184 é comprovada em build/API real separados. Não há união de schemas, resumo global incompatível, soma financeira local ou promoção de candidato como integrado. Reconciliar uma versão oficial integrada após os merges administrativos e manter o gate de publicação. Ver ../contracts/apostas.md e o corpo canônico da #18.

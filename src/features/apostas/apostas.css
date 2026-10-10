@@ -1,0 +1,147 @@
+.apostas-cabecalho {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--espaco-24);
+  flex-wrap: wrap;
+}
+.apostas-cabecalho h1 {
+  margin-bottom: var(--espaco-8);
+}
+.apostas-filtros,
+.apostas-resumo {
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+  padding: var(--espaco-16);
+  margin-block: var(--espaco-24);
+}
+.apostas-filtros > summary,
+.aposta-detalhes > summary {
+  cursor: pointer;
+  min-height: var(--alvo-toque);
+  display: list-item;
+  padding: var(--espaco-8);
+  font-weight: var(--peso-destaque);
+}
+.apostas-indicadores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--espaco-24);
+}
+.apostas-indicadores dd {
+  margin: 0;
+  font-size: var(--fonte-secao);
+  font-weight: var(--peso-destaque);
+  overflow-wrap: anywhere;
+}
+.apostas-indicadores dt,
+.aposta-valores dt,
+.aposta-detalhes dt {
+  color: var(--tinta-secundaria);
+}
+.apostas-itens {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--espaco-16);
+}
+.aposta-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(9rem, 1fr) minmax(0, 1.4fr);
+  gap: var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+  padding: var(--espaco-24);
+}
+.aposta-contexto {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.aposta-contexto h3 {
+  margin-block: var(--espaco-8);
+}
+.aposta-contexto p {
+  margin-block: var(--espaco-4);
+}
+.aposta-situacao {
+  display: flex;
+  align-items: start;
+  flex-direction: column;
+  gap: var(--espaco-8);
+}
+.aposta-estado {
+  border-radius: var(--raio-pilula);
+  border: 1px solid var(--borda);
+  padding: var(--espaco-4) var(--espaco-12);
+  font-weight: var(--peso-destaque);
+}
+.aposta-estado[data-estado='GREEN'],
+.aposta-estado[data-estado='MEIO_GREEN'] {
+  color: var(--lucro);
+  background: var(--lucro-fundo);
+}
+.aposta-estado[data-estado='RED'],
+.aposta-estado[data-estado='MEIO_RED'] {
+  color: var(--perda);
+  background: var(--perda-fundo);
+}
+.aposta-aviso {
+  color: var(--atencao);
+  font-size: var(--fonte-pequena);
+}
+.aposta-valores {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-12);
+  margin: 0;
+}
+.aposta-valores dd,
+.aposta-detalhes dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.aposta-detalhes {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--borda);
+}
+.aposta-detalhes dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+.apostas-paginacao {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-16);
+  flex-wrap: wrap;
+  margin-block: var(--espaco-24);
+}
+.apostas-vazio {
+  padding: var(--espaco-24);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+@media (max-width: 48rem) {
+  .aposta-linha {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--espaco-16);
+  }
+  .aposta-situacao {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .aposta-detalhes dl,
+  .apostas-indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espaco-16);
+  }
+}
+@media (max-width: 22rem) {
+  .aposta-detalhes dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
