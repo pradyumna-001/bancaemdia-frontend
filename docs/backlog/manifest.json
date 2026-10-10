@@ -256,5 +256,11 @@
     "title": "[ADR-019] Primeiro uso — acesso, contas e canais de entrada",
     "file": "059.md",
     "dependencies": "#12, #32, #24, #34; #51; #54; #52"
+  },
+  {
+    "number": 82,
+    "title": "[ADR-006] Corrigir apresentação das telas de acesso após revisão visual",
+    "file": "082.md",
+    "dependencies": "#12 / PR #67 integrada em main"
   }
 ]

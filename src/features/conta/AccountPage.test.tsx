@@ -79,6 +79,8 @@ it.each([
     const button = await screen.findByRole('button', { name: action });
     await waitFor(() => expect(button).toBeEnabled());
     expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Próximo passo' })).toBeNull();
     expect(screen.queryByText(/trial ativo/i)).toBeNull();
     await userEvent.click(button);
     const url = new URL(navigate.mock.calls[0]![0]);
@@ -180,6 +182,7 @@ it('link expirado/repetido e recuperação interrompida têm orientação e reco
   expect(
     screen.getByRole('link', { name: 'Recomeçar cadastro' }),
   ).toBeVisible();
+  await userEvent.click(screen.getByText('Não conseguiu continuar?'));
   expect(screen.getByText(/opção de reenvio/)).toBeVisible();
 });
 it('saída não confirmada impede novo fluxo e permite conferir sem identidade fabricada', async () => {
