@@ -18,3 +18,7 @@ Plataforma Fase 1: nginx estático em Compose atrás de Caddy/TLS, na arquitetur
 - Publicar produção somente após #39; falha exige restaurar release anterior com [rollback](rollback.md).
 
 A CI testa o nginx real em Docker; isso não comprova Caddy/TLS, DNS, emissor nem ambiente público.
+
+## Foto privada da Revisão (#19)
+
+A CSP gerada permite blob: somente em img-src, para imagens raster obtidas por GET privado autenticado e com URL revogada em saída/logout. Não autoriza data:, imagens externas, scripts Blob, conexões externas ou inline adicional. CSP e dist devem pertencer ao mesmo SHA. E2E usa a política gerada e verifica decodificação sem violação.

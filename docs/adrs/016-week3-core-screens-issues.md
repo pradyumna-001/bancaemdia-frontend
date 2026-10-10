@@ -20,3 +20,7 @@ Revisado em 29/09/2026 pelo [ADR019](019-current-product-backend-alignment.md). 
 ## Regras comuns
 
 Cada corpo preserva Labels, Size, Files, Tasks e Acceptance, incluindo contrato/disponibilidade e critérios visuais. [Backlog completo](../backlog/README.md), [contratos](../API-CONTRACTS.md), [pesquisa](../research/backlog-visual.md). A antiga cópia dos corpos foi substituída por referências para impedir divergência entre ADRs, GitHub e planejamento. Histórico permanece no Git.
+
+## Detalhe — #19, 10/10/2026
+
+Rota própria preserva a lista compacta aprovada, filtros e âncora/foco ao voltar. Correção, resultado e conta ficam sob demanda; eventos são traduzidos por allowlist. Atribuição temporal e dinheiro pertencem à API. Ver [contrato do detalhe](../contracts/detalhe-aposta.md), incluindo revisão legada, mídia privada e limites da #22/#28/#32.

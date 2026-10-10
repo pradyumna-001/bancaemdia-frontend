@@ -26,7 +26,8 @@ jobs:
           node-version-file: .node-version
       - run: npm install --global pnpm@10.34.6
       - run: make install lint typecheck test:coverage build check:bundle gen-types
-      - run: git diff --exit-code -- src/api/schema.d.ts src/api/operations.generated.ts
+      - run: git diff --exit-code -- src/api/schema.d.ts src/api/operations.generated.ts src/api/site-read.generated.ts
+      - run: node scripts/generate-site-fixture.mjs && git diff --exit-code -- tests/fixtures/apostas-contract.generated.ts
       - run: pnpm exec playwright install --with-deps
       - run: make measure:lighthouse
       - name: Guardar build público e CSP do mesmo SHA

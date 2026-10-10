@@ -1,16 +1,16 @@
 # Cliente tipado — #9
 
-Contrato adotado: API main integrada em `bd055417459f796fed960b5b37efb33a9744419f`. [Referência e hash](../../config/api-contract.json), [tipos](../../src/api/schema.d.ts), [políticas geradas](../../src/api/operations.generated.ts), [ADR003](../adrs/003-api-client-typing-session.md). O PR backend #168 de identidade continua separado; esta entrega não promove seu schema nem implementa sessão/telas.
+Contrato atual, atualizado pela #52: API main integrada em `b916f54331f14cf47a3800324bd61d8638043c06`, incluindo identidade e acesso comercial. [Referência e hash](../../config/api-contract.json), [tipos](../../src/api/schema.d.ts), [políticas geradas](../../src/api/operations.generated.ts), [ADR003](../adrs/003-api-client-typing-session.md). A disponibilidade no ambiente de publicação ainda exige homologação; integração do código não afirma deploy.
 
 ## Versão e atualização
 
-`pnpm gen-types` lê uma única referência completa com SHA-256 dos bytes. O hash atual é `cd35afa0d037f14f3c68d7502a4fff0402b4490f6d2a1552c2fa790a87447881`. Primeiro verifica bytes e OpenAPI3; depois gera/formata tipos e políticas de upload/idempotência do mesmo documento. A CI regenera e exige ausência de drift nos dois arquivos. Um snapshot local pode substituir o download somente com o mesmo hash; URL alternativa/main/latest é recusada.
+`pnpm gen-types` lê uma única referência completa com SHA-256 dos bytes. O hash atual é `0714381b9e0e4797000932636ffb770b794dc7b6731c1bfcea3d46881bfbe11a`. Primeiro verifica bytes e OpenAPI3; depois gera/formata tipos e políticas de upload/idempotência do mesmo documento. A CI regenera e exige ausência de drift nos dois arquivos. Um snapshot local pode substituir o download somente com o mesmo hash; URL alternativa/main/latest é recusada. `pnpm check:contract-integration` verifica a integração do commit fixado antes da publicação.
 
 Atualização exige verificar que o commit foi integrado no backend, comparar contratos e impactos nas consumidoras, atualizar commit/hash no manifesto e revisar a regeneração de ambos os arquivos. Não adicionar shapes manuais nem unir branches. Hash confirma conteúdo, não confirma integração/deploy; essa disponibilidade é auditada no PR de atualização.
 
 ## Uso do transporte
 
-`getApiClient()` cria um único cliente após `initializeConfig()`. A #11 poderá chamar `initializeApiClient({ getCsrfToken: lerCsrfAtual })` uma vez, antes do primeiro uso; esse accessor consulta somente memória e acompanha rotação/troca de sessão. Reconfiguração silenciosa é recusada. `createApiClient` permite instância isolada em testes e integração controlada. Nenhum singleton nasce ao importar o módulo.
+`getApiClient()` cria um único cliente após `initializeConfig()`. O bootstrap chama `initializeApiClient` uma vez, antes do primeiro uso, com a prova CSRF e o contexto privado do serviço de sessão em memória. A #52 acrescenta `beforeMutation` para conferir acesso comercial antes de escrita e `onAccessDenied` para invalidar a confirmação após 402, sem repetir a operação. Ver [acesso](acesso.md). Reconfiguração silenciosa é recusada. `createApiClient` permite instância isolada em testes e integração controlada. Nenhum singleton nasce ao importar o módulo.
 
 ```ts
 const client = getApiClient();
@@ -28,7 +28,7 @@ Timeout: leitura 10s, escrita 15s, operações multipart 60s, incluindo recepç�
 
 ## Idempotência e formatos
 
-Na versão adotada, somente `POST /api/v1/caixa` publica `Idempotency-Key`, obrigatória. `createIdempotencyKey()` gera uma chave por intenção confirmada; a consumidora conserva **a mesma chave e o mesmo corpo** para reconciliação. Não gerar outra chave para tentar repetir o mesmo movimento. Corpo diferente com a mesma chave é conflito decidido pelo servidor. Chave ausente/vazia e chave em operação não contratada são recusadas; o transporte nunca reenvia mutação automaticamente.
+Na versão adotada, `POST /api/v1/caixa`, `POST /api/v1/billing/subscribe`, `POST /api/v1/titulares/trocas` e `POST /api/v1/titulares/trocas/preview` publicam `Idempotency-Key`, conforme as políticas geradas. `createIdempotencyKey()` gera uma chave por intenção confirmada; a consumidora conserva **a mesma chave e o mesmo corpo** para reconciliação. Não gerar outra chave para tentar repetir a mesma intenção. Corpo diferente com a mesma chave é conflito decidido pelo servidor. Chave ausente/vazia e chave em operação não contratada são recusadas; o transporte nunca reenvia mutação automaticamente.
 
 Downloads finitos usam `parseAs: 'blob'` ou `'arrayBuffer'`; `/metrics` pode usar `'text'`. JSON inesperado/malformado em uma leitura JSON vira ApiError seguro. Modo stream fica fora do contrato deste cliente; arquivos são recebidos integralmente sob o deadline. Cabeçalhos de download e bytes são preservados.
 
@@ -46,12 +46,12 @@ const result = await client.POST('/api/v1/upload', {
 });
 ```
 
-Na planilha, usar campos `arquivo` e `origem_id` contratados. Não criar protocolo de prévia/consentimento/prints para contornar lacunas da #50. Aceite 202 conserva `job_id`/`status_url`; falhas parciais do status não são convertidas em sucesso total ou cancelamento remoto.
+Na planilha, usar campos `arquivo` e `origem_id` contratados. Não criar protocolo de prévia/prints para contornar lacunas da #50. Aceite 202 conserva `job_id`/`status_url`; falhas parciais do status não são convertidas em sucesso total ou cancelamento remoto. O upload inicia processamento e o site acompanha o resultado, sem estimativa/aviso de custo de processamento ou aprovação de gasto (ADR019, decisão de 06/10/2026). Eventual campo de estimativa retornado pela API não cria etapa visual; limites máximos de gasto por usuário permanecem no backend.
 
 ## Erros e evidência
 
 ApiError expõe `kind`, `status`, código conhecido, mensagem pt-BR, `retryAfterMs`, `requestId` seguro, `outcomeUnknown` e a projeção de campos 422 `invalidFields`. Corpo, input/msg/ctx de validação, trace, URL, senha/token e causa externa não são retidos. Código auth pode vir de `X-Auth-Error`; nunca exibir `detail` arbitrário. 401 e 402 têm mensagens distintas e não disparam logout aqui. Retry-After aceita segundos e HTTP-date, preservando zero. A [#10](recuperacao.md) aplica decisão limitada de retry/recuperação sem duplicar writes; limites de paginação também são gerados do mesmo snapshot.
 
-Fixtures/MSW em `tests/fixtures/api/` são tipadas pelos schemas selecionados: null, HTTP401/402/409/422/429/503, resposta não JSON, upload202/resultado parcial, bytes, cancelamento, prazo e chave estável. O caso 402 testa separação de erro; billing permanece em PR separado, sem afirmar disponibilidade desse recurso na main. Nenhum endpoint fictício é usado e nenhum mock entra no bundle. Tipos estáticos não são um validador runtime completo do JSON de sucesso; os testes de contrato backend continuam necessários.
+Fixtures/MSW em `tests/fixtures/api/` são tipadas pelos schemas selecionados: null, HTTP401/402/409/422/429/503, resposta não JSON, upload202/resultado parcial, bytes, cancelamento, prazo e chave estável. O caso 402 testa separação de erro; a #52 usa o billing integrado e comprova a distinção entre sessão e acesso comercial. Nenhum endpoint fictício é usado e nenhum mock entra no bundle. Tipos estáticos não são um validador runtime completo do JSON de sucesso; os testes de contrato backend continuam necessários.
 
-Vitest verifica transporte e hash/drift. Cobertura por arquivo passa a incluir `src/api/`, com os mesmos quatro gates >=80%, além de lib/features. CI preserva E2E nos três browsers/dois viewports, budget, Lighthouse, pre-commit, Docker/CSP, GitGuardian e os nove+dois aceites reais de identidade herdados da #49. Não há alteração visual nem conexão de tela/guard à sessão nesta issue; integração dessas consumidoras fica na #11/#12.
+Vitest verifica transporte e hash/drift. Cobertura por arquivo inclui `src/api/`, com os mesmos quatro gates >=80%, além de lib/features/auth. CI preserva E2E nos três browsers/dois viewports, budget, Lighthouse, pre-commit, Docker/CSP, GitGuardian e a prova real de identidade/acesso. A #9 entregou originalmente o transporte; #11/#12 conectaram sessão e conta, e #52 acrescenta o aviso e a proteção por operação.

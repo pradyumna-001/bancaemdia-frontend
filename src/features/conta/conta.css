@@ -1,9 +1,41 @@
 .conta {
   max-width: 36rem;
 }
-.conta .conta-introducao {
+.conta-acesso {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: var(--espaco-32) var(--espaco-16);
+  overflow-wrap: anywhere;
+}
+.conta-painel {
+  width: 100%;
+  max-width: 28rem;
+  padding: var(--espaco-32);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+.conta-painel--interno {
+  max-width: none;
+  padding: 0;
+  border: 0;
+}
+.conta-acesso .cabecalho-marca,
+.conta-acesso h1,
+.conta-acesso .conta-introducao {
+  text-align: center;
+}
+.conta-painel .conta-introducao {
   font-size: 1.125rem;
   margin-block-end: var(--espaco-24);
+  color: var(--tinta-secundaria);
+}
+.conta-protecao {
+  margin-block: var(--espaco-12) var(--espaco-24);
+  font-size: var(--fonte-pequena);
+  text-align: center;
+  color: var(--tinta-secundaria);
 }
 .conta-proximo {
   padding: var(--espaco-16);
@@ -33,6 +65,7 @@
   flex-wrap: wrap;
   gap: var(--espaco-8) var(--espaco-24);
   margin-block: var(--espaco-16);
+  justify-content: center;
 }
 .conta-links a,
 .conta-rodape > a,
@@ -60,6 +93,8 @@
   margin-block-start: var(--espaco-32);
   padding-block-start: var(--espaco-16);
   border-block-start: 1px solid var(--borda);
+  display: flex;
+  justify-content: center;
 }
 @media (max-width: 35rem) {
   .conta {
@@ -68,5 +103,12 @@
   .conta-links {
     flex-direction: column;
     gap: 0;
+    align-items: center;
+  }
+  .conta-acesso {
+    padding: var(--espaco-24) var(--espaco-12);
+  }
+  .conta-acesso .conta-painel {
+    padding: var(--espaco-24) var(--espaco-16);
   }
 }

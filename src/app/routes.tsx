@@ -14,6 +14,12 @@ import { Shell } from './Shell';
 import { SistemaPage } from '../features/sistema/SistemaPage';
 import type { ConsultarRevisao } from '../features/revisao/estatisticas';
 import { AccountPage } from '../features/conta/AccountPage';
+import { EnviarPage } from '../features/enviar/EnviarPage';
+import { TelegramPage } from '../features/conexoes/TelegramPage';
+import { AssinaturaPage } from '../features/assinatura/AssinaturaPage';
+import { ConfiguracoesPage } from '../features/configuracoes/ConfiguracoesPage';
+import { ApostasPage } from '../features/apostas/ApostasPage';
+import { DetalheApostaPage } from '../features/apostas/detalhe/DetalheApostaPage';
 
 export function loginLoader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -23,12 +29,28 @@ export function loginLoader({ request }: LoaderFunctionArgs) {
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
   consultarRevisao?: ConsultarRevisao,
+  billingReturning = false,
 ): RouteObject[] {
   const guard = exigirSessao(consultarSessao);
+  let billingReturnPending = billingReturning;
   const protectedRoute = (path: string, element: ReactNode): RouteObject => ({
     path,
     caseSensitive: true,
     loader: guard,
+    // Changing the list's URL selectors is a query, not a new protected page.
+    // RequireSession and every API read still enforce the current identity.
+    shouldRevalidate: ({
+      currentUrl,
+      nextUrl,
+      formMethod,
+      defaultShouldRevalidate,
+    }) =>
+      path === '/' &&
+      currentUrl.pathname === nextUrl.pathname &&
+      currentUrl.search !== nextUrl.search &&
+      !formMethod
+        ? false
+        : defaultShouldRevalidate,
     hydrateFallbackElement: (
       <main className="pagina">
         <p role="status">Abrindo página…</p>
@@ -49,7 +71,24 @@ export function createAppRoutes(
     ...ROTAS_PROTEGIDAS.map(({ path, title }) =>
       protectedRoute(
         path,
-        path === '/sistema' ? (
+        path === '/' ? (
+          <ApostasPage />
+        ) : path === '/aposta/:chave' ? (
+          <DetalheApostaPage />
+        ) : path === '/configuracoes' ? (
+          <ConfiguracoesPage />
+        ) : path === '/assinatura' ? (
+          <AssinaturaPage
+            returning={() => billingReturnPending}
+            onReturnHandled={() => {
+              billingReturnPending = false;
+            }}
+          />
+        ) : path === '/configuracoes/conexoes' ? (
+          <TelegramPage />
+        ) : path === '/enviar' ? (
+          <EnviarPage />
+        ) : path === '/sistema' ? (
           <SistemaPage />
         ) : (
           <Placeholder title={title} interna />
