@@ -1410,9 +1410,9 @@ async def test_public_spa_operational_bets(harness, engine_admin, viewport):
             page.get_by_role("button", name="Mostrar mais", exact=True)
         ).to_be_disabled()
         article = page.get_by_role("article", name="Evento com conta", exact=True)
-        await article.locator("summary").filter(
-            has_text="Informações da aposta"
-        ).click()
+        await (
+            article.locator("summary").filter(has_text="Informações da aposta").click()
+        )
         await expect(
             article.get_by_text("Conta histórica renomeada (inativa)", exact=True)
         ).to_be_visible()
