@@ -51,3 +51,4 @@ Revisão de produto autorizada em 29/09/2026. Corpos abaixo são canônicos e es
 | [#57](https://github.com/pradyumna-001/bancaemdia-frontend/issues/57) | [Painel — metas de desempenho e fuso horário](057.md)                   | #20, #16; #52; pradyumna-001/bancaemdia-api#105                           |
 | [#58](https://github.com/pradyumna-001/bancaemdia-frontend/issues/58) | [Privacidade — exportar registros e encerrar conta](058.md)             | #9, #10, #11, #33; #52; pradyumna-001/bancaemdia-api#43                   |
 | [#59](https://github.com/pradyumna-001/bancaemdia-frontend/issues/59) | [Primeiro uso — acesso, contas e canais de entrada](059.md)             | #12, #32, #24, #34; #51; #54; #52                                         |
+| [#82](https://github.com/pradyumna-001/bancaemdia-frontend/issues/82) | [Correção visual das telas de acesso](082.md)                           | #12 / PR #67 integrada em main                                            |
