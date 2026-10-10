@@ -204,7 +204,12 @@ for (const outcome of ['rede', 'timeout'] as const) {
     });
     await page.goto(fixture);
     await page.getByLabel('Odd', { exact: true }).fill('4.50');
-    await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+    await expect(page.getByLabel('Odd', { exact: true })).toHaveValue('4.50');
+    const send = page.getByRole('button', { name: 'Enviar', exact: true });
+    // Exercise native keyboard submission under the test clock, exactly once.
+    await send.focus();
+    await expect(send).toBeFocused();
+    await send.press('Enter');
     await expect.poll(() => committed).toBe(1);
     if (outcome === 'timeout') await page.clock.runFor(15000);
     await expect(

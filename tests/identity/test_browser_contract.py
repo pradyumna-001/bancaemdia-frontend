@@ -1210,14 +1210,19 @@ async def test_public_spa_timezone_preference(harness, engine_admin, viewport):
         assert (await browser_request(page, "/api/v1/painel/preferencias"))[
             "status"
         ] == 200
+        live = (await browser_request(page, "/auth/session"))["data"]
+        assert live["usuario_id"] == uid
         refused = await browser_request(
             page,
             "/api/v1/painel/preferencias",
             method="PATCH",
-            csrf=current["csrf_token"],
+            csrf=live["csrf_token"],
             body={"fuso_horario": "America/Manaus"},
         )
-        assert refused["status"] == 402
+        assert (
+            refused["status"] == 402
+            and refused["data"]["detail"] == "account_read_only"
+        )
         await expect(
             page.get_by_role("link", name="Conexões", exact=True)
         ).to_have_attribute("href", "/configuracoes/conexoes?casa=7&apagadas=1")
