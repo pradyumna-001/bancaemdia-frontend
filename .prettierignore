@@ -2,6 +2,17 @@ node_modules/
 dist/
 dist-security/
 dist-shell-fixture/
+dist-acesso-fixture/
+dist-filtros-fixture/
+dist-filtros-security/
+dist-enviar-fixture/
+dist-assinatura-fixture/
+dist-calculadoras-fixture/
+dist-telegram-fixture/
+dist-configuracoes-fixture/
+dist-apostas-fixture/
+dist-apostas-security/
+dist-painel-proposta/
 public/fontes/OFL-source-sans-3.md
 coverage/
 playwright-report/
@@ -10,3 +21,9 @@ pnpm-lock.yaml
 .husky/_/
 
 reports/
+
+dist-painel-fixture/
+dist-contas-fixture/
+
+dist-midia-fixture/
+dist-hipotetica-fixture/

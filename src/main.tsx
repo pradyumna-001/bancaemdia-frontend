@@ -16,12 +16,18 @@ import {
   sanitizeProtocolLocation,
 } from './auth/returnDestination';
 import { ApiError } from './api/error';
+import { createAccessController } from './features/acesso/controller';
+import {
+  restoreBillingReturn,
+  sanitizeBillingLocation,
+} from './features/assinatura/returnDestination';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Não foi possível iniciar a aplicação.');
 
 const application = createRoot(root);
 sanitizeProtocolLocation(location, history);
+sanitizeBillingLocation(location, history);
 application.render(
   <main className="pagina">
     <header className="cabecalho-marca">
@@ -41,6 +47,7 @@ initializeConfig().then(
       /* Fragment restoration is optional. */
     }
     restoreLoginFragment(location, history, storage);
+    const billingReturning = restoreBillingReturn(location, history, storage);
     let channel: BroadcastChannel | undefined;
     try {
       if (typeof BroadcastChannel === 'function')
@@ -55,9 +62,12 @@ initializeConfig().then(
       storage,
       channel,
     });
+    const access = createAccessController(auth, queryClient);
     const api = initializeApiClient({
       captureSession: auth.capture,
       onUnauthorized: auth.unauthorized,
+      onAccessDenied: access.denied,
+      beforeMutation: (operation) => access.run(api, operation, async () => {}),
     });
     const consultarRevisao = (signal?: AbortSignal) =>
       auth.read(async () => {
@@ -66,7 +76,7 @@ initializeConfig().then(
         return result.data;
       });
     const router = createBrowserRouter(
-      createAppRoutes(auth.resume, consultarRevisao),
+      createAppRoutes(auth.resume, consultarRevisao, billingReturning),
     );
     application.render(
       <StrictMode>
@@ -75,6 +85,7 @@ initializeConfig().then(
             router={router}
             queryClient={queryClient}
             ambiente={getConfig().appEnv}
+            access={access}
           />
         </ProvedorAuth>
       </StrictMode>,

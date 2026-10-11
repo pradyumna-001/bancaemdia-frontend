@@ -1,0 +1,107 @@
+.contas-pagina {
+  overflow-wrap: anywhere;
+}
+.contas-datas {
+  border: 0;
+  padding: 0;
+  margin-inline: 0;
+}
+.contas-pagina section {
+  margin-block: var(--espaco-32);
+}
+.contas-caixa {
+  padding: var(--espaco-16);
+  margin-block: var(--espaco-12);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+.contas-pagina summary {
+  cursor: pointer;
+  min-height: var(--alvo-toque);
+  font-weight: var(--peso-destaque);
+}
+.contas-pagina form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--espaco-16);
+  margin-block: var(--espaco-16);
+}
+.contas-pagina label {
+  display: grid;
+  gap: var(--espaco-8);
+  max-width: 100%;
+}
+.contas-pagina input {
+  min-width: 0;
+  width: 100%;
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-12);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--tinta);
+}
+.contas-pagina button {
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-16);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--tinta);
+}
+.contas-pagina form > button:not([type]) {
+  background: var(--acao);
+  border-color: var(--acao);
+  color: var(--sobre-acao);
+}
+.contas-pagina button:disabled {
+  opacity: 0.65;
+}
+.contas-pagina button:hover:not(:disabled) {
+  background: var(--acao-hover);
+  border-color: var(--acao-hover);
+  color: var(--sobre-acao);
+}
+.contas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--espaco-16);
+  padding: 0;
+}
+.contas-grid > li::marker {
+  font-size: 0;
+}
+.contas-grid > li > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo-toque);
+  font-weight: var(--peso-destaque);
+}
+.contas-grid > li > p {
+  font-size: var(--fonte-pequena);
+  color: var(--tinta-secundaria);
+}
+.contas-valores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--espaco-16);
+}
+.contas-valores dd {
+  margin: 0;
+  font-weight: var(--peso-destaque);
+}
+.contas-valores dt {
+  color: var(--tinta-secundaria);
+}
+.contas-estado {
+  font-weight: var(--peso-destaque);
+}
+.contas-pagina dialog {
+  background: var(--superficie);
+  color: var(--tinta);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  max-width: min(32rem, calc(100vw - 2rem));
+}
