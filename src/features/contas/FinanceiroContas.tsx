@@ -55,8 +55,8 @@ export function FinanceiroContas({ data }: { data: Financeiro }) {
         <summary>Apostas e movimentos sem conta atribuída</summary>
         <Valores values={data.nao_atribuidas} />
         <p>
-          São uma categoria separada fornecida pela API, sem distribuição
-          automática entre titulares.
+          Esses registros não estão vinculados a uma conta e não são
+          distribuídos automaticamente entre titulares.
         </p>
       </details>
       <details className="contas-caixa">

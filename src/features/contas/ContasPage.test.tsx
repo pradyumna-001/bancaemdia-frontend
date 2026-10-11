@@ -626,7 +626,7 @@ it('Retry-After on a write blocks submit and manual check without replay', async
 });
 it('unsupported exact IDs do not silently broaden the financial population', async () => {
   const { requests, router } = await open('/contas?conta=9007199254740993');
-  await screen.findByText(/Este identificador exige uma consulta/);
+  await screen.findByText(/A consulta não está disponível para esta casa/);
   expect(
     requests.some((req) => req.url.includes('/titulares/financeiro')),
   ).toBe(false);
@@ -704,7 +704,7 @@ it('an exact catalog ID unsupported by the write contract is explained without r
     screen.getByRole('button', { name: 'Casa da nova conta Sem filtro' }),
   );
   fireEvent.click(screen.getByRole('button', { name: 'Casa com ID exato' }));
-  await screen.findByText(/Esta casa exige uma versão do cadastro/);
+  await screen.findByText(/O cadastro de conta ainda não está disponível/);
   expect(
     screen.getByRole('button', { name: 'Cadastrar conta' }),
   ).toBeDisabled();

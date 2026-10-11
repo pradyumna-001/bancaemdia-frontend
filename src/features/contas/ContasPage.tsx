@@ -518,7 +518,7 @@ function Conteudo({
                 <h2 id="contas-arquivar">Arquivar {holder.nome}?</h2>
                 <p>
                   Contas e histórico serão preservados. Se houver conta em uso,
-                  o servidor exigirá uma troca antes.
+                  troque-a antes de arquivar.
                 </p>
                 <div className="acoes">
                   <button
@@ -770,8 +770,8 @@ function Conteudo({
               </EscolhaFiltro>
               {newHouse && !identificador(newHouse) && (
                 <p role="alert">
-                  Esta casa exige uma versão do cadastro com IDs exatos. Escolha
-                  outra casa ou aguarde a atualização do contrato.
+                  O cadastro de conta ainda não está disponível para esta casa.
+                  Escolha outra casa ou tente mais tarde.
                 </p>
               )}
               <button
@@ -821,8 +821,9 @@ function Conteudo({
         </nav>
         {unsafeIds && (
           <p role="alert">
-            Este identificador exige uma consulta com IDs exatos. O filtro foi
-            preservado; remova-o explicitamente para consultar outro recorte.
+            A consulta não está disponível para esta casa, titular ou conta.
+            Seus filtros foram preservados; remova o filtro para consultar outro
+            recorte.
           </p>
         )}
         <p>

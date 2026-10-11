@@ -66,8 +66,8 @@ export function ContaCard({
           </ol>
         ) : (
           <p>
-            Esta conta ainda não tem períodos de uso. Ative-a quando a API
-            permitir ou consulte outra conta.
+            Esta conta ainda não tem períodos de uso. Ative-a quando estiver
+            disponível ou consulte outra conta.
           </p>
         )}
       </details>
@@ -96,7 +96,7 @@ export function ContaCard({
                     ),
                   );
                 },
-                'Conta ativada. O período começou no horário confirmado pelo servidor.',
+                'Conta ativada. O início do período está registrado no histórico.',
               )
             }
           >
