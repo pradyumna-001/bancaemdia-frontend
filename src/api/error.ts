@@ -150,7 +150,8 @@ export function httpError(
   const candidate =
     response.headers.get('X-Auth-Error') ??
     value?.code ??
-    record(value?.detail)?.code;
+    record(value?.detail)?.code ??
+    (typeof value?.detail === 'string' ? value.detail : undefined);
   return new ApiError('http', {
     status: response.status,
     headers: response.headers,
