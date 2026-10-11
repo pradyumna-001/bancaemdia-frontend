@@ -2,6 +2,14 @@ node_modules/
 dist/
 dist-security/
 dist-shell-fixture/
+dist-acesso-fixture/
+dist-filtros-fixture/
+dist-filtros-security/
+dist-enviar-fixture/
+dist-assinatura-fixture/
+dist-calculadoras-fixture/
+dist-telegram-fixture/
+dist-configuracoes-fixture/
 dist-ssr/
 *.local
 .env
@@ -28,3 +36,10 @@ Thumbs.db
 reports/
 .identity-api/
 __pycache__/
+dist-midia-fixture/
+dist-apostas-fixture/
+dist-hipotetica-fixture/
+dist-contas-fixture/
+dist-painel-proposta/
+dist-painel-fixture/
+dist-apostas-security/

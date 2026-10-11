@@ -36,6 +36,7 @@ test('todas as rotas protegidas exigem sessão e preservam destino permitido', a
     '/resultados',
     '/revisao',
     '/aposta/abc-123',
+    '/aposta/abc-123/foto',
     '/configuracoes',
     '/configuracoes/conexoes',
     '/configuracoes/privacidade',

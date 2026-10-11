@@ -1,5 +1,7 @@
 # bancaemdia-frontend
 
+Foto original (#22): visualizador protegido `/aposta/:chave/foto`, com leitura sob demanda, ampliação e ausência segura. [Contrato, provas e integração com o detalhe](docs/contracts/foto-aposta.md). A candidata backend #193 permanece dependência de revisão/integração, sem deploy.
+
 Refatoração do frontend do Planilhador de Apostas. Single-page application **React + Vite + TypeScript (strict)** que consome a API versionada [`bancaemdia-api`](https://github.com/pradyumna-001/bancaemdia-api) (`/api/v1`, contratos em `docs/API.md` do backend).
 
 SPA para as tarefas atuais de bancaemdia-api: apostas, contas/titulares, caixa, revisão, entrada, assinatura, análises e ferramentas. Preserva vocabulário pt-BR e qualidade de tela; o monólito é referência histórica, não limite de escopo. Ver ADR 019 e docs/backlog.
