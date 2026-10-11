@@ -366,6 +366,7 @@ export function ApostasPage({
           )}
           {summary.error && (
             <ErroApi
+              contexto="Resumo de apostas"
               error={summary.error}
               intent="leitura"
               destination={destination}
@@ -436,6 +437,7 @@ export function ApostasPage({
         {list.error && (
           <>
             <ErroApi
+              contexto="Lista de apostas"
               error={list.error}
               intent="leitura"
               destination={destination}

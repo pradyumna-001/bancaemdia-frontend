@@ -134,6 +134,7 @@ async def seed(page, engine, uid):
                     estado="PENDENTE",
                     stake_unidades=1,
                     stake_centavos=10000,
+                    valor_aposta_centavos=10000,
                     data_aposta=datetime(2026, 10, 10, 12, tzinfo=UTC),
                     conta_casa_id=orphan if index == 5 else None,
                 )
@@ -397,6 +398,9 @@ async def test_public_spa_central_journey(
             assert response.status == 200 and (await response.body()).startswith(b"PK")
             await page.goto(backend.FRONT + "/" + search)
             await expect(page.get_by_role("article")).to_have_count(2)
+            await page.get_by_text(
+                "Filtrar apostas — há filtros ativos", exact=True
+            ).click()
             await page.get_by_role("button", name="Remover filtro Conta").click()
             assert "conta" not in urlsplit_query(page.url)
             await page.go_back()
@@ -482,7 +486,7 @@ async def test_public_spa_central_access_isolation(
             "usuario_id"
         ]
         await page.goto(backend.FRONT + "/sair")
-        await page.get_by_role("button", name="Sair desta conta").click()
+        await page.get_by_role("button", name="Confirmar saída", exact=True).click()
         await expect(
             page.get_by_role("heading", name="Entrar", exact=True)
         ).to_be_visible()

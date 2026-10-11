@@ -127,14 +127,13 @@ test('fila vazia, erro e recuperação não fabricam contador nem bloqueiam nave
         }),
   );
   await page.goto('http://127.0.0.1:4175/?ambiente=production');
-  await expect(page.getByRole('alert')).toContainText(
-    'Não foi possível atualizar',
-  );
+  const avisoFila = page.locator('.aviso-fila');
+  await expect(avisoFila).toContainText('Não foi possível atualizar');
   await expect(page.getByRole('note')).toHaveCount(0);
   await expect(page.getByRole('link', { name: /Revisão/ })).toHaveCount(0);
   falha = false;
-  await page.getByRole('button', { name: 'Tentar novamente' }).click();
-  await expect(page.getByRole('alert')).toHaveCount(0);
+  await avisoFila.getByRole('button', { name: 'Tentar novamente' }).click();
+  await expect(avisoFila).toHaveCount(0);
   await expect(page.getByRole('link', { name: /Revisão/ })).toHaveCount(0);
   if (testInfo.project.name.endsWith('mobile')) {
     await page.setViewportSize({ width: 320, height: 568 });

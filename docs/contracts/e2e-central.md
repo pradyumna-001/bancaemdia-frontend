@@ -8,7 +8,7 @@ API real do sandbox: [f109655afa4721b239afc1c2c7593c5391cc047a](https://github.c
 
 Disponibilidade `sandbox_reconciliation` no manifesto, com commit completo, permalink, baseline e cabeças de origem imutáveis. A fonte é uma branch de ensaio, não main, PR backend entregue ou deploy. `requireIntegratedContract` recusa toda disponibilidade candidata; sua prova de ancestralidade permanece. O administrador mantém as revisões e os merges dos PRs originais.
 
-Frontend: reaproveita #86 (fundação #85/#80 e Contas), #84 (lista compacta/detalhe), #88 (foto e suas provas), preservando a apresentação aprovada da conta #83. Reconciliam-se rotas, catálogo restrito de casas das Contas, pílulas únicas do Painel e link de foto no detalhe por chave/query. A foto não depende de hash ou revisão aberta. Escopo próprio #23: esta reconciliação, manifestação da fonte candidata e testes/CI centrais. As telas e decisões financeiras continuam nos seus PRs independentes.
+Frontend: reaproveita #86 (fundação #85/#80 e Contas), #84 (lista compacta/detalhe), #88 (foto e suas provas), preservando a apresentação aprovada da conta #83. Reconciliam-se rotas, catálogo restrito de casas das Contas, pílulas únicas do Painel e link de foto no detalhe por chave/query. A foto não depende de hash ou revisão aberta. Erros simultâneos da lista e do resumo têm nomes acessíveis distintos; o teste da fila verifica especificamente o aviso da Revisão. Escopo próprio #23: esta reconciliação, manifestação da fonte candidata e testes/CI centrais. As telas e decisões financeiras continuam nos seus PRs independentes.
 
 ## Dados e jornadas reais
 

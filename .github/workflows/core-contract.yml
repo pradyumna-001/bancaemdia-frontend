@@ -100,6 +100,7 @@ jobs:
         with:
           name: central-${{ matrix.browser }}-${{ github.event_name }}-${{ github.run_id }}
           if-no-files-found: error
+          include-hidden-files: true
           path: |
             .identity-api/*-results.xml
             .identity-api/central-*.zip

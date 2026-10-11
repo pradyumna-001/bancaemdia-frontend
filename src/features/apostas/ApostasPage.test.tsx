@@ -471,6 +471,15 @@ it('404 não repete a lista e oferece orientação preservando todos os filtros'
   await within(
     screen.getByRole('region', { name: 'Lista de apostas' }),
   ).findByRole('alert');
+  await within(
+    screen.getByRole('region', { name: 'Resumo desta visão' }),
+  ).findByRole('region', { name: /^Resumo de apostas / });
+  expect(
+    within(screen.getByRole('region', { name: 'Lista de apostas' })).getByRole(
+      'region',
+      { name: /^Lista de apostas / },
+    ),
+  ).toBeVisible();
   expect(
     screen.queryByRole('button', { name: 'Tentar novamente' }),
   ).not.toBeInTheDocument();
