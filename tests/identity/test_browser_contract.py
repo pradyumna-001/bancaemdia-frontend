@@ -1329,7 +1329,9 @@ async def test_public_spa_painel_detalhado(harness, engine_admin, viewport):
             + f"/painel?grupo={group_id}&desde=2026-01-01&ate=2026-02-15&apagadas=todas"
         )
         await expect(
-            page.get_by_text("Grupo de prova do Painel", exact=True)
+            page.locator(".painel-grupos").get_by_text(
+                "Grupo de prova do Painel", exact=True
+            )
         ).to_be_visible()
         await expect(page.locator(".painel-dias > li")).to_have_count(14)
         await expect(

@@ -88,6 +88,7 @@ export function ExportarPainel({
       )}
       {!!error && (
         <ErroApi
+          contexto="Excel do Painel"
           error={error}
           intent="leitura"
           destination="/painel"

@@ -36,10 +36,19 @@ import './painel.css';
 
 type Client = ReturnType<typeof createApiClient>;
 type Query = Record<string, string | number | boolean>;
-function Falha({ error, tentar }: { error: unknown; tentar: () => void }) {
+function Falha({
+  error,
+  tentar,
+  contexto,
+}: {
+  error: unknown;
+  tentar: () => void;
+  contexto: string;
+}) {
   return (
     <ErroApi
       error={error}
+      contexto={contexto}
       intent="leitura"
       destination="/painel"
       actions={{ tentar }}
@@ -280,7 +289,11 @@ function Conteudo({
           </div>
           {diario.isPending && <p role="status">Consultando os dias…</p>}
           {diario.error && (
-            <Falha error={diario.error} tentar={() => void diario.refetch()} />
+            <Falha
+              contexto="Lucro por dia"
+              error={diario.error}
+              tentar={() => void diario.refetch()}
+            />
           )}
           {diario.data && (
             <DiarioPainel
@@ -317,6 +330,7 @@ function Conteudo({
           {groupError && (
             <>
               <Falha
+                contexto="Lucro por grupo"
                 error={groupError}
                 tentar={() => resetGroups((n) => n + 1)}
               />
@@ -344,7 +358,11 @@ function Conteudo({
         </p>
         {saldo.isPending && <p role="status">Consultando os saldos…</p>}
         {saldo.error && (
-          <Falha error={saldo.error} tentar={() => void saldo.refetch()} />
+          <Falha
+            contexto="Saldo de todas as contas"
+            error={saldo.error}
+            tentar={() => void saldo.refetch()}
+          />
         )}
         {saldo.data && (
           <>
@@ -379,6 +397,7 @@ function Conteudo({
         ) : null}
         {evolucao.error && (
           <Falha
+            contexto="Lucro acumulado"
             error={evolucao.error}
             tentar={() => void evolucao.refetch()}
           />
@@ -425,6 +444,7 @@ function Conteudo({
         )}
         {comparacoes.error && (
           <Falha
+            contexto="Comparações do recorte"
             error={comparacoes.error}
             tentar={() => void comparacoes.refetch()}
           />

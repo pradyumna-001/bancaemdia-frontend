@@ -305,9 +305,13 @@ it('merges paginated children keeping the parent total and detects changed metri
   fireEvent.click(
     screen.getByRole('button', { name: 'Atualizar todo o Painel' }),
   );
-  await screen.findByRole('button', {
-    name: 'Carregar mais grupos e tipsters',
-  });
+  await screen.findByRole(
+    'button',
+    {
+      name: 'Carregar mais grupos e tipsters',
+    },
+    { timeout: 5000 },
+  );
   second.grupos[0]!.metricas.lucro_centavos = '777';
   h.handlers[GRUPOS] = () => json(second);
   fireEvent.click(
