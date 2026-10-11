@@ -2,13 +2,29 @@ import { useQueryClient } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, type RouteObject } from 'react-router-dom';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import * as api from '../api/client';
+import { parseConfig } from '../lib/config';
+import { unlinkedTelegram } from '../../tests/fixtures/telegram';
 import { App } from './App';
 import { RouteError } from './RouteError';
 import { createAppQueryClient } from './queryClient';
 import { createAppRoutes } from './routes';
 
 const disposers: Array<() => void> = [];
+beforeEach(() => {
+  vi.spyOn(api, 'getApiClient').mockReturnValue(
+    api.createApiClient(
+      parseConfig({ VITE_API_URL: 'http://127.0.0.1:8000' }),
+      {
+        fetcher: async () =>
+          new Response(JSON.stringify(unlinkedTelegram), {
+            headers: { 'Content-Type': 'application/json' },
+          }),
+      },
+    ),
+  );
+});
 afterEach(() => {
   disposers.splice(0).forEach((dispose) => dispose());
   vi.restoreAllMocks();
@@ -46,7 +62,7 @@ it.each([
   ['/revisao', 'Revisão'],
   ['/aposta/abc-123', 'Aposta'],
   ['/configuracoes', 'Configurações'],
-  ['/configuracoes/conexoes', 'Conexões'],
+  ['/configuracoes/conexoes', 'Telegram'],
   ['/configuracoes/privacidade', 'Privacidade'],
   ['/contas', 'Contas e titulares'],
   ['/contas/42', 'Contas do titular'],

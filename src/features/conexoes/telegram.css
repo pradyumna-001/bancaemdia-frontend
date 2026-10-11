@@ -1,0 +1,84 @@
+.telegram-pagina {
+  display: grid;
+  gap: var(--espaco-24);
+}
+.telegram-pagina > p,
+.telegram-pagina h1 {
+  margin: 0;
+}
+.telegram-painel,
+.telegram-confirmacao {
+  padding: var(--espaco-24);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+}
+.telegram-painel h2,
+.telegram-confirmacao h2 {
+  margin-top: 0;
+}
+.telegram-painel > button + button {
+  margin-inline-start: var(--espaco-12);
+}
+.telegram-pagina button {
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-16);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  color: var(--acao);
+  background: var(--superficie);
+  font: inherit;
+  cursor: pointer;
+}
+.telegram-pagina button:disabled {
+  color: var(--tinta-secundaria);
+  background: var(--superficie);
+  cursor: default;
+}
+.telegram-pagina button:hover:not(:disabled) {
+  background: var(--acao-hover);
+  color: var(--sobre-acao);
+  border-color: var(--acao-hover);
+}
+.telegram-pagina summary {
+  cursor: pointer;
+  min-height: var(--alvo-toque);
+}
+.telegram-comando {
+  padding: var(--espaco-16);
+  background: var(--superficie-secundaria);
+  border-radius: var(--raio-controle);
+  overflow-wrap: anywhere;
+}
+.telegram-comando code {
+  font: inherit;
+  font-weight: var(--peso-forte);
+  user-select: all;
+}
+.telegram-dados {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-24);
+}
+.telegram-dados dd {
+  margin: var(--espaco-8) 0 0;
+}
+.telegram-lancamento {
+  color: var(--tinta-secundaria);
+}
+@media (max-width: 40rem) {
+  .telegram-dados {
+    grid-template-columns: 1fr;
+  }
+  .telegram-painel,
+  .telegram-confirmacao {
+    padding: var(--espaco-16);
+  }
+  .telegram-painel > button {
+    display: block;
+    margin-top: var(--espaco-12);
+  }
+  .telegram-painel > button + button {
+    margin-inline-start: 0;
+  }
+}
