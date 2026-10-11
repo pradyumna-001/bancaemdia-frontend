@@ -139,6 +139,7 @@ test('link secundário em Apostas preserva filtros e identifica área ativa', as
     name: 'E se eu seguisse a stake do tipster?',
   });
   await expect(link).toHaveAttribute('href', '/e-se?casa=7&apagadas=1');
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await link.click();
   await expect(
     page.getByRole('heading', { name: 'Comparação disponível' }),

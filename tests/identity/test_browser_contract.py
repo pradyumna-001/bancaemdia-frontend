@@ -1395,7 +1395,16 @@ async def test_public_spa_historical_comparison(harness, engine_admin, viewport)
             other.get_by_role("heading", name="Nenhuma aposta neste recorte")
         ).to_be_visible()
         await page.goto(backend.FRONT + "/sair")
-        await page.get_by_role("button", name="Confirmar saída", exact=True).click()
+        async with page.expect_response(
+            lambda r: r.url.endswith("/auth/logout") and r.request.method == "POST"
+        ) as pending_logout:
+            await page.get_by_role("button", name="Confirmar saída", exact=True).click()
+        logout = await pending_logout.value
+        assert logout.status == 204
+        await expect(
+            page.get_by_role("heading", name="Entrar", exact=True)
+        ).to_be_visible()
+        assert (await browser_request(page, "/auth/session"))["status"] == 401
         await page.goto(backend.FRONT + "/e-se" + query)
         await expect(
             page.get_by_role("heading", name="Entrar", exact=True)
