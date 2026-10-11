@@ -20,3 +20,5 @@ Revisado em 29/09/2026 pelo [ADR019](019-current-product-backend-alignment.md). 
 ## Regras comuns
 
 Cada corpo preserva Labels, Size, Files, Tasks e Acceptance, incluindo contrato/disponibilidade e critérios visuais. [Backlog completo](../backlog/README.md), [contratos](../API-CONTRACTS.md), [pesquisa](../research/backlog-visual.md). A antiga cópia dos corpos foi substituída por referências para impedir divergência entre ADRs, GitHub e planejamento. Histórico permanece no Git.
+
+Atualização #20 (11/10/2026): proposta aprovada e consumo da candidata backend #189 autorizado pelo titular, com dependências contra main e sem schema composto. Diário/grupos/Excel e seus limites estão em [contrato do Painel](../contracts/painel.md). Prova de sandbox não autoriza deploy; integração/reconciliação continua obrigatória.
