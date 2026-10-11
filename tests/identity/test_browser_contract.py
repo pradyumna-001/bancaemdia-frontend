@@ -1400,7 +1400,7 @@ async def test_public_spa_historical_comparison(harness, engine_admin, viewport)
         ) as pending_logout:
             await page.get_by_role("button", name="Confirmar saída", exact=True).click()
         logout = await pending_logout.value
-        assert logout.status == 204
+        assert logout.status == 200 and await logout.json() == {"logged_out": True}
         await expect(
             page.get_by_role("heading", name="Entrar", exact=True)
         ).to_be_visible()
