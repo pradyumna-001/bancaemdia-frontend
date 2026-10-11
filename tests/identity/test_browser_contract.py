@@ -1364,7 +1364,9 @@ async def test_public_spa_painel_detalhado(harness, engine_admin, viewport):
         async with page.expect_download() as download:
             await page.get_by_role("button", name="Exportar Painel em Excel").click()
         downloaded = await download.value
-        workbook = load_workbook(await downloaded.path(), read_only=True)
+        workbook = load_workbook(
+            io.BytesIO(Path(await downloaded.path()).read_bytes()), read_only=True
+        )
         try:
             assert set(workbook.sheetnames) == {
                 "Contexto",
