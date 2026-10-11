@@ -1272,11 +1272,13 @@ async def test_public_spa_aposta_photo(harness, engine_admin, viewport):
             await conn.execute(text("SELECT billing_activate_rollout()"))
             await conn.execute(
                 text(
-                    "WITH bounds AS (SELECT clock_timestamp()+interval '1 hour' AS finish) UPDATE assinaturas SET trial_confirmed=true, trial_ends_at=bounds.finish, trial_started_at=bounds.finish-interval '168 hours' FROM bounds WHERE usuario_id=:uid"
+                    "WITH bounds AS (SELECT clock_timestamp()+interval '45 seconds' AS finish) UPDATE assinaturas SET trial_confirmed=true, trial_ends_at=bounds.finish, trial_started_at=bounds.finish-interval '168 hours' FROM bounds WHERE usuario_id=:uid"
                 ),
                 {"uid": uid},
             )
         live = (await browser_request(page, "/auth/session"))["data"]
+        access = (await browser_request(page, "/api/v1/billing/status"))["data"]
+        assert access["access"] == "FULL_WRITE"
         created = await browser_request(
             page,
             "/api/v1/apostas",
@@ -1318,12 +1320,9 @@ async def test_public_spa_aposta_photo(harness, engine_admin, viewport):
                 .where(models.RevisaoPendente.id == review)
                 .values(resolvido_em=datetime.now().astimezone())
             )
-            await conn.execute(
-                text(
-                    "UPDATE assinaturas SET trial_confirmed=false WHERE usuario_id=:uid"
-                ),
-                {"uid": uid},
-            )
+        # The database clock expires the immutable trial; never reverse its grant.
+        expiry = datetime.fromisoformat(access["trial_ends_at"]).timestamp()
+        await asyncio.sleep(max(0, expiry - time.time()) + 1)
         assert (await browser_request(page, "/api/v1/billing/status"))["data"][
             "access"
         ] == "READ_ONLY"

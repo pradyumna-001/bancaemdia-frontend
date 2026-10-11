@@ -30,12 +30,14 @@ test('foto privada: sob demanda, reserva, zoom, Escape e foco', async ({
     )
     .toBe(800);
   expect(reads).toBe(1);
-  expect(
-    await frame.evaluate((node) => {
-      const box = node.getBoundingClientRect();
-      return { width: box.width, height: box.height, top: box.top + scrollY };
-    }),
-  ).toEqual(before);
+  const after = await frame.evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    return { width: box.width, height: box.height, top: box.top + scrollY };
+  });
+  expect(after.width).toBe(before.width);
+  expect(after.height).toBe(before.height);
+  // Firefox rounds viewport coordinates when scrolling; retain subpixel precision.
+  expect(after.top).toBeCloseTo(before.top, 3);
   expect(await img.getAttribute('src')).toMatch(/^blob:/);
   expect(await img.getAttribute('loading')).toBe('lazy');
   const zoom = page.getByRole('button', { name: 'Ampliar foto' });
@@ -119,12 +121,13 @@ test('mídia lenta reserva espaço e duplo toque não duplica', async ({
   });
   await page.getByRole('button', { name: 'Abrir foto' }).dblclick();
   await expect(page.getByRole('button', { name: 'Abrir foto' })).toBeDisabled();
-  expect(
-    await frame.evaluate((node) => {
-      const box = node.getBoundingClientRect();
-      return { width: box.width, height: box.height, top: box.top + scrollY };
-    }),
-  ).toEqual(before);
+  const after = await frame.evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    return { width: box.width, height: box.height, top: box.top + scrollY };
+  });
+  expect(after.width).toBe(before.width);
+  expect(after.height).toBe(before.height);
+  expect(after.top).toBeCloseTo(before.top, 3);
   release();
   await expect(page.locator('.foto-aposta').getByRole('img')).toBeVisible();
   expect(reads).toBe(1);
@@ -133,6 +136,9 @@ test('contraste, temas, teclado e reflow nos estados da foto', async ({
   page,
 }, testInfo) => {
   await page.goto(origin + path);
+  await expect(
+    page.getByRole('heading', { name: 'Foto da aposta', exact: true }),
+  ).toBeVisible();
   for (const theme of ['claro', 'escuro']) {
     await page.evaluate((value) => {
       document.documentElement.dataset.tema = value;
