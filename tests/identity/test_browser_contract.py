@@ -1323,22 +1323,23 @@ async def test_public_spa_aposta_photo(harness, engine_admin, viewport):
         # The database clock expires the immutable trial; never reverse its grant.
         expiry = datetime.fromisoformat(access["trial_ends_at"]).timestamp()
         await asyncio.sleep(max(0, expiry - time.time()) + 1)
-        assert (await browser_request(page, "/api/v1/billing/status"))["data"][
-            "access"
-        ] == "READ_ONLY"
-        assert (
-            await page.request.get(backend.FRONT + f"/api/v1/revisao/{review}/foto")
-        ).status == 404
-        before = await snapshot(uid)
         from urllib.parse import quote
 
         url = (
             backend.FRONT + "/aposta/" + quote(key, safe="") + "/foto?casa=7&apagadas=1"
         )
+        # Enter through the SPA so its real Web Lock/session flow renews short
+        # issuer tokens after the wait; raw fetch intentionally does not renew.
         await page.goto(url)
         await expect(
             page.get_by_role("heading", name="Foto da aposta", exact=True)
         ).to_be_visible()
+        readonly = await browser_request(page, "/api/v1/billing/status")
+        assert readonly["status"] == 200 and readonly["data"]["access"] == "READ_ONLY"
+        assert (
+            await page.request.get(backend.FRONT + f"/api/v1/revisao/{review}/foto")
+        ).status == 404
+        before = await snapshot(uid)
         async with page.expect_response(
             lambda r: "/api/v1/apostas/" in r.url and r.url.endswith("/foto")
         ) as pending:
