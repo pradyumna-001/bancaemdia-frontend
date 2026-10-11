@@ -13,6 +13,7 @@ import {
 } from '../features/revisao/estatisticas';
 import { ABAS, abaAtual } from './nav';
 import './Shell.css';
+import { AvisoAcesso } from '../features/acesso/AvisoAcesso';
 
 export function Shell({
   children,
@@ -153,7 +154,15 @@ export function Shell({
             </button>
           </div>
         )}
+        <AvisoAcesso />
         {children}
+        {location.pathname === '/' && (
+          <p className="hipotetica-entrada">
+            <Link to={{ pathname: '/e-se', search: location.search }}>
+              E se eu seguisse a stake do tipster?
+            </Link>
+          </p>
+        )}
       </div>
       <nav className="nav-mobile" aria-label="Navegação principal no celular">
         {abas.filter((aba) => aba.mobile).map(link)}

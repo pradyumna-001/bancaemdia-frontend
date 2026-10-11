@@ -30,6 +30,7 @@ test('todas as rotas protegidas exigem sessão e preservam destino permitido', a
   for (const path of [
     '/',
     '/painel',
+    '/e-se',
     '/enviar',
     '/coleta',
     '/banca',
