@@ -1,0 +1,47 @@
+# Acesso comercial — #52 / ADR019
+
+## Fonte e disponibilidade
+
+Backend integrado `b916f54331f14cf47a3800324bd61d8638043c06`, árvore única. OpenAPI oficial `tests/contract/schemas/openapi.json`, SHA-256 `0714381b9e0e4797000932636ffb770b794dc7b6731c1bfcea3d46881bfbe11a`. Backend #93 concluída por #177/#178/#181. `pnpm check:contract-integration` verifica ancestralidade na main; tipos/políticas têm o gate de drift existente. Isso não declara homologação/deploy, não ativa billing nem contrata serviços.
+
+Fontes imutáveis: [dependências](https://github.com/pradyumna-001/bancaemdia-api/blob/b916f54331f14cf47a3800324bd61d8638043c06/src/bancaemdia/api/deps.py), [status](https://github.com/pradyumna-001/bancaemdia-api/blob/b916f54331f14cf47a3800324bd61d8638043c06/src/bancaemdia/api/v1/billing.py), [calculadoras](https://github.com/pradyumna-001/bancaemdia-api/blob/b916f54331f14cf47a3800324bd61d8638043c06/src/bancaemdia/api/v1/calculators.py), [relógio/rollout](https://github.com/pradyumna-001/bancaemdia-api/blob/b916f54331f14cf47a3800324bd61d8638043c06/src/bancaemdia/domain/billing.py).
+
+## Comportamento
+
+- Cookie/sessão e acesso comercial são estados separados. `/auth/session` prova identidade; `GET /api/v1/billing/status` confirma `access`. Não derivar permissão de `status`, cartão, datas, preço ou trial_confirmed. Antes da ativação administrativa de billing, o servidor pode retornar FULL_WRITE mesmo sem trial confirmado; apenas `access` prevalece.
+- Provider consulta apenas com sessão autenticada. Cache inclui pessoa, geração privada e revisão de recusa. Dados/limite Retry-After e sinais externos são limpos pelo serviço de sessão no logout/troca. Parsing e consultas preservam o fencing do cliente/serviço.
+- Carregamento/atualização/erro desconhecido fecham escrita; leituras e exceções explicitamente contratadas seguem disponíveis com sessão válida. Erro conserva filtros e formulário. Datas são exibidas em São Paulo pelo formatador único, sem comparar com o relógio local para conceder acesso.
+- O cliente central chama `beforeMutation` antes de transmitir mutações da SPA. O controller consulta status fresco para operações sujeitas a escrita; exceções abaixo não consultam billing. Nenhuma mutação é query ou ganha replay/retry. Consumidor pode usar `useAcesso().can(operation)` para orientar o botão, sem apagar campos. `run(operation, work)` atende integrações explícitas que não passam pelo cliente central; não duplicar a conferência de uma chamada já protegida.
+- 402 real (`detail="account_read_only"`, projeção de código permitida) invalida a confirmação em memória e consulta status novamente. A sessão não termina. Uma recusa inesperada do próprio status não aciona reconfirmação circular. Falha de status fecha escrita; recuperação de pagamento não reenvia nem limpa a intenção recusada.
+- GETs respeitam os limites permanentes de retry. Retry-After mantém prazo compartilhado no controller; prazo longo encerra retry automático/foco/remount. Conferência manual aguarda o prazo; 404/405 não oferecem repetir. A consulta de acesso não bloqueia GETs de dados, exportação nem controle de sessão. Login/logout/refresh permanecem fora do gate comercial.
+- O aviso vive dentro do Shell protegido e preserva parâmetros ao abrir Assinatura. A #51 entrega checkout; esta issue não fabrica preços, pagamento ou assinatura. Os estados operacionais e financeiros são respostas da API, sem cálculo no cliente.
+
+## Matriz integrada por operação
+
+Todas as linhas exigem a credencial válida correspondente; permissão comercial não substitui CSRF, domínio/RLS, ações válidas, idempotência ou confirmação destrutiva.
+
+| Capacidade              | Em READ_ONLY                                        | Escrita e exceções                                                                                                                                                                                                      |
+| ----------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Apostas e resultados    | GET lista/detalhe/histórico                         | POST criação/resultado/restaurar/importar-planilha, PATCH correção e DELETE exigem FULL_WRITE                                                                                                                           |
+| Caixa                   | GET saldo/extrato/movimentos                        | POST movimentos e PATCH conta/banca exigem FULL_WRITE                                                                                                                                                                   |
+| Revisão                 | GET fila/stats/detalhe/foto autorizada              | POST resolver exige FULL_WRITE                                                                                                                                                                                          |
+| Uploads                 | GET job já autorizado, sem reenviar upload          | POST upload exige FULL_WRITE; 402 mantém arquivo/intenção; limites internos de gasto não geram autorização na UI                                                                                                        |
+| Titulares/contas/trocas | GET matriz/histórico/financeiro                     | CRUD/arquivo/ativar/troca exigem FULL_WRITE, com ações válidas decididas pela API                                                                                                                                       |
+| Painel/análises/metas   | GET resumos, métricas, export, preferências e metas | CRUD metas e PATCH preferências exigem FULL_WRITE                                                                                                                                                                       |
+| Privacidade             | GET export do usuário                               | DELETE /usuario/me é exceção de controle, continua permitido; manter confirmação própria                                                                                                                                |
+| Bot Telegram            | GET vínculo                                         | POST /telegram/link-codes e DELETE /telegram/link são exceções de controle; bot processa dados segundo gate do servidor                                                                                                 |
+| Coleta                  | GET instalações/projeções autorizadas               | POST /coleta/pairing-codes, POST /coleta/installations/{instalacao_id}/rotate e DELETE /coleta/installations/{instalacao_id} são exceções de controle. Ingestão/status da instalação usam credencial própria, não a SPA |
+| Calculadoras            | Quatro POST stateless permitidos                    | mercado-justo, distribuir-entre-resultados, cobertura-ao-vivo, percentual-banca; resultados sempre calculados pelo servidor                                                                                             |
+| Billing                 | GET status                                          | POST subscribe/portal/cancel são exceções explícitas, com condições próprias da API; sem replay de uma escrita financeira após pagamento                                                                                |
+
+`operations.ts` enumera exceções com verificação estática contra paths gerados. Não classificar todo POST como escrita bloqueada ou todo DELETE como exceção.
+
+## Integração das PRs independentes
+
+Branch parte da main frontend b5fb27d; não é empilhada. Reutiliza formatação exata/dataHora e seus testes da #16/PR #69, e preserva as decisões de remoção de consentimento da #71. Gate de pin integrado e documentação da exceção #17/#184 vêm da #74; **o schema de filtros candidato não é adotado**. Reconciliar as sobreposições após merges administrativos. Se #74 integrar por último, seu candidato continuará marcado indisponível para publicar até reconciliar ao backend integrado; nunca substituir pelo pin b916 e manter componentes de filtros que exigem #184.
+
+PRs #73/#75 permanecem contra main: o cliente central aplica o gate comercial quando reconciliadas com esta entrega. A #24 deve orientar o botão com `can('POST /api/v1/upload')`, conservar arquivo em 402 e observar GET do job em modo de leitura. A #15 não deve bloquear observação por falta de FULL_WRITE. Novas consumidoras #18/#19/#20/#26–#34/#51/#53–#58 usam esse provider/controller e a matriz; não criar outro gate por verbo, storage ou data. Essas páginas continuam em suas próprias issues.
+
+## Evidência
+
+Testes de controller/provider/client cobrem status inválido/erro, prazo, recusa concorrente, troca/logout, cancelamento de consulta antiga, exceções e ausência de replay. E2E usa o build público para aviso, filtros, temas, teclado, 390/1440 e reflow 320; exercício separado de formulário prova preservação após 402, sem bypass público. A prova OIDC/PostgreSQL real roda no build público, dois viewports e zero skips, com rollout/trial/período pago exclusivamente no banco descartável do CI. Confere expiração no relógio do servidor, 402, leitura/exportação/calculadora e recuperação sem nova aposta. Simulação de período pago não é checkout live nem substitui #51.
