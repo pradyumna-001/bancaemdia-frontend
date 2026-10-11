@@ -367,6 +367,24 @@ it('isolates failed saldo/compared sections and retries only explicit safe reads
     'Sem evolução consolidada. Escolha outro período ou envie apostas.',
   );
 });
+it('preserves the current filters in section and export recovery links', async () => {
+  await open('/painel?casa=7&apagadas=1', {
+    '/api/v1/painel': () => json({}, 402),
+    [EXPORT]: () => json({}, 402),
+  });
+  await screen.findByRole('link', { name: /Ver assinatura/ });
+  await screen.findByText('Seleções de futebol');
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Exportar Painel em Excel' }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.getAllByRole('link', { name: /Ver assinatura/ }),
+    ).toHaveLength(2),
+  );
+  for (const link of screen.getAllByRole('link', { name: /Ver assinatura/ }))
+    expect(link).toHaveAttribute('href', '/assinatura?casa=7&apagadas=1');
+});
 it('rejects malformed export and supports explicit corrected download', async () => {
   const h = await open('/painel', {
     [EXPORT]: () => new Response(new Blob(['bad'], { type: 'text/html' })),

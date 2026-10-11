@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/ProvedorAuth';
 import type { createApiClient } from '../../api/client';
 import { ApiError } from '../../api/error';
@@ -16,6 +17,7 @@ export function ExportarPainel({
   leitura: ReturnType<typeof useLeituraPainel>;
 }) {
   const auth = useAuth()!;
+  const location = useLocation();
   const resource = useRef<{ controller?: AbortController; url?: string }>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
@@ -91,7 +93,7 @@ export function ExportarPainel({
           contexto="Excel do Painel"
           error={error}
           intent="leitura"
-          destination="/painel"
+          destination={location.pathname + location.search}
           actions={{ tentar: () => void exportar() }}
         />
       )}

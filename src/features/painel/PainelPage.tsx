@@ -45,12 +45,13 @@ function Falha({
   tentar: () => void;
   contexto: string;
 }) {
+  const location = useLocation();
   return (
     <ErroApi
       error={error}
       contexto={contexto}
       intent="leitura"
-      destination="/painel"
+      destination={location.pathname + location.search}
       actions={{ tentar }}
     />
   );
