@@ -1236,7 +1236,7 @@ async def test_public_spa_timezone_preference(harness, engine_admin, viewport):
 @pytest.mark.parametrize(
     "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
 )
-async def test_public_spa_painel_detalhado(harness, engine_admin, viewport):
+async def test_public_spa_painel_detalhado(harness, engine_admin, viewport, request):
     """Real private daily/hierarchy pagination and whole-selection Excel, no mocks."""
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch()
@@ -1245,7 +1245,19 @@ async def test_public_spa_painel_detalhado(harness, engine_admin, viewport):
         page = await context.new_page()
         other = await other_context.new_page()
         errors = []
-        page.on("pageerror", lambda _error: errors.append("public-page-error"))
+        hosted_diagnostics = []
+
+        def document_error(_error):
+            origin = urlsplit(page.url).netloc
+            if origin == urlsplit(backend.FRONT).netloc:
+                errors.append("public SPA pageerror")
+            elif origin == urlsplit(backend.ISSUER).netloc:
+                # Match the existing commercial proof; never log protocol URLs/secrets.
+                hosted_diagnostics.append("hosted document pageerror")
+            else:
+                errors.append("unexpected document pageerror")
+
+        page.on("pageerror", document_error)
         session, _ = await backend.register(
             page,
             uuid4().hex + "@example.org",
@@ -1405,6 +1417,10 @@ async def test_public_spa_painel_detalhado(harness, engine_admin, viewport):
         assert (await browser_request(page, "/api/v1/painel/filtrado/grupos"))[
             "status"
         ] == 401
+        request.node.user_properties.append(
+            ("hosted_document_pageerrors", str(len(hosted_diagnostics)))
+        )
+        assert not errors
         await context.close()
         await other_context.close()
         await browser.close()
