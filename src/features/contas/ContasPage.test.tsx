@@ -45,6 +45,7 @@ beforeEach(() => {
     this: HTMLDialogElement,
   ) {
     this.removeAttribute('open');
+    this.dispatchEvent(new Event('close'));
   });
 });
 afterEach(() => {
@@ -222,6 +223,9 @@ it('renames a person, confirms archive, preserves account history', async () => 
   await screen.findByRole('heading', { name: 'Marina Silva' });
   fireEvent.click(screen.getByRole('button', { name: 'Arquivar titular' }));
   fireEvent.click(screen.getByRole('button', { name: 'Agora não' }));
+  expect(
+    screen.getByRole('button', { name: 'Arquivar titular' }),
+  ).toHaveFocus();
   expect(writes(requests)).toHaveLength(1);
   fireEvent.click(screen.getByRole('button', { name: 'Arquivar titular' }));
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar arquivo' }));
@@ -648,4 +652,61 @@ it('malformed activation receipt is uncertain and never grants local use state',
   expect(document.body.textContent).not.toContain('INVALID_TIME');
   expect(screen.getByRole('button', { name: 'Ativar conta' })).toBeDisabled();
   expect(writes(requests)).toHaveLength(1);
+});
+it.each(['/contas', '/contas/2'])(
+  'empty house catalogs offer a search action: %s',
+  async (path) => {
+    await open(path, (req) =>
+      new URL(req.url).pathname === '/api/v1/filtros/casas'
+        ? json({
+            dimensao: 'casas',
+            data: [],
+            pagination: { page: 1, page_size: 20, total: 0 },
+          })
+        : undefined,
+    );
+    await ready();
+    const label =
+      path === '/contas'
+        ? /^Casa Sem filtro$/
+        : /^Casa da nova conta Sem filtro$/;
+    fireEvent.click(screen.getByRole('button', { name: label }));
+    const dialog = screen.getByRole('dialog', {
+      name: path === '/contas' ? 'Casa' : 'Casa da nova conta',
+    });
+    expect(
+      within(dialog).getByText(
+        'Nenhuma casa nesta busca. Tente outro nome ou busque sem texto.',
+      ),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByRole('button', { name: 'Buscar' }),
+    ).toBeEnabled();
+  },
+);
+it('an exact catalog ID unsupported by the write contract is explained without rounding', async () => {
+  const { requests } = await open('/contas/2', (req) =>
+    new URL(req.url).pathname === '/api/v1/filtros/casas'
+      ? json({
+          dimensao: 'casas',
+          data: [
+            { id: '9007199254740993', nome: 'Casa com ID exato', ativa: true },
+          ],
+          pagination: { page: 1, page_size: 20, total: 1 },
+        })
+      : undefined,
+  );
+  await ready();
+  fireEvent.change(screen.getByLabelText('Apelido da conta'), {
+    target: { value: 'Conta' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Casa da nova conta Sem filtro' }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Casa com ID exato' }));
+  await screen.findByText(/Esta casa exige uma versão do cadastro/);
+  expect(
+    screen.getByRole('button', { name: 'Cadastrar conta' }),
+  ).toBeDisabled();
+  expect(writes(requests)).toHaveLength(0);
 });

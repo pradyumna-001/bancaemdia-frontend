@@ -1590,12 +1590,15 @@ async def test_public_spa_contas_titulares(harness, engine_admin, viewport, requ
         assert (
             await browser_request(other, f"/api/v1/titulares/casas/{house_id}/matriz")
         )["data"]["contas"] == []
-        foreign_finance = (
-            await browser_request(
-                other, f"/api/v1/titulares/financeiro?conta_casa_id={account_id}"
-            )
-        )["data"]
-        assert foreign_finance["titulares"] == []
+        foreign_finance = await browser_request(
+            other, f"/api/v1/titulares/financeiro?conta_casa_id={account_id}"
+        )
+        assert foreign_finance["status"] == 404
+        assert foreign_finance["data"] == {"detail": "não achei esta conta"}
+        own_finance = await browser_request(other, "/api/v1/titulares/financeiro")
+        assert own_finance["status"] == 200
+        assert own_finance["data"]["titulares"] == []
+        assert own_finance["data"]["contas_sem_titular"] == []
         await asyncio.sleep(max(0, expiry - time.time()) + 1)
         await page.goto(backend.FRONT + f"/contas/{holder_id}?apagadas=1")
         await expect(

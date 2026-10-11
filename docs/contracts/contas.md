@@ -18,6 +18,7 @@ Tipos, políticas e descritores são gerados do documento integral pinado. O ger
 - Financeiro recebe casa/titular/conta e limites desde/ate em Brasília, fim exclusivo. Outros filtros persistem no endereço com escopo explicitamente distinto. Lucro, giro, ROI, movimentos e categorias UNASSIGNED/contas sem titular vêm prontos da API. Saldo atual é all-time, sem corte por datas; null aparece como Não informado, zero válido continua zero. Totais não são somados no cliente.
 - Leituras têm recuperação limitada, deadline Retry-After compartilhado e erro por seção. Escritas não são repetidas. Resultado desconhecido bloqueia novas escritas até consulta explícita do estado; falha dessa consulta preserva o bloqueio. 422/402 preservam os campos e nunca exibem payload privado. READ_ONLY mantém listas, matrizes, histórico e financeiro.
 - Logout/troca de usuário abortam pedidos e desmontam forms/recibos privados. Captura de sessão é conferida depois da resposta; código antigo não atualiza o novo usuário. Catálogos consultam apenas a dimensão necessária. Picker com portal evita formulários HTML aninhados e mantém teclado/foco.
+- Identificadores de titular/conta de outro usuário recebem 404, inclusive no financeiro; não são consultas vazias bem-sucedidas. A consulta financeira sem esses identificadores mostra somente a população do usuário autenticado. A prova real verifica tanto a recusa quanto essa população vazia para o segundo usuário.
 
 ## Evidências e limites
 

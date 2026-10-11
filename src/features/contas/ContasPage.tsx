@@ -107,6 +107,7 @@ function Conteudo({
   const [newHouse, setNewHouse] = useState<string>();
   const [rename, setRename] = useState<string>();
   const confirm = useRef<HTMLDialogElement>(null);
+  const archiveTrigger = useRef<HTMLButtonElement>(null);
   const eligible = auth?.state.phase === 'authenticated' && (!rawId || !!id);
   const key = ['contas', auth?.state.privateEpoch];
   function change(values: Record<string, string | undefined>) {
@@ -499,6 +500,7 @@ function Conteudo({
                 </button>
               </form>
               <button
+                ref={archiveTrigger}
                 type="button"
                 disabled={
                   write.blocked ||
@@ -508,7 +510,11 @@ function Conteudo({
               >
                 Arquivar titular
               </button>
-              <dialog ref={confirm} aria-labelledby="contas-arquivar">
+              <dialog
+                ref={confirm}
+                aria-labelledby="contas-arquivar"
+                onClose={() => archiveTrigger.current?.focus()}
+              >
                 <h2 id="contas-arquivar">Arquivar {holder.nome}?</h2>
                 <p>
                   Contas e histórico serão preservados. Se houver conta em uso,
@@ -573,6 +579,14 @@ function Conteudo({
             }
           >
             <p>Escolha uma casa para consultar todas as contas nela.</p>
+            {houses?.fase === 'carregando' && (
+              <p role="status">Consultando casas…</p>
+            )}
+            {houses?.fase === 'pronto' && !houses.options.length && (
+              <p>
+                Nenhuma casa nesta busca. Tente outro nome ou busque sem texto.
+              </p>
+            )}
             {houses?.erro && <p role="alert">{houses.erro}</p>}
             <div className="acoes">
               {houses?.anterior && (
@@ -729,6 +743,15 @@ function Conteudo({
                 }
               >
                 {houses?.erro && <p role="alert">{houses.erro}</p>}
+                {houses?.fase === 'carregando' && (
+                  <p role="status">Consultando casas…</p>
+                )}
+                {houses?.fase === 'pronto' && !houses.options.length && (
+                  <p>
+                    Nenhuma casa nesta busca. Tente outro nome ou busque sem
+                    texto.
+                  </p>
+                )}
                 {houses?.anterior && (
                   <button type="button" onClick={houses.anterior}>
                     Opções anteriores
@@ -745,6 +768,12 @@ function Conteudo({
                   </button>
                 )}
               </EscolhaFiltro>
+              {newHouse && !identificador(newHouse) && (
+                <p role="alert">
+                  Esta casa exige uma versão do cadastro com IDs exatos. Escolha
+                  outra casa ou aguarde a atualização do contrato.
+                </p>
+              )}
               <button
                 disabled={
                   write.blocked ||

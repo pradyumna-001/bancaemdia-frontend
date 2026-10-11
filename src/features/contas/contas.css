@@ -59,6 +59,11 @@
 .contas-pagina button:disabled {
   opacity: 0.65;
 }
+.contas-pagina button:hover:not(:disabled) {
+  background: var(--acao-hover);
+  border-color: var(--acao-hover);
+  color: var(--sobre-acao);
+}
 .contas-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
