@@ -105,6 +105,7 @@ export class ApiError extends Error {
   readonly status: number;
   readonly code?: string;
   readonly retryAfterMs?: number;
+  readonly retryAfterDeadline?: number;
   readonly requestId?: string;
   readonly outcomeUnknown: boolean;
   readonly invalidFields: readonly InvalidField[];
@@ -132,6 +133,10 @@ export class ApiError extends Error {
     this.retryAfterMs = retryAfterMs(
       options.headers?.get('Retry-After') ?? null,
     );
+    this.retryAfterDeadline =
+      this.retryAfterMs === undefined
+        ? undefined
+        : Date.now() + this.retryAfterMs;
     const id = options.headers?.get('X-Request-Id');
     this.requestId = id && /^[A-Za-z0-9._:-]{1,128}$/.test(id) ? id : undefined;
     this.outcomeUnknown =
@@ -150,7 +155,8 @@ export function httpError(
   const candidate =
     response.headers.get('X-Auth-Error') ??
     value?.code ??
-    record(value?.detail)?.code;
+    record(value?.detail)?.code ??
+    (typeof value?.detail === 'string' ? value.detail : undefined);
   return new ApiError('http', {
     status: response.status,
     headers: response.headers,
