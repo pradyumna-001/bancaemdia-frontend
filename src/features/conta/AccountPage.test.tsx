@@ -9,6 +9,10 @@ import { createSession } from '../../auth/session';
 import { ProvedorAuth } from '../../auth/ProvedorAuth';
 import { sessionContext } from '../../auth/protocol';
 import { ApiError } from '../../api/error';
+import * as apiClient from '../../api/client';
+import { parseConfig } from '../../lib/config';
+import { paginaExemplo } from '../../../tests/fixtures/apostas';
+import { billingStatus } from '../../../tests/fixtures/acesso';
 
 const disposers: Array<() => void> = [];
 afterEach(() => {
@@ -79,6 +83,8 @@ it.each([
     const button = await screen.findByRole('button', { name: action });
     await waitFor(() => expect(button).toBeEnabled());
     expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Próximo passo' })).toBeNull();
     expect(screen.queryByText(/trial ativo/i)).toBeNull();
     await userEvent.click(button);
     const url = new URL(navigate.mock.calls[0]![0]);
@@ -112,6 +118,25 @@ it('trocar entre jornadas preserva filtros/fragmento e não expõe destino exter
   );
 });
 it('conta confirmada permite continuar; sair permanece uma ação explícita cancelável', async () => {
+  // Continuar agora chega à lista operacional real, que exige transporte inicializado.
+  vi.spyOn(apiClient, 'getApiClient').mockReturnValue(
+    apiClient.createApiClient(
+      parseConfig({ VITE_API_URL: 'https://site.example' }),
+      {
+        fetcher: async (request) =>
+          new Response(
+            JSON.stringify(
+              new URL(request.url).pathname === '/api/v1/billing/status'
+                ? billingStatus
+                : new URL(request.url).pathname === '/api/v1/revisao/stats'
+                  ? { total: 0, por_motivo: {} }
+                  : paginaExemplo,
+            ),
+            { headers: { 'Content-Type': 'application/json' } },
+          ),
+      },
+    ),
+  );
   const { router, transport } = open('/login?destino=%2Fpainel', true);
   await screen.findByRole('link', { name: 'Continuar na conta' });
   await act(() => router.navigate('/sair'));
@@ -180,6 +205,7 @@ it('link expirado/repetido e recuperação interrompida têm orientação e reco
   expect(
     screen.getByRole('link', { name: 'Recomeçar cadastro' }),
   ).toBeVisible();
+  await userEvent.click(screen.getByText('Não conseguiu continuar?'));
   expect(screen.getByText(/opção de reenvio/)).toBeVisible();
 });
 it('saída não confirmada impede novo fluxo e permite conferir sem identidade fabricada', async () => {

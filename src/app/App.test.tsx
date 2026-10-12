@@ -2,13 +2,29 @@ import { useQueryClient } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, type RouteObject } from 'react-router-dom';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import * as api from '../api/client';
+import { parseConfig } from '../lib/config';
+import { unlinkedTelegram } from '../../tests/fixtures/telegram';
 import { App } from './App';
 import { RouteError } from './RouteError';
 import { createAppQueryClient } from './queryClient';
 import { createAppRoutes } from './routes';
 
 const disposers: Array<() => void> = [];
+beforeEach(() => {
+  vi.spyOn(api, 'getApiClient').mockReturnValue(
+    api.createApiClient(
+      parseConfig({ VITE_API_URL: 'http://127.0.0.1:8000' }),
+      {
+        fetcher: async () =>
+          new Response(JSON.stringify(unlinkedTelegram), {
+            headers: { 'Content-Type': 'application/json' },
+          }),
+      },
+    ),
+  );
+});
 afterEach(() => {
   disposers.splice(0).forEach((dispose) => dispose());
   vi.restoreAllMocks();
@@ -46,7 +62,7 @@ it.each([
   ['/revisao', 'Revisão'],
   ['/aposta/abc-123', 'Aposta'],
   ['/configuracoes', 'Configurações'],
-  ['/configuracoes/conexoes', 'Conexões'],
+  ['/configuracoes/conexoes', 'Telegram'],
   ['/configuracoes/privacidade', 'Privacidade'],
   ['/contas', 'Contas e titulares'],
   ['/contas/42', 'Contas do titular'],
@@ -87,6 +103,20 @@ it('mantém query e fragmento ao abrir uma rota protegida com sessão', async ()
   await screen.findByRole('heading', { name: 'Apostas' });
   expect(router.state.location.search).toBe('?apagadas=1&estado=GREEN');
   expect(router.state.location.hash).toBe('#lista');
+});
+
+it('seletores da lista mantêm o guard atual; abrir outra área revalida a sessão', async () => {
+  const consult = vi.fn(async () => true);
+  const { router } = open('/?page_size=2', true, createAppRoutes(consult));
+  await screen.findByRole('heading', { name: 'Apostas' });
+  expect(consult).toHaveBeenCalledTimes(1);
+  await act(() => router.navigate('/?page_size=2&estado=PENDENTE'));
+  expect(consult).toHaveBeenCalledTimes(1);
+  await act(() => router.revalidate());
+  await waitFor(() => expect(consult).toHaveBeenCalledTimes(2));
+  await act(() => router.navigate('/painel?estado=PENDENTE'));
+  await screen.findByRole('heading', { name: 'Painel' });
+  expect(consult).toHaveBeenCalledTimes(3);
 });
 
 it.each([

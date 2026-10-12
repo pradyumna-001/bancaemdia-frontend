@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import openapiTS, { astToString } from 'openapi-typescript';
+import { siteReadContract } from './site-read-contract.mjs';
 import { format, resolveConfig } from 'prettier';
 import {
   contractSource,
@@ -50,6 +51,14 @@ try {
   await mkdir('src/api', { recursive: true });
   await writeFile('src/api/schema.d.ts', output);
   await writeFile('src/api/operations.generated.ts', metadata);
+  await writeFile(
+    'src/api/site-read.generated.ts',
+    await format(
+      '// Generated from the same verified OpenAPI; unavailable routes stay absent.\n' +
+        `export const SITE_READ_CONTRACT = ${JSON.stringify(siteReadContract(document))} as const;\n`,
+      prettierOptions,
+    ),
+  );
   console.info(
     `Tipos e políticas gerados da API ${pin.commit}; SHA-256 verificado.`,
   );

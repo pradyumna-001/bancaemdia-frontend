@@ -7,6 +7,7 @@ import {
   operationPolicies,
   paginationPolicies,
   verifiedSchema,
+  requireIntegratedContract,
 } from '../../scripts/api-contract.mjs';
 
 const bytes = Buffer.from(
@@ -99,9 +100,59 @@ it('deriva políticas de headers e multipart do próprio contrato', () => {
     uploads: [],
   });
 });
-it('referência versionada usa somente o snapshot oficial integrado', async () => {
+it('referência versionada usa somente o snapshot oficial imutável, com estado explícito', async () => {
   const actual = JSON.parse(await readFile('config/api-contract.json', 'utf8'));
   expect(contractSource(actual)).toMatch(
     /raw\.githubusercontent\.com\/pradyumna-001\/bancaemdia-api\/[a-f0-9]{40}\/tests\/contract\/schemas\/openapi\.json$/,
   );
+});
+it('candidato autenticado não se passa por contrato integrado nem pode publicar', () => {
+  const candidate = {
+    ...pin,
+    availability: {
+      kind: 'pull_request',
+      url: 'https://github.com/pradyumna-001/bancaemdia-api/pull/184',
+      integratedBaseline: 'b'.repeat(40),
+    },
+  };
+  expect(contractSource(candidate)).toContain(pin.commit);
+  expect(() => requireIntegratedContract(candidate)).toThrow('merge backend');
+  expect(() => requireIntegratedContract(pin)).not.toThrow();
+  for (const availability of [
+    { ...candidate.availability, url: 'https://example.org/184' },
+    { ...candidate.availability, integratedBaseline: 'main' },
+    { ...candidate.availability, kind: 'integrated' },
+  ])
+    expect(() => contractSource({ ...pin, availability })).toThrow('candidato');
+});
+it('reconciliação usa uma árvore imutável da API e mantém o bloqueio de publicação', () => {
+  const availability = {
+    kind: 'sandbox_reconciliation',
+    url: `https://github.com/${pin.repository}/tree/${pin.commit}`,
+    integratedBaseline: 'b'.repeat(40),
+    sources: [
+      { pullRequest: 189, commit: 'c'.repeat(40) },
+      { pullRequest: 193, commit: 'd'.repeat(40) },
+    ],
+  };
+  expect(contractSource({ ...pin, availability })).toContain(pin.commit);
+  expect(() => requireIntegratedContract({ ...pin, availability })).toThrow(
+    'merge backend',
+  );
+  for (const changes of [
+    { url: `https://github.com/${pin.repository}/tree/main` },
+    { sources: [{ pullRequest: 193, commit: 'main' }] },
+    { sources: [availability.sources[0], availability.sources[0]] },
+    {
+      sources: [
+        { pullRequest: -1, commit: 'c'.repeat(40) },
+        availability.sources[1],
+      ],
+    },
+    { sources: undefined },
+    { integratedBaseline: 'main' },
+  ])
+    expect(() =>
+      contractSource({ ...pin, availability: { ...availability, ...changes } }),
+    ).toThrow('candidato');
 });
