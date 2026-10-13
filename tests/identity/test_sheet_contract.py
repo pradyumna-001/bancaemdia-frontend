@@ -176,7 +176,11 @@ async def test_public_spa_sheet_preview_remap_confirm(
                 "button", name="Conferir outro arquivo da mesma fonte"
             ).click()
             await page.get_by_label("Arquivo XLSX", exact=True).set_input_files(
-                {"name": "renomeada.xlsx", "buffer": file}
+                {
+                    "name": "renomeada.xlsx",
+                    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "buffer": file,
+                }
             )
             await page.get_by_role(
                 "button", name="Conferir planilha", exact=True
