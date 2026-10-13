@@ -1,10 +1,12 @@
 """Results gestures through the public SPA, actual issuer/API/PostgreSQL."""
 
+import asyncio
 import importlib.util
 import json
 import os
 import secrets
 import sys
+import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
@@ -46,7 +48,7 @@ async def test_public_spa_resultados_gestures_undo_recovery(
             harness=harness,
         )
         uid = session["usuario_id"]
-        await core.grant(page, engine_admin, uid, seconds=1800)
+        expiry = await core.grant(page, engine_admin, uid, seconds=120)
         async with engine_admin.begin() as conn:
             house = await conn.scalar(
                 text(
@@ -202,18 +204,8 @@ async def test_public_spa_resultados_gestures_undo_recovery(
                 )
             ).to_be_disabled()
             await expect(green).to_be_enabled()
-            # Published billing refusal preserves current work and authenticated reads.
-            async with engine_admin.begin() as conn:
-                await conn.execute(
-                    text("SELECT set_config('app.current_user_id',:uid,true)"),
-                    {"uid": str(uid)},
-                )
-                await conn.execute(
-                    text(
-                        "UPDATE assinaturas SET trial_started_at=clock_timestamp()-interval '169 hours', trial_ends_at=clock_timestamp()-interval '1 hour' WHERE usuario_id=:uid"
-                    ),
-                    {"uid": uid},
-                )
+            # The immutable trial expires naturally; no entitlement guard is bypassed.
+            await asyncio.sleep(max(0, expiry - time.time()) + 1)
             await green.click()
             await expect(
                 page.get_by_role("heading", name="Resultados em consulta", exact=True)

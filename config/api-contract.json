@@ -1,11 +1,11 @@
 {
   "repository": "pradyumna-001/bancaemdia-api",
-  "commit": "ac8a2d86865c374f2b868f3cc04e9483cdff1a38",
+  "commit": "b37a3f88b922b471d25d5f1c92c84b336cd2c9c0",
   "schemaPath": "tests/contract/schemas/openapi.json",
   "sha256": "9da4116cf357df8c1b933c575156c067d8df86b3a216d234d810214a27a02ecb",
   "availability": {
     "kind": "sandbox_reconciliation",
-    "url": "https://github.com/pradyumna-001/bancaemdia-api/tree/ac8a2d86865c374f2b868f3cc04e9483cdff1a38",
+    "url": "https://github.com/pradyumna-001/bancaemdia-api/tree/b37a3f88b922b471d25d5f1c92c84b336cd2c9c0",
     "integratedBaseline": "b916f54331f14cf47a3800324bd61d8638043c06",
     "sources": [
       {

@@ -1,6 +1,6 @@
 # Resultados — fila, um toque e desfazer (#27)
 
-API candidata [#199](https://github.com/pradyumna-001/bancaemdia-api/pull/199), issue #198, SHA `a67920f1aa6f77de1fd34c6b142c3e611f584502`, com 27 checks aprovados. Main backend `b916f54` ainda não contém o contrato. O sandbox real único `ac8a2d86865c374f2b868f3cc04e9483cdff1a38` reconcilia o código próprio dessa candidata com 003d3a0, preservando as entregas anteriores. Migração de Resultados sucede s196preview2026 nesta árvore de prova; o administrador reconcilia as cabeças ao integrar. Nenhum merge administrativo foi feito.
+API candidata [#199](https://github.com/pradyumna-001/bancaemdia-api/pull/199), issue #198, SHA `a67920f1aa6f77de1fd34c6b142c3e611f584502`, com 27 checks aprovados. Main backend `b916f54` ainda não contém o contrato. O sandbox real único `b37a3f88b922b471d25d5f1c92c84b336cd2c9c0` reconcilia o código próprio dessa candidata com 003d3a0, preservando as entregas anteriores. Migração de Resultados sucede s196preview2026 nesta árvore de prova; o administrador reconcilia as cabeças ao integrar. Nenhum merge administrativo foi feito.
 
 OpenAPI inteiro gerado pelo app: 120 operações, SHA-256 `9da4116cf357df8c1b933c575156c067d8df86b3a216d234d810214a27a02ecb`. Tipos, descritores, políticas de upload/idempotência e `x-bancaemdia-resultados` vêm desse mesmo documento. A disponibilidade continua `sandbox_reconciliation` e bloqueia publicação. Não juntar schemas nem substituir o pin pelos 94 endpoints da candidata isolada.
 
