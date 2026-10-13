@@ -830,7 +830,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
                 ))}
               </div>
               <section>
-                <h2>Bancas vinculadas</h2>
+                <h2>Bancas</h2>
                 <p className="legenda">
                   Saldo e capital inicial informados por banca.
                 </p>
@@ -843,9 +843,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
                           {moeda(b.saldo_total_centavos)}
                         </span>
                         {b.motivo_saldo_indisponivel && (
-                          <small>
-                            Saldo indisponível nas contas vinculadas.
-                          </small>
+                          <small>Saldo da banca indisponível.</small>
                         )}
                         <small>
                           Capital inicial informado:{' '}

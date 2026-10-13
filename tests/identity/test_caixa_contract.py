@@ -3,6 +3,7 @@
 import asyncio
 import importlib.util
 import os
+import re
 import secrets
 import sys
 import time
@@ -25,7 +26,7 @@ backend = core.backend
 
 
 async def choose(page, label, option):
-    await page.get_by_role("button", name=label, exact=False).click()
+    await page.get_by_role("button", name=re.compile("^" + re.escape(label))).click()
     await page.get_by_role("button", name=option, exact=True).click()
 
 
@@ -133,6 +134,18 @@ async def test_public_spa_caixa_atomic_money_recovery(
                 c["conta_casa_id"]: c["saldo_atual_centavos"] for c in saldo["contas"]
             }
             assert received[accounts[0]] == 7500 and received[accounts[1]] == 2500
+            source_card = page.get_by_role("article").filter(
+                has=page.get_by_role("heading", name=source, exact=True)
+            )
+            destination_card = page.get_by_role("article").filter(
+                has=page.get_by_role("heading", name=destination, exact=True)
+            )
+            await expect(
+                source_card.get_by_text("R$ 75,00", exact=True)
+            ).to_be_visible()
+            await expect(
+                destination_card.get_by_text("R$ 25,00", exact=True)
+            ).to_be_visible()
             async with engine_admin.connect() as conn:
                 assert (
                     await conn.scalar(
@@ -173,6 +186,9 @@ async def test_public_spa_caixa_atomic_money_recovery(
                 == original.headers["idempotency-key"]
             )
             assert writes[-1].post_data_json == original.post_data_json
+            await expect(
+                source_card.get_by_text("R$ 85,00", exact=True)
+            ).to_be_visible()
             async with engine_admin.connect() as conn:
                 assert (
                     await conn.scalar(
