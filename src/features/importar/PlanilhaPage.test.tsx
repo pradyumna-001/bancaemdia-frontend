@@ -681,3 +681,27 @@ it.each(['source', 'preview'])(
     expect(server.writes).toHaveLength(1);
   },
 );
+
+it('prévia expirada permite encerrar somente a consulta e preserva fonte e filtros', async () => {
+  const server = simulated(async (r) =>
+    r.method === 'POST' ? json({ detail: 'expired' }, 410) : undefined,
+  );
+  await setup(server.fetch, restored);
+  await ready();
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar importação' }));
+  await screen.findByText('Confira o recebimento deste pedido');
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Encerrar consulta deste pedido' }),
+  );
+  await waitFor(() =>
+    expect(screen.getByTestId('url')).not.toHaveTextContent('confirmacao='),
+  );
+  expect(screen.getByTestId('url')).not.toHaveTextContent('previa=');
+  expect(screen.getByTestId('url')).toHaveTextContent(`fonte=${sourceId}`);
+  expect(screen.getByTestId('url')).toHaveTextContent('apagadas=1');
+  await choose();
+  expect(
+    screen.getByRole('button', { name: 'Conferir planilha' }),
+  ).toBeEnabled();
+  expect(server.writes).toHaveLength(1);
+});

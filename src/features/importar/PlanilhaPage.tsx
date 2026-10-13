@@ -490,7 +490,7 @@ export function PlanilhaPage() {
       JSON.stringify(draftMapping) !== JSON.stringify(info.mapping));
   const blocked = write.busy || write.waiting || write.uncertain;
   const fieldError = (error: components['schemas']['FieldError']) =>
-    `${catalog.data?.fields.find((field) => field.field === error.field)?.label ?? 'Linha'}: ${ERROR_CODES[error.code] ?? 'Confira este campo na planilha.'}`;
+    `${catalog.data?.fields.find((field) => field.field === error.field)?.label ?? 'Linha'}: ${Object.hasOwn(ERROR_CODES, error.code) ? ERROR_CODES[error.code] : 'Confira este campo na planilha.'}`;
   const readError = (
     query:
       | typeof catalog
@@ -509,12 +509,14 @@ export function PlanilhaPage() {
         actions={{ tentar: () => void query.refetch() }}
       />
     ) : null;
-  function restart() {
-    if (blocked) return;
+  function restart(closeObservation = false) {
+    if (write.busy || write.waiting || (blocked && !closeObservation)) return;
+    if (closeObservation) cancel();
     setFile(undefined);
     setPending(undefined);
     setFileError('');
     setDraft(undefined);
+    setCheckedAbsent(false);
     change({
       previa: undefined,
       confirmacao: undefined,
@@ -1075,7 +1077,7 @@ export function PlanilhaPage() {
                   </li>
                 ))}
               </ul>
-              <button disabled={blocked} onClick={restart}>
+              <button disabled={blocked} onClick={() => restart()}>
                 Conferir outro arquivo da mesma fonte
               </button>
             </section>
@@ -1107,6 +1109,17 @@ export function PlanilhaPage() {
                 onClick={() => void reconcile()}
               >
                 Conferir recebimento
+              </button>
+              <p>
+                Encerrar esta consulta não desfaz o pedido enviado. Ele poderá
+                ter sido aplicado; mantenha a mesma fonte ao conferir outro
+                arquivo.
+              </p>
+              <button
+                disabled={write.busy || write.waiting}
+                onClick={() => restart(true)}
+              >
+                Encerrar consulta deste pedido
               </button>
               {checkedAbsent && (
                 <p>

@@ -62,4 +62,4 @@ A PR backend #195 entrega o contrato de prints web da #25: admissão por arquivo
 
 ### Planilha candidata (#26), 13/10/2026
 
-A PR backend #197 entrega catálogo, fonte estável, prévia síncrona, remapeamento e confirmação atômica. Frontend implementa contra main declarando #90 e #197, preservando provas anteriores no sandbox real único 24d3372. Gerar somente OpenAPI do aplicativo dessa árvore e reconfirmar versão integrada antes de publicar. Confirmação é dos dados da importação, sem custo ou aprovação de gasto. Detalhes e restrição de legado em [contrato da planilha](../contracts/planilha.md).
+A PR backend #197 entrega catálogo, fonte estável, prévia síncrona, remapeamento e confirmação atômica. Frontend implementa contra main declarando #90 e #197, preservando provas anteriores no sandbox real único 003d3a0. Gerar somente OpenAPI do aplicativo dessa árvore e reconfirmar versão integrada antes de publicar. Confirmação é dos dados da importação, sem custo ou aprovação de gasto. Detalhes e restrição de legado em [contrato da planilha](../contracts/planilha.md).

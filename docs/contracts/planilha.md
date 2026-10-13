@@ -1,6 +1,6 @@
 # Planilha — prévia, colunas e confirmação (#26)
 
-Contrato candidato da PR backend [#197](https://github.com/pradyumna-001/bancaemdia-api/pull/197), issue #196, commit `2140bdabb21835e3c66487c4fe532b09fadebe0b`. Main auditada `b916f54331f14cf47a3800324bd61d8638043c06` não contém o fluxo. A árvore real reconciliada `24d33725806b4f64112aa005bc87bdea36096632` incorpora o sandbox anterior cf20de6 e o código próprio da #197. OpenAPI gerado pelo aplicativo: 115 operações, SHA-256 `c28137d18b64db1a7d3663159f15ee3d6a456abf9d6b8c25776b9f68050301de`. Tipos, políticas e descritores usam esse único documento. Sem união de schemas. Publicação bloqueada até integração administrativa e revalidação.
+Contrato candidato da PR backend [#197](https://github.com/pradyumna-001/bancaemdia-api/pull/197), issue #196, commit `2140bdabb21835e3c66487c4fe532b09fadebe0b`. Main auditada `b916f54331f14cf47a3800324bd61d8638043c06` não contém o fluxo. A árvore real reconciliada `003d3a0782cca071eaa0db4e8ce66fed2811a7ac` incorpora o sandbox anterior cf20de6 e o código próprio da #197. OpenAPI gerado pelo aplicativo: 115 operações, SHA-256 `c28137d18b64db1a7d3663159f15ee3d6a456abf9d6b8c25776b9f68050301de`. Tipos, políticas e descritores usam esse único documento. Sem união de schemas. Publicação bloqueada até integração administrativa e revalidação.
 
 ## Fluxo e identidade
 
@@ -17,6 +17,8 @@ POST `/confirmacoes/{confirmation_id}` envia somente `preview_id` e `preview_has
 UUIDs de fonte/prévia/confirmação são identificadores, não autorização, e precedem mutations na URL. Arquivo, nome, células e mapeamento não são persistidos em storage/URL/telemetria. Queries guardam apenas respostas privadas da API e são limpas na saída/troca/logout; bytes locais e intenção pendente ficam em memória do componente. Requests abortam e respostas tardias são descartadas pelo escopo de sessão.
 
 Sem replay automático de PUT/POST. Resultado desconhecido exige GET da mesma identidade; 404 não prova rollback. Com payload original ainda em memória, gesto explícito permite o mesmo pedido/UUID, sob o contrato idempotente do servidor; recarga apenas consulta. 409/410 exigem conferir antes de continuar. 402 preserva sessão/leitura e não reexecuta após pagamento. GETs respeitam limites de retry/Retry-After; mutations exigem FULL_WRITE revalidado, inclusive preparar prévia e remapear. Nenhum custo/estimativa/aprovação de gasto na tela.
+
+Encerrar explicitamente a consulta remove a prévia/confirmação da URL e o payload local, preservando fonte/filtros. Não cancela nem desfaz o pedido já enviado, não indica rollback e não reenvia dados. Essa saída permite escolher outro arquivo após expiração sem criar fonte diferente para o mesmo histórico.
 
 ## Provas
 
