@@ -31,6 +31,47 @@ afterEach(() => {
 });
 afterAll(() => server.close());
 
+it('confere acesso antes de emitir a escrita e não repete uma intenção recusada', async () => {
+  const received = vi.fn();
+  server.use(
+    http.post(url + '/api/v1/apostas', () => {
+      received();
+      return HttpResponse.json({});
+    }),
+  );
+  const beforeMutation = vi.fn(async (): Promise<void> => {
+    throw new ApiError('http', { status: 402, code: 'account_read_only' });
+  });
+  const client = createApiClient(config, { beforeMutation });
+  await expect(
+    client.POST('/api/v1/apostas', {
+      body: { casa: 'betano', odd: 2, stake_unidades: 1, freebet: false },
+    }),
+  ).rejects.toMatchObject({ status: 402 });
+  expect(received).not.toHaveBeenCalled();
+  expect(beforeMutation).toHaveBeenCalledExactlyOnceWith(
+    'POST /api/v1/apostas',
+  );
+  beforeMutation.mockResolvedValueOnce(undefined);
+  await client.POST('/api/v1/apostas', {
+    body: { casa: 'betano', odd: 2, stake_unidades: 1, freebet: false },
+  });
+  expect(received).toHaveBeenCalledTimes(1);
+});
+
+it('uma recusa inesperada do próprio status não inicia ciclo de reconfirmação', async () => {
+  const onAccessDenied = vi.fn();
+  server.use(
+    http.get(url + '/api/v1/billing/status', () =>
+      HttpResponse.json({ detail: 'account_read_only' }, { status: 402 }),
+    ),
+  );
+  await expect(
+    createApiClient(config, { onAccessDenied }).GET('/api/v1/billing/status'),
+  ).rejects.toMatchObject({ status: 402, code: 'account_read_only' });
+  expect(onAccessDenied).not.toHaveBeenCalled();
+});
+
 it('preserva null, envia filtros/paginação e força cookie/no-store sem Authorization', async () => {
   server.use(
     http.get(url + '/api/v1/apostas', ({ request }) => {

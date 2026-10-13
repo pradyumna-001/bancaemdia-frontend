@@ -7,6 +7,21 @@ afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
+it('distingue regiões quando várias seções recebem o mesmo erro', () => {
+  const error = new ApiError('http', { status: 403 });
+  render(
+    <>
+      <ErroApi error={error} intent="leitura" contexto="Lucro por dia" />
+      <ErroApi error={error} intent="leitura" contexto="Lucro por grupo" />
+    </>,
+  );
+  expect(
+    screen.getByRole('region', { name: /^Lucro por dia / }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole('region', { name: /^Lucro por grupo / }),
+  ).toBeInTheDocument();
+});
 it('401 abre reautenticação com destino interno em outra aba e mantém formulário', () => {
   const { rerender } = render(
     <>

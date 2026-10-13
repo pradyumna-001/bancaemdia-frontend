@@ -1,0 +1,45 @@
+.foto-aposta {
+  display: grid;
+  gap: var(--espaco-12);
+}
+.foto-aposta-espaco {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  max-width: 42rem;
+  background: var(--superficie-secundaria);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.foto-aposta-espaco p {
+  max-width: 26rem;
+  padding: var(--espaco-16);
+  text-align: center;
+}
+.foto-aposta-espaco img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.foto-aposta button {
+  justify-self: start;
+}
+.foto-aposta-zoom {
+  width: min(94vw, 68rem);
+  max-height: 92dvh;
+  padding: var(--espaco-16);
+  background: var(--superficie);
+  color: var(--tinta);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+.foto-aposta-zoom img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 76dvh;
+  object-fit: contain;
+  margin-top: var(--espaco-12);
+}

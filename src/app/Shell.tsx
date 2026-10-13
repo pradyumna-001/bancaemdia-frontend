@@ -13,6 +13,7 @@ import {
 } from '../features/revisao/estatisticas';
 import { ABAS, abaAtual } from './nav';
 import './Shell.css';
+import { AvisoAcesso } from '../features/acesso/AvisoAcesso';
 
 export function Shell({
   children,
@@ -153,6 +154,7 @@ export function Shell({
             </button>
           </div>
         )}
+        <AvisoAcesso />
         {children}
       </div>
       <nav className="nav-mobile" aria-label="Navegação principal no celular">
