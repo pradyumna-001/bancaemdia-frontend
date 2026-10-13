@@ -93,6 +93,20 @@ test('Caixa: saldo desconhecido, transferência atômica, temas, teclado e reflo
   expect(fixture.saldo.contas[0]!.banca_id).toBe(1);
   await page.getByRole('link', { name: 'Extrato', exact: true }).click();
   await expect(page.getByText('Aposta · GREEN')).toBeVisible();
+  await page.goto(
+    url + '?movimento=' + (await page.evaluate(() => crypto.randomUUID())),
+  );
+  await expect(
+    page.getByRole('heading', { name: 'Marina · Betano · Principal' }),
+  ).toBeVisible();
+  await expect(bankPicker).toBeDisabled();
+  await expect(submit).toBeDisabled();
+  await expect(
+    page.getByRole('button', {
+      name: 'Conferir movimentos e vínculo',
+      exact: true,
+    }),
+  ).toBeEnabled();
   await page.setViewportSize({ width: 320, height: 844 });
   expect(
     await page.evaluate(

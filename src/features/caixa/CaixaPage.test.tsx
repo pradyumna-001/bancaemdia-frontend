@@ -473,6 +473,12 @@ it('vínculo da banca exige escolha/confirmar; resposta desconhecida só faz GET
 it('restauração de referência sem corpo nunca reconstrói/reenvia POST', async () => {
   const id = crypto.randomUUID();
   const s = await setup(undefined, `/banca?movimento=${id}`);
+  await screen.findByRole('heading', { name: 'Marina · Betano · Principal' });
+  expect(
+    screen
+      .getAllByRole('button', { name: /^Banca da conta / })
+      .every((button) => (button as HTMLButtonElement).disabled),
+  ).toBe(true);
   expect(
     screen.getByRole('button', { name: 'Conferir lançamento' }),
   ).toBeDisabled();

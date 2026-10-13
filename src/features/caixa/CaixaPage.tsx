@@ -814,6 +814,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
                       }))}
                       blocked={
                         blocked ||
+                        restored ||
                         op.waiting ||
                         !op.can(PATCH) ||
                         saldo.isFetching
