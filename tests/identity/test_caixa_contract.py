@@ -83,11 +83,11 @@ async def test_public_spa_caixa_atomic_money_recovery(
                 ),
                 {"uid": uid},
             )
-        holder = await core.write(
-            page, "/api/v1/titulares", {"nome": "Caixa real"}, expected=201
-        )
         accounts = []
         for name in ("Origem", "Destino"):
+            holder = await core.write(
+                page, "/api/v1/titulares", {"nome": "Caixa real " + name}, expected=201
+            )
             account = await core.write(
                 page,
                 f"/api/v1/titulares/{holder['id']}/contas",
@@ -108,8 +108,8 @@ async def test_public_spa_caixa_atomic_money_recovery(
         try:
             await page.goto(backend.FRONT + "/banca?casa=" + str(house))
             source, destination = (
-                "Caixa real · Betano · Origem",
-                "Caixa real · Betano · Destino",
+                "Caixa real Origem · Betano · Origem",
+                "Caixa real Destino · Betano · Destino",
             )
             await expect(
                 page.get_by_role("heading", name=source, exact=True)
@@ -141,10 +141,10 @@ async def test_public_spa_caixa_atomic_money_recovery(
                 has=page.get_by_role("heading", name=destination, exact=True)
             )
             await expect(
-                source_card.get_by_text("R$ 75,00", exact=True)
+                source_card.locator("dl").first.get_by_text("R$ 75,00", exact=True)
             ).to_be_visible()
             await expect(
-                destination_card.get_by_text("R$ 25,00", exact=True)
+                destination_card.locator("dl").first.get_by_text("R$ 25,00", exact=True)
             ).to_be_visible()
             async with engine_admin.connect() as conn:
                 assert (
@@ -187,7 +187,7 @@ async def test_public_spa_caixa_atomic_money_recovery(
             )
             assert writes[-1].post_data_json == original.post_data_json
             await expect(
-                source_card.get_by_text("R$ 85,00", exact=True)
+                source_card.locator("dl").first.get_by_text("R$ 85,00", exact=True)
             ).to_be_visible()
             async with engine_admin.connect() as conn:
                 assert (

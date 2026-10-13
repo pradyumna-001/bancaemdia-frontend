@@ -71,6 +71,26 @@ test('Caixa: saldo desconhecido, transferência atômica, temas, teclado e reflo
   await expect(submit).toBeFocused();
   expect(fixture.receipts.size).toBe(1);
   expect([...fixture.receipts.values()][0]!.data.movimentos).toHaveLength(2);
+  const bankPicker = page.getByRole('button', { name: /^Banca da conta 11 / });
+  await bankPicker.click();
+  await page
+    .getByRole('button', { name: 'Banca de reserva', exact: true })
+    .click();
+  const account = page.getByRole('article').filter({
+    has: page.getByRole('heading', {
+      name: 'Marina · Betano · Principal',
+      exact: true,
+    }),
+  });
+  await account
+    .getByRole('button', { name: 'Salvar vínculo', exact: true })
+    .click();
+  await page
+    .getByRole('dialog', { name: 'Confirmar vínculo da conta?' })
+    .getByRole('button', { name: 'Cancelar', exact: true })
+    .click();
+  await expect(bankPicker).toBeFocused();
+  expect(fixture.saldo.contas[0]!.banca_id).toBe(1);
   await page.getByRole('link', { name: 'Extrato', exact: true }).click();
   await expect(page.getByText('Aposta · GREEN')).toBeVisible();
   await page.setViewportSize({ width: 320, height: 844 });

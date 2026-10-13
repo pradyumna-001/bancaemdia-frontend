@@ -446,6 +446,18 @@ it('vínculo da banca exige escolha/confirmar; resposta desconhecida só faz GET
     within(article).getByRole('button', { name: 'Salvar vínculo' }),
   );
   expect(s.writes).toHaveLength(0);
+  fireEvent.click(
+    within(screen.getByRole('dialog', { name: /Confirmar vínculo/ })).getByRole(
+      'button',
+      { name: 'Cancelar' },
+    ),
+  );
+  expect(
+    screen.getByRole('button', { name: /^Banca da conta 11 / }),
+  ).toHaveFocus();
+  fireEvent.click(
+    within(article).getByRole('button', { name: 'Salvar vínculo' }),
+  );
   confirm();
   await screen.findByRole('heading', { name: 'Conferir o lançamento' });
   expect(s.writes).toHaveLength(1);

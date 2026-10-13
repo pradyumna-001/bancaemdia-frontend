@@ -1149,7 +1149,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
         aria-labelledby="caixa-confirmar"
         onClose={() => {
           setConfirmation(undefined);
-          trigger.current?.focus();
+          document.getElementById(focusId.current)?.focus();
         }}
       >
         <h2 id="caixa-confirmar">
