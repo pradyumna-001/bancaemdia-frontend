@@ -241,11 +241,10 @@ async def test_public_spa_resultados_gestures_undo_recovery(
                 "document.documentElement.scrollWidth <= innerWidth"
             )
             session = (await core.request(page, "/auth/session"))["data"]
-            assert (
-                await core.request(
-                    page, "/auth/logout", method="POST", csrf=session["csrf_token"]
-                )
-            )["status"] == 204
+            logout = await core.request(
+                page, "/auth/logout", method="POST", csrf=session["csrf_token"]
+            )
+            assert logout["status"] == 200 and logout["data"] == {"logged_out": True}
             await page.reload()
             await expect(
                 page.get_by_role("heading", name="Entrar", exact=True)

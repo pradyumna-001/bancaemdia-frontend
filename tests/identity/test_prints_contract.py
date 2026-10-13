@@ -204,6 +204,9 @@ async def test_public_spa_prints_real_worker(
                         )
                     ).to_be_visible()
                     assert not writes
+                    await expect(
+                        page.get_by_role("button", name="Enviar prints selecionados")
+                    ).to_be_enabled()
                     await page.get_by_role(
                         "button", name="Enviar prints selecionados"
                     ).focus()
