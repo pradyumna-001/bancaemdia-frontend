@@ -67,3 +67,7 @@ A PR backend #197 entrega catálogo, fonte estável, prévia síncrona, remapeam
 ## Resultados — 13/10/2026 (#27)
 
 Backend #198/#199 entrega fila keyset e revisão entre escritores, reversão por pré-imagem e recibo recuperável. O consumidor segue o sandbox real único autorizado, acrescentando o código dessa candidata às provas anteriores, gerando o OpenAPI inteiro pelo app e preservando a disponibilidade sandbox_reconciliation. Registrar é um gesto, dinheiro e reversão pertencem à API. PR contra main, dependências declaradas e merge com administrador; integração exige novo pin e revalidação antes de publicar. [Contrato](../contracts/resultados.md).
+
+## Revisão — revalidação de 13/10/2026 (#28)
+
+Matching/consolidação e resolução legada já existem em main; não estão integralmente ausentes. O caminho de escolha de tipster conflitante não é consumível pela leitura/resolução de revisão. Publicar a decisão humana, projeção/ações por família, contexto de atribuição, precondição e política temporal antes de concluir a fila avançada. A serialização de uma escrita não substitui a comparação da evidência apresentada. [Auditoria](../audits/revisao-2026-10-13.md); solicitação emergencial preparada para a API, sem número fictício ou PR frontend declarado pronto. Preservar os consumidores existentes e gerar tipos de uma única árvore real pinada após a entrega. Dependências futuras contra main, merge e publicação com o administrador.
