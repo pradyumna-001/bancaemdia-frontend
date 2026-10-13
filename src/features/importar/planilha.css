@@ -1,0 +1,54 @@
+.planilha-pagina input[type='text'],
+.planilha-pagina input:not([type]) {
+  width: 100%;
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--tinta);
+}
+.planilha-mapeamento {
+  margin-block: var(--espaco-24);
+}
+.planilha-mapeamento > div {
+  margin-block: var(--espaco-16);
+}
+.planilha-tabela {
+  overflow-x: auto;
+  max-width: 100%;
+  margin-block: var(--espaco-24);
+}
+.planilha-tabela table {
+  width: 100%;
+  min-width: 42rem;
+  border-collapse: collapse;
+}
+.planilha-tabela th,
+.planilha-tabela td {
+  padding: var(--espaco-12);
+  border-bottom: 1px solid var(--borda);
+  text-align: left;
+  vertical-align: top;
+}
+.planilha-tabela th {
+  background: var(--superficie-secundaria);
+  min-width: 5rem;
+  overflow-wrap: normal;
+}
+.planilha-tabela td {
+  max-width: 22rem;
+  overflow-wrap: anywhere;
+}
+.planilha-tabela dd {
+  margin-inline: 0;
+}
+.planilha-pagina h3 {
+  margin-top: 0;
+}
+.planilha-pagina form button {
+  margin-top: var(--espaco-16);
+}
+.planilha-pagina a {
+  overflow-wrap: anywhere;
+}

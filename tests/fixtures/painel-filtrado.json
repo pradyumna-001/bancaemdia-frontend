@@ -1,0 +1,23 @@
+{
+  "por_casa": [],
+  "por_mercado": [],
+  "por_tipster": [],
+  "respondido_em": "2026-01-02T03:00:01Z",
+  "resumo": {
+    "anuladas": 0,
+    "base_roi_centavos": 0,
+    "em_revisao": 0,
+    "freebets": 0,
+    "giro_centavos": 0,
+    "greens": 0,
+    "lucro_centavos": null,
+    "pendentes": 0,
+    "reds": 0,
+    "resultados_desconhecidos": 0,
+    "retorno_centavos": null,
+    "roi": null,
+    "total_apostas": 0,
+    "win_rate": "0"
+  },
+  "snapshot_em": "2026-01-02T03:00:00Z"
+}

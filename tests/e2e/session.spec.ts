@@ -120,7 +120,7 @@ test('guard usa sessão consultada, não concede escrita comercial e mantém she
   await expect(
     page.getByRole('heading', { name: 'Painel', exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole('alert')).toContainText(
+  await expect(page.locator('.aviso-fila[role="alert"]')).toContainText(
     'Não foi possível atualizar a fila',
   );
   expect(new URL(page.url()).searchParams.get('apagadas')).toBe('1');
