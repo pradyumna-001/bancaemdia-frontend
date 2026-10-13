@@ -225,6 +225,55 @@ it('separa os três canais e cria fonte antes do PUT preservando filtros', async
     true,
   );
 });
+it('cadastro mantém ações bloqueadas até terminar a atualização das fontes', async () => {
+  let hold = false;
+  let finish: (() => void) | undefined;
+  const server = simulated(async (request) => {
+    const url = new URL(request.url);
+    if (request.method === 'PUT') hold = true;
+    if (
+      hold &&
+      request.method === 'GET' &&
+      url.pathname === '/api/v1/planilhas/fontes'
+    )
+      return new Promise<Response>((resolve) => {
+        finish = () => {
+          hold = false;
+          const result = server.fixture.handle(
+            'GET',
+            url.pathname,
+            url.searchParams,
+          );
+          resolve(json(result.data, result.status));
+        };
+      });
+    return undefined;
+  });
+  server.fixture.sources.clear();
+  await setup(server.fetch);
+  await screen.findByText(/Nenhuma fonte cadastrada/);
+  fireEvent.change(screen.getByLabelText('Nome da nova fonte'), {
+    target: { value: 'Fonte protegida' },
+  });
+  fireEvent.submit(
+    screen.getByLabelText('Nome da nova fonte').closest('form')!,
+  );
+  await waitFor(() => expect(finish).toBeDefined());
+  await screen.findByLabelText('Arquivo XLSX');
+  await choose();
+  expect(
+    screen.getByRole('button', { name: 'Conferir planilha' }),
+  ).toBeDisabled();
+  await act(async () => finish!());
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Conferir planilha' }),
+    ).toBeEnabled(),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Conferir planilha' }));
+  await ready();
+  expect(server.writes).toHaveLength(2);
+});
 it('mostra população integral, face de freebet, null e confirmação exata sem custo', async () => {
   const server = simulated();
   await setup(server.fetch, restored);

@@ -56,6 +56,7 @@ const httpMessages: Record<number, string> = {
 
 // Codes are protocol identifiers, never provider messages or arbitrary response text.
 const knownCodes = new Set([
+  'result_busy',
   'account_read_only',
   'access_expired',
   'not_authenticated',

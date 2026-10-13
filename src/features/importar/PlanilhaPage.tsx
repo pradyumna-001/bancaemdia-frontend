@@ -81,6 +81,7 @@ export function PlanilhaPage() {
   const [fileError, setFileError] = useState('');
   const [name, setName] = useState('');
   const [pending, setPending] = useState<Pending>();
+  const [executing, setExecuting] = useState(false);
   const [checkedAbsent, setCheckedAbsent] = useState(false);
   const [draft, setDraft] = useState<{
     id: string;
@@ -258,6 +259,7 @@ export function PlanilhaPage() {
     )
       return;
     lock.current = true;
+    setExecuting(true);
     intendedSource.current =
       intent.kind === 'source' ? intent.id : route.source;
     setPending(intent);
@@ -453,6 +455,7 @@ export function PlanilhaPage() {
       }
     } finally {
       lock.current = false;
+      if (active.current) setExecuting(false);
     }
   }
   async function reconcile() {
@@ -488,7 +491,7 @@ export function PlanilhaPage() {
     !!info &&
     (selectedSheet !== info.sheet ||
       JSON.stringify(draftMapping) !== JSON.stringify(info.mapping));
-  const blocked = write.busy || write.waiting || write.uncertain;
+  const blocked = executing || write.busy || write.waiting || write.uncertain;
   const fieldError = (error: components['schemas']['FieldError']) =>
     `${catalog.data?.fields.find((field) => field.field === error.field)?.label ?? 'Linha'}: ${Object.hasOwn(ERROR_CODES, error.code) ? ERROR_CODES[error.code] : 'Confira este campo na planilha.'}`;
   const readError = (

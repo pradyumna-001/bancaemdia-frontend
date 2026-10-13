@@ -368,12 +368,17 @@ it('recarregar referência consulta recibo sem corpo em memória ou escrita', as
   await screen.findByRole('button', { name: 'Desfazer Botafogo × Fluminense' });
   expect(state.writes).toHaveLength(0);
 });
-it('erro de consulta e 503 respeitam Retry-After e mantêm a intenção', async () => {
+it('GET tem seu próprio Retry-After, sem herdar a espera do POST', async () => {
+  let reads = 0;
   const state = await setup(async (r) =>
     r.method === 'POST'
-      ? json({}, 503, { 'Retry-After': '1' })
+      ? json({}, 503, { 'Retry-After': '60' })
       : r.url.includes('/operacoes/')
-        ? json({}, 500)
+        ? json(
+            {},
+            ++reads === 1 ? 503 : 500,
+            reads === 1 ? { 'Retry-After': '1' } : {},
+          )
         : undefined,
   );
   await ready();
@@ -382,7 +387,9 @@ it('erro de consulta e 503 respeitam Retry-After e mantêm a intenção', async 
   const consult = screen.getByRole('button', {
     name: 'Consultar resultado do pedido',
   });
-  expect(consult).toBeDisabled();
+  expect(consult).toBeEnabled();
+  fireEvent.click(consult);
+  await waitFor(() => expect(consult).toBeDisabled());
   await waitFor(() => expect(consult).toBeEnabled(), { timeout: 2000 });
   fireEvent.click(consult);
   await screen.findByText('O serviço encontrou um problema.', { exact: false });
@@ -411,6 +418,25 @@ it('READ_ONLY consulta fila e bloqueia gravação/reversão', async () => {
   expect(
     screen.getByRole('heading', { name: 'Resultados em consulta' }),
   ).toBeInTheDocument();
+});
+it('catálogos e seletores carregam somente ao abrir os filtros', async () => {
+  const state = await setup();
+  await ready();
+  expect(state.calls.some((r) => r.url.includes('/filtros/'))).toBe(false);
+  const details = screen.getByText('Filtros da fila').closest('details')!;
+  details.open = true;
+  fireEvent(details, new Event('toggle', { bubbles: true }));
+  await screen.findByRole('region', { name: 'Filtros da visão' });
+  await waitFor(() =>
+    expect(state.calls.some((r) => r.url.includes('/filtros/'))).toBe(true),
+  );
+  details.open = false;
+  fireEvent(details, new Event('toggle', { bubbles: true }));
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('region', { name: 'Filtros da visão' }),
+    ).not.toBeInTheDocument(),
+  );
 });
 it('422 projeta somente o campo com rótulo local, nunca input/msg/ctx privados', async () => {
   const state = await setup(async (r) =>

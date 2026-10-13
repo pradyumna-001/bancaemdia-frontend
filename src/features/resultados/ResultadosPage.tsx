@@ -84,7 +84,14 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
   const signature = serializarConsulta(adapter.query);
   const epoch = auth.state.privateEpoch;
   const [search, setSearch] = useSearchParams();
-  const catalogos = useCatalogos(SITE_READ_CONTRACT, api, visao);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const catalogos = useCatalogos(
+    SITE_READ_CONTRACT,
+    api,
+    visao,
+    undefined,
+    filtersOpen,
+  );
   const op = useOperacao();
   const { cancel } = op;
   const [recibos, setRecibos] = useState<Recibo[]>([]);
@@ -96,6 +103,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
   const [comissao, setComissao] = useState('');
   const [localError, setLocalError] = useState('');
   const [readError, setReadError] = useState<unknown>();
+  const [writeBarrier, setWriteBarrier] = useState<unknown>();
   const [reading, setReading] = useState(false);
   const [cooldown, setCooldown] = useState(false);
   const pending = useRef<Intento>();
@@ -114,6 +122,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
       ? rawId
       : undefined;
   const readWaiting = useRetryAfter(readError);
+  const writeWaiting = useRetryAfter(writeBarrier);
   const fila = useInfiniteQuery({
     queryKey: ['resultados-fila', epoch, signature],
     enabled:
@@ -148,6 +157,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
     op.busy ||
     op.waiting ||
     op.uncertain ||
+    writeWaiting ||
     fila.isFetching ||
     filaWaiting ||
     reading ||
@@ -164,6 +174,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
       setRecibos([]);
       setConsumed([]);
       setUndoBlocked([]);
+      setWriteBarrier(undefined);
       void queries.cancelQueries({
         queryKey: ['resultados-fila', epoch, signature],
         exact: true,
@@ -235,26 +246,41 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
     const receipt = await op.run(
       intent.tipo === 'result' ? REGISTRAR : DESFAZER,
       async (signal) => {
-        const response =
-          intent.tipo === 'result'
-            ? await api.POST('/api/v1/resultados/operacoes/{intention_id}', {
-                signal,
-                params: { path: { intention_id: intent.id } },
-                body: intent.body,
-              })
-            : await api.POST(
-                '/api/v1/resultados/operacoes/{intention_id}/desfazer',
-                {
+        try {
+          const response =
+            intent.tipo === 'result'
+              ? await api.POST('/api/v1/resultados/operacoes/{intention_id}', {
                   signal,
                   params: { path: { intention_id: intent.id } },
                   body: intent.body,
-                },
-              );
-        return validarRecibo(response.data, intent.id, {
-          chave: intent.chave,
-          tipo: intent.tipo,
-          ...(intent.tipo === 'undo' ? { alvo: intent.body.operacao_id } : {}),
-        });
+                })
+              : await api.POST(
+                  '/api/v1/resultados/operacoes/{intention_id}/desfazer',
+                  {
+                    signal,
+                    params: { path: { intention_id: intent.id } },
+                    body: intent.body,
+                  },
+                );
+          return validarRecibo(response.data, intent.id, {
+            chave: intent.chave,
+            tipo: intent.tipo,
+            ...(intent.tipo === 'undo'
+              ? { alvo: intent.body.operacao_id }
+              : {}),
+          });
+        } catch (cause) {
+          if (
+            alive.current &&
+            !signal.aborted &&
+            cause instanceof ApiError &&
+            (cause.status === 429 ||
+              cause.status === 503 ||
+              cause.code === 'result_busy')
+          )
+            setWriteBarrier(cause);
+          throw cause;
+        }
       },
       explicitReplay,
     );
@@ -343,7 +369,6 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
       reading ||
       op.busy ||
       readWaiting ||
-      op.waiting ||
       (currentBet && !pending.current)
     )
       return;
@@ -440,10 +465,19 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
             ? `${recibos[0].tipo === 'undo' ? 'Desfeito' : rotuloEstado(recibos[0].aposta.estado)} confirmado para ${recibos[0].aposta.evento ?? 'a aposta'}.`
             : ''}
       </p>
-      <details className="resultados-filtros">
+      <details
+        className="resultados-filtros"
+        onToggle={(event) => setFiltersOpen(event.currentTarget.open)}
+      >
         <summary>Filtros da fila</summary>
-        <Filtros recurso="resultados" catalogos={catalogos} />
+        {filtersOpen && <Filtros recurso="resultados" catalogos={catalogos} />}
       </details>
+      {!!visao.invalidos.length && (
+        <p role="status">
+          Filtros inválidos no endereço usam o padrão. Abra os filtros para
+          conferir.
+        </p>
+      )}
       {!op.can(REGISTRAR) && (
         <section className="resultados-nota">
           <h2>Resultados em consulta</h2>
@@ -493,6 +527,12 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
           </span>
         </div>
       )}
+      {writeWaiting && (
+        <p role="status">
+          O serviço pediu uma pausa nas gravações. As consultas continuam
+          disponíveis.
+        </p>
+      )}
       {op.error !== undefined && (
         <ErroApi
           error={op.error}
@@ -512,7 +552,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
           </p>
           <button
             type="button"
-            disabled={reading || op.busy || readWaiting || op.waiting}
+            disabled={reading || op.busy || readWaiting}
             onClick={() => void lookup()}
           >
             Consultar resultado do pedido
@@ -520,7 +560,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
           {definiteError && pendingIntent && (
             <button
               type="button"
-              disabled={reading || op.busy || readWaiting || op.waiting}
+              disabled={reading || op.busy || readWaiting}
               onClick={() => void lookup(true)}
             >
               Consultar aposta atual
@@ -536,7 +576,13 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
                 </p>
                 <button
                   type="button"
-                  disabled={reading || op.busy || readWaiting || op.waiting}
+                  disabled={
+                    reading ||
+                    op.busy ||
+                    readWaiting ||
+                    op.waiting ||
+                    writeWaiting
+                  }
                   onClick={() => void send(pending.current!, true)}
                 >
                   Reenviar exatamente este pedido
