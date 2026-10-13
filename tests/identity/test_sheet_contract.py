@@ -143,6 +143,7 @@ async def test_public_spa_sheet_preview_remap_confirm(
                     "heading", name="Confira as linhas com erro", exact=True
                 )
             ).to_be_visible()
+            await page.get_by_text("Conferir ou corrigir colunas", exact=True).click()
             await page.get_by_role("button", name="Odd", exact=False).click()
             await page.get_by_role("button", name="Coluna 4 · odd", exact=True).click()
             await page.get_by_role("button", name="Gerar nova prévia").click()
