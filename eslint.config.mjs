@@ -25,6 +25,7 @@ export default tseslint.config(
       'dist-prints-fixture/**',
       'dist-planilha-fixture/**',
       'dist-resultados-fixture/**',
+      'dist-caixa-fixture/**',
       'dist-hipotetica-fixture/**',
       'dist-apostas-fixture/**',
       'dist-apostas-security/**',

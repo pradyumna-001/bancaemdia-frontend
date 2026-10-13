@@ -12,6 +12,13 @@ export function centavosDaEntrada(valor: string): number {
   return Number(inteiro);
 }
 
+/** Sinal de uma entrada BRL para ajuste, sem decidir o efeito financeiro. */
+export function centavosComSinalDaEntrada(valor: string): number {
+  const texto = valor.trim();
+  if (texto.startsWith('-')) return -centavosDaEntrada(texto.slice(1));
+  return centavosDaEntrada(texto.startsWith('+') ? texto.slice(1) : texto);
+}
+
 /** Números JSON já imprecisos são recusados, nunca reconstruídos. */
 function inteiroExato(valor: InteiroExato): bigint {
   if (typeof valor === 'number' && Number.isSafeInteger(valor))

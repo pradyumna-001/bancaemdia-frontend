@@ -1242,6 +1242,303 @@ export const SITE_READ_CONTRACT = {
       },
     },
   },
+  '/api/v1/caixa': {
+    query: {
+      conta_casa_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'null' },
+        ],
+      },
+      titular_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'null' },
+        ],
+      },
+      tipo: {
+        anyOf: [
+          {
+            type: 'string',
+            enum: ['DEPOSITO', 'SAQUE', 'TRANSFERENCIA', 'BONUS', 'AJUSTE'],
+          },
+          { type: 'null' },
+        ],
+      },
+      desde: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      page: { type: 'integer', minimum: 1, maximum: 92233720368547760 },
+      page_size: { type: 'integer', minimum: 1, maximum: 100 },
+    },
+    response: {
+      type: 'object',
+      required: ['data', 'pagination'],
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'id',
+              'conta_casa_id',
+              'tipo',
+              'valor_centavos',
+              'transferencia_id',
+              'ocorrido_em',
+              'descricao',
+            ],
+            properties: {
+              conta_casa_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              descricao: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              id: { type: 'integer' },
+              ocorrido_em: { type: 'string' },
+              tipo: {
+                type: 'string',
+                enum: ['DEPOSITO', 'SAQUE', 'TRANSFERENCIA', 'BONUS', 'AJUSTE'],
+              },
+              transferencia_id: {
+                anyOf: [{ type: 'string' }, { type: 'null' }],
+              },
+              valor_centavos: { type: 'integer' },
+            },
+          },
+        },
+        pagination: {
+          type: 'object',
+          required: ['page', 'page_size', 'total'],
+          properties: {
+            page: { type: 'integer' },
+            page_size: { type: 'integer' },
+            total: { type: 'integer' },
+          },
+        },
+      },
+    },
+  },
+  '/api/v1/caixa/saldo': {
+    query: { data_corte: { anyOf: [{ type: 'string' }, { type: 'null' }] } },
+    response: {
+      type: 'object',
+      required: [
+        'data_corte',
+        'contas',
+        'saldo_conhecido_centavos',
+        'saldo_total_centavos',
+        'saldo_total_escopo',
+        'contas_sem_saldo_confiavel',
+        'bancas',
+      ],
+      properties: {
+        bancas: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'id',
+              'nome',
+              'saldo_inicial_centavos',
+              'saldo_total_centavos',
+              'motivo_saldo_indisponivel',
+            ],
+            properties: {
+              id: { type: 'integer' },
+              motivo_saldo_indisponivel: {
+                anyOf: [{ type: 'string' }, { type: 'null' }],
+              },
+              nome: { type: 'string' },
+              saldo_inicial_centavos: {
+                anyOf: [{ type: 'integer' }, { type: 'null' }],
+              },
+              saldo_total_centavos: {
+                anyOf: [{ type: 'integer' }, { type: 'null' }],
+              },
+            },
+          },
+        },
+        contas: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'conta_casa_id',
+              'casa_id',
+              'banca_id',
+              'apelido',
+              'saldo_atual_centavos',
+              'saldo_confiavel',
+              'depositado_centavos',
+              'sacado_centavos',
+              'bonus_centavos',
+              'movido_centavos',
+              'apostado_centavos',
+              'retornado_centavos',
+              'em_jogo_centavos',
+              'apostas_pendentes',
+              'movimentos',
+              'desde',
+              'deposito_faltante_centavos',
+            ],
+            properties: {
+              apelido: { type: 'string' },
+              apostado_centavos: { type: 'integer' },
+              apostas_pendentes: { type: 'integer' },
+              banca_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              bonus_centavos: { type: 'integer' },
+              casa_id: { type: 'integer' },
+              conta_casa_id: { type: 'integer' },
+              depositado_centavos: { type: 'integer' },
+              deposito_faltante_centavos: { type: 'integer' },
+              desde: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              em_jogo_centavos: { type: 'integer' },
+              movido_centavos: { type: 'integer' },
+              movimentos: { type: 'integer' },
+              retornado_centavos: { type: 'integer' },
+              sacado_centavos: { type: 'integer' },
+              saldo_atual_centavos: {
+                anyOf: [{ type: 'integer' }, { type: 'null' }],
+              },
+              saldo_confiavel: { type: 'boolean' },
+            },
+          },
+        },
+        contas_sem_saldo_confiavel: { type: 'integer' },
+        data_corte: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        saldo_conhecido_centavos: { type: 'integer' },
+        saldo_total_centavos: {
+          anyOf: [{ type: 'integer' }, { type: 'null' }],
+        },
+        saldo_total_escopo: { type: 'string', const: 'contas_casa' },
+      },
+    },
+  },
+  '/api/v1/caixa/extrato': {
+    query: {
+      conta_casa_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'null' },
+        ],
+      },
+      desde: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      page: { type: 'integer', minimum: 1, maximum: 92233720368547760 },
+      page_size: { type: 'integer', minimum: 1, maximum: 100 },
+    },
+    response: {
+      type: 'object',
+      required: ['data', 'pagination'],
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            oneOf: [
+              {
+                type: 'object',
+                required: [
+                  'id',
+                  'conta_casa_id',
+                  'tipo',
+                  'valor_centavos',
+                  'transferencia_id',
+                  'ocorrido_em',
+                  'descricao',
+                  'origem',
+                  'data_referencia',
+                ],
+                properties: {
+                  conta_casa_id: {
+                    anyOf: [{ type: 'integer' }, { type: 'null' }],
+                  },
+                  data_referencia: { type: 'string' },
+                  descricao: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                  id: { type: 'integer' },
+                  ocorrido_em: { type: 'string' },
+                  origem: { type: 'string', enum: ['movimento'] },
+                  tipo: {
+                    type: 'string',
+                    enum: [
+                      'DEPOSITO',
+                      'SAQUE',
+                      'TRANSFERENCIA',
+                      'BONUS',
+                      'AJUSTE',
+                    ],
+                  },
+                  transferencia_id: {
+                    anyOf: [{ type: 'string' }, { type: 'null' }],
+                  },
+                  valor_centavos: { type: 'integer' },
+                },
+              },
+              {
+                type: 'object',
+                required: [
+                  'origem',
+                  'id',
+                  'chave',
+                  'tipo',
+                  'conta_casa_id',
+                  'estado',
+                  'stake_centavos',
+                  'retorno_centavos',
+                  'resultado_liquido_centavos',
+                  'revisao_grave',
+                  'data_referencia',
+                  'data_referencia_origem',
+                  'liquidada_em',
+                ],
+                properties: {
+                  chave: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                  conta_casa_id: {
+                    anyOf: [{ type: 'integer' }, { type: 'null' }],
+                  },
+                  data_referencia: {
+                    anyOf: [{ type: 'string' }, { type: 'null' }],
+                  },
+                  data_referencia_origem: {
+                    type: 'string',
+                    enum: ['data_aposta', 'criada_em'],
+                  },
+                  estado: {
+                    type: 'string',
+                    enum: [
+                      'GREEN',
+                      'RED',
+                      'ANULADA',
+                      'MEIO_GREEN',
+                      'MEIO_RED',
+                      'CASHOUT',
+                    ],
+                  },
+                  id: { type: 'integer' },
+                  liquidada_em: { type: 'null' },
+                  origem: { type: 'string', enum: ['aposta'] },
+                  resultado_liquido_centavos: {
+                    anyOf: [{ type: 'integer' }, { type: 'null' }],
+                  },
+                  retorno_centavos: {
+                    anyOf: [{ type: 'integer' }, { type: 'null' }],
+                  },
+                  revisao_grave: { type: 'boolean' },
+                  stake_centavos: { type: 'integer' },
+                  tipo: { type: 'string', const: 'APOSTA_LIQUIDADA' },
+                },
+              },
+            ],
+          },
+        },
+        pagination: {
+          type: 'object',
+          required: ['page', 'page_size', 'total'],
+          properties: {
+            page: { type: 'integer' },
+            page_size: { type: 'integer' },
+            total: { type: 'integer' },
+          },
+        },
+      },
+    },
+  },
   '/api/v1/apostas': {
     query: {
       page: { type: 'integer', minimum: 1 },
@@ -3961,6 +4258,60 @@ export const SITE_READ_CONTRACT = {
           },
         },
         eventos_gravados: { type: 'integer', minimum: 0 },
+      },
+    },
+  },
+  'POST /api/v1/caixa': {
+    query: {},
+    response: {
+      type: 'object',
+      required: ['tipo', 'transferencia_id', 'movimentos'],
+      properties: {
+        movimentos: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'id',
+              'conta_casa_id',
+              'tipo',
+              'valor_centavos',
+              'transferencia_id',
+              'ocorrido_em',
+              'descricao',
+            ],
+            properties: {
+              conta_casa_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              descricao: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              id: { type: 'integer' },
+              ocorrido_em: { type: 'string' },
+              tipo: {
+                type: 'string',
+                enum: ['DEPOSITO', 'SAQUE', 'TRANSFERENCIA', 'BONUS', 'AJUSTE'],
+              },
+              transferencia_id: {
+                anyOf: [{ type: 'string' }, { type: 'null' }],
+              },
+              valor_centavos: { type: 'integer' },
+            },
+          },
+        },
+        tipo: {
+          type: 'string',
+          enum: ['DEPOSITO', 'SAQUE', 'TRANSFERENCIA', 'AJUSTE'],
+        },
+        transferencia_id: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      },
+    },
+  },
+  'PATCH /api/v1/caixa/contas/{conta_casa_id}/banca': {
+    query: {},
+    response: {
+      type: 'object',
+      required: ['conta_casa_id', 'banca_id'],
+      properties: {
+        banca_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+        conta_casa_id: { type: 'integer' },
       },
     },
   },

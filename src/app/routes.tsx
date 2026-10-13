@@ -24,6 +24,7 @@ import { DetalheApostaPage } from '../features/apostas/detalhe/DetalheApostaPage
 import { FotoPage } from '../features/midia/FotoPage';
 import { ContasPage } from '../features/contas/ContasPage';
 import { ResultadosPage } from '../features/resultados/ResultadosPage';
+import { CaixaPage } from '../features/caixa/CaixaPage';
 
 export function loginLoader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -47,7 +48,10 @@ export function createAppRoutes(
       formMethod,
       defaultShouldRevalidate,
     }) =>
-      (path === '/' || path === '/enviar' || path === '/resultados') &&
+      (path === '/' ||
+        path === '/enviar' ||
+        path === '/resultados' ||
+        path === '/banca') &&
       currentUrl.pathname === nextUrl.pathname &&
       currentUrl.search !== nextUrl.search &&
       !formMethod
@@ -98,6 +102,8 @@ export function createAppRoutes(
           <EnviarPage />
         ) : path === '/resultados' ? (
           <ResultadosPage />
+        ) : path === '/banca' ? (
+          <CaixaPage />
         ) : path === '/sistema' ? (
           <SistemaPage />
         ) : (

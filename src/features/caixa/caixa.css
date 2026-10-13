@@ -1,0 +1,159 @@
+.caixa-pagina {
+  display: grid;
+  gap: var(--espaco-24);
+}
+.caixa-cabecalho,
+.caixa-controles,
+.caixa-secoes {
+  display: flex;
+  gap: var(--espaco-16);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.caixa-cabecalho {
+  justify-content: space-between;
+}
+.caixa-secoes {
+  border-bottom: 1px solid var(--borda);
+  padding-bottom: var(--espaco-12);
+}
+.caixa-secoes a {
+  padding: var(--espaco-12);
+}
+.caixa-secoes [aria-current] {
+  color: var(--acao);
+  font-weight: var(--peso-forte);
+  text-decoration: underline;
+}
+.caixa-nota,
+.caixa-resumo,
+.caixa-conta,
+.caixa-formulario {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  padding: var(--espaco-24);
+  border-radius: var(--raio-painel);
+}
+.caixa-resumo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-16);
+}
+.caixa-resumo span,
+.caixa-resumo strong {
+  display: block;
+}
+.caixa-resumo strong {
+  font-size: var(--fonte-marca);
+}
+.caixa-resumo p {
+  margin: 0;
+  grid-column: 1/-1;
+}
+.caixa-contas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+.caixa-conta h2 {
+  font-size: var(--fonte-corpo);
+  overflow-wrap: anywhere;
+}
+.caixa-conta dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-12);
+}
+.caixa-conta dt {
+  color: var(--tinta-secundaria);
+}
+.caixa-conta dd {
+  margin: var(--espaco-4) 0 0;
+  overflow-wrap: anywhere;
+}
+.caixa-conta summary {
+  padding: var(--espaco-12) 0;
+}
+.caixa-filtros,
+.caixa-vinculo,
+.caixa-formulario form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-16);
+  align-items: end;
+}
+.caixa-vinculo {
+  margin-top: var(--espaco-16);
+}
+.caixa-formulario form {
+  max-width: 44rem;
+}
+.caixa-formulario label {
+  display: grid;
+  gap: var(--espaco-8);
+  flex-basis: 100%;
+}
+.caixa-formulario input {
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: var(--espaco-8) var(--espaco-12);
+  color: var(--tinta);
+  background: var(--superficie);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+}
+.caixa-pagina button {
+  min-height: 3rem;
+}
+.caixa-lista {
+  list-style: none;
+  padding: 0;
+}
+.caixa-lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espaco-16);
+  padding: var(--espaco-16) 0;
+  border-bottom: 1px solid var(--borda);
+  flex-wrap: wrap;
+}
+.caixa-lista strong,
+.caixa-lista small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.caixa-lista small {
+  color: var(--tinta-secundaria);
+  margin-top: var(--espaco-4);
+}
+.caixa-dialog {
+  max-width: min(36rem, calc(100vw - var(--espaco-32)));
+  padding: var(--espaco-24);
+  background: var(--superficie);
+  color: var(--tinta);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+@media (max-width: 40rem) {
+  .caixa-contas {
+    grid-template-columns: 1fr;
+  }
+  .caixa-nota,
+  .caixa-conta,
+  .caixa-formulario,
+  .caixa-resumo {
+    padding: var(--espaco-16);
+  }
+  .caixa-conta dl {
+    grid-template-columns: 1fr 1fr;
+  }
+  .caixa-resumo {
+    grid-template-columns: 1fr;
+  }
+  .caixa-filtros,
+  .caixa-vinculo {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

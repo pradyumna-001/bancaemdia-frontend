@@ -12,6 +12,7 @@ export type Regra = Readonly<{
   minLength?: number;
   maxLength?: number;
   anyOf?: readonly Regra[];
+  oneOf?: readonly Regra[];
   items?: Regra;
   properties?: Readonly<Record<string, Regra>>;
   additionalProperties?: Regra;
@@ -36,6 +37,8 @@ export function objeto(value: unknown): Record<string, unknown> {
 export function corresponde(value: unknown, rule: Regra): boolean {
   if (rule.json) return jsonValue(value);
   if (rule.anyOf) return rule.anyOf.some((part) => corresponde(value, part));
+  if (rule.oneOf)
+    return rule.oneOf.filter((part) => corresponde(value, part)).length === 1;
   if (rule.const !== undefined && value !== rule.const) return false;
   if (rule.enum && !rule.enum.includes(value)) return false;
   if (rule.type === 'null') return value === null;

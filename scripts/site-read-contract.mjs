@@ -1,6 +1,9 @@
 // Capabilities and validators come from one verified document, never from a merge of schemas.
 export function siteReadContract(document) {
   const selected = [
+    '/api/v1/caixa',
+    '/api/v1/caixa/saldo',
+    '/api/v1/caixa/extrato',
     '/api/v1/apostas',
     '/api/v1/apostas/{chave}',
     '/api/v1/revisao/{revisao_id}',
@@ -38,6 +41,7 @@ export function siteReadContract(document) {
     ])
       if (node[key] !== undefined) result[key] = node[key];
     if (node.anyOf) result.anyOf = node.anyOf.map(compact);
+    if (node.oneOf) result.oneOf = node.oneOf.map(compact);
     if (node.items) result.items = compact(node.items);
     if (
       node.additionalProperties &&
@@ -64,6 +68,8 @@ export function siteReadContract(document) {
     ),
     ...selected.map((path) => [path, 'get']),
     ['/api/v1/apostas/{chave}', 'patch'],
+    ['/api/v1/caixa', 'post'],
+    ['/api/v1/caixa/contas/{conta_casa_id}/banca', 'patch'],
     ['/api/v1/apostas/{chave}', 'delete'],
     ['/api/v1/apostas/{chave}/restaurar', 'post'],
     ['/api/v1/apostas/{chave}/resultado', 'post'],

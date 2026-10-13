@@ -71,3 +71,7 @@ Backend #198/#199 entrega fila keyset e revisão entre escritores, reversão por
 ## Revisão — revalidação de 13/10/2026 (#28)
 
 Matching/consolidação e resolução legada já existem em main; não estão integralmente ausentes. O caminho de escolha de tipster conflitante não é consumível pela leitura/resolução de revisão. Publicar a decisão humana, projeção/ações por família, contexto de atribuição, precondição e política temporal antes de concluir a fila avançada. A serialização de uma escrita não substitui a comparação da evidência apresentada. [Auditoria](../audits/revisao-2026-10-13.md); solicitação emergencial preparada para a API, sem número fictício ou PR frontend declarado pronto. Preservar os consumidores existentes e gerar tipos de uma única árvore real pinada após a entrega. Dependências futuras contra main, merge e publicação com o administrador.
+
+## Caixa — 13/10/2026 (#31)
+
+Contrato integrado permite adiantar Caixa enquanto Revisão #28 aguarda a API. Consumidor preserva pin sandbox único da #27, dependências contra main e merge administrativo. Transferência em um POST, dinheiro recebido, idempotência explícita e vínculo distinto de modo/capital de banca. CRUD/capital/modo permanecem #50. [Contrato](../contracts/caixa.md).

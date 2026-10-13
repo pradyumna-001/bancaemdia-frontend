@@ -109,6 +109,8 @@ jobs:
           python ../tests/identity/check_sheet_results.py sheet-spa-results.xml '${{ matrix.browser }}'
           python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_resultados_contract.py -k '${{ matrix.browser }}' --junitxml=resultados-spa-results.xml --tb=short -v
           python ../tests/identity/check_resultados_results.py resultados-spa-results.xml '${{ matrix.browser }}'
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_caixa_contract.py -k '${{ matrix.browser }}' --junitxml=caixa-spa-results.xml --tb=short -v
+          python ../tests/identity/check_caixa_results.py caixa-spa-results.xml '${{ matrix.browser }}'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -122,6 +124,7 @@ jobs:
             .identity-api/sheet-*.zip
             .identity-api/resultados-*.zip
             .identity-api/resultados-inp-*.json
+            .identity-api/caixa-*.zip
       - name: Encerrar somente o sandbox deste job
         if: always()
         run: |

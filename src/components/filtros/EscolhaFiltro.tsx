@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
 export type OpcaoFiltro = Readonly<{ value: string; label: string }>;
 export function EscolhaFiltro({
+  id: controlId,
   label,
   value,
   options,
@@ -11,6 +12,7 @@ export function EscolhaFiltro({
   busca,
   children,
 }: {
+  id?: string;
   label: string;
   value?: string;
   options: readonly OpcaoFiltro[];
@@ -37,6 +39,7 @@ export function EscolhaFiltro({
     <div className="filtro-escolha">
       <span id={id + '-label'}>{label}</span>
       <button
+        id={controlId}
         ref={trigger}
         type="button"
         disabled={disabled}
