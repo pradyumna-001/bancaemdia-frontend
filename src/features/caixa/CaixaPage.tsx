@@ -249,8 +249,14 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
         focusId.current,
       ) as HTMLButtonElement | null;
       if (target && !target.disabled) {
-        target.focus();
-        focusedMessage.current = message;
+        // Let the closed dialog and the enabled form finish their paint first.
+        const frame = requestAnimationFrame(() => {
+          if (!alive.current || target.disabled || dialog.current?.open) return;
+          target.focus();
+          if (document.activeElement === target)
+            focusedMessage.current = message;
+        });
+        return () => cancelAnimationFrame(frame);
       }
     }
   }, [
@@ -264,6 +270,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
     canMove,
     canLink,
     saldo.isFetching,
+    search,
   ]);
   const blocked = executing || op.busy || reading || !!pendente || op.uncertain;
   const writeBlocked = blocked || op.waiting || !op.can(POST);

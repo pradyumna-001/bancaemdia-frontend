@@ -254,6 +254,13 @@ it.each(['SAQUE', 'TRANSFERENCIA', 'AJUSTE'])(
     await screen.findByText(
       `${({ SAQUE: 'Saque', TRANSFERENCIA: 'Transferência', AJUSTE: 'Ajuste' } as Record<string, string>)[tipo]} ${tipo === 'TRANSFERENCIA' ? 'registrada' : 'registrado'}.`,
     );
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', {
+          name: 'Conferir lançamento',
+        }),
+      ).toHaveFocus(),
+    );
     expect(s.writes).toHaveLength(1);
     const body = await s.writes[0]!.json();
     expect(body.valor_centavos).toBe(tipo === 'AJUSTE' ? -150 : 1500);

@@ -283,25 +283,27 @@ async def test_public_spa_caixa_atomic_money_recovery(
             assert await page.evaluate(
                 "document.documentElement.scrollWidth <= innerWidth"
             )
-            # Resizing/focusing Firefox can renew the short-lived sandbox session.
-            # Finish that real rotation before unloading its document; aborting it
-            # after the server commits would leave a retired cookie in the browser.
-            await page.wait_for_load_state("networkidle")
-            await page.goto(backend.FRONT + "/sair?destino=%2Fbanca")
+            # Keep the original document alive while a second tab acquires the
+            # session Web Lock. Logout must clear the original private page too.
+            logout_page = await context.new_page()
+            await logout_page.goto(backend.FRONT + "/sair?destino=%2Fbanca")
             await expect(
-                page.get_by_role("button", name="Confirmar saída", exact=True)
+                logout_page.get_by_role("button", name="Confirmar saída", exact=True)
             ).to_be_enabled()
-            async with page.expect_response(
+            async with logout_page.expect_response(
                 lambda response: (
                     response.url.endswith("/auth/logout")
                     and response.request.method == "POST"
                 )
             ) as pending_logout:
-                await page.get_by_role(
+                await logout_page.get_by_role(
                     "button", name="Confirmar saída", exact=True
                 ).click()
             logout = await pending_logout.value
             assert logout.status == 200 and await logout.json() == {"logged_out": True}
+            await expect(
+                logout_page.get_by_role("heading", name="Entrar", exact=True)
+            ).to_be_visible()
             await expect(
                 page.get_by_role("heading", name="Entrar", exact=True)
             ).to_be_visible()
