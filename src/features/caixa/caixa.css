@@ -13,6 +13,9 @@
 .caixa-cabecalho {
   justify-content: space-between;
 }
+.caixa-saldo-controles {
+  align-items: flex-end;
+}
 .caixa-secoes {
   border-bottom: 1px solid var(--borda);
   padding-bottom: var(--espaco-12);
@@ -152,7 +155,8 @@
     grid-template-columns: 1fr;
   }
   .caixa-filtros,
-  .caixa-vinculo {
+  .caixa-vinculo,
+  .caixa-saldo-controles {
     align-items: stretch;
     flex-direction: column;
   }

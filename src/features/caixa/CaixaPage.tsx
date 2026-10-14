@@ -758,7 +758,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
       )}
       {view.secao === 'saldos' && (
         <>
-          <div className="caixa-controles">
+          <div className="caixa-controles caixa-saldo-controles">
             <DataFiltro
               label="Saldo até a data"
               value={view.corte}
