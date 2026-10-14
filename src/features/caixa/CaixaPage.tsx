@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getApiClient } from '../../api/client';
@@ -86,6 +86,10 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
   const api = client ?? getApiClient();
   const queries = useQueryClient();
   const [search, setSearch] = useSearchParams();
+  const latestSearch = useRef(search);
+  useLayoutEffect(() => {
+    latestSearch.current = search;
+  }, [search]);
   const view = lerCaixa(search);
   const read = useLeituraPainel();
   const op = useOperacao();
@@ -242,24 +246,25 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
     search.has('movimento') &&
     (!rawRef || !UUID.test(rawRef) || search.getAll('movimento').length !== 1);
   function change(values: Record<string, string | undefined>, page = true) {
-    setSearch(
-      (old) => {
-        const next = new URLSearchParams(old);
-        for (const [key, value] of Object.entries(values)) {
-          next.delete(key);
-          if (value) next.set(key, value);
-        }
-        if (page) next.delete('caixa_pagina');
-        return next;
-      },
-      { replace: true },
-    );
+    const next = new URLSearchParams(latestSearch.current);
+    for (const [key, value] of Object.entries(values)) {
+      next.delete(key);
+      if (value) next.set(key, value);
+    }
+    if (page) next.delete('caixa_pagina');
+    latestSearch.current = next;
+    setSearch(next, { replace: true });
   }
   function clearPending() {
+    const original = pending.current;
     pending.current = undefined;
     setPendente(undefined);
     setConsulted(false);
-    change({ movimento: undefined }, false);
+    if (
+      original?.kind === 'movimento' &&
+      latestSearch.current.get('movimento') === original.key
+    )
+      change({ movimento: undefined }, false);
   }
   useEffect(() => {
     alive.current = true;
@@ -293,17 +298,19 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
       ![409, 410].includes(op.error.status) &&
       pending.current
     ) {
+      const original = pending.current;
       pending.current = undefined;
       setPendente(undefined);
       setConsulted(false);
-      setSearch(
-        (old) => {
-          const next = new URLSearchParams(old);
-          next.delete('movimento');
-          return next;
-        },
-        { replace: true },
-      );
+      if (
+        original.kind === 'movimento' &&
+        latestSearch.current.get('movimento') === original.key
+      ) {
+        const next = new URLSearchParams(latestSearch.current);
+        next.delete('movimento');
+        latestSearch.current = next;
+        setSearch(next, { replace: true });
+      }
     }
   }, [op.error, setSearch]);
   function show(value: Pendente) {

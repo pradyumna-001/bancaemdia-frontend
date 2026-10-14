@@ -5,6 +5,7 @@ import { temaInicial } from '../../scripts/tema-vite';
 import { randomUUID } from 'node:crypto';
 import { billingStatus } from './acesso';
 import { createContasFixture } from './contas';
+import { caixaFixture } from './caixa';
 // Build separado: nenhuma entrada de sessão simulada participa de dist/.
 export default defineConfig({
   root: fileURLToPath(new URL('./shell/', import.meta.url)),
@@ -16,6 +17,7 @@ export default defineConfig({
       name: 'fila-simulada-apenas-na-demonstracao',
       configurePreviewServer(server) {
         const contas = createContasFixture();
+        const caixa = caixaFixture();
         const session = {
           usuario_id: 1,
           nome: 'Demonstração',
@@ -39,6 +41,14 @@ export default defineConfig({
           if (url.pathname === '/api/v1/billing/status')
             return send(billingStatus);
           if (req.method === 'GET') {
+            if (
+              url.pathname.startsWith('/api/v1/caixa') ||
+              url.pathname === '/api/v1/titulares/casas/7/matriz'
+            ) {
+              const result = caixa.handle('GET', url);
+              res.statusCode = result.status;
+              return send(result.data);
+            }
             const data = contas.handle('GET', url, {});
             if (data !== undefined) return send(data);
           }

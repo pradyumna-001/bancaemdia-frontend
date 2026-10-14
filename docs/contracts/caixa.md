@@ -12,6 +12,8 @@ Titular/casa/apelido vêm da matriz publicada, incluindo Sem titular. Falha de i
 
 URL: `caixa=saldos|movimentos|extrato`, `caixa_conta`, `caixa_titular`, `caixa_tipo`, `caixa_desde`, `caixa_ate`, `caixa_pagina`, `data_corte`. Inválidos usam defaults; dia final convertido para exclusivo no fuso São Paulo. Movimentos aceita conta/titular/tipo/datas; Extrato somente conta/datas. Tipo/titular preservados não são aplicados ao Extrato. Outros filtros permanecem nos links, com escopo explícito. Paginação é da API; não filtrar uma página para simular população.
 
+Uma resposta de escrita preserva o recorte atual, inclusive se alterado durante o envio; só remove sua própria identidade do endereço. Recarga com referência pendente bloqueia também alterações de vínculo até consulta e encerramento explícitos, sem desfazer dinheiro.
+
 Extrato usa discriminador movimento/aposta. A aposta informa data_aposta/criada_em, `liquidada_em:null`; não inventar liquidação ou saldo corrido. Custo/retorno/resultado líquido são recebidos. BONUS só leitura.
 
 ## Escrita e recuperação

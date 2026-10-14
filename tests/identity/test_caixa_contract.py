@@ -96,14 +96,26 @@ async def test_public_spa_caixa_atomic_money_recovery(
             )
             accounts.append(account["conta_casa_id"])
         writes = []
-        page.on(
-            "request",
-            lambda r: (
-                writes.append(r)
-                if r.method != "GET" and "/api/v1/caixa" in r.url
-                else None
-            ),
-        )
+        disconnect_next = False
+
+        async def observe_cash(route):
+            nonlocal disconnect_next
+            request = route.request
+            if request.method != "GET":
+                writes.append(request)
+            if (
+                disconnect_next
+                and request.method == "POST"
+                and request.url.endswith("/api/v1/caixa")
+            ):
+                disconnect_next = False
+                response = await route.fetch()
+                assert response.status == 201
+                await route.abort("failed")
+            else:
+                await route.continue_()
+
+        await page.route("**/api/v1/caixa**", observe_cash)
         await context.tracing.start(screenshots=False, snapshots=False, sources=False)
         try:
             await page.goto(backend.FRONT + "/banca?casa=" + str(house))
@@ -156,17 +168,20 @@ async def test_public_spa_caixa_atomic_money_recovery(
                 )
 
             # A genuine committed response is lost. Only explicit GET then identical key/body replay.
-            async def disconnect(route):
-                response = await route.fetch()
-                assert response.status == 201
-                await route.abort("failed")
-
-            await page.route("**/api/v1/caixa", disconnect, times=1)
+            disconnect_next = True
             await movement(page, "Depósito", source, amount="10,00")
             await expect(
                 page.get_by_role("heading", name="Conferir o lançamento", exact=True)
             ).to_be_visible()
             assert len(writes) == 3
+            async with engine_admin.connect() as conn:
+                assert (
+                    await conn.scalar(
+                        text("SELECT count(*) FROM movimentos WHERE usuario_id=:uid"),
+                        {"uid": uid},
+                    )
+                    == 4
+                )
             original = writes[-1]
             await page.get_by_role(
                 "button", name="Conferir movimentos e vínculo", exact=True

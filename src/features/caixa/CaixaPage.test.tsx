@@ -560,6 +560,45 @@ it('logout elimina recibo/formulário e descarta resposta tardia de POST', async
     s.queries.getQueryCache().findAll({ queryKey: ['caixa'] }),
   ).toHaveLength(0);
 });
+it('confirmação tardia preserva o recorte escolhido durante o envio', async () => {
+  let finish: (value: Response) => void = () => {};
+  let sent: Request | undefined;
+  const s = await setup(async (r) => {
+    if (r.method === 'POST') {
+      sent = r;
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    }
+  }, '/banca?casa=7&apagadas=1');
+  await fill();
+  confirm();
+  await waitFor(() => expect(s.writes).toHaveLength(1));
+  fireEvent.click(screen.getByRole('link', { name: 'Movimentos' }));
+  await select('Conta do Caixa', 'Sem titular · Betano · Reserva');
+  expect(screen.getByTestId('url')).toHaveTextContent('caixa_conta=12');
+  await act(async () =>
+    finish(
+      json(
+        s.fixture.handle(
+          'POST',
+          new URL(sent!.url),
+          await sent!.json(),
+          sent!.headers.get('Idempotency-Key')!,
+        ).data,
+        201,
+      ),
+    ),
+  );
+  await screen.findByText('Depósito registrado.');
+  await waitFor(() =>
+    expect(screen.getByTestId('url')).not.toHaveTextContent('movimento='),
+  );
+  expect(screen.getByTestId('url')).toHaveTextContent('caixa=movimentos');
+  expect(screen.getByTestId('url')).toHaveTextContent('caixa_conta=12');
+  expect(screen.getByTestId('url')).toHaveTextContent('casa=7');
+  expect(screen.getByTestId('url')).toHaveTextContent('apagadas=1');
+});
 it('estado vazio orienta ação, rótulos ausentes têm erro seguro e query inválida usa defaults', async () => {
   await setup(
     async (r) =>
