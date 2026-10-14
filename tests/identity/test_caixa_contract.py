@@ -283,13 +283,16 @@ async def test_public_spa_caixa_atomic_money_recovery(
             assert await page.evaluate(
                 "document.documentElement.scrollWidth <= innerWidth"
             )
-            session = (await core.request(page, "/auth/session"))["data"]
-            assert (
-                await core.request(
-                    page, "/auth/logout", method="POST", csrf=session["csrf_token"]
-                )
-            )["status"] == 200
-            await page.reload()
+            await page.goto(backend.FRONT + "/sair?destino=%2Fbanca")
+            await expect(
+                page.get_by_role("button", name="Confirmar saída", exact=True)
+            ).to_be_enabled()
+            await page.get_by_role("button", name="Confirmar saída", exact=True).click()
+            await expect(
+                page.get_by_role("heading", name="Entrar", exact=True)
+            ).to_be_visible()
+            assert (await core.request(page, "/auth/session"))["status"] == 401
+            await page.goto(backend.FRONT + "/banca")
             await expect(
                 page.get_by_role("heading", name="Entrar", exact=True)
             ).to_be_visible()
