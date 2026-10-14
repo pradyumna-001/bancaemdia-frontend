@@ -116,6 +116,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const focusId = useRef('caixa-conferir');
+  const focusedMessage = useRef<string>();
   const cancel = useRef<HTMLButtonElement>(null);
   const [confirmation, setConfirmation] = useState<Pendente>();
   const saldo = useQuery({
@@ -230,10 +231,40 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
   });
   const current = () =>
     alive.current && auth.service.getSnapshot().privateEpoch === epoch;
+  const canMove = op.can(POST);
+  const canLink = op.can(PATCH);
   useEffect(() => {
-    if (message && !executing && !reading && !pendente)
-      document.getElementById(focusId.current)?.focus();
-  }, [message, executing, reading, pendente]);
+    if (
+      message &&
+      focusedMessage.current !== message &&
+      !executing &&
+      !reading &&
+      !pendente &&
+      !op.busy &&
+      !op.waiting &&
+      !op.uncertain &&
+      (canMove || canLink)
+    ) {
+      const target = document.getElementById(
+        focusId.current,
+      ) as HTMLButtonElement | null;
+      if (target && !target.disabled) {
+        target.focus();
+        focusedMessage.current = message;
+      }
+    }
+  }, [
+    message,
+    executing,
+    reading,
+    pendente,
+    op.busy,
+    op.waiting,
+    op.uncertain,
+    canMove,
+    canLink,
+    saldo.isFetching,
+  ]);
   const blocked = executing || op.busy || reading || !!pendente || op.uncertain;
   const writeBlocked = blocked || op.waiting || !op.can(POST);
   const rawRef = search.get('movimento');
@@ -332,6 +363,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
     acting.current = true;
     setExecuting(true);
     setMessage('');
+    focusedMessage.current = undefined;
     setRecibo(undefined);
     pending.current = value;
     setPendente(value);
@@ -590,6 +622,13 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
           {message}
         </p>
       )}
+      {executing && (
+        <p role="status">
+          {message
+            ? 'Atualizando dados do Caixa…'
+            : 'Registrando alteração no Caixa…'}
+        </p>
+      )}
       {op.error !== undefined && (
         <ErroApi error={op.error} intent="gravacao" fields={CAMPOS} />
       )}
@@ -599,7 +638,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
           repetido.
         </p>
       )}
-      {(pendente || restored) && (
+      {!executing && ((pendente && op.uncertain) || restored) && (
         <section className="caixa-nota">
           <h2>Conferir o lançamento</h2>
           <p>

@@ -574,6 +574,12 @@ it('confirmação tardia preserva o recorte escolhido durante o envio', async ()
   await fill();
   confirm();
   await waitFor(() => expect(s.writes).toHaveLength(1));
+  expect(
+    screen.queryByRole('heading', { name: 'Conferir o lançamento' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByText('Registrando alteração no Caixa…'),
+  ).toBeInTheDocument();
   fireEvent.click(screen.getByRole('link', { name: 'Movimentos' }));
   await select('Conta do Caixa', 'Sem titular · Betano · Reserva');
   expect(screen.getByTestId('url')).toHaveTextContent('caixa_conta=12');
