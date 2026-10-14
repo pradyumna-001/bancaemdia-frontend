@@ -135,7 +135,10 @@ it('Retry-After não dispara navegação automática e foco não muda quando o p
       headers: new Headers({ 'Retry-After': '1' }),
     }),
   );
-  await screen.findByRole('heading', { name: 'Aguarde para tentar novamente' });
+  const heading = await screen.findByRole('heading', {
+    name: 'Aguarde para tentar novamente',
+  });
+  await waitFor(() => expect(heading).toHaveFocus());
   const key = router.state.location.key;
   const retry = screen.getByRole('button', { name: 'Tentar novamente' });
   expect(retry).toBeDisabled();

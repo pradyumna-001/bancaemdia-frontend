@@ -6,7 +6,9 @@ Accepted — implementação na issue #8, em 29/09/2026. Deploy real depende de 
 
 ## CI permanente
 
-Push e pull request executam o SHA exato da branch, inclusive mudanças documentais. Preservam lint, tipos, testes, build, schema pinado sem drift, 120 E2E em três browsers/dois viewports, pre-commit, Docker/nginx/CSP e GitGuardian. Nenhum sucesso anterior ou mock substitui integração real. O único job de qualidade mantém os nomes `Testes (push)` e `Testes (pull_request)`; sharding fica para quando duração medida justificar a complexidade.
+Push e pull request executam o SHA exato da branch, inclusive mudanças documentais. Preservam lint, tipos, testes, build, schema pinado sem drift, a suíte E2E completa em três browsers/dois viewports, pre-commit, Docker/nginx/CSP e GitGuardian. Nenhum sucesso anterior ou mock substitui integração real. O único job de qualidade mantém os nomes `Testes (push)` e `Testes (pull_request)`; sharding fica para quando duração medida justificar a complexidade.
+
+Na #31, a suíte cresceu para 612 E2E. Em 14/10/2026, duas execuções do mesmo SHA concluíram os 1.168 testes unitários e os 612 E2E, mas atingiram os 20 minutos durante as etapas finais de pre-commit/Docker/nginx. O tempo máximo do job passa a 25 minutos para incluir instalação, suíte completa, build da imagem e verificações de rotas/CSP. Os limites individuais dos testes e os gates de cobertura, bundle, Lighthouse, segurança e execução sem skips continuam os mesmos.
 
 A #8 acrescenta:
 
