@@ -283,6 +283,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
       if (value) next.set(key, value);
     }
     if (page) next.delete('caixa_pagina');
+    if (next.toString() === latestSearch.current.toString()) return;
     latestSearch.current = next;
     setSearch(next, { replace: true });
   }
