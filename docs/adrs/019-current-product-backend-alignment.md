@@ -79,3 +79,7 @@ Contrato integrado permite adiantar Caixa enquanto Revisão #28 aguarda a API. C
 ## Revisão #28 — 15/10/2026
 
 Backend #200/PR #201 entrega o protocolo pendente. Sandbox único 547a4d0cfce5308dfe71221a77ad6fd5eb6e47cd incorpora #201 ao b37a3f8 e preserva todas as operações anteriores. OpenAPI de 125 operações, hash 09cf9fbb4b46a8dfc20fc4f4a3c97c3b88000612308cfb4e1e8fd4565901854a; sem união de schemas ou publicação. Seis jornadas reais de Revisão e 56 aceites PostgreSQL são acrescentados às provas anteriores. Job central reserva 25 minutos para o inventário ampliado, sem mudar limites de teste/pedido, cobertura, budget JS ou regra de zero skips. [Contrato](../contracts/revisao.md).
+
+## Privacidade #58 — 15/10/2026
+
+Entrega frontend independente da criação manual #29, por decisão do titular de adiantar trabalho enquanto o backend prepara esse contrato. Exportação e anonimização já integradas em b916f54; consumidor mantém o sandbox único 547a4d0 e declara frontend #94 contra main. A SPA apresenta opções, confirmações, limites e recusas; o backend executa exclusão e regras. READ_ONLY, isolamento, descarte de respostas antigas e limpeza após confirmação são obrigatórios. [Contrato](../contracts/privacidade.md).

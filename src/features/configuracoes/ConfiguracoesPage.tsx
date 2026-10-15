@@ -57,7 +57,7 @@ export function ConfiguracoesPage({
               <Link to={'/configuracoes/privacidade' + location.search}>
                 Privacidade
               </Link>
-              <p>Exportação e encerramento da conta estão em preparação.</p>
+              <p>Exporte seus registros ou solicite o encerramento da conta.</p>
             </li>
           </ul>
         </section>

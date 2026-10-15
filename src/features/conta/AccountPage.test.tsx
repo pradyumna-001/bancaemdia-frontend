@@ -15,6 +15,21 @@ import { paginaExemplo } from '../../../tests/fixtures/apostas';
 import { billingStatus } from '../../../tests/fixtures/acesso';
 
 const disposers: Array<() => void> = [];
+it('confirmação de conta encerrada vem só da memória da sessão, nunca de query ou history state', async () => {
+  const { service, router } = open('/login?accountClosed=true', true);
+  await screen.findByRole('heading', { name: /^Entrar$/ });
+  expect(
+    screen.queryByText(/Conta desativada e anonimizada/),
+  ).not.toBeInTheDocument();
+  await act(() =>
+    router.navigate('/login', { state: { accountClosed: true } }),
+  );
+  expect(
+    screen.queryByText(/Conta desativada e anonimizada/),
+  ).not.toBeInTheDocument();
+  await act(() => service.accountClosed());
+  await screen.findByText(/Conta desativada e anonimizada/);
+});
 afterEach(() => {
   disposers.splice(0).forEach((dispose) => dispose());
   vi.restoreAllMocks();

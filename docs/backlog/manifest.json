@@ -249,7 +249,7 @@
     "number": 58,
     "title": "[ADR-019] Privacidade — exportar registros e encerrar conta",
     "file": "058.md",
-    "dependencies": "#9, #10, #11, #33; #52; pradyumna-001/bancaemdia-api#43"
+    "dependencies": "#9, #10, #11, #33; #52; pradyumna-001/bancaemdia-api#43 integrada; frontend PR #94; independente da #29 por decisão do titular"
   },
   {
     "number": 59,

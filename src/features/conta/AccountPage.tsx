@@ -72,6 +72,7 @@ export function AccountPage({ path }: { path: JourneyPath | '/sair' }) {
     waiting ||
     (!!auth.state.error && auth.state.error.kind !== 'invalid_request');
   const journey = path === '/sair' ? undefined : journeys[path];
+  const closed = path === '/login' && auth?.state.accountClosed === true;
   const recovery = journey?.intent === 'recover';
   return (
     <main className={internal ? 'pagina pagina-interna conta' : 'conta-acesso'}>
@@ -86,6 +87,12 @@ export function AccountPage({ path }: { path: JourneyPath | '/sair' }) {
         )}
         {internal && <p className="legenda">Sua conta</p>}
         <h1 id="titulo-conta">{journey?.title ?? 'Sair'}</h1>
+        {closed && (
+          <p className="conta-status" role="status">
+            Conta desativada e anonimizada. Os dados privados desta sessão foram
+            removidos deste navegador.
+          </p>
+        )}
         <p className="conta-introducao">
           {journey?.description ?? 'Deseja sair da sua conta neste navegador?'}
         </p>

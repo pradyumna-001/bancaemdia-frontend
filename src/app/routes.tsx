@@ -31,6 +31,11 @@ const RevisaoPage = lazy(() =>
     default: m.RevisaoPage,
   })),
 );
+const PrivacidadePage = lazy(() =>
+  import('../features/configuracoes/privacidade/PrivacidadePage').then((m) => ({
+    default: m.PrivacidadePage,
+  })),
+);
 
 export function loginLoader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -96,6 +101,17 @@ export function createAppRoutes(
           <ContasPage />
         ) : path === '/configuracoes' ? (
           <ConfiguracoesPage />
+        ) : path === '/configuracoes/privacidade' ? (
+          <Suspense
+            fallback={
+              <main className="pagina">
+                <h1>Privacidade</h1>
+                <p role="status">Abrindo privacidade…</p>
+              </main>
+            }
+          >
+            <PrivacidadePage />
+          </Suspense>
         ) : path === '/assinatura' ? (
           <AssinaturaPage
             returning={() => billingReturnPending}
@@ -113,8 +129,8 @@ export function createAppRoutes(
           <Suspense
             fallback={
               <main className="pagina">
-                <h1>Revis�o</h1>
-                <p role="status">Abrindo revis�o�</p>
+                <h1>Revisão</h1>
+                <p role="status">Abrindo revisão…</p>
               </main>
             }
           >
