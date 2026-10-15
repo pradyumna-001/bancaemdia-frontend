@@ -56,6 +56,7 @@ async def test_public_spa_privacidade_export_isolation_close(
         uid, other = users
         await core.grant(pages[0], engine_admin, uid)
         names = ["Registros próprios " + uuid4().hex, "Outra pessoa " + uuid4().hex]
+        private_reference = "private-customer-" + uuid4().hex
         async with engine_admin.begin() as conn:
             for owner, name in zip(users, names, strict=True):
                 await conn.execute(
@@ -64,9 +65,9 @@ async def test_public_spa_privacidade_export_isolation_close(
                 )
             await conn.execute(
                 text(
-                    "UPDATE assinaturas SET trial_ends_at=clock_timestamp()-interval '1 second' WHERE usuario_id=:uid"
+                    "UPDATE assinaturas SET trial_ends_at=clock_timestamp()-interval '1 second', provider_customer_ref=:private WHERE usuario_id=:uid"
                 ),
-                {"uid": uid},
+                {"uid": uid, "private": private_reference},
             )
         assert (await core.request(pages[0], "/api/v1/billing/status"))["data"][
             "access"
@@ -112,10 +113,18 @@ async def test_public_spa_privacidade_export_isolation_close(
                     assert exported["usuario"]["id"] == uid
                     assert any(row["nome"] == names[0] for row in exported["bancas"])
                     assert names[1] not in content.decode()
-                    assert (
-                        "token_hash" not in content.decode()
-                        and "provider_customer_ref" not in content.decode()
-                    )
+                    # Audit diff.fields names changed columns; those names are
+                    # metadata, not credential values or exported columns.
+                    forbidden = {
+                        "token_hash",
+                        "code_hash",
+                        "provider_customer_ref",
+                        "provider_subscription_ref",
+                    }
+                    for rows in exported.values():
+                        if isinstance(rows, list):
+                            assert all(forbidden.isdisjoint(row) for row in rows)
+                    assert private_reference not in content.decode()
                 else:
                     book = load_workbook(BytesIO(content), read_only=True)
                     try:
@@ -123,6 +132,12 @@ async def test_public_spa_privacidade_export_isolation_close(
                         rows = list(book["bancas"].values)
                         assert any(names[0] in row for row in rows)
                         assert not any(names[1] in row for row in rows)
+                        for sheet in book:
+                            assert all(
+                                private_reference not in str(cell)
+                                for row in sheet.values
+                                for cell in row
+                            )
                     finally:
                         book.close()
             await page.get_by_role(

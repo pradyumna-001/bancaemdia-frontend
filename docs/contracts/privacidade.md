@@ -22,4 +22,6 @@ Unitários cobrem READ_ONLY, formatos/MIME, nomes, campos de URL, limpeza, diál
 
 O teste de rotas consulta o título atual até o fim do fallback lazy, sem manter uma referência ao nó provisório removido. Todas as rotas/assertivas anteriores permanecem, com verificação adicional de que o estado de abertura terminou; nenhum timeout ou retry é ampliado.
 
+O audit log publica nomes de colunas alteradas em diff.fields, sem seus valores. As provas de arquivo verificam exclusão das colunas restritas e ausência de uma referência privada sintética no conteúdo JSON e Excel; não confundem o nome de uma coluna na auditoria com um valor de credencial exportado.
+
 CI preserva as 42 jornadas reais anteriores e acrescenta seis de Privacidade: duas contas isoladas, exportação JSON/XLSX em READ_ONLY, CSRF, 409 real por marcador sintético de importação e encerramento confirmado sem afetar a outra conta. Dois aceites PostgreSQL existentes da API tornam-se inventário obrigatório com zero skips. Traces iniciam depois de autenticação/seed, sem rede/recursos/resultados secretos. Somente usuários e registros descartáveis dos testes são alterados. Publicação continua bloqueada pelo sandbox, com revalidação integrada antes de lançamento.
