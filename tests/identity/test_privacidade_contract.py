@@ -142,9 +142,18 @@ async def test_public_spa_privacidade_export_isolation_close(
                     {"id": raw_id, "uid": uid},
                 )
             await asyncio.sleep(max(0, expiry - time.time() + 0.2))
-            assert (await core.request(page, "/api/v1/billing/status"))["data"][
-                "access"
-            ] == "READ_ONLY"
+            # The sandbox also has short auth lifetimes. Refresh through the SPA,
+            # as the other real journeys do, without changing commercial access.
+            await core.fresh_session(page)
+            await page.goto(
+                backend.FRONT + "/configuracoes/privacidade?casa=7&apagadas=1"
+            )
+            await expect(
+                page.get_by_role("heading", name="Privacidade", exact=True)
+            ).to_be_visible()
+            access = await core.request(page, "/api/v1/billing/status")
+            assert access["status"] == 200
+            assert access["data"]["access"] == "READ_ONLY"
             for label, extension in (("JSON", "json"), ("Excel", "xlsx")):
                 async with page.expect_download() as download_info:
                     await page.get_by_role(
@@ -214,6 +223,7 @@ async def test_public_spa_privacidade_export_isolation_close(
                 assert await conn.scalar(
                     text("SELECT ativo FROM usuarios WHERE id=:uid"), {"uid": other}
                 )
+            await core.fresh_session(pages[1])
             other_export = await core.request(pages[1], "/api/v1/usuario/me/export")
             assert other_export["status"] == 200
             assert other_export["data"]["usuario"]["id"] == other
