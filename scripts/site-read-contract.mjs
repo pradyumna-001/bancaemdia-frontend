@@ -60,7 +60,8 @@ export function siteReadContract(document) {
   const operations = [
     ...Object.entries(document.paths).flatMap(([path, methods]) =>
       path.startsWith('/api/v1/planilhas/') ||
-      path.startsWith('/api/v1/resultados/')
+      path.startsWith('/api/v1/resultados/') ||
+      path.startsWith('/api/v1/revisao-operacional/')
         ? Object.keys(methods)
             .filter((method) => ['get', 'post', 'put'].includes(method))
             .map((method) => [path, method])

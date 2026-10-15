@@ -7,6 +7,7 @@ import {
   operationPolicies,
   paginationPolicies,
   resultsPolicies,
+  reviewPolicies,
   verifiedSchema,
 } from './api-contract.mjs';
 
@@ -57,6 +58,14 @@ try {
     await format(
       '// Generated from x-bancaemdia-resultados in the same verified OpenAPI.\n' +
         `export const RESULTADOS_POLICIES = ${JSON.stringify(resultsPolicies(document))} as const;\n`,
+      prettierOptions,
+    ),
+  );
+  await writeFile(
+    'src/api/revisao.generated.ts',
+    await format(
+      '// Generated from x-bancaemdia-review in the same verified OpenAPI.\n' +
+        `export const REVISAO_POLICIES = ${JSON.stringify(reviewPolicies(document))} as const;\n`,
       prettierOptions,
     ),
   );

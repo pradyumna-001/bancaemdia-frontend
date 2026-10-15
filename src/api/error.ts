@@ -11,7 +11,15 @@ export type InvalidField = Readonly<{ scope: 'body' | 'query'; field: string }>;
 
 function invalidFields(body: unknown): readonly InvalidField[] {
   const detail = record(body)?.detail;
-  if (!Array.isArray(detail)) return [];
+  if (!Array.isArray(detail)) {
+    const field = record(body)?.campo;
+    return typeof detail === 'string' &&
+      detail.startsWith('review_') &&
+      typeof field === 'string' &&
+      /^[A-Za-z_][A-Za-z0-9_]{0,79}$/.test(field)
+      ? Object.freeze([Object.freeze({ scope: 'body' as const, field })])
+      : [];
+  }
   const fields: InvalidField[] = [];
   for (const issue of detail.slice(0, 100)) {
     const loc = record(issue)?.loc;
@@ -47,6 +55,7 @@ const httpMessages: Record<number, string> = {
   404: 'Não encontramos o que você procurou.',
   405: 'Esta ação não está disponível.',
   409: 'Os dados mudaram ou este pedido já foi utilizado. Confira o resultado antes de continuar.',
+  410: 'O prazo de consulta deste recibo terminou. Isso não confirma que a alteração foi desfeita.',
   413: 'O arquivo ou pedido ultrapassa o tamanho permitido.',
   422: 'Confira os dados informados e tente novamente.',
   429: 'Muitas tentativas. Aguarde para tentar novamente.',
@@ -57,6 +66,10 @@ const httpMessages: Record<number, string> = {
 // Codes are protocol identifiers, never provider messages or arbitrary response text.
 const knownCodes = new Set([
   'result_busy',
+  'review_busy',
+  'review_evidence_changed',
+  'review_already_resolved',
+  'review_intention_conflict',
   'account_read_only',
   'access_expired',
   'not_authenticated',

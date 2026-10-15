@@ -142,3 +142,20 @@ export function resultsPolicies(schema) {
     ),
   );
 }
+
+export function reviewPolicies(schema) {
+  return Object.fromEntries(
+    Object.entries(schema.paths).flatMap(([path, methods]) =>
+      Object.entries(methods).flatMap(([method, operation]) =>
+        operation['x-bancaemdia-review']
+          ? [
+              [
+                `${method.toUpperCase()} ${path}`,
+                operation['x-bancaemdia-review'],
+              ],
+            ]
+          : [],
+      ),
+    ),
+  );
+}

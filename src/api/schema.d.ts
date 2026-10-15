@@ -1511,6 +1511,90 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/revisao-operacional/fila': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Fila segura por motivo
+     * @description Snapshot do primário: intervalo de abertura criado_em [desde,ate), datas sem offset em America/Sao_Paulo, filtro de família aplicado à população inteira. total_filtrado/por_familia_filtrado do mesmo recorte; total_global identifica separadamente todas as abertas. Reiniciar página 1 depois de resolver para não pular itens em uma fila que diminui.
+     */
+    get: operations['queue_api_v1_revisao_operacional_fila_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/revisao-operacional/operacoes/{operacao_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Reconciliar uma intenção de revisão
+     * @description Recibo durável privado no primário por 90 dias, acessível em READ_ONLY. 404/410 não provam rollback nem autorizam novo POST automático. Revisão resolvida por outro escritor não é atribuída à intenção desconhecida. 401 reautentica; 402 preserva sessão e formulário.
+     */
+    get: operations['recover_api_v1_revisao_operacional_operacoes__operacao_id__get'];
+    put?: never;
+    /**
+     * Resolver uma revisão condicionalmente
+     * @description UUID persistido antes do POST, FULL_WRITE atual e cookie+CSRF. Precondição comparada sob locks em transação SERIALIZABLE; escolha de tipster por fonte, sem IDs inferidos. Reutiliza correção, matriz de conta, consolidação e materializador de Print. Recibo, eventos, vínculo e fechamento atômicos. Repetição explícita idempotente do mesmo UUID/payload recupera recibo por 90 dias; nenhum replay automático após erro ou pagamento.
+     */
+    post: operations['decide_api_v1_revisao_operacional_operacoes__operacao_id__post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/revisao-operacional/revisoes/{revisao_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Evidência autorizada e ações por família
+     * @description Projeção tipada e sanitizada, sem extração bruta/diagnósticos/custos/URLs assinadas. Precondição opaca vinculada ao usuário e à revisão; conta pelo dia do jogo com exceção multicontas explícita. Fotos opcionais pela rota privada existente. Motivo não suportado encaminha ao suporte sem ações.
+     */
+    get: operations['detail_api_v1_revisao_operacional_revisoes__revisao_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/revisao-operacional/revisoes/{revisao_id}/foto': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Foto opcional privada da revisão
+     * @description READ_ONLY, snapshot do primário, mesma origem autenticada e autorização pela revisão. Reutiliza proveniência/mídia existente; ausência/expiração/foto inválida retornam 404 indistinguível. Raster JPEG/PNG/GIF/WebP até 20 MiB, 40 milhões de pixels e 256 frames; sem hash/URL assinada como autorização.
+     */
+    get: operations['photo_api_v1_revisao_operacional_revisoes__revisao_id__foto_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/revisao/stats': {
     parameters: {
       query?: never;
@@ -1520,7 +1604,7 @@ export interface paths {
     };
     /**
      * Consultar estatísticas de revisão
-     * @description Retorna volume, motivos e idade da fila de revisões pendentes do usuário.
+     * @description Retorna volume, motivos e idade da fila de revisões pendentes do usuário. Estatísticas globais de todas as abertas, sem os filtros da lista; idade sobre criado_em, relógio do servidor.
      */
     get: operations['consultar_estatisticas_api_v1_revisao_stats_get'];
     put?: never;
@@ -2131,6 +2215,53 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /** AccountChoice */
+    AccountChoice: {
+      /** Apelido */
+      apelido: string;
+      /** Ativa */
+      ativa: boolean;
+      /** Coincide No Dia Do Jogo */
+      coincide_no_dia_do_jogo: boolean;
+      /** Elegivel Escolha Explicita */
+      elegivel_escolha_explicita: boolean;
+      /** Estado */
+      estado: string;
+      /** Id */
+      id: string;
+      titular: components['schemas']['HolderChoice'] | null;
+    };
+    /** AccountEvidence */
+    AccountEvidence: {
+      /** Candidatos */
+      candidatos: components['schemas']['AccountChoice'][];
+      /** Casa */
+      casa: string | null;
+      /** Casa Id */
+      casa_id: string | null;
+      /** Conta Atual Id */
+      conta_atual_id: string | null;
+      /**
+       * Criterio
+       * @enum {string}
+       */
+      criterio: 'data_jogo' | 'multicontas_explicita';
+      /**
+       * Encaminhamento
+       * @enum {string}
+       */
+      encaminhamento:
+        'escolher_conta' | 'cadastrar_conta_na_casa' | 'informar_casa';
+      /** Instante */
+      instante: string | null;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: 'NONE' | 'UNIQUE' | 'AMBIGUOUS' | 'INVALID';
+      /** Status Na Abertura */
+      status_na_abertura?: ('NONE' | 'UNIQUE' | 'AMBIGUOUS') | null;
+    };
     /** AnalisesSaida */
     AnalisesSaida: {
       /** Atualizado Em */
@@ -3631,6 +3762,15 @@ export interface components {
        */
       unidade_paginacao: 'grupo_tipster';
     };
+    /** HolderChoice */
+    HolderChoice: {
+      /** Arquivado */
+      arquivado: boolean;
+      /** Id */
+      id: string;
+      /** Nome */
+      nome: string;
+    };
     /** HostedResponse */
     HostedResponse: {
       /** Url */
@@ -4432,6 +4572,26 @@ export interface components {
       resumo: components['schemas']['MetricasSaida'];
       saldo: components['schemas']['bancaemdia__api__v1__painel__SaldoSaida'];
     };
+    /** PairEvidence */
+    PairEvidence: {
+      /** Busca Incompleta */
+      busca_incompleta: boolean;
+      /** Casa Chave */
+      casa_chave: string;
+      /** Concorrentes */
+      concorrentes: number;
+      /** Escolha Tipster Obrigatoria */
+      escolha_tipster_obrigatoria: boolean;
+      /** Telegram Chave */
+      telegram_chave: string;
+      /**
+       * Tipo
+       * @enum {string}
+       */
+      tipo: 'legado' | 'casa_financeira_telegram_contextual';
+      /** Tipster Opcoes */
+      tipster_opcoes: components['schemas']['TipsterChoice'][];
+    };
     /** PairingCodeResponse */
     PairingCodeResponse: {
       /** Codigo */
@@ -4800,6 +4960,8 @@ export interface components {
        */
       acao: 'CORRIGIR' | 'DESCARTAR' | 'MESMA';
       aposta_corrigida?: components['schemas']['CorrecaoDaRevisao'] | null;
+      /** Tipster Choice */
+      tipster_choice?: ('casa' | 'telegram') | null;
     };
     /** ResolucaoSaida */
     ResolucaoSaida: {
@@ -5009,6 +5171,181 @@ export interface components {
        */
       retry_id: string;
     };
+    /** ReviewDecision */
+    ReviewDecision: {
+      /**
+       * Acao
+       * @enum {string}
+       */
+      acao:
+        'CORRIGIR' | 'DESCARTAR' | 'MESMA' | 'DISTINTAS' | 'RECUSAR_VINCULO';
+      aposta_corrigida?: components['schemas']['CorrecaoDaRevisao'] | null;
+      /**
+       * Conta Casa Id
+       * @description Escolha explícita exata como string BIGINT; convertida somente no servidor. Não selecionar o primeiro candidato.
+       */
+      conta_casa_id?: string | null;
+      /** Precondicao */
+      precondicao: string;
+      /** Revisao Id */
+      revisao_id: string;
+      /** Tipster Choice */
+      tipster_choice?: ('casa' | 'telegram') | null;
+    };
+    /** ReviewError */
+    ReviewError: {
+      /** Campo */
+      campo?: string | null;
+      /** Detail */
+      detail: string;
+    };
+    /** ReviewPage */
+    ReviewPage: {
+      /**
+       * Criterio Idade
+       * @constant
+       */
+      criterio_idade: 'intervalo_criado_em';
+      /** Data */
+      data: components['schemas']['ReviewView'][];
+      /**
+       * Observado Em
+       * Format: date-time
+       */
+      observado_em: string;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /**
+       * Politica Consumo
+       * @constant
+       */
+      politica_consumo: 'reiniciar_pagina_1_apos_resolver';
+      /** Por Familia Filtrado */
+      por_familia_filtrado: {
+        [key: string]: number;
+      };
+      /** Total Filtrado */
+      total_filtrado: number;
+      /** Total Global */
+      total_global: number;
+    };
+    /** ReviewReceipt */
+    ReviewReceipt: {
+      /**
+       * Acao
+       * @enum {string}
+       */
+      acao:
+        'CORRIGIR' | 'DESCARTAR' | 'MESMA' | 'DISTINTAS' | 'RECUSAR_VINCULO';
+      /** Aposta Chave */
+      aposta_chave: string | null;
+      /**
+       * Confirmado Em
+       * Format: date-time
+       */
+      confirmado_em: string;
+      /**
+       * Consultar Ate
+       * Format: date-time
+       */
+      consultar_ate: string;
+      /** Eventos Gravados */
+      eventos_gravados: number;
+      /**
+       * Familia
+       * @enum {string}
+       */
+      familia:
+        | 'leitura'
+        | 'conta'
+        | 'par_legado'
+        | 'consolidacao'
+        | 'print_incompleto'
+        | 'nao_suportada';
+      /**
+       * Operacao Id
+       * Format: uuid
+       */
+      operacao_id: string;
+      /** Revisao Id */
+      revisao_id: string;
+    };
+    /** ReviewView */
+    ReviewView: {
+      /** Acoes */
+      acoes: (
+        'CORRIGIR' | 'DESCARTAR' | 'MESMA' | 'DISTINTAS' | 'RECUSAR_VINCULO'
+      )[];
+      conta: components['schemas']['AccountEvidence'] | null;
+      /**
+       * Criado Em
+       * Format: date-time
+       */
+      criado_em: string;
+      /**
+       * Encaminhamento
+       * @enum {string}
+       */
+      encaminhamento:
+        | 'resolver_aposta'
+        | 'resolver_conta'
+        | 'resolver_par'
+        | 'resolver_print'
+        | 'suporte'
+        | 'resolvida';
+      /**
+       * Estado
+       * @enum {string}
+       */
+      estado: 'aberta' | 'resolvida';
+      /**
+       * Familia
+       * @enum {string}
+       */
+      familia:
+        | 'leitura'
+        | 'conta'
+        | 'par_legado'
+        | 'consolidacao'
+        | 'print_incompleto'
+        | 'nao_suportada';
+      /** Fontes */
+      fontes: components['schemas']['SourceEvidence'][];
+      /** Foto Url */
+      foto_url: string | null;
+      /** Id */
+      id: string;
+      /**
+       * Motivo
+       * @enum {string}
+       */
+      motivo:
+        | 'leitura_incompleta'
+        | 'atribuicao_conta'
+        | 'par_a_confirmar'
+        | 'fontes_a_consolidar'
+        | 'print_sem_aposta'
+        | 'motivo_nao_suportado';
+      par: components['schemas']['PairEvidence'] | null;
+      /** Precondicao */
+      precondicao: string;
+      /** Print Casa */
+      print_casa: string | null;
+      /** Print Descricao */
+      print_descricao: string | null;
+      /** Print Evento */
+      print_evento: string | null;
+      /** Print Odd */
+      print_odd: number | null;
+      /** Print Stake Unidades */
+      print_stake_unidades: number | null;
+      /** Resolver Url */
+      resolver_url: string | null;
+      /** Resolvido Em */
+      resolvido_em: string | null;
+    };
     /** RevisaoFechadaSaida */
     RevisaoFechadaSaida: {
       /** Id */
@@ -5161,6 +5498,48 @@ export interface components {
       /** Total Rows */
       total_rows: number;
     };
+    /** SourceEvidence */
+    SourceEvidence: {
+      /** Casa */
+      casa: string | null;
+      /** Chave */
+      chave: string;
+      /** Data Aposta */
+      data_aposta: string | null;
+      /** Data Jogo */
+      data_jogo: string | null;
+      /** Descricao */
+      descricao: string | null;
+      /** Evento */
+      evento: string | null;
+      /** Freebet */
+      freebet: boolean;
+      /** Mercado */
+      mercado: string | null;
+      /** Odd */
+      odd: number | null;
+      /** Origem */
+      origem: string;
+      /**
+       * Papel
+       * @enum {string}
+       */
+      papel: 'aposta' | 'casa' | 'telegram';
+      /** Retorno Centavos */
+      retorno_centavos: string | null;
+      /** Selecionada */
+      selecionada: boolean;
+      /** Stake Centavos */
+      stake_centavos: string | null;
+      /** Stake Unidades */
+      stake_unidades: number | null;
+      /** Tipster */
+      tipster: string | null;
+      /** Tipster Id */
+      tipster_id: string | null;
+      /** Valor Aposta Centavos */
+      valor_aposta_centavos: string | null;
+    };
     /** SourceInput */
     SourceInput: {
       /** Nome */
@@ -5253,6 +5632,20 @@ export interface components {
      */
     TipoMovimentoConsulta:
       'DEPOSITO' | 'SAQUE' | 'TRANSFERENCIA' | 'BONUS' | 'AJUSTE';
+    /** TipsterChoice */
+    TipsterChoice: {
+      /**
+       * Fonte
+       * @enum {string}
+       */
+      fonte: 'casa' | 'telegram';
+      /** Rotulo */
+      rotulo: string;
+      /** Tipster */
+      tipster: string | null;
+      /** Tipster Id */
+      tipster_id: string | null;
+    };
     /** TipsterDoGrupo */
     TipsterDoGrupo: {
       /**
@@ -14235,7 +14628,7 @@ export interface operations {
   queue_api_v1_resultados_fila_get: {
     parameters: {
       query?: {
-        /** @description Cursor privado cifrado, até 2048 caracteres, vinculado ao usuário/capacidade/filtros; expira em 24h. Reiniciar a paginação em 422. */
+        /** @description Cursor de Resultados privado por 30 minutos. */
         cursor?: string | null;
         /** @description Quantidade máxima de itens retornados na página. */
         page_size?: number;
@@ -14770,9 +15163,9 @@ export interface operations {
       query?: {
         /** @description Texto do motivo usado para filtrar a fila de revisões. */
         motivo?: string | null;
-        /** @description data_aposta: limite inicial inclusivo, ISO 8601 com offset; legado sem offset significa UTC. Não combinar com periodo na lista/visão filtrada. */
+        /** @description Abertura RevisaoPendente.criado_em; limite inclusivo >= desde; ISO 8601 sem offset significa America/Sao_Paulo. Não filtra data_aposta nem data_jogo. */
         desde?: string | null;
-        /** @description data_aposta: limite final exclusivo, ISO 8601 com offset; legado sem offset significa UTC. Não combinar com periodo na lista/visão filtrada. */
+        /** @description Abertura RevisaoPendente.criado_em; limite exclusivo < ate; ISO 8601 sem offset significa America/Sao_Paulo. Não filtra data_aposta nem data_jogo. */
         ate?: string | null;
         /** @description Número da página, começando em 1. */
         page?: number;
@@ -14850,6 +15243,625 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  queue_api_v1_revisao_operacional_fila_get: {
+    parameters: {
+      query?: {
+        /** @description Família decidida pelo servidor; filtro aplicado antes da paginação e da contagem. */
+        familia?:
+          | (
+              | 'leitura'
+              | 'conta'
+              | 'par_legado'
+              | 'consolidacao'
+              | 'print_incompleto'
+              | 'nao_suportada'
+            )
+          | null;
+        /** @description Abertura RevisaoPendente.criado_em; limite inclusivo >= desde; ISO 8601 sem offset significa America/Sao_Paulo. Não filtra data_aposta nem data_jogo. */
+        desde?: string | null;
+        /** @description Abertura RevisaoPendente.criado_em; limite exclusivo < ate; ISO 8601 sem offset significa America/Sao_Paulo. Não filtra data_aposta nem data_jogo. */
+        ate?: string | null;
+        /** @description Número da página, começando em 1. */
+        page?: number;
+        /** @description Quantidade máxima de itens retornados na página. */
+        page_size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewPage'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+    };
+  };
+  recover_api_v1_revisao_operacional_operacoes__operacao_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID criado e persistido pelo cliente antes da escrita; recuperação pela mesma identidade. */
+        operacao_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewReceipt'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+    };
+  };
+  decide_api_v1_revisao_operacional_operacoes__operacao_id__post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID criado e persistido pelo cliente antes da escrita; recuperação pela mesma identidade. */
+        operacao_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReviewDecision'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewReceipt'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Cookie mutation requires exact Origin and current CSRF proof. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description The request body exceeds this endpoint's streaming limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          /** @example Content Too Large */
+          'text/plain': string;
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+    };
+  };
+  detail_api_v1_revisao_operacional_revisoes__revisao_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identificador numérico da revisão pertencente ao usuário. */
+        revisao_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewView'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+    };
+  };
+  photo_api_v1_revisao_operacional_revisoes__revisao_id__foto_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identificador numérico da revisão pertencente ao usuário. */
+        revisao_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Original privado, raster validado até 20 MiB/40 milhões de pixels/256 frames. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'image/gif': string;
+          'image/jpeg': string;
+          'image/png': string;
+          'image/webp': string;
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Código público e campo seguro; sem detalhes internos. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewError'];
         };
       };
     };

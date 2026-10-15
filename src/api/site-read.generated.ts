@@ -1242,6 +1242,759 @@ export const SITE_READ_CONTRACT = {
       },
     },
   },
+  '/api/v1/revisao-operacional/fila': {
+    query: {
+      familia: {
+        anyOf: [
+          {
+            type: 'string',
+            enum: [
+              'leitura',
+              'conta',
+              'par_legado',
+              'consolidacao',
+              'print_incompleto',
+              'nao_suportada',
+            ],
+          },
+          { type: 'null' },
+        ],
+      },
+      desde: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      page: { type: 'integer', minimum: 1, maximum: 92233720368547760 },
+      page_size: { type: 'integer', minimum: 1, maximum: 100 },
+    },
+    response: {
+      type: 'object',
+      required: [
+        'data',
+        'page',
+        'page_size',
+        'total_filtrado',
+        'total_global',
+        'por_familia_filtrado',
+        'observado_em',
+        'politica_consumo',
+        'criterio_idade',
+      ],
+      properties: {
+        criterio_idade: { type: 'string', const: 'intervalo_criado_em' },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'id',
+              'familia',
+              'motivo',
+              'estado',
+              'criado_em',
+              'resolvido_em',
+              'precondicao',
+              'acoes',
+              'encaminhamento',
+              'resolver_url',
+              'foto_url',
+              'fontes',
+              'conta',
+              'par',
+              'print_casa',
+              'print_evento',
+              'print_descricao',
+              'print_odd',
+              'print_stake_unidades',
+            ],
+            properties: {
+              acoes: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: [
+                    'CORRIGIR',
+                    'DESCARTAR',
+                    'MESMA',
+                    'DISTINTAS',
+                    'RECUSAR_VINCULO',
+                  ],
+                },
+              },
+              conta: {
+                anyOf: [
+                  {
+                    type: 'object',
+                    required: [
+                      'casa',
+                      'casa_id',
+                      'instante',
+                      'criterio',
+                      'status',
+                      'conta_atual_id',
+                      'candidatos',
+                      'encaminhamento',
+                    ],
+                    properties: {
+                      candidatos: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          required: [
+                            'id',
+                            'apelido',
+                            'estado',
+                            'ativa',
+                            'titular',
+                            'elegivel_escolha_explicita',
+                            'coincide_no_dia_do_jogo',
+                          ],
+                          properties: {
+                            apelido: { type: 'string' },
+                            ativa: { type: 'boolean' },
+                            coincide_no_dia_do_jogo: { type: 'boolean' },
+                            elegivel_escolha_explicita: { type: 'boolean' },
+                            estado: { type: 'string' },
+                            id: {
+                              type: 'string',
+                              pattern: '^[1-9][0-9]{0,18}$',
+                            },
+                            titular: {
+                              anyOf: [
+                                {
+                                  type: 'object',
+                                  required: ['id', 'nome', 'arquivado'],
+                                  properties: {
+                                    arquivado: { type: 'boolean' },
+                                    id: {
+                                      type: 'string',
+                                      pattern: '^[1-9][0-9]{0,18}$',
+                                    },
+                                    nome: { type: 'string' },
+                                  },
+                                },
+                                { type: 'null' },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                      casa: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                      casa_id: {
+                        anyOf: [
+                          { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+                          { type: 'null' },
+                        ],
+                      },
+                      conta_atual_id: {
+                        anyOf: [
+                          { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+                          { type: 'null' },
+                        ],
+                      },
+                      criterio: {
+                        type: 'string',
+                        enum: ['data_jogo', 'multicontas_explicita'],
+                      },
+                      encaminhamento: {
+                        type: 'string',
+                        enum: [
+                          'escolher_conta',
+                          'cadastrar_conta_na_casa',
+                          'informar_casa',
+                        ],
+                      },
+                      instante: {
+                        anyOf: [{ type: 'string' }, { type: 'null' }],
+                      },
+                      status: {
+                        type: 'string',
+                        enum: ['NONE', 'UNIQUE', 'AMBIGUOUS', 'INVALID'],
+                      },
+                      status_na_abertura: {
+                        anyOf: [
+                          {
+                            type: 'string',
+                            enum: ['NONE', 'UNIQUE', 'AMBIGUOUS'],
+                          },
+                          { type: 'null' },
+                        ],
+                      },
+                    },
+                  },
+                  { type: 'null' },
+                ],
+              },
+              criado_em: { type: 'string' },
+              encaminhamento: {
+                type: 'string',
+                enum: [
+                  'resolver_aposta',
+                  'resolver_conta',
+                  'resolver_par',
+                  'resolver_print',
+                  'suporte',
+                  'resolvida',
+                ],
+              },
+              estado: { type: 'string', enum: ['aberta', 'resolvida'] },
+              familia: {
+                type: 'string',
+                enum: [
+                  'leitura',
+                  'conta',
+                  'par_legado',
+                  'consolidacao',
+                  'print_incompleto',
+                  'nao_suportada',
+                ],
+              },
+              fontes: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: [
+                    'chave',
+                    'papel',
+                    'origem',
+                    'casa',
+                    'evento',
+                    'descricao',
+                    'mercado',
+                    'data_jogo',
+                    'data_aposta',
+                    'tipster',
+                    'tipster_id',
+                    'odd',
+                    'stake_unidades',
+                    'stake_centavos',
+                    'valor_aposta_centavos',
+                    'retorno_centavos',
+                    'freebet',
+                    'selecionada',
+                  ],
+                  properties: {
+                    casa: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                    chave: { type: 'string' },
+                    data_aposta: {
+                      anyOf: [{ type: 'string' }, { type: 'null' }],
+                    },
+                    data_jogo: {
+                      anyOf: [{ type: 'string' }, { type: 'null' }],
+                    },
+                    descricao: {
+                      anyOf: [{ type: 'string' }, { type: 'null' }],
+                    },
+                    evento: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                    freebet: { type: 'boolean' },
+                    mercado: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                    odd: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+                    origem: { type: 'string' },
+                    papel: {
+                      type: 'string',
+                      enum: ['aposta', 'casa', 'telegram'],
+                    },
+                    retorno_centavos: {
+                      anyOf: [{ type: 'string' }, { type: 'null' }],
+                    },
+                    selecionada: { type: 'boolean' },
+                    stake_centavos: {
+                      anyOf: [{ type: 'string' }, { type: 'null' }],
+                    },
+                    stake_unidades: {
+                      anyOf: [{ type: 'number' }, { type: 'null' }],
+                    },
+                    tipster: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                    tipster_id: {
+                      anyOf: [
+                        { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+                        { type: 'null' },
+                      ],
+                    },
+                    valor_aposta_centavos: {
+                      anyOf: [{ type: 'string' }, { type: 'null' }],
+                    },
+                  },
+                },
+              },
+              foto_url: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              id: { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+              motivo: {
+                type: 'string',
+                enum: [
+                  'leitura_incompleta',
+                  'atribuicao_conta',
+                  'par_a_confirmar',
+                  'fontes_a_consolidar',
+                  'print_sem_aposta',
+                  'motivo_nao_suportado',
+                ],
+              },
+              par: {
+                anyOf: [
+                  {
+                    type: 'object',
+                    required: [
+                      'tipo',
+                      'casa_chave',
+                      'telegram_chave',
+                      'tipster_opcoes',
+                      'escolha_tipster_obrigatoria',
+                      'concorrentes',
+                      'busca_incompleta',
+                    ],
+                    properties: {
+                      busca_incompleta: { type: 'boolean' },
+                      casa_chave: { type: 'string' },
+                      concorrentes: { type: 'integer' },
+                      escolha_tipster_obrigatoria: { type: 'boolean' },
+                      telegram_chave: { type: 'string' },
+                      tipo: {
+                        type: 'string',
+                        enum: ['legado', 'casa_financeira_telegram_contextual'],
+                      },
+                      tipster_opcoes: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          required: [
+                            'fonte',
+                            'rotulo',
+                            'tipster',
+                            'tipster_id',
+                          ],
+                          properties: {
+                            fonte: {
+                              type: 'string',
+                              enum: ['casa', 'telegram'],
+                            },
+                            rotulo: { type: 'string' },
+                            tipster: {
+                              anyOf: [{ type: 'string' }, { type: 'null' }],
+                            },
+                            tipster_id: {
+                              anyOf: [
+                                {
+                                  type: 'string',
+                                  pattern: '^[1-9][0-9]{0,18}$',
+                                },
+                                { type: 'null' },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  { type: 'null' },
+                ],
+              },
+              precondicao: { type: 'string' },
+              print_casa: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              print_descricao: {
+                anyOf: [{ type: 'string' }, { type: 'null' }],
+              },
+              print_evento: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              print_odd: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+              print_stake_unidades: {
+                anyOf: [{ type: 'number' }, { type: 'null' }],
+              },
+              resolver_url: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              resolvido_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            },
+          },
+        },
+        observado_em: { type: 'string' },
+        page: { type: 'integer' },
+        page_size: { type: 'integer' },
+        politica_consumo: {
+          type: 'string',
+          const: 'reiniciar_pagina_1_apos_resolver',
+        },
+        por_familia_filtrado: {
+          type: 'object',
+          additionalProperties: { type: 'integer' },
+        },
+        total_filtrado: { type: 'integer' },
+        total_global: { type: 'integer' },
+      },
+    },
+  },
+  '/api/v1/revisao-operacional/operacoes/{operacao_id}': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'operacao_id',
+        'revisao_id',
+        'familia',
+        'acao',
+        'aposta_chave',
+        'confirmado_em',
+        'consultar_ate',
+        'eventos_gravados',
+      ],
+      properties: {
+        acao: {
+          type: 'string',
+          enum: [
+            'CORRIGIR',
+            'DESCARTAR',
+            'MESMA',
+            'DISTINTAS',
+            'RECUSAR_VINCULO',
+          ],
+        },
+        aposta_chave: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        confirmado_em: { type: 'string' },
+        consultar_ate: { type: 'string' },
+        eventos_gravados: { type: 'integer' },
+        familia: {
+          type: 'string',
+          enum: [
+            'leitura',
+            'conta',
+            'par_legado',
+            'consolidacao',
+            'print_incompleto',
+            'nao_suportada',
+          ],
+        },
+        operacao_id: { type: 'string' },
+        revisao_id: { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+      },
+    },
+  },
+  'POST /api/v1/revisao-operacional/operacoes/{operacao_id}': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'operacao_id',
+        'revisao_id',
+        'familia',
+        'acao',
+        'aposta_chave',
+        'confirmado_em',
+        'consultar_ate',
+        'eventos_gravados',
+      ],
+      properties: {
+        acao: {
+          type: 'string',
+          enum: [
+            'CORRIGIR',
+            'DESCARTAR',
+            'MESMA',
+            'DISTINTAS',
+            'RECUSAR_VINCULO',
+          ],
+        },
+        aposta_chave: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        confirmado_em: { type: 'string' },
+        consultar_ate: { type: 'string' },
+        eventos_gravados: { type: 'integer' },
+        familia: {
+          type: 'string',
+          enum: [
+            'leitura',
+            'conta',
+            'par_legado',
+            'consolidacao',
+            'print_incompleto',
+            'nao_suportada',
+          ],
+        },
+        operacao_id: { type: 'string' },
+        revisao_id: { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+      },
+    },
+  },
+  '/api/v1/revisao-operacional/revisoes/{revisao_id}': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'id',
+        'familia',
+        'motivo',
+        'estado',
+        'criado_em',
+        'resolvido_em',
+        'precondicao',
+        'acoes',
+        'encaminhamento',
+        'resolver_url',
+        'foto_url',
+        'fontes',
+        'conta',
+        'par',
+        'print_casa',
+        'print_evento',
+        'print_descricao',
+        'print_odd',
+        'print_stake_unidades',
+      ],
+      properties: {
+        acoes: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: [
+              'CORRIGIR',
+              'DESCARTAR',
+              'MESMA',
+              'DISTINTAS',
+              'RECUSAR_VINCULO',
+            ],
+          },
+        },
+        conta: {
+          anyOf: [
+            {
+              type: 'object',
+              required: [
+                'casa',
+                'casa_id',
+                'instante',
+                'criterio',
+                'status',
+                'conta_atual_id',
+                'candidatos',
+                'encaminhamento',
+              ],
+              properties: {
+                candidatos: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    required: [
+                      'id',
+                      'apelido',
+                      'estado',
+                      'ativa',
+                      'titular',
+                      'elegivel_escolha_explicita',
+                      'coincide_no_dia_do_jogo',
+                    ],
+                    properties: {
+                      apelido: { type: 'string' },
+                      ativa: { type: 'boolean' },
+                      coincide_no_dia_do_jogo: { type: 'boolean' },
+                      elegivel_escolha_explicita: { type: 'boolean' },
+                      estado: { type: 'string' },
+                      id: { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+                      titular: {
+                        anyOf: [
+                          {
+                            type: 'object',
+                            required: ['id', 'nome', 'arquivado'],
+                            properties: {
+                              arquivado: { type: 'boolean' },
+                              id: {
+                                type: 'string',
+                                pattern: '^[1-9][0-9]{0,18}$',
+                              },
+                              nome: { type: 'string' },
+                            },
+                          },
+                          { type: 'null' },
+                        ],
+                      },
+                    },
+                  },
+                },
+                casa: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                casa_id: {
+                  anyOf: [
+                    { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+                    { type: 'null' },
+                  ],
+                },
+                conta_atual_id: {
+                  anyOf: [
+                    { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+                    { type: 'null' },
+                  ],
+                },
+                criterio: {
+                  type: 'string',
+                  enum: ['data_jogo', 'multicontas_explicita'],
+                },
+                encaminhamento: {
+                  type: 'string',
+                  enum: [
+                    'escolher_conta',
+                    'cadastrar_conta_na_casa',
+                    'informar_casa',
+                  ],
+                },
+                instante: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                status: {
+                  type: 'string',
+                  enum: ['NONE', 'UNIQUE', 'AMBIGUOUS', 'INVALID'],
+                },
+                status_na_abertura: {
+                  anyOf: [
+                    { type: 'string', enum: ['NONE', 'UNIQUE', 'AMBIGUOUS'] },
+                    { type: 'null' },
+                  ],
+                },
+              },
+            },
+            { type: 'null' },
+          ],
+        },
+        criado_em: { type: 'string' },
+        encaminhamento: {
+          type: 'string',
+          enum: [
+            'resolver_aposta',
+            'resolver_conta',
+            'resolver_par',
+            'resolver_print',
+            'suporte',
+            'resolvida',
+          ],
+        },
+        estado: { type: 'string', enum: ['aberta', 'resolvida'] },
+        familia: {
+          type: 'string',
+          enum: [
+            'leitura',
+            'conta',
+            'par_legado',
+            'consolidacao',
+            'print_incompleto',
+            'nao_suportada',
+          ],
+        },
+        fontes: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'chave',
+              'papel',
+              'origem',
+              'casa',
+              'evento',
+              'descricao',
+              'mercado',
+              'data_jogo',
+              'data_aposta',
+              'tipster',
+              'tipster_id',
+              'odd',
+              'stake_unidades',
+              'stake_centavos',
+              'valor_aposta_centavos',
+              'retorno_centavos',
+              'freebet',
+              'selecionada',
+            ],
+            properties: {
+              casa: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              chave: { type: 'string' },
+              data_aposta: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              data_jogo: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              descricao: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              evento: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              freebet: { type: 'boolean' },
+              mercado: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              odd: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+              origem: { type: 'string' },
+              papel: { type: 'string', enum: ['aposta', 'casa', 'telegram'] },
+              retorno_centavos: {
+                anyOf: [{ type: 'string' }, { type: 'null' }],
+              },
+              selecionada: { type: 'boolean' },
+              stake_centavos: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              stake_unidades: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+              tipster: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              tipster_id: {
+                anyOf: [
+                  { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+                  { type: 'null' },
+                ],
+              },
+              valor_aposta_centavos: {
+                anyOf: [{ type: 'string' }, { type: 'null' }],
+              },
+            },
+          },
+        },
+        foto_url: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        id: { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+        motivo: {
+          type: 'string',
+          enum: [
+            'leitura_incompleta',
+            'atribuicao_conta',
+            'par_a_confirmar',
+            'fontes_a_consolidar',
+            'print_sem_aposta',
+            'motivo_nao_suportado',
+          ],
+        },
+        par: {
+          anyOf: [
+            {
+              type: 'object',
+              required: [
+                'tipo',
+                'casa_chave',
+                'telegram_chave',
+                'tipster_opcoes',
+                'escolha_tipster_obrigatoria',
+                'concorrentes',
+                'busca_incompleta',
+              ],
+              properties: {
+                busca_incompleta: { type: 'boolean' },
+                casa_chave: { type: 'string' },
+                concorrentes: { type: 'integer' },
+                escolha_tipster_obrigatoria: { type: 'boolean' },
+                telegram_chave: { type: 'string' },
+                tipo: {
+                  type: 'string',
+                  enum: ['legado', 'casa_financeira_telegram_contextual'],
+                },
+                tipster_opcoes: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    required: ['fonte', 'rotulo', 'tipster', 'tipster_id'],
+                    properties: {
+                      fonte: { type: 'string', enum: ['casa', 'telegram'] },
+                      rotulo: { type: 'string' },
+                      tipster: {
+                        anyOf: [{ type: 'string' }, { type: 'null' }],
+                      },
+                      tipster_id: {
+                        anyOf: [
+                          { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+                          { type: 'null' },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            { type: 'null' },
+          ],
+        },
+        precondicao: { type: 'string' },
+        print_casa: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        print_descricao: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        print_evento: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        print_odd: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+        print_stake_unidades: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+        resolver_url: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        resolvido_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      },
+    },
+  },
+  '/api/v1/revisao-operacional/revisoes/{revisao_id}/foto': { query: {} },
   '/api/v1/caixa': {
     query: {
       conta_casa_id: {

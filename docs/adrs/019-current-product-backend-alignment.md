@@ -75,3 +75,7 @@ Matching/consolidação e resolução legada já existem em main; não estão in
 ## Caixa — 13/10/2026 (#31)
 
 Contrato integrado permite adiantar Caixa enquanto Revisão #28 aguarda a API. Consumidor preserva pin sandbox único da #27, dependências contra main e merge administrativo. Transferência em um POST, dinheiro recebido, idempotência explícita e vínculo distinto de modo/capital de banca. CRUD/capital/modo permanecem #50. [Contrato](../contracts/caixa.md).
+
+## Revisão #28 — 15/10/2026
+
+Backend #200/PR #201 entrega o protocolo pendente. Sandbox único 27054591bf223d97151b06b0ab2632ccd20048d3 incorpora #201 ao b37a3f8 e preserva todas as operações anteriores. OpenAPI de 125 operações, hash 09cf9fbb4b46a8dfc20fc4f4a3c97c3b88000612308cfb4e1e8fd4565901854a; sem união de schemas ou publicação. Seis jornadas reais de Revisão e 56 aceites PostgreSQL são acrescentados às provas anteriores. Job central reserva 25 minutos para o inventário ampliado, sem mudar limites de teste/pedido, cobertura, budget JS ou regra de zero skips. [Contrato](../contracts/revisao.md).

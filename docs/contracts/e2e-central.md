@@ -33,3 +33,7 @@ Local: `make lint && make typecheck && make test`, com orçamento e cobertura or
 ## Após o administrador integrar
 
 Reconciliar os trechos comuns com #184/#187/#189/#193 e as telas #81/#84/#85/#86/#88. Obter o OpenAPI inteiro do novo SHA backend integrado, regenerar tipos/políticas/descritores, atualizar os dois workflows para esse único SHA, retirar a disponibilidade candidata somente com ancestralidade comprovada e repetir todas as jornadas/gates. A prova de sandbox não publica nem substitui essa revalidação.
+
+## Revisão #28 — 15/10/2026
+
+Sandbox fornecido pelo backend 27054591bf223d97151b06b0ab2632ccd20048d3 incorpora #201 ao b37a3f8, preserva as 120 operações anteriores e publica 125. Hash OpenAPI 09cf9fbb4b46a8dfc20fc4f4a3c97c3b88000612308cfb4e1e8fd4565901854a. Sem união de schemas, promoção ou publicação. Acrescentam-se 56 aceites PostgreSQL e seis jornadas reais Revisão nos três browsers/dois viewports, preservando inventários anteriores. O job central reserva 25 minutos para o inventário ampliado; limites de teste/pedido, cobertura, budget JS e zero skips permanecem. Detalhes em docs/contracts/revisao.md.

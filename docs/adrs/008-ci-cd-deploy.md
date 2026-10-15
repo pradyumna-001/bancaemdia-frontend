@@ -43,3 +43,7 @@ Não há CD automático neste PR. Homologação depende de #14; produção, de #
 Consulta de 29/09/2026: repositório público, conta autenticada com push/triage, **admin=false e maintain=false**. Leitura de proteção de main devolveu 404 e lista de rulesets vazia; com essa permissão não é possível afirmar nem modificar a configuração completa de proteção. Não tentar contornar esse limite com tokens ou remover checks.
 
 A configuração proposta e o procedimento administrativo estão em [branch-protection.md](../runbooks/branch-protection.md). Aplicação depende de administrador e é impedimento externo registrado, permitido pelo aceite da #8. Enquanto isso, workflow e regra de entrega continuam exigindo todos os checks verdes, mas não substituem enforcement de merge no GitHub.
+
+## Revisão #28 — 15/10/2026
+
+Backend #200/PR #201 entrega o protocolo pendente. Sandbox único 27054591bf223d97151b06b0ab2632ccd20048d3 incorpora #201 ao b37a3f8 e preserva todas as operações anteriores. OpenAPI de 125 operações, hash 09cf9fbb4b46a8dfc20fc4f4a3c97c3b88000612308cfb4e1e8fd4565901854a; sem união de schemas ou publicação. Seis jornadas reais de Revisão e 56 aceites PostgreSQL são acrescentados às provas anteriores. Job central reserva 25 minutos para o inventário ampliado, sem mudar limites de teste/pedido, cobertura, budget JS ou regra de zero skips. [Contrato](../contracts/revisao.md).

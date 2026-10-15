@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import {
   Outlet,
   type LoaderFunctionArgs,
@@ -26,6 +26,12 @@ import { ContasPage } from '../features/contas/ContasPage';
 import { ResultadosPage } from '../features/resultados/ResultadosPage';
 import { CaixaPage } from '../features/caixa/CaixaPage';
 
+const RevisaoPage = lazy(() =>
+  import('../features/revisao/RevisaoPage').then((m) => ({
+    default: m.RevisaoPage,
+  })),
+);
+
 export function loginLoader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   return { destino: destinoInterno(url.searchParams.get('destino')) };
@@ -51,7 +57,8 @@ export function createAppRoutes(
       (path === '/' ||
         path === '/enviar' ||
         path === '/resultados' ||
-        path === '/banca') &&
+        path === '/banca' ||
+        path === '/revisao') &&
       currentUrl.pathname === nextUrl.pathname &&
       currentUrl.search !== nextUrl.search &&
       !formMethod
@@ -102,6 +109,17 @@ export function createAppRoutes(
           <EnviarPage />
         ) : path === '/resultados' ? (
           <ResultadosPage />
+        ) : path === '/revisao' ? (
+          <Suspense
+            fallback={
+              <main className="pagina">
+                <h1>Revis�o</h1>
+                <p role="status">Abrindo revis�o�</p>
+              </main>
+            }
+          >
+            <RevisaoPage />
+          </Suspense>
         ) : path === '/banca' ? (
           <CaixaPage />
         ) : path === '/sistema' ? (

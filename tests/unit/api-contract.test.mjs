@@ -9,6 +9,7 @@ import {
   verifiedSchema,
   requireIntegratedContract,
   resultsPolicies,
+  reviewPolicies,
 } from '../../scripts/api-contract.mjs';
 
 const bytes = Buffer.from(
@@ -29,6 +30,22 @@ const pin = {
   schemaPath: 'tests/contract/schemas/openapi.json',
   sha256: createHash('sha256').update(bytes).digest('hex'),
 };
+
+it('Revisão extrai CAS/consumo/acesso do mesmo documento, sem replay automático', () => {
+  const policy = {
+    access: 'FULL_WRITE',
+    precondition: 'opaque_evidence_cas',
+    automatic_mutation_replay: false,
+    consumption: 'restart_page_1',
+  };
+  expect(
+    reviewPolicies({
+      paths: {
+        '/review': { post: { 'x-bancaemdia-review': policy }, get: {} },
+      },
+    }),
+  ).toEqual({ 'POST /review': policy });
+});
 
 it('Resultados extrai matriz/cursor/intenção da mesma fonte sem habilitar replay automático', () => {
   const policy = {

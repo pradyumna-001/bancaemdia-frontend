@@ -19,9 +19,9 @@ jobs:
       matrix:
         browser: [chromium, firefox, webkit]
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
-      IDENTITY_API_SHA: b37a3f88b922b471d25d5f1c92c84b336cd2c9c0
+      IDENTITY_API_SHA: 27054591bf223d97151b06b0ab2632ccd20048d3
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -95,6 +95,8 @@ jobs:
           python scripts/check_sheet_import_results.py sheet-import-results.xml
           pytest -n 0 tests/integration/test_results_db.py --no-cov --tb=short --junitxml=results-api-results.xml
           python scripts/check_results_junit.py results-api-results.xml
+          pytest -n 0 tests/integration/test_reviews_db.py --no-cov --tb=short --junitxml=reviews-api-results.xml
+          python scripts/check_reviews_junit.py reviews-api-results.xml
       - name: Comprovar jornada central com SPA pública, API, emissor e banco reais
         working-directory: .identity-api
         env:
@@ -111,6 +113,8 @@ jobs:
           python ../tests/identity/check_resultados_results.py resultados-spa-results.xml '${{ matrix.browser }}'
           python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_caixa_contract.py -k '${{ matrix.browser }}' --junitxml=caixa-spa-results.xml --tb=short -v
           python ../tests/identity/check_caixa_results.py caixa-spa-results.xml '${{ matrix.browser }}'
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_revisao_contract.py -k '${{ matrix.browser }}' --junitxml=revisao-spa-results.xml --tb=short -v
+          python ../tests/identity/check_revisao_results.py revisao-spa-results.xml '${{ matrix.browser }}'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -125,6 +129,7 @@ jobs:
             .identity-api/resultados-*.zip
             .identity-api/resultados-inp-*.json
             .identity-api/caixa-*.zip
+            .identity-api/revisao-*.zip
       - name: Encerrar somente o sandbox deste job
         if: always()
         run: |

@@ -6,23 +6,28 @@ import { atrasoConsulta, retryConsulta } from '../app/queryClient';
 import { useAuth } from '../auth/ProvedorAuth';
 import { useRetryAfter } from '../lib/useRetryAfter';
 import { ErroApi } from './ErroApi';
+import { caminhoRevisao } from '../features/revisao/identidade';
 import './FotoAposta.css';
 
 type Props = {
   chave: string;
+  revisaoId?: string;
   client?: ReturnType<typeof createApiClient>;
   destination?: string;
 };
 export function FotoAposta(props: Props) {
   const auth = useAuth();
   return auth?.state.phase === 'authenticated' ? (
-    <FotoPrivada key={`${auth.state.privateEpoch}:${props.chave}`} {...props} />
+    <FotoPrivada
+      key={`${auth.state.privateEpoch}:${props.revisaoId ?? props.chave}`}
+      {...props}
+    />
   ) : (
     <p role="status">Entre para consultar a foto.</p>
   );
 }
 
-function FotoPrivada({ chave, client, destination }: Props) {
+function FotoPrivada({ chave, revisaoId, client, destination }: Props) {
   const auth = useAuth()!;
   const api = client ?? getApiClient();
   const [url, setUrl] = useState<string>();
@@ -98,11 +103,20 @@ function FotoPrivada({ chave, client, destination }: Props) {
       for (let attempt = 0; ; attempt++) {
         try {
           const response = await auth.service.read(() =>
-            api.GET('/api/v1/apostas/{chave}/foto', {
-              params: { path: { chave } },
-              parseAs: 'blob',
-              signal: abort.signal,
-            }),
+            revisaoId
+              ? api.GET(
+                  '/api/v1/revisao-operacional/revisoes/{revisao_id}/foto',
+                  {
+                    ...caminhoRevisao(revisaoId),
+                    parseAs: 'blob',
+                    signal: abort.signal,
+                  },
+                )
+              : api.GET('/api/v1/apostas/{chave}/foto', {
+                  params: { path: { chave } },
+                  parseAs: 'blob',
+                  signal: abort.signal,
+                }),
           );
           const blob = response.data;
           if (
@@ -153,7 +167,10 @@ function FotoPrivada({ chave, client, destination }: Props) {
       }
     } finally {
       pending.current = false;
-      if (current()) setBusy(false);
+      if (alive.current && !abort.signal.aborted) {
+        setBusy(false);
+        if (!scope.isCurrent()) setError(new ApiError('cancelled'));
+      }
     }
   }
   function broken() {

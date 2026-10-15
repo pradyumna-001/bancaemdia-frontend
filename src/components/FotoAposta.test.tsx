@@ -48,7 +48,7 @@ const failure = (status: number, retry?: string) =>
       ...(retry ? { 'Retry-After': retry } : {}),
     },
   });
-async function open(read = async () => image()) {
+async function open(read = async () => image(), revisaoId?: string) {
   const queries = new QueryClient();
   const context = sessionContext({
     usuario_id: 1,
@@ -85,7 +85,7 @@ async function open(read = async () => image()) {
   const tree = (chave: string) => (
     <MemoryRouter>
       <ProvedorAuth service={session}>
-        <FotoAposta chave={chave} client={client} />
+        <FotoAposta chave={chave} revisaoId={revisaoId} client={client} />
       </ProvedorAuth>
     </MemoryRouter>
   );
@@ -99,6 +99,14 @@ async function open(read = async () => image()) {
 it('não consulta sem sessão', () => {
   render(<FotoAposta chave="teste" />);
   expect(screen.getByRole('status')).toHaveTextContent('Entre');
+});
+it('foto da revisão usa rota fixa e identificador exato sem arredondamento', async () => {
+  const { requests } = await open(undefined, '9007199254740993');
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir foto' }));
+  await screen.findByRole('img');
+  expect(requests[0]!.url).toBe(
+    'http://127.0.0.1:8000/api/v1/revisao-operacional/revisoes/9007199254740993/foto',
+  );
 });
 it('só carrega com gesto, codifica a chave, não armazena nem duplica pedidos', async () => {
   const { requests } = await open();

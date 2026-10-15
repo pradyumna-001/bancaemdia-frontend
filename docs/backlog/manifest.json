@@ -123,7 +123,7 @@
     "number": 28,
     "title": "[ADR-019] Revisão — leitura, conta e conflitos por motivo",
     "file": "028.md",
-    "dependencies": "#19, #22, #32; #52; #50; frontend PR #92; contrato emergencial de Revisão na API, ainda a criar"
+    "dependencies": "#19, #22, #32; #52; #50; frontend PR #93; backend #200/PR #201 e candidatas herdadas registradas no pin"
   },
   {
     "number": 29,
