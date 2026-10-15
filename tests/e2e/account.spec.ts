@@ -95,7 +95,15 @@ test('cadastro/confirmação/recuperação usam somente os intents suportados, s
     const action = page.locator('.conta-acoes button');
     await expect(action).toBeEnabled();
     entry = undefined;
-    await action.click();
+    await Promise.all([
+      page.waitForURL(
+        (url) =>
+          url.origin === 'http://127.0.0.1:8000' &&
+          url.pathname === '/auth/start',
+        { waitUntil: 'load' },
+      ),
+      action.click(),
+    ]);
     await expect.poll(() => entry?.searchParams.get('intent')).toBe(intent);
     expect(entry!.searchParams.get('return_to')).toBe('/painel?apagadas=1');
     expect(entry!.hash).toBe('');

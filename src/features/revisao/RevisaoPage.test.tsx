@@ -1,3 +1,4 @@
+import { useLayoutEffect } from 'react';
 import { webcrypto } from 'node:crypto';
 import {
   act,
@@ -42,9 +43,10 @@ const json = (data: unknown, status = 200, headers = {}) =>
     status,
     headers: { 'Content-Type': 'application/json', ...headers },
   });
-function Location() {
+function Location({ onCommit }: { onCommit?: (search: string) => void }) {
   const loc = useLocation(),
     nav = useNavigate();
+  useLayoutEffect(() => onCommit?.(loc.search), [loc.search, onCommit]);
   return (
     <>
       <output data-testid="url">{loc.search}</output>
@@ -56,6 +58,7 @@ async function setup(
   custom?: (r: Request) => Promise<Response | undefined>,
   path = '/revisao',
   accessState = 'FULL_WRITE',
+  onCommit?: (search: string) => void,
 ) {
   const fixture = revisaoFixture(),
     calls: Request[] = [],
@@ -121,7 +124,7 @@ async function setup(
         <ProvedorAcesso controller={access} client={client}>
           <MemoryRouter initialEntries={[path]}>
             <RevisaoPage client={client} />
-            <Location />
+            <Location onCommit={onCommit} />
           </MemoryRouter>
         </ProvedorAcesso>
       </QueryClientProvider>
@@ -145,6 +148,27 @@ async function editor(name = 'Flamengo × Botafogo') {
     ).not.toBeInTheDocument(),
   );
 }
+it('bloqueia consulta já no commit do UUID, antes do primeiro envio', async () => {
+  const observed: boolean[] = [];
+  const s = await setup(undefined, '/revisao', 'FULL_WRITE', (search) => {
+    if (search.includes('revisao_operacao='))
+      observed.push(
+        screen
+          .getByRole('button', { name: 'Consultar decisão' })
+          .hasAttribute('disabled'),
+      );
+  });
+  await editor();
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar correção' }));
+  await screen.findByText(
+    'Revisão resolvida. A fila foi consultada novamente desde o início.',
+  );
+  expect(observed[0]).toBe(true);
+  expect(s.writes).toHaveLength(1);
+  expect(
+    s.calls.some((r) => r.method === 'GET' && r.url.includes('/operacoes/')),
+  ).toBe(false);
+});
 it('corrige sem recarregar, preservando filtros e UUID antes do POST', async () => {
   const s = await setup(undefined, '/revisao?casa=7&apagadas=1');
   await editor();

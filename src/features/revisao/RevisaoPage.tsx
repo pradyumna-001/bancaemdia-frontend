@@ -68,6 +68,7 @@ function Revisoes({ api }: { api: ReturnType<typeof getApiClient> }) {
   const { cancel } = op;
   const alive = useRef(true);
   const acting = useRef(false);
+  const [sending, setSending] = useState(false);
   const controller = useRef<AbortController>();
   const [pending, setPending] = useState<Intento>();
   const pendingRef = useRef<Intento>();
@@ -131,6 +132,7 @@ function Revisoes({ api }: { api: ReturnType<typeof getApiClient> }) {
   });
   const detailWait = useRetryAfter(detail.error);
   const locked =
+    sending ||
     auth.state.phase !== 'authenticated' ||
     unresolved ||
     op.busy ||
@@ -169,6 +171,7 @@ function Revisoes({ api }: { api: ReturnType<typeof getApiClient> }) {
       controller.current?.abort();
       pendingRef.current = undefined;
       queued.current = undefined;
+      setSending(false);
       setPending(undefined);
       setReceipt(undefined);
       setMessage('');
@@ -265,6 +268,7 @@ function Revisoes({ api }: { api: ReturnType<typeof getApiClient> }) {
     if (acting.current || writeBlocked || detail.data?.id !== body.revisao_id)
       return;
     acting.current = true;
+    setSending(true);
     setReceipt(undefined);
     setMessage('');
     setLookupError(undefined);
@@ -286,12 +290,15 @@ function Revisoes({ api }: { api: ReturnType<typeof getApiClient> }) {
       queued.current = undefined;
       void dispatch.current?.(intent).finally(() => {
         acting.current = false;
+        if (alive.current && auth.service.getSnapshot().privateEpoch === epoch)
+          setSending(false);
       });
     }
-  }, [operation, pending]);
+  }, [operation, pending, auth.service, epoch]);
   async function lookup(evidence = false) {
     if (
       auth.service.getSnapshot().phase !== 'authenticated' ||
+      sending ||
       !operationValid ||
       reading ||
       op.busy ||
@@ -511,6 +518,7 @@ function Revisoes({ api }: { api: ReturnType<typeof getApiClient> }) {
           aria-label="Conferir decisão anterior"
         >
           <h2>Confira o resultado antes de continuar</h2>
+          {sending && <p role="status">Enviando decisão…</p>}
           <p>
             Consulte esta decisão pela mesma referência. Uma resposta ausente ou
             expirada não prova que a alteração foi desfeita.
@@ -528,14 +536,28 @@ function Revisoes({ api }: { api: ReturnType<typeof getApiClient> }) {
           ) : (
             <div className="revisao-acoes">
               <button
-                disabled={reading || op.busy || lookupWait || op.waiting}
+                disabled={
+                  sending ||
+                  auth.state.phase !== 'authenticated' ||
+                  reading ||
+                  op.busy ||
+                  lookupWait ||
+                  op.waiting
+                }
                 onClick={() => void lookup()}
               >
                 Consultar decisão
               </button>
               {pending && consulted && (
                 <button
-                  disabled={reading || op.busy || lookupWait || op.waiting}
+                  disabled={
+                    sending ||
+                    auth.state.phase !== 'authenticated' ||
+                    reading ||
+                    op.busy ||
+                    lookupWait ||
+                    op.waiting
+                  }
                   onClick={() => void lookup(true)}
                 >
                   Reler pendência antes de nova decisão
@@ -543,7 +565,9 @@ function Revisoes({ api }: { api: ReturnType<typeof getApiClient> }) {
               )}
               {pending && replayAllowed && (
                 <button
-                  disabled={reading || op.busy || op.waiting || !op.can(POST)}
+                  disabled={
+                    sending || reading || op.busy || op.waiting || !op.can(POST)
+                  }
                   onClick={() => void send(pending, true)}
                 >
                   Reenviar a mesma decisão
