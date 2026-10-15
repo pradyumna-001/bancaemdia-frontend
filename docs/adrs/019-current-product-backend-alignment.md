@@ -83,3 +83,7 @@ Backend #200/PR #201 entrega o protocolo pendente. Sandbox único 547a4d0cfce530
 ## Privacidade #58 — 15/10/2026
 
 Entrega frontend independente da criação manual #29, por decisão do titular de adiantar trabalho enquanto o backend prepara esse contrato. Exportação e anonimização já integradas em b916f54; consumidor mantém o sandbox único 547a4d0 e declara frontend #94 contra main. A SPA apresenta opções, confirmações, limites e recusas; o backend executa exclusão e regras. READ_ONLY, isolamento, descarte de respostas antigas e limpeza após confirmação são obrigatórios. [Contrato](../contracts/privacidade.md).
+
+## Nova aposta #29 — 15/10/2026
+
+Criação manual, freebet e atribuição já existem na main. Falta identidade durável escolhida antes do pedido e consulta do resultado da criação após resposta perdida. UUID interno novo por POST não oferece idempotência HTTP; os testes de repositório da backend #36 não suprem esse protocolo. A #29 permanece bloqueada por essa entrega mínima, sem simular recuperação pela listagem ou inventar endpoint. [Auditoria](../audits/nova-aposta-2026-10-15.md). PR futura contra main com #94 e emergência backend declaradas; sem merge ou publicação.
