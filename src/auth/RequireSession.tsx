@@ -15,6 +15,7 @@ export function RequireSession({ children }: { children: ReactNode }) {
   }, [auth?.state.phase, auth?.state.error]);
   const active = auth ? auth.state.phase !== 'anonymous' : hasSession === true;
   if (!active) {
+    if (auth?.state.accountClosed) return <Navigate replace to="/login" />;
     // Requests dos loaders omitem o fragmento; location preserva a URL inteira.
     const destino = destinoInterno(
       `${location.pathname}${location.search}${location.hash}`,
