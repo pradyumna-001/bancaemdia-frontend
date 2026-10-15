@@ -82,7 +82,12 @@ it.each([
   ['/sair', 'Sair'],
 ])('renderiza %s com sessão disponível', async (path, title) => {
   open(path);
-  expect(await screen.findByRole('heading', { name: title })).toBeVisible();
+  await waitFor(() => {
+    expect(screen.getByRole('heading', { name: title })).toBeVisible();
+    expect(
+      screen.queryByText(/^Abrindo (privacidade|revisão)…$/),
+    ).not.toBeInTheDocument();
+  });
 });
 
 it('protege o destino inteiro sem permitir sessão via URL ou storage', async () => {
