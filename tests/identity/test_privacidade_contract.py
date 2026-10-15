@@ -1,10 +1,12 @@
 """Privacy UI with the public build, real identity, API and PostgreSQL."""
 
+import asyncio
 import importlib.util
 import json
 import os
 import secrets
 import sys
+import time
 from io import BytesIO
 from pathlib import Path
 from uuid import uuid4
@@ -54,8 +56,8 @@ async def test_public_spa_privacidade_export_isolation_close(
             )
             users.append(session["usuario_id"])
         uid, other = users
-        for page, owner in zip(pages, users, strict=True):
-            await core.grant(page, engine_admin, owner)
+        await core.grant(pages[1], engine_admin, other)
+        expiry = await core.grant(pages[0], engine_admin, uid, seconds=45)
         names = ["Registros próprios " + uuid4().hex, "Outra pessoa " + uuid4().hex]
         private_reference = "private-customer-" + uuid4().hex
         async with engine_admin.begin() as conn:
@@ -65,7 +67,7 @@ async def test_public_spa_privacidade_export_isolation_close(
                     {"uid": owner, "name": name},
                 )
             # Seed the synthetic imported source while the owner can write.
-            # Both UI DELETE attempts below still run with READ_ONLY access.
+            # The trial expires naturally before exports and final closure.
             raw_id = await conn.scalar(
                 text(
                     "INSERT INTO uploads(usuario_id,filename,chat_id) VALUES (:uid,'privacy-test.zip',9876) RETURNING id"
@@ -74,13 +76,10 @@ async def test_public_spa_privacidade_export_isolation_close(
             )
             await conn.execute(
                 text(
-                    "UPDATE assinaturas SET trial_ends_at=clock_timestamp()-interval '1 second', provider_customer_ref=:private WHERE usuario_id=:uid"
+                    "UPDATE assinaturas SET provider_customer_ref=:private WHERE usuario_id=:uid"
                 ),
                 {"uid": uid, "private": private_reference},
             )
-        assert (await core.request(pages[0], "/api/v1/billing/status"))["data"][
-            "access"
-        ] == "READ_ONLY"
         # Cookie writes require CSRF, including the explicit commercial exception.
         assert (await core.request(pages[0], "/api/v1/usuario/me", method="DELETE"))[
             "status"
@@ -109,6 +108,43 @@ async def test_public_spa_privacidade_export_isolation_close(
             await expect(
                 page.get_by_role("link", name="Voltar às configurações")
             ).to_have_attribute("href", "/configuracoes?casa=7&apagadas=1")
+            await page.get_by_role(
+                "button", name="Solicitar encerramento", exact=True
+            ).click()
+            modal = page.get_by_role("dialog")
+            await expect(
+                modal.get_by_role("button", name="Manter minha conta")
+            ).to_be_focused()
+            await expect(
+                modal.get_by_role("button", name="Confirmar encerramento")
+            ).to_be_disabled()
+            await page.keyboard.press("Escape")
+            assert len(writes) == 0
+            # The synthetic imported-source marker exercises the real 409 guard.
+            await page.get_by_role(
+                "button", name="Solicitar encerramento", exact=True
+            ).click()
+            await modal.get_by_role("checkbox").check()
+            await modal.get_by_role("button", name="Confirmar encerramento").click()
+            await expect(
+                page.get_by_role(
+                    "heading", name="O encerramento precisa de acompanhamento"
+                )
+            ).to_be_visible()
+            assert len(writes) == 1
+            # Remove only the synthetic source before the real trial expires.
+            async with engine_admin.begin() as conn:
+                assert await conn.scalar(
+                    text("SELECT ativo FROM usuarios WHERE id=:uid"), {"uid": uid}
+                )
+                await conn.execute(
+                    text("DELETE FROM uploads WHERE id=:id AND usuario_id=:uid"),
+                    {"id": raw_id, "uid": uid},
+                )
+            await asyncio.sleep(max(0, expiry - time.time() + 0.2))
+            assert (await core.request(page, "/api/v1/billing/status"))["data"][
+                "access"
+            ] == "READ_ONLY"
             for label, extension in (("JSON", "json"), ("Excel", "xlsx")):
                 async with page.expect_download() as download_info:
                     await page.get_by_role(
@@ -149,50 +185,6 @@ async def test_public_spa_privacidade_export_isolation_close(
                             )
                     finally:
                         book.close()
-            await page.get_by_role(
-                "button", name="Solicitar encerramento", exact=True
-            ).click()
-            modal = page.get_by_role("dialog")
-            await expect(
-                modal.get_by_role("button", name="Manter minha conta")
-            ).to_be_focused()
-            await expect(
-                modal.get_by_role("button", name="Confirmar encerramento")
-            ).to_be_disabled()
-            await page.keyboard.press("Escape")
-            assert len(writes) == 0
-            # The synthetic imported-source marker exercises the real 409 guard.
-            await page.get_by_role(
-                "button", name="Solicitar encerramento", exact=True
-            ).click()
-            await modal.get_by_role("checkbox").check()
-            await modal.get_by_role("button", name="Confirmar encerramento").click()
-            await expect(
-                page.get_by_role(
-                    "heading", name="O encerramento precisa de acompanhamento"
-                )
-            ).to_be_visible()
-            assert len(writes) == 1
-            # Administrative seed transition removes only the synthetic source;
-            # restore READ_ONLY before the next explicit UI request.
-            await core.grant(page, engine_admin, uid)
-            async with engine_admin.begin() as conn:
-                assert await conn.scalar(
-                    text("SELECT ativo FROM usuarios WHERE id=:uid"), {"uid": uid}
-                )
-                await conn.execute(
-                    text("DELETE FROM uploads WHERE id=:id AND usuario_id=:uid"),
-                    {"id": raw_id, "uid": uid},
-                )
-                await conn.execute(
-                    text(
-                        "UPDATE assinaturas SET trial_ends_at=clock_timestamp()-interval '1 second' WHERE usuario_id=:uid"
-                    ),
-                    {"uid": uid},
-                )
-            assert (await core.request(page, "/api/v1/billing/status"))["data"][
-                "access"
-            ] == "READ_ONLY"
             await page.get_by_role(
                 "button", name="Solicitar encerramento", exact=True
             ).click()
