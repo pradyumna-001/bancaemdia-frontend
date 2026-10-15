@@ -55,6 +55,8 @@ jobs:
           python-version: '3.12'
       - run: pip install -e '.identity-api[dev]'
       - run: ruff check tests/identity && ruff format --check tests/identity
+      - name: Provar limpeza do ambiente antes e depois do bootstrap
+        run: python -m pytest -c .identity-api/pyproject.toml --noconftest -o addopts='' --import-mode=importlib tests/identity/test_harness_resources.py --no-cov -n 0
       - run: python -m playwright install --with-deps ${{ matrix.browser }}
       - name: Gerar credenciais exclusivamente descartáveis e mascaradas
         shell: bash

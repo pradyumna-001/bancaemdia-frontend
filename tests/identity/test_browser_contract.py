@@ -6,6 +6,7 @@ own disposable PostgreSQL/OIDC/SMTP. This server stands in for the same-origin p
 
 import asyncio
 import hashlib
+import importlib.util
 import io
 import json
 import mimetypes
@@ -38,6 +39,12 @@ from tests.identity import journey as backend
 
 ROOT = Path(__file__).resolve().parents[2]
 DIST = ROOT / "dist"
+
+_resource_spec = importlib.util.spec_from_file_location(
+    "frontend_owned_runtime", Path(__file__).with_name("harness_resources.py")
+)
+runtime = importlib.util.module_from_spec(_resource_spec)
+_resource_spec.loader.exec_module(runtime)
 
 
 def serve_public_build():
@@ -177,10 +184,12 @@ async def banco():
 @pytest.fixture
 async def harness(banco, engine_admin, tmp_path, monkeypatch):
     assert (DIST / "index.html").is_file(), "Build the public SPA before acceptance"
-    monkeypatch.setattr(backend, "serve_frontend", serve_public_build)
     monkeypatch.setattr(backend, "fetch", browser_request)
-    async for instance in backend.harness.__wrapped__(banco, engine_admin, tmp_path):
-        yield instance
+    async with runtime.owned_runtime(backend, serve_public_build, monkeypatch):
+        async for instance in backend.harness.__wrapped__(
+            banco, engine_admin, tmp_path
+        ):
+            yield instance
 
 
 @pytest.mark.parametrize(
@@ -1352,9 +1361,7 @@ async def test_public_spa_aposta_photo(harness, engine_admin, viewport):
             "img", name="Foto original vinculada a esta aposta", exact=True
         )
         await expect(photo).to_be_visible()
-        await page.wait_for_function(
-            "document.querySelector('.foto-aposta img')?.naturalWidth === 800"
-        )
+        await expect(photo).to_have_js_property("naturalWidth", 800)
         assert (await photo.get_attribute("src")).startswith("blob:")
         await page.get_by_role("button", name="Ampliar foto").click()
         await page.keyboard.press("Escape")
