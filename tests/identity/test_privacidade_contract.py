@@ -54,7 +54,8 @@ async def test_public_spa_privacidade_export_isolation_close(
             )
             users.append(session["usuario_id"])
         uid, other = users
-        await core.grant(pages[0], engine_admin, uid)
+        for page, owner in zip(pages, users, strict=True):
+            await core.grant(page, engine_admin, owner)
         names = ["Registros próprios " + uuid4().hex, "Outra pessoa " + uuid4().hex]
         private_reference = "private-customer-" + uuid4().hex
         async with engine_admin.begin() as conn:
@@ -63,6 +64,14 @@ async def test_public_spa_privacidade_export_isolation_close(
                     text("INSERT INTO bancas(usuario_id,nome) VALUES (:uid,:name)"),
                     {"uid": owner, "name": name},
                 )
+            # Seed the synthetic imported source while the owner can write.
+            # Both UI DELETE attempts below still run with READ_ONLY access.
+            raw_id = await conn.scalar(
+                text(
+                    "INSERT INTO uploads(usuario_id,filename,chat_id) VALUES (:uid,'privacy-test.zip',9876) RETURNING id"
+                ),
+                {"uid": uid},
+            )
             await conn.execute(
                 text(
                     "UPDATE assinaturas SET trial_ends_at=clock_timestamp()-interval '1 second', provider_customer_ref=:private WHERE usuario_id=:uid"
@@ -152,14 +161,7 @@ async def test_public_spa_privacidade_export_isolation_close(
             ).to_be_disabled()
             await page.keyboard.press("Escape")
             assert len(writes) == 0
-            # Synthetic imported-source marker exercises the real 409 guard.
-            async with engine_admin.begin() as conn:
-                raw_id = await conn.scalar(
-                    text(
-                        "INSERT INTO uploads(usuario_id,filename,chat_id) VALUES (:uid,'privacy-test.zip',9876) RETURNING id"
-                    ),
-                    {"uid": uid},
-                )
+            # The synthetic imported-source marker exercises the real 409 guard.
             await page.get_by_role(
                 "button", name="Solicitar encerramento", exact=True
             ).click()
@@ -171,6 +173,9 @@ async def test_public_spa_privacidade_export_isolation_close(
                 )
             ).to_be_visible()
             assert len(writes) == 1
+            # Administrative seed transition removes only the synthetic source;
+            # restore READ_ONLY before the next explicit UI request.
+            await core.grant(page, engine_admin, uid)
             async with engine_admin.begin() as conn:
                 assert await conn.scalar(
                     text("SELECT ativo FROM usuarios WHERE id=:uid"), {"uid": uid}
@@ -179,6 +184,15 @@ async def test_public_spa_privacidade_export_isolation_close(
                     text("DELETE FROM uploads WHERE id=:id AND usuario_id=:uid"),
                     {"id": raw_id, "uid": uid},
                 )
+                await conn.execute(
+                    text(
+                        "UPDATE assinaturas SET trial_ends_at=clock_timestamp()-interval '1 second' WHERE usuario_id=:uid"
+                    ),
+                    {"uid": uid},
+                )
+            assert (await core.request(page, "/api/v1/billing/status"))["data"][
+                "access"
+            ] == "READ_ONLY"
             await page.get_by_role(
                 "button", name="Solicitar encerramento", exact=True
             ).click()

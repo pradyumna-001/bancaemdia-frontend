@@ -107,6 +107,8 @@ jobs:
           CORE_BROWSER: ${{ matrix.browser }}
           CORE_TRACE_DIR: ${{ github.workspace }}/.identity-api
         run: |
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_privacidade_contract.py -k '${{ matrix.browser }}' --junitxml=privacidade-spa-results.xml --tb=short -v
+          python ../tests/identity/check_privacidade_results.py privacidade-spa-results.xml '${{ matrix.browser }}'
           python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_core_contract.py -k '${{ matrix.browser }}' --junitxml=core-results.xml --tb=short -v
           python ../tests/identity/check_core_results.py core-results.xml '${{ matrix.browser }}'
           python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_prints_contract.py -k '${{ matrix.browser }}' --junitxml=prints-spa-results.xml --tb=short -v
@@ -119,8 +121,6 @@ jobs:
           python ../tests/identity/check_caixa_results.py caixa-spa-results.xml '${{ matrix.browser }}'
           python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_revisao_contract.py -k '${{ matrix.browser }}' --junitxml=revisao-spa-results.xml --tb=short -v
           python ../tests/identity/check_revisao_results.py revisao-spa-results.xml '${{ matrix.browser }}'
-          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_privacidade_contract.py -k '${{ matrix.browser }}' --junitxml=privacidade-spa-results.xml --tb=short -v
-          python ../tests/identity/check_privacidade_results.py privacidade-spa-results.xml '${{ matrix.browser }}'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
