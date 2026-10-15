@@ -1,0 +1,139 @@
+name: E2E central candidato
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: central-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  central:
+    name: E2E central real (${{ matrix.browser }}, ${{ github.event_name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      IDENTITY_API_SHA: 547a4d0cfce5308dfe71221a77ad6fd5eb6e47cd
+      APP_ENV: testing
+      JWT_ALGORITHM: RS256
+      JWT_AUDIENCE: bancaemdia-api
+      JWT_ISSUER: bancaemdia-api
+      JWT_SECRET_KEY: unused-for-rs256-acceptance
+      REDIS_URL: redis://localhost:6379/0
+      RATE_LIMIT_STORAGE: memory://
+      OTEL_EXPORTER_OTLP_ENDPOINT: ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: pradyumna-001/bancaemdia-api
+          ref: ${{ env.IDENTITY_API_SHA }}
+          path: .identity-api
+          persist-credentials: false
+      - name: Conferir versão única do backend de sandbox
+        run: |
+          test "$(git -C .identity-api rev-parse HEAD)" = "$IDENTITY_API_SHA"
+          test "$(python3 -c 'import json; print(json.load(open("config/api-contract.json"))["commit"])')" = "$IDENTITY_API_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm install --global pnpm@10.34.6
+      - run: make install build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e '.identity-api[dev]'
+      - run: ruff check tests/identity && ruff format --check tests/identity
+      - name: Provar limpeza do ambiente antes e depois do bootstrap
+        run: python -m pytest -c .identity-api/pyproject.toml --noconftest -o addopts='' --import-mode=importlib tests/identity/test_harness_resources.py --no-cov -n 0
+      - run: python -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Gerar credenciais exclusivamente descartáveis e mascaradas
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_password=$(openssl rand -hex 24)
+          admin_password=$(openssl rand -hex 24)
+          echo "::add-mask::$db_password"
+          echo "::add-mask::$admin_password"
+          echo "POSTGRES_PASSWORD=$db_password" >> "$GITHUB_ENV"
+          echo "KC_BOOTSTRAP_ADMIN_USERNAME=identity-admin-$(openssl rand -hex 8)" >> "$GITHUB_ENV"
+          echo "KC_BOOTSTRAP_ADMIN_PASSWORD=$admin_password" >> "$GITHUB_ENV"
+          echo "TEST_DATABASE_URL=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+          echo "DATABASE_URL_REPLICA=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+      - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d --wait postgres mailpit
+      - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d issuer
+      - run: docker compose -f tests/identity/upload-compose.yml up -d --wait redis
+      - name: Provar contratos reconciliados no mesmo aplicativo e banco
+        if: matrix.browser == 'chromium'
+        working-directory: .identity-api
+        run: |
+          ruff check .
+          ruff format --check .
+          mypy src/ --strict --ignore-missing-imports
+          python scripts/generate_openapi.py --check
+          pytest -n 0 tests/integration/test_site_filters_db.py --tb=short --junitxml=site-filter-results.xml
+          python scripts/check_site_filter_results.py site-filter-results.xml
+          pytest -n 0 tests/integration/test_painel_detalhado_db.py -o junit_family=xunit1 --tb=short --junitxml=panel-detail-results.xml
+          python scripts/check_panel_detail_results.py panel-detail-results.xml
+          pytest -n 0 tests/integration/test_bet_page_projection.py --tb=short --junitxml=bet-page-results.xml
+          python ../tests/identity/check_core_api_results.py bet-page-results.xml
+          pytest -n 0 tests/integration/test_aposta_foto_db.py --tb=short --junitxml=aposta-foto-results.xml
+          python scripts/check_aposta_foto_results.py aposta-foto-results.xml
+          TEST_REDIS_URL=redis://127.0.0.1:56379/0 pytest -n 0 tests/integration/test_web_print_db.py --no-cov --tb=short --junitxml=web-print-results.xml
+          python scripts/check_web_print_results.py web-print-results.xml
+          pytest -n 0 tests/integration/test_sheet_import_db.py --no-cov --tb=short --junitxml=sheet-import-results.xml
+          python scripts/check_sheet_import_results.py sheet-import-results.xml
+          pytest -n 0 tests/integration/test_results_db.py --no-cov --tb=short --junitxml=results-api-results.xml
+          python scripts/check_results_junit.py results-api-results.xml
+          pytest -n 0 tests/integration/test_reviews_db.py --no-cov --tb=short --junitxml=reviews-api-results.xml
+          python scripts/check_reviews_junit.py reviews-api-results.xml
+      - name: Comprovar jornada central com SPA pública, API, emissor e banco reais
+        working-directory: .identity-api
+        env:
+          CORE_BROWSER: ${{ matrix.browser }}
+          CORE_TRACE_DIR: ${{ github.workspace }}/.identity-api
+        run: |
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_core_contract.py -k '${{ matrix.browser }}' --junitxml=core-results.xml --tb=short -v
+          python ../tests/identity/check_core_results.py core-results.xml '${{ matrix.browser }}'
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_prints_contract.py -k '${{ matrix.browser }}' --junitxml=prints-spa-results.xml --tb=short -v
+          python ../tests/identity/check_prints_results.py prints-spa-results.xml '${{ matrix.browser }}'
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_sheet_contract.py -k '${{ matrix.browser }}' --junitxml=sheet-spa-results.xml --tb=short -v
+          python ../tests/identity/check_sheet_results.py sheet-spa-results.xml '${{ matrix.browser }}'
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_resultados_contract.py -k '${{ matrix.browser }}' --junitxml=resultados-spa-results.xml --tb=short -v
+          python ../tests/identity/check_resultados_results.py resultados-spa-results.xml '${{ matrix.browser }}'
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_caixa_contract.py -k '${{ matrix.browser }}' --junitxml=caixa-spa-results.xml --tb=short -v
+          python ../tests/identity/check_caixa_results.py caixa-spa-results.xml '${{ matrix.browser }}'
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_revisao_contract.py -k '${{ matrix.browser }}' --junitxml=revisao-spa-results.xml --tb=short -v
+          python ../tests/identity/check_revisao_results.py revisao-spa-results.xml '${{ matrix.browser }}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: central-${{ matrix.browser }}-${{ github.event_name }}-${{ github.run_id }}
+          if-no-files-found: error
+          include-hidden-files: true
+          path: |
+            .identity-api/*-results.xml
+            .identity-api/central-*.zip
+            .identity-api/prints-*.zip
+            .identity-api/sheet-*.zip
+            .identity-api/resultados-*.zip
+            .identity-api/resultados-inp-*.json
+            .identity-api/caixa-*.zip
+            .identity-api/revisao-*.zip
+      - name: Encerrar somente o sandbox deste job
+        if: always()
+        run: |
+          docker compose -f tests/identity/upload-compose.yml down
+          docker compose -f .identity-api/tests/identity/docker-compose.yml down

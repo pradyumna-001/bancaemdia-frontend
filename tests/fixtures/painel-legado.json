@@ -1,0 +1,33 @@
+{
+  "atualizado_em": "2026-10-11T11:59:00Z",
+  "evolucao": [],
+  "idade_mv_segundos": null,
+  "por_casa": [],
+  "por_mercado": [],
+  "por_tipster": [],
+  "replica_atraso_disponivel": false,
+  "replica_atraso_estado": "disponivel",
+  "replica_atraso_segundos": null,
+  "respondido_em": "2026-10-11T12:00:00Z",
+  "resumo": {
+    "base_roi_centavos": 0,
+    "freebets": 0,
+    "giro_centavos": 0,
+    "greens": 0,
+    "lucro_centavos": 0,
+    "pendentes": 0,
+    "reds": 0,
+    "retorno_centavos": 0,
+    "roi": "0",
+    "roi_basis_points": 0,
+    "total_apostas": 0,
+    "win_rate": "0",
+    "win_rate_basis_points": 0
+  },
+  "saldo": {
+    "contas_saldo_desconhecido": 1,
+    "escopo": "contas_casa_all_time",
+    "saldo_conhecido_centavos": 1200500,
+    "saldo_total_centavos": null
+  }
+}
