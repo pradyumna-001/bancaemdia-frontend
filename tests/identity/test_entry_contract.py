@@ -80,15 +80,16 @@ async def test_entry_export_lost_response_and_real_limit(
         ]
         lost = []
 
-        async def lose_after_commit(route):
-            if route.request.method != "POST":
-                return await route.continue_()
-            accepted = await route.fetch()
-            assert accepted.status == 202
-            lost.append((await accepted.json())["job_id"])
-            await route.abort("failed")
+        statuses = []
 
-        await other.route("**/api/v1/upload", lose_after_commit)
+        def lose_after_commit(method, path, response):
+            if method != "POST" or path != "/api/v1/upload":
+                return False
+            statuses.append(response.status_code)
+            lost.append(response.json().get("job_id"))
+            return True
+
+        harness.frontend_proxy.after_api_response = lose_after_commit
         await other.goto(core.backend.FRONT + "/enviar?casa=7&apagadas=1")
         await other.get_by_label("Arquivo do export", exact=True).set_input_files(
             {
@@ -103,7 +104,8 @@ async def test_entry_export_lost_response_and_real_limit(
                 "Sem o endereço de acompanhamento, o serviço não permite", exact=False
             )
         ).to_be_visible()
-        assert len(lost) == 1 and "envio" not in parse_qs(urlsplit(other.url).query)
+        assert statuses == [202] and len(lost) == 1 and lost[0]
+        assert "envio" not in parse_qs(urlsplit(other.url).query)
         assert (await core.request(page, "/api/v1/upload/" + lost[0]))["status"] == 404
         # The test can observe the genuine receipt. The SPA has no returned UUID
         # and must continue describing its own GET as non-conclusive.

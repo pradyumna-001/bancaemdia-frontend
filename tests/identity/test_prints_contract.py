@@ -204,16 +204,26 @@ async def test_public_spa_prints_real_worker(
                     ),
                 )
                 held_item = None
+                admissions = []
+                lost_statuses = []
+
+                def lose_third_response(method, path, response):
+                    nonlocal held_item
+                    if method != "POST" or not path.startswith("/api/v1/prints/"):
+                        return False
+                    admissions.append(path)
+                    if len(admissions) != 3:
+                        return False
+                    lost_statuses.append(response.status_code)
+                    held_item = path.rsplit("/", 1)[-1]
+                    return True
+
+                harness.frontend_proxy.after_api_response = lose_third_response
 
                 async def partial_response(route):
                     nonlocal held_item
                     request = route.request
-                    if request.method == "POST" and len(writes) == 3:
-                        accepted = await route.fetch()
-                        assert accepted.status == 202
-                        held_item = request.url.rsplit("/", 1)[-1]
-                        await route.abort("failed")
-                    elif request.method == "GET" and held_item:
+                    if request.method == "GET" and held_item:
                         if request.url.endswith("/itens/" + held_item):
                             held_item = None
                             await route.continue_()
@@ -272,7 +282,7 @@ async def test_public_spa_prints_real_worker(
                     await expect(
                         page.get_by_role("button", name="Conferir print 3", exact=True)
                     ).to_be_enabled()
-                    assert len(writes) == 3
+                    assert len(writes) == 3 and lost_statuses == [202]
                     await page.get_by_role(
                         "button", name="Conferir print 3", exact=True
                     ).click()

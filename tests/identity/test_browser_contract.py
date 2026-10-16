@@ -13,6 +13,7 @@ import mimetypes
 import os
 import re
 import secrets
+import socket
 import subprocess
 import sys
 import tempfile
@@ -72,6 +73,13 @@ def serve_public_build():
                         headers=headers,
                         content=body,
                     )
+                after_response = getattr(self.server, "after_api_response", None)
+                if after_response and after_response(self.command, path, result):
+                    # Lose only the returned bytes, after the real API committed.
+                    # Keep the browser's original multipart body untouched.
+                    self.close_connection = True
+                    self.connection.shutdown(socket.SHUT_RDWR)
+                    return
                 self.send_response(result.status_code)
                 for key, value in result.headers.multi_items():
                     if key.lower() not in {
@@ -185,10 +193,18 @@ async def banco():
 async def harness(banco, engine_admin, tmp_path, monkeypatch):
     assert (DIST / "index.html").is_file(), "Build the public SPA before acceptance"
     monkeypatch.setattr(backend, "fetch", browser_request)
-    async with runtime.owned_runtime(backend, serve_public_build, monkeypatch):
+    proxies = []
+
+    def frontend():
+        server = serve_public_build()
+        proxies.append(server)
+        return server
+
+    async with runtime.owned_runtime(backend, frontend, monkeypatch):
         async for instance in backend.harness.__wrapped__(
             banco, engine_admin, tmp_path
         ):
+            instance.frontend_proxy = proxies[0]
             yield instance
 
 

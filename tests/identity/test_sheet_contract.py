@@ -153,24 +153,29 @@ async def test_public_spa_sheet_preview_remap_confirm(
             current = parse_qs(urlsplit(page.url).query)
             assert current["previa"][0] != original and current["fonte"] == [source]
             await page.get_by_role("button", name="Confirmar importação").focus()
-            lost_confirmation = False
+            lost_statuses = []
 
-            async def lose_confirmation(route):
-                nonlocal lost_confirmation
-                if route.request.method == "POST" and not lost_confirmation:
-                    lost_confirmation = True
-                    response = await route.fetch()
-                    assert response.status in {200, 201}
-                    await route.abort("failed")
-                else:
-                    await route.continue_()
+            def lose_confirmation(method, path, response):
+                if (
+                    method != "POST"
+                    or not path.startswith("/api/v1/planilhas/confirmacoes/")
+                    or lost_statuses
+                ):
+                    return False
+                lost_statuses.append(response.status_code)
+                return True
 
-            await page.route("**/api/v1/planilhas/confirmacoes/*", lose_confirmation)
+            harness.frontend_proxy.after_api_response = lose_confirmation
             await page.keyboard.press("Enter")
+            await expect(
+                page.get_by_role(
+                    "heading", name="Confira se o pedido foi concluído", exact=True
+                )
+            ).to_be_visible()
             await expect(
                 page.get_by_role("button", name="Conferir recebimento", exact=True)
             ).to_be_enabled()
-            assert lost_confirmation
+            assert lost_statuses in ([200], [201])
             before_lookup = len(writes)
             await page.get_by_role(
                 "button", name="Conferir recebimento", exact=True
