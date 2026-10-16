@@ -82,11 +82,11 @@ async def test_public_spa_manual_creation_recovery(
                     "INSERT INTO casas(nome,dominio) VALUES ('Betano','betano.com') RETURNING id"
                 )
             )
-        holder = await core.write(
-            page, "/api/v1/titulares", {"nome": "Titular manual"}, expected=201
-        )
         accounts = []
         for name in ("Principal manual", "Temporária manual"):
+            holder = await core.write(
+                page, "/api/v1/titulares", {"nome": "Titular " + name}, expected=201
+            )
             accounts.append(
                 await core.write(
                     page,
