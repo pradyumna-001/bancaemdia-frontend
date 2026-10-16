@@ -1,0 +1,59 @@
+.assinatura > section {
+  padding-block: var(--espaco-24);
+  border-block-start: 1px solid var(--borda);
+}
+.assinatura h2 {
+  font-size: var(--fonte-secao);
+}
+.assinatura p {
+  max-width: 65ch;
+}
+.assinatura dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--espaco-16);
+}
+.assinatura dt {
+  color: var(--tinta-secundaria);
+}
+.assinatura dd {
+  margin: var(--espaco-8) 0 0;
+  overflow-wrap: anywhere;
+}
+.assinatura-estado {
+  font-weight: 700;
+}
+.assinatura fieldset {
+  margin: var(--espaco-16) 0;
+  border: 0;
+  padding: 0;
+}
+.assinatura-preco {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-12);
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-12);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  margin-block: var(--espaco-8);
+  max-width: 35rem;
+}
+.assinatura-preco input {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.assinatura-confirmacao {
+  border: 1px solid var(--borda);
+  padding: var(--espaco-16);
+  margin-top: var(--espaco-16);
+  border-radius: var(--raio-painel);
+}
+.assinatura nav {
+  margin-top: var(--espaco-24);
+}
+.assinatura nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo-toque);
+}

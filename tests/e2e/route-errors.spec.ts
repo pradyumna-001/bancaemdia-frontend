@@ -231,7 +231,13 @@ test('429/503 respeitam prazo e escrita incerta não oferece reenvio; flags da f
   });
   for (const value of [429, 503]) {
     status = value;
+    const failure = page.getByRole('heading', {
+      name: /^(Aguarde para tentar novamente|O serviço está temporariamente indisponível)$/,
+    });
     await page.goto(`${fixture}/coleta${suffix}`);
+    // A same-document navigation can still show the prior refusal until reload.
+    // Settle that document before reloading; assert the new status/focus below.
+    await expect(failure).toBeVisible();
     await page.reload();
     await expect(
       page.getByRole('heading', {
