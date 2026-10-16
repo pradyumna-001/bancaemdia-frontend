@@ -1,9 +1,11 @@
 """Public SPA + actual XLSX API and PostgreSQL, no response/session mocks."""
 
+import asyncio
 import importlib.util
 import os
 import secrets
 import sys
+import time
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
@@ -154,8 +156,20 @@ async def test_public_spa_sheet_preview_remap_confirm(
             assert current["previa"][0] != original and current["fonte"] == [source]
             await page.get_by_role("button", name="Confirmar importação").focus()
             lost_statuses = []
+            receipt_deadline = 0
 
             def lose_confirmation(method, path, response):
+                nonlocal receipt_deadline
+                if (
+                    method == "GET"
+                    and path.startswith("/api/v1/planilhas/confirmacoes/")
+                    and response.status_code == 404
+                ):
+                    receipt_deadline = max(
+                        receipt_deadline,
+                        time.monotonic()
+                        + int(response.headers.get("Retry-After", "0")),
+                    )
                 if (
                     method != "POST"
                     or not path.startswith("/api/v1/planilhas/confirmacoes/")
@@ -177,9 +191,20 @@ async def test_public_spa_sheet_preview_remap_confirm(
             ).to_be_enabled()
             assert lost_statuses in ([200], [201])
             before_lookup = len(writes)
-            await page.get_by_role(
-                "button", name="Conferir recebimento", exact=True
-            ).click()
+            # The automatic GET before POST can legitimately see 404 with the
+            # limiter's real Retry-After. Respect the read embargo, never bypass it.
+            await asyncio.sleep(max(0, receipt_deadline - time.monotonic()) + 0.2)
+            assert len(writes) == before_lookup
+            async with page.expect_response(
+                lambda response: (
+                    response.request.method == "GET"
+                    and "/api/v1/planilhas/confirmacoes/" in response.url
+                    and response.status == 200
+                )
+            ):
+                await page.get_by_role(
+                    "button", name="Conferir recebimento", exact=True
+                ).click()
             await expect(
                 page.get_by_role("heading", name="Importação concluída", exact=True)
             ).to_be_visible()

@@ -253,7 +253,10 @@ async def test_public_spa_manual_creation_recovery(
             # Exercise the SPA's normal focus/resume path, including Web Lock and
             # HttpOnly refresh, without leaving the memory-only form or injecting auth.
             async with page.expect_response(
-                lambda response: urlparse(response.url).path == "/auth/session"
+                lambda response: (
+                    urlparse(response.url).path == "/auth/session"
+                    and response.status == 200
+                )
             ):
                 await page.evaluate("window.dispatchEvent(new Event('focus'))")
             try:
