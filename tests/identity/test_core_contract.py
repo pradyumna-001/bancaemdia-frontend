@@ -7,12 +7,10 @@ The candidate remains distinct from an integrated release.
 import asyncio
 import hashlib
 import importlib.util
-import json
 import os
 import secrets
 import sys
 import time
-import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import quote, urlencode
@@ -228,25 +226,12 @@ async def accessibility(page):
     await page.set_viewport_size(original)
 
 
-def sanitize_trace(path):
-    # Authentication and seed finish before tracing. Keep action timing/stacks,
-    # discard network/resources and evaluated results (which may contain CSRF).
-    with zipfile.ZipFile(path) as source:
-        files = {
-            name: source.read(name)
-            for name in source.namelist()
-            if name.endswith((".trace", ".stacks"))
-        }
-    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as target:
-        for name, content in files.items():
-            if name.endswith(".trace"):
-                entries = []
-                for line in content.splitlines():
-                    entry = json.loads(line)
-                    entry.pop("result", None)
-                    entries.append(json.dumps(entry))
-                content = ("\n".join(entries) + "\n").encode()
-            target.writestr(name, content)
+_trace_spec = importlib.util.spec_from_file_location(
+    "frontend_trace_privacy", Path(__file__).with_name("trace_privacy.py")
+)
+_trace_module = importlib.util.module_from_spec(_trace_spec)
+_trace_spec.loader.exec_module(_trace_module)
+sanitize_trace = _trace_module.sanitize_trace
 
 
 @pytest.mark.parametrize("browser_name", ["chromium", "firefox", "webkit"])

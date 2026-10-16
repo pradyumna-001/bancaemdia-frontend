@@ -157,9 +157,12 @@ it('conta confirmada permite continuar; sair permanece uma ação explícita can
   await act(() => router.navigate('/sair'));
   expect(await screen.findByRole('heading', { name: 'Sair' })).toBeVisible();
   expect(transport.logout).not.toHaveBeenCalled();
-  await userEvent.click(
-    screen.getByRole('link', { name: 'Continuar na conta' }),
-  );
+  await act(async () => {
+    await userEvent.click(
+      screen.getByRole('link', { name: 'Continuar na conta' }),
+    );
+  });
+  expect(router.state.location.pathname).toBe('/');
   expect(await screen.findByRole('heading', { name: 'Apostas' })).toBeVisible();
   expect(transport.logout).not.toHaveBeenCalled();
 });

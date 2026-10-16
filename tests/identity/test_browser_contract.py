@@ -195,7 +195,15 @@ async def harness(banco, engine_admin, tmp_path, monkeypatch):
 @pytest.mark.parametrize(
     "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
 )
-async def test_public_spa_telegram_import(harness, engine_admin, viewport):
+async def test_public_spa_telegram_import(
+    harness,
+    engine_admin,
+    viewport,
+    browser_name="chromium",
+    after_import=None,
+    trace_dir=None,
+    sanitize_trace=None,
+):
     """Real file, queue, worker, materialization and RLS; only extraction input is cached.
 
     No jobs, status, progress or final bets are inserted by the test. No paid IA is called.
@@ -279,6 +287,8 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
         ANTHROPIC_BASE_URL=f"http://127.0.0.1:{trap.server_port}",
         ANTHROPIC_MAX_RETRIES="0",
     )
+    browser = None
+    traced = []
     with tempfile.TemporaryFile(mode="w+t") as worker_log:
         worker = None
         try:
@@ -318,7 +328,7 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
                     f"Worker exited before import: {worker.returncode}; classes={classes}; missing_modules={modules}"
                 )
             async with async_playwright() as playwright:
-                browser = await playwright.chromium.launch()
+                browser = await getattr(playwright, browser_name).launch()
                 contexts = [
                     await browser.new_context(viewport=viewport) for _ in range(2)
                 ]
@@ -346,6 +356,18 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
                         else None
                     ),
                 )
+                if after_import is not None:
+                    for index, context in enumerate(contexts):
+                        await context.tracing.start(
+                            screenshots=False, snapshots=False, sources=False
+                        )
+                        traced.append(
+                            (
+                                context,
+                                trace_dir
+                                / f"entrada-{browser_name}-{viewport['width']}-{index}.zip",
+                            )
+                        )
                 await pages[0].goto(backend.FRONT + "/enviar?estado=GREEN&apagadas=1")
                 await (
                     pages[0]
@@ -421,7 +443,19 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
                     )
                     .count()
                 )
+                if after_import is not None:
+                    await after_import(
+                        pages, content.getvalue(), job_id, owner, engine_admin
+                    )
+                    assert not calls, (
+                        "Entry faults may not call a paid extraction provider"
+                    )
+                for context, trace in traced:
+                    await context.tracing.stop(path=trace)
+                    sanitize_trace(trace)
+                traced.clear()
                 await browser.close()
+                browser = None
             assert worker.poll() is None, "Actual worker must survive the import"
         except BaseException:
             worker_log.seek(0)
@@ -463,10 +497,22 @@ async def test_public_spa_telegram_import(harness, engine_admin, viewport):
                 results.close()
             raise
         finally:
-            cache.delete(cache_key)
-            cache.close()
-            await asyncio.to_thread(trap.shutdown)
-            trap.server_close()
+            try:
+                for context, trace in traced:
+                    try:
+                        await context.tracing.stop(path=trace)
+                    finally:
+                        if trace.is_file():
+                            sanitize_trace(trace)
+            finally:
+                try:
+                    if browser is not None:
+                        await browser.close()
+                finally:
+                    cache.delete(cache_key)
+                    cache.close()
+                    await asyncio.to_thread(trap.shutdown)
+                    trap.server_close()
 
 
 @pytest.mark.parametrize(

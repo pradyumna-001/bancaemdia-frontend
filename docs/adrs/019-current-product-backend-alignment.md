@@ -91,3 +91,7 @@ Criação manual, freebet e atribuição já existem na main. Falta identidade d
 ## Nova aposta #29 — contrato entregue em 15/10/2026
 
 Backend #202/PR #203 resolve a lacuna auditada. Consumidor preserva frontend #95/#94, usa sandbox único ec46748 (127 operações, hash 797c735e0fa6d63f46c3eb1635e569e434154dfc02fb17d27c940ff339cfcf96), sem schemas compostos ou promoção. UUID anterior ao POST, corpo em memória, confirmação autoritativa e recuperação explícita são obrigatórios. Mais seis jornadas reais e 44 aceites API se somam aos inventários anteriores. O job central reserva 30 minutos para 54 jornadas, mantendo timeouts individuais, cobertura, budget e zero skips. [Contrato](../contracts/nova-aposta.md).
+
+## E2E de entrada #30 — 15/10/2026
+
+Preservar o pin ec46748 e a frontend #96, com PR contra main e dependências declaradas. A cobertura liga Print recebido à Revisão e à aposta atribuída, confirma planilha após perda de resposta, e prova export com 429 real e POST confirmado cuja resposta não chega à SPA. Não alterar relógios/limites nem tratar listagem como reconciliação do export legado sem UUID. Os inventários existentes permanecem; seis casos de export em matriz isolada de 15 minutos ampliam as 54 jornadas para 60. Nenhuma tela nova, decisão financeira local ou aprovação de gasto. Traces usam projeção permitida de metadados, sem argumentos/resultados/rede; falha de sanitização impede publicação do ZIP bruto e um gate verifica os artefatos antes de upload. [Matriz e diagnóstico](../contracts/entrada.md).

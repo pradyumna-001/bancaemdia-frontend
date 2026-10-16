@@ -153,10 +153,34 @@ async def test_public_spa_sheet_preview_remap_confirm(
             current = parse_qs(urlsplit(page.url).query)
             assert current["previa"][0] != original and current["fonte"] == [source]
             await page.get_by_role("button", name="Confirmar importação").focus()
+            lost_confirmation = False
+
+            async def lose_confirmation(route):
+                nonlocal lost_confirmation
+                if route.request.method == "POST" and not lost_confirmation:
+                    lost_confirmation = True
+                    response = await route.fetch()
+                    assert response.status in {200, 201}
+                    await route.abort("failed")
+                else:
+                    await route.continue_()
+
+            await page.route("**/api/v1/planilhas/confirmacoes/*", lose_confirmation)
             await page.keyboard.press("Enter")
+            await expect(
+                page.get_by_role("button", name="Conferir recebimento", exact=True)
+            ).to_be_enabled()
+            assert lost_confirmation
+            before_lookup = len(writes)
+            await page.get_by_role(
+                "button", name="Conferir recebimento", exact=True
+            ).click()
             await expect(
                 page.get_by_role("heading", name="Importação concluída", exact=True)
             ).to_be_visible()
+            assert len(writes) == before_lookup, (
+                "Receipt lookup may not repeat the committed confirmation"
+            )
             count = len(writes)
             async with engine_admin.connect() as conn:
                 assert (

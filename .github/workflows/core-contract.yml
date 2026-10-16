@@ -125,8 +125,14 @@ jobs:
           python ../tests/identity/check_caixa_results.py caixa-spa-results.xml '${{ matrix.browser }}'
           python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_revisao_contract.py -k '${{ matrix.browser }}' --junitxml=revisao-spa-results.xml --tb=short -v
           python ../tests/identity/check_revisao_results.py revisao-spa-results.xml '${{ matrix.browser }}'
-      - uses: actions/upload-artifact@v4
+          python ../tests/identity/check_entry_results.py . '${{ matrix.browser }}' central
+      - name: Verificar privacidade dos traces antes de publicar
         if: always()
+        id: trace_privacy
+        working-directory: .identity-api
+        run: python ../tests/identity/trace_privacy.py --check-dir .
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.trace_privacy.outcome == 'success'
         with:
           name: central-${{ matrix.browser }}-${{ github.event_name }}-${{ github.run_id }}
           if-no-files-found: error

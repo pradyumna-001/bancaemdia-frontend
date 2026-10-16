@@ -135,7 +135,7 @@
     "number": 30,
     "title": "[ADR-019] E2E de entrada — importações, resultado e revisão",
     "file": "030.md",
-    "dependencies": "#24, #25, #26, #27, #28, #29; #52"
+    "dependencies": "#24/#25/#26/#27/#28/#29; #52; frontend PR #96 (5a5dcf3) e antecedentes; backend #203/#201/#199/#197/#195/#193/#189/#187; pin ec46748; integracao/revalidacao antes de publicar"
   },
   {
     "number": 31,

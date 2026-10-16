@@ -41,3 +41,7 @@ Sandbox fornecido pelo backend 547a4d0cfce5308dfe71221a77ad6fd5eb6e47cd incorpor
 ## Ampliação #29 — 15/10/2026
 
 Pin ec46748b00ce97ae3c3cac032f03cc691f7f8908, OpenAPI inteiro de 127 operações, hash 797c735e0fa6d63f46c3eb1635e569e434154dfc02fb17d27c940ff339cfcf96. Preserva 125 anteriores e acrescenta #203. Seis jornadas manuais e 44 aceites HTTP/PostgreSQL/checker somam-se às 48 jornadas anteriores. Reserva do job central passa a 30 minutos para esse inventário; não muda timeout de teste/pedido, cobertura por arquivo, budget JS ou zero skips. Publicação continua bloqueada. Ver [Nova aposta](nova-aposta.md).
+
+## Ampliação #30 — 15/10/2026
+
+Mantém o mesmo pin e os 54 casos centrais. Prints passa a demonstrar admissão parcial com resposta perdida, consulta sem reenviar sucessos e Revisão até aposta com conta temporal/dinheiro autoritativos. Planilha perde a confirmação após commit e recupera pelo mesmo UUID, mantendo o teste de fonte estável/duplicação. O gate de entrada exige seus dez casos centrais por browser. Uma matriz separada prova mais seis exports reais, 429 e perda de resposta sem UUID; 60 jornadas reais totais e 36 específicas da entrada. O job central conserva 30 minutos e os demais limites. Traces agora removem argumentos/mensagens/títulos além de resultados/rede/recursos e têm gate de privacidade antes de upload, inclusive em falha. Ver [matriz de entrada](entrada.md).
