@@ -94,6 +94,12 @@
 .painel-export {
   margin-top: var(--espaco-16);
 }
+.painel-export > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo-toque);
+  margin-inline-start: var(--espaco-16);
+}
 .painel-colunas {
   display: grid;
   grid-template-columns: 1.3fr 1fr;

@@ -48,6 +48,10 @@ const NovaApostaPage = lazy(() =>
   })),
 );
 
+const AjudaPage = lazy(() =>
+  import('../features/ajuda/AjudaPage').then((m) => ({ default: m.AjudaPage })),
+);
+
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
   consultarRevisao?: ConsultarRevisao,
@@ -166,7 +170,18 @@ export function createAppRoutes(
     ...ROTAS_PUBLICAS.map(({ path, title }) => ({
       path,
       caseSensitive: true,
-      element: <Placeholder title={title} />,
+      element: (
+        <Suspense
+          fallback={
+            <main className="pagina">
+              <h1>{title}</h1>
+              <p role="status">Abrindo ajuda…</p>
+            </main>
+          }
+        >
+          <AjudaPage extensao={path === '/extensao'} />
+        </Suspense>
+      ),
       errorElement: <RouteError />,
     })),
     ...ROTAS_AUTH.map(({ path, protected: isProtected }) =>

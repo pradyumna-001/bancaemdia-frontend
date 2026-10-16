@@ -95,3 +95,7 @@ Backend #202/PR #203 resolve a lacuna auditada. Consumidor preserva frontend #95
 ## E2E de entrada #30 — 15/10/2026
 
 Preservar o pin ec46748 e a frontend #96, com PR contra main e dependências declaradas. A cobertura liga Print recebido à Revisão e à aposta atribuída, confirma planilha após perda de resposta, e prova export com 429 real e POST confirmado cuja resposta não chega à SPA. Não alterar relógios/limites nem tratar listagem como reconciliação do export legado sem UUID. Os inventários existentes permanecem; seis casos de export em matriz isolada de 15 minutos ampliam as 54 jornadas para 60. Nenhuma tela nova, decisão financeira local ou aprovação de gasto. Traces usam projeção permitida de metadados, sem argumentos/resultados/rede; falha de sanitização impede publicação do ZIP bruto e um gate verifica os artefatos antes de upload. [Matriz e diagnóstico](../contracts/entrada.md).
+
+## Ajuda #35 — parcela adiantada em 16/10/2026
+
+Enquanto #34 aguarda leitura web de sessão, adiantar Tutorial/Extensão públicos e ajuda contextual do Excel, sobre frontend #97, contra main. Reutilizar download e contratos de entrada existentes, sem dados privados na ajuda ou promessa de coleta disponível. A extensão não tem release em ff62454: informar Esperando lançamento, sem binário/checksum inventados ou instalação do protótipo. A #35 permanece aberta pela distribuição verificável e reconciliação com #34. A prova real existente amplia-se para baixar/abrir Excel pela SPA, sem alterar pin, inventário, gates ou timeouts. [Contrato](../contracts/ajuda.md).

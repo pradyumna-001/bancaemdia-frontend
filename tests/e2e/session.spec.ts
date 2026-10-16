@@ -60,12 +60,18 @@ test('ajuda pública não consulta identidade; páginas de conta conferem o aces
   for (const path of ['/tutorial', '/extensao']) {
     await page.goto(path);
     await expect(
-      page.getByText('Esta página está em preparação.'),
+      page.getByRole('heading', {
+        name: path === '/tutorial' ? 'Tutorial' : 'Extensão',
+        exact: true,
+      }),
     ).toBeVisible();
     await page.bringToFront();
     await page.reload();
     await expect(
-      page.getByText('Esta página está em preparação.'),
+      page.getByRole('heading', {
+        name: path === '/tutorial' ? 'Tutorial' : 'Extensão',
+        exact: true,
+      }),
     ).toBeVisible();
   }
   expect(reads).toBe(0);

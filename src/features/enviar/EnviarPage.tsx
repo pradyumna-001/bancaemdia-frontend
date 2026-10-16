@@ -31,6 +31,8 @@ function CanaisEnviar() {
   const params = new URLSearchParams(location.search);
   const prints = params.get('entrada') === 'prints';
   const planilha = params.get('entrada') === 'planilha';
+  const ajuda = new URLSearchParams(params);
+  ajuda.set('guia', planilha ? 'planilha' : prints ? 'prints' : 'telegram');
   const link = (channel: string) => {
     const next = new URLSearchParams(params);
     if (channel !== 'telegram') next.set('entrada', channel);
@@ -56,6 +58,7 @@ function CanaisEnviar() {
         Prints
       </Link>
       <Link to={novaApostaDestino(location.search)}>Nova aposta</Link>
+      <Link to={`/tutorial?${ajuda}#passo-a-passo`}>Ajuda para enviar</Link>
     </nav>
   );
 }
@@ -549,8 +552,8 @@ function ExportPage() {
           confira a conexão com o Telegram
         </Link>
         . Você também pode escolher Prints acima para enviar imagens pelo site.
-        A importação de planilha terá suas próprias instruções quando estiver
-        disponível.
+        Para importar uma planilha, escolha Planilha acima e confira a prévia
+        antes de confirmar.
       </p>
     </main>
   );

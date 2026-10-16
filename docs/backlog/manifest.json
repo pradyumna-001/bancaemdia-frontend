@@ -165,7 +165,7 @@
     "number": 35,
     "title": "[ADR-019] Ajuda e exportação — canais atuais e arquivos corretos",
     "file": "035.md",
-    "dependencies": "#20, #24, #34; #54"
+    "dependencies": "#20, #24, #34; #54; parcela publica sobre frontend PR #97 e antecedentes; pin ec46748 preservado; distribuicao verificavel da extensao pendente de lancamento, sem releases em ff62454"
   },
   {
     "number": 36,
