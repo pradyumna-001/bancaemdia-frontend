@@ -98,8 +98,10 @@ async def test_public_spa_manual_creation_recovery(
         await core.fresh_session(page)
         writes = []
         response_statuses = []
+        retry_deadline = 0
 
         def observe_response(response):
+            nonlocal retry_deadline
             if P in response.url or response.url.endswith("/matriz"):
                 response_statuses.append(
                     (
@@ -108,6 +110,10 @@ async def test_public_spa_manual_creation_recovery(
                         response.headers.get("retry-after"),
                     )
                 )
+                if P in response.url and response.status == 422:
+                    retry_deadline = time.monotonic() + float(
+                        response.headers.get("retry-after", "0")
+                    )
 
         page.on("response", observe_response)
 
@@ -241,6 +247,15 @@ async def test_public_spa_manual_creation_recovery(
             await expect(page.get_by_label("Evento", exact=True)).to_have_value(
                 "Campos preservados após recusa"
             )
+            # The real rate limiter publishes Retry-After even on this 422.
+            # Respect it; do not bypass the deadline or the 30-second identity.
+            await asyncio.sleep(max(0, retry_deadline - time.monotonic()) + 0.2)
+            # Exercise the SPA's normal focus/resume path, including Web Lock and
+            # HttpOnly refresh, without leaving the memory-only form or injecting auth.
+            async with page.expect_response(
+                lambda response: urlparse(response.url).path == "/auth/session"
+            ):
+                await page.evaluate("window.dispatchEvent(new Event('focus'))")
             try:
                 await expect(page.get_by_label("Evento", exact=True)).to_be_enabled()
             except AssertionError as error:

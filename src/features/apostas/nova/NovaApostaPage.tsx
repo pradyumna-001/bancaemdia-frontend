@@ -414,6 +414,12 @@ function Formulario({ api }: { api: ReturnType<typeof getApiClient> }) {
           destination={'/aposta/nova?' + search.toString()}
         />
       )}
+      {op.waiting && (
+        <p role="status">
+          O serviço pediu uma pausa. Aguarde o prazo informado antes de corrigir
+          ou enviar este pedido novamente.
+        </p>
+      )}
       {!!lookupError && (
         <ErroApi
           error={lookupError}

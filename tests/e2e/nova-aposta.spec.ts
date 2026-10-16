@@ -120,6 +120,7 @@ test('Nova aposta: recusa de conta permite corrigir e reenviar com o mesmo UUID'
     if (ids.length === 1)
       return route.fulfill({
         status: 422,
+        headers: { 'Retry-After': '1' },
         json: {
           detail: 'manual_account_invalid',
           campo: 'conta_casa_id',
@@ -142,6 +143,12 @@ test('Nova aposta: recusa de conta permite corrigir e reenviar com o mesmo UUID'
       exact: true,
     }),
   ).toBeVisible();
+  await expect(
+    page.getByText('O serviço pediu uma pausa.', { exact: false }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Registrar aposta', exact: true }),
+  ).toBeDisabled();
   await expect(page.getByLabel('Odd', { exact: true })).toBeEnabled();
   await page.getByRole('button', { name: /^Conta que fez a aposta / }).click();
   await page
