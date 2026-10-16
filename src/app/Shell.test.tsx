@@ -1,7 +1,9 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter } from 'react-router-dom';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import * as api from '../api/client';
+import { parseConfig } from '../lib/config';
 import { App } from './App';
 import { createAppRoutes } from './routes';
 import { createAppQueryClient } from './queryClient';
@@ -15,6 +17,11 @@ import {
 } from '../features/revisao/estatisticas';
 
 const limpar: Array<() => void> = [];
+beforeEach(() => {
+  vi.spyOn(api, 'getApiClient').mockReturnValue(
+    api.createApiClient(parseConfig({ VITE_API_URL: 'https://site.example' })),
+  );
+});
 it.each([
   [429, 'Muitas consultas'],
   [503, 'temporariamente indisponível'],
@@ -25,7 +32,10 @@ it.each([
     'segredo',
   );
 });
-afterEach(() => limpar.splice(0).forEach((fn) => fn()));
+afterEach(() => {
+  limpar.splice(0).forEach((fn) => fn());
+  vi.restoreAllMocks();
+});
 function dados(total: number): EstatisticasRevisao {
   return {
     total,

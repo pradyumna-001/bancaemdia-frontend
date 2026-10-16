@@ -1,0 +1,48 @@
+// Generated from x-bancaemdia-review in the same verified OpenAPI.
+export const REVISAO_POLICIES = {
+  'GET /api/v1/revisao-operacional/fila': {
+    access: 'READ_ONLY',
+    age_filter: 'criado_em_interval',
+    automatic_mutation_replay: false,
+    consumption: 'restart_page_1',
+    precondition: 'opaque_evidence_cas',
+    read_source: 'primary_snapshot',
+    receipt_days: 90,
+  },
+  'GET /api/v1/revisao-operacional/operacoes/{operacao_id}': {
+    access: 'READ_ONLY',
+    age_filter: 'criado_em_interval',
+    automatic_mutation_replay: false,
+    consumption: 'restart_page_1',
+    precondition: 'opaque_evidence_cas',
+    read_source: 'primary_snapshot',
+    receipt_days: 90,
+  },
+  'POST /api/v1/revisao-operacional/operacoes/{operacao_id}': {
+    access: 'FULL_WRITE',
+    age_filter: 'criado_em_interval',
+    automatic_mutation_replay: false,
+    consumption: 'restart_page_1',
+    precondition: 'opaque_evidence_cas',
+    read_source: 'primary_transaction',
+    receipt_days: 90,
+  },
+  'GET /api/v1/revisao-operacional/revisoes/{revisao_id}': {
+    access: 'READ_ONLY',
+    age_filter: 'criado_em_interval',
+    automatic_mutation_replay: false,
+    consumption: 'restart_page_1',
+    precondition: 'opaque_evidence_cas',
+    read_source: 'primary_snapshot',
+    receipt_days: 90,
+  },
+  'GET /api/v1/revisao-operacional/revisoes/{revisao_id}/foto': {
+    access: 'READ_ONLY',
+    age_filter: 'criado_em_interval',
+    automatic_mutation_replay: false,
+    consumption: 'restart_page_1',
+    precondition: 'opaque_evidence_cas',
+    read_source: 'primary_snapshot',
+    receipt_days: 90,
+  },
+} as const;
