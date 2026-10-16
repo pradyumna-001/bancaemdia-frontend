@@ -107,3 +107,46 @@ test('build público não libera sessão pela fixture de planilha', async ({
     page.getByRole('heading', { name: 'Importar planilha', exact: true }),
   ).toHaveCount(0);
 });
+
+test('seletor indisponível mantém contraste durante resultado desconhecido', async ({
+  page,
+}, info) => {
+  let writes = 0;
+  await page.route('**/api/v1/planilhas/confirmacoes/*', async (route) => {
+    if (route.request().method() === 'POST') {
+      writes++;
+      await route.abort('failed');
+    } else await route.continue();
+  });
+  await page.goto(fixture);
+  await page.getByLabel('Arquivo XLSX', { exact: true }).setInputFiles({
+    name: 'conferencia.xlsx',
+    mimeType:
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: Buffer.from('fixture: no XLSX parsing'),
+  });
+  await page
+    .getByRole('button', { name: 'Conferir planilha', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Confirmar importação', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', {
+      name: 'Confira se o pedido foi concluído',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.getByLabel('Arquivo XLSX', { exact: true })).toBeDisabled();
+  for (const theme of ['Claro', 'Escuro']) {
+    await page.getByRole('button', { name: 'Opções', exact: true }).click();
+    await page.getByRole('radio', { name: theme, exact: true }).check();
+    await page.keyboard.press('Escape');
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    await page.screenshot({
+      path: info.outputPath(`planilha-indisponivel-${theme}.png`),
+      fullPage: true,
+    });
+  }
+  expect(writes).toBe(1);
+});

@@ -4,7 +4,7 @@
 
 Esta entrega amplia as provas do frontend #96, HEAD herdado 5a5dcf397e44f4250025270f11102cae573f82b2. A PR continua diretamente contra main, com dependências declaradas; não realiza merge, deploy ou promoção de contrato. O pin permanece ec46748b00ce97ae3c3cac032f03cc691f7f8908, árvore real única de 127 operações, SHA-256 OpenAPI 797c735e0fa6d63f46c3eb1635e569e434154dfc02fb17d27c940ff339cfcf96. Backend #203 e candidatas herdadas continuam sandbox_reconciliation e bloqueiam publicação até integração/revalidação.
 
-É uma issue de testes e diagnóstico, sem tela nova ou cálculo financeiro. Controles, contratos e apresentação permanecem nas respectivas entregas #24–29/#52. Não acrescentar aviso de custo ou aprovação de gasto.
+É uma issue de testes e diagnóstico, sem tela nova ou cálculo financeiro. Inclui a correção de contraste do seletor de arquivo desabilitado, identificada no ensaio de resultado desconhecido: texto usa token neutro legível e borda tracejada, sem opacidade sobre o texto. Os demais controles e contratos permanecem nas respectivas entregas #24–29/#52. Não acrescentar aviso de custo ou aprovação de gasto.
 
 ## Matriz obrigatória
 
@@ -23,7 +23,9 @@ O export legado não publica reconciliação sem UUID nem idempotência de admis
 
 ## Isolamento, falhas e evidências
 
-Cada caso usa banco PostgreSQL novo, emissor e cookies reais, Redis/Celery descartáveis e processos próprios. Somente arquivo, raster, leitura em cache e contexto histórico de conta são entradas sintéticas. Nenhum job, progresso, aposta ou resultado final de importação é semeado. Uma armadilha HTTP local impede extração paga; não é prova de qualidade da IA nem de lançamento. Rotas Playwright cortam o transporte após a resposta real ou durante uma indisponibilidade de rede, sem fabricar JSON/status/finanças.
+Cada caso usa banco PostgreSQL novo, emissor e cookies reais, Redis/Celery descartáveis e processos próprios. Somente arquivo, raster, leitura em cache e contexto histórico de conta são entradas sintéticas. Nenhum job, progresso, aposta ou resultado final de importação é semeado. Uma armadilha HTTP local impede extração paga; não é prova de qualidade da IA nem de lançamento. O proxy de testes corta a resposta após o retorno real da API, preservando o multipart original; rotas Playwright simulam indisponibilidade de rede, sem fabricar JSON/status/finanças. A consulta de confirmação respeita também o Retry-After real do 404 anterior à gravação e exige novo GET 200.
+
+O teste de interface reproduz a confirmação incerta com seletor indisponível e verifica axe/contraste em Claro/Escuro, 390×844 e 1440×900. Ele acrescenta seis casos à suíte de apresentação (678 no total), sem substituir as 60 jornadas reais. O diagnóstico real de acessibilidade publica somente IDs de regras e metadados de tags/classes/cores, nunca texto, HTML, atributos, URLs ou valores dos campos.
 
 O workflow entry-contract.yml reserva uma matriz separada de 15 minutos para o export, sem ampliar a carga do job central de 30 minutos. Usa dist/CSP públicos do mesmo SHA e o mesmo pin backend. O workflow central preserva seus gates e acrescenta check_entry_results.py; a matriz de export exige o mesmo inventário exato. Caso ausente/duplicado/de outro browser, arquivo faltante, skip, falha e erro impedem aprovação. Testes negativos verificam esse comportamento.
 
