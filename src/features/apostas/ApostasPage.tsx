@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { novaApostaDestino } from '../../lib/params';
 import { getApiClient, type createApiClient } from '../../api/client';
 import { recuperacaoErro } from '../../api/recovery';
 import { SITE_READ_CONTRACT } from '../../api/site-read.generated';
@@ -298,6 +299,7 @@ export function ApostasPage({
           <p>Acompanhe suas apostas e encontre o que precisa de revisão.</p>
         </div>
         <div className="acoes">
+          <Link to={novaApostaDestino(location.search)}>Nova aposta</Link>
           <Link to={entry + location.search}>{entryLabel}</Link>
           <button
             type="button"

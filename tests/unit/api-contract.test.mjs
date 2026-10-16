@@ -10,6 +10,7 @@ import {
   requireIntegratedContract,
   resultsPolicies,
   reviewPolicies,
+  manualPolicies,
 } from '../../scripts/api-contract.mjs';
 
 const bytes = Buffer.from(
@@ -30,6 +31,41 @@ const pin = {
   schemaPath: 'tests/contract/schemas/openapi.json',
   sha256: createHash('sha256').update(bytes).digest('hex'),
 };
+
+it('Manual extrai identidade por caminho, retenção, READ_ONLY e ausência de retry do mesmo schema', () => {
+  const policy = {
+    identity: 'path.intencao_id',
+    scope: 'authenticated_user',
+    automatic_retry: false,
+    retention_days: 90,
+    expired_identity_reusable: false,
+  };
+  expect(
+    manualPolicies({
+      paths: {
+        '/api/v1/apostas-manuais/operacoes/{intencao_id}': {
+          post: { 'x-idempotency': policy },
+          get: { 'x-permission': 'READ_ONLY', 'x-automatic-retry': false },
+        },
+      },
+    }),
+  ).toEqual({
+    ...policy,
+    get_permission: 'READ_ONLY',
+    get_automatic_retry: false,
+  });
+  expect(() => manualPolicies({ paths: {} })).toThrow();
+  expect(() =>
+    manualPolicies({
+      paths: {
+        '/api/v1/apostas-manuais/operacoes/{intencao_id}': {
+          post: { 'x-idempotency': policy },
+          get: { 'x-permission': 'FULL_WRITE' },
+        },
+      },
+    }),
+  ).toThrow();
+});
 
 it('Revisão extrai CAS/consumo/acesso do mesmo documento, sem replay automático', () => {
   const policy = {

@@ -63,6 +63,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/apostas-manuais/operacoes/{intencao_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Recuperar confirmação original manual
+     * @description READ_ONLY explícito no primário, por UUID e usuário autenticado. Recibo original disponível por 90 dias, mesmo após correção/apagamento da aposta. 404/410 não provam rollback nem autorizam repetição automática. Somente confirmado tem chave para navegar ao detalhe atual; nenhuma fila assíncrona é publicada.
+     */
+    get: operations['recover_manual_api_v1_apostas_manuais_operacoes__intencao_id__get'];
+    put?: never;
+    /**
+     * Criar aposta manual reconciliável
+     * @description FULL_WRITE e CSRF atuais. UUID escolhido antes do POST; aposta, eventos, eventual revisão e recibo no mesmo commit. Mesmo UUID/corpo normalizado devolve confirmação original sem recalcular data, unidade ou conta; outro corpo conflita. Recuperação por 90 dias; identidade não é reutilizada após expirar. Nenhum POST recebe retry automático.
+     */
+    post: operations['create_manual_api_v1_apostas_manuais_operacoes__intencao_id__post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/apostas/importar-planilha': {
     parameters: {
       query?: never;
@@ -3956,6 +3980,22 @@ export interface components {
       /** Logged Out */
       logged_out: boolean;
     };
+    /** ManualAssignmentNotice */
+    ManualAssignmentNotice: {
+      /**
+       * Codigo
+       * @enum {string}
+       */
+      codigo: 'conta_ausente' | 'conta_ambigua';
+      /**
+       * Encaminhamento
+       * @default revisar_conta
+       * @constant
+       */
+      encaminhamento: 'revisar_conta';
+      /** Revisao Id */
+      revisao_id: string;
+    };
     /** ManualCandidate */
     ManualCandidate: {
       /** Access Confirmed */
@@ -3971,6 +4011,136 @@ export interface components {
       evidence_sha256: string;
       /** Hostname */
       hostname: string;
+    };
+    /** ManualCreationError */
+    ManualCreationError: {
+      /** Campo */
+      campo?:
+        | (
+            | 'intencao_id'
+            | 'casa'
+            | 'data_aposta'
+            | 'data_jogo'
+            | 'odd'
+            | 'stake_unidades'
+            | 'evento'
+            | 'descricao'
+            | 'mercado_bruto'
+            | 'freebet'
+            | 'comissao_centavos'
+            | 'conta_casa_id'
+          )
+        | null;
+      /**
+       * Detail
+       * @enum {string}
+       */
+      detail:
+        | 'manual_validation_invalid'
+        | 'manual_account_invalid'
+        | 'manual_creation_busy'
+        | 'manual_intention_conflict'
+        | 'manual_intention_not_found'
+        | 'manual_receipt_expired'
+        | 'manual_creation_unavailable';
+      /**
+       * Efeito
+       * @default nenhuma_gravacao_neste_pedido
+       * @enum {string}
+       */
+      efeito:
+        | 'nenhuma_gravacao_neste_pedido'
+        | 'resultado_desconhecido'
+        | 'confirmacao_anterior_retida';
+    };
+    /**
+     * ManualCreationReceipt
+     * @description Original confirmation, never a live financial projection of the bet.
+     */
+    ManualCreationReceipt: {
+      /** Aposta Chave */
+      aposta_chave: string;
+      /** Avisos */
+      avisos: components['schemas']['ManualAssignmentNotice'][];
+      confirmacao_original: components['schemas']['ManualOriginalConfirmation'];
+      /**
+       * Confirmado Em
+       * Format: date-time
+       */
+      confirmado_em: string;
+      /** Detalhe Url */
+      detalhe_url: string;
+      /**
+       * Estado
+       * @default confirmada
+       * @constant
+       */
+      estado: 'confirmada';
+      /**
+       * Intencao Id
+       * Format: uuid
+       */
+      intencao_id: string;
+      /**
+       * Recuperavel Ate
+       * Format: date-time
+       */
+      recuperavel_ate: string;
+    };
+    /** ManualCreationRequest */
+    ManualCreationRequest: {
+      /** Casa */
+      casa: string;
+      /** Comissao Centavos */
+      comissao_centavos?: string | null;
+      /** Conta Casa Id */
+      conta_casa_id?: string | null;
+      /** Data Aposta */
+      data_aposta?: string | null;
+      /** Data Jogo */
+      data_jogo?: string | null;
+      /** Descricao */
+      descricao?: string | null;
+      /** Evento */
+      evento?: string | null;
+      /**
+       * Freebet
+       * @default false
+       */
+      freebet: boolean;
+      /** Mercado Bruto */
+      mercado_bruto?: string | null;
+      /** Odd */
+      odd: number;
+      /** Stake Unidades */
+      stake_unidades: number;
+    };
+    /** ManualOriginalConfirmation */
+    ManualOriginalConfirmation: {
+      /** Comissao Centavos */
+      comissao_centavos: string;
+      /** Conta Casa Id */
+      conta_casa_id: string | null;
+      /**
+       * Criterio Conta
+       * @enum {string}
+       */
+      criterio_conta: 'data_jogo' | 'multicontas_explicita';
+      /**
+       * Data Aposta
+       * Format: date-time
+       */
+      data_aposta: string;
+      /** Data Jogo */
+      data_jogo: string | null;
+      /** Freebet */
+      freebet: boolean;
+      /** Stake Centavos */
+      stake_centavos: string;
+      /** Valor Aposta Centavos */
+      valor_aposta_centavos: string;
+      /** Valor Unidade Centavos */
+      valor_unidade_centavos: string;
     };
     /** ManualReceipt */
     ManualReceipt: {
@@ -6362,6 +6532,258 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  recover_manual_api_v1_apostas_manuais_operacoes__intencao_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID escolhido pela SPA antes do POST e persistido na URL. A referência não concede acesso e fica ocupada para o mesmo usuário após expiração do recibo. */
+        intencao_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationReceipt'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationError'];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationError'];
+        };
+      };
+      /** @description Gone */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationError'];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationError'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Dependência ou autenticação indisponível; resultado desconhecido, consultar intenção antes de nova ação. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['ManualCreationError']
+            | components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  create_manual_api_v1_apostas_manuais_operacoes__intencao_id__post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID escolhido pela SPA antes do POST e persistido na URL. A referência não concede acesso e fica ocupada para o mesmo usuário após expiração do recibo. */
+        intencao_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManualCreationRequest'];
+      };
+    };
+    responses: {
+      /** @description Recibo original de repetição explícita do mesmo UUID/corpo. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationReceipt'];
+        };
+      };
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationReceipt'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Cookie mutation requires exact Origin and current CSRF proof. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationError'];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationError'];
+        };
+      };
+      /** @description Gone */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationError'];
+        };
+      };
+      /** @description The request body exceeds this endpoint's streaming limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          /** @example Content Too Large */
+          'text/plain': string;
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManualCreationError'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Dependência ou autenticação indisponível; resultado desconhecido, consultar intenção antes de nova ação. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['ManualCreationError']
+            | components['schemas']['ErrorResponse'];
         };
       };
     };
@@ -18082,6 +18504,9 @@ export interface operations {
               [key: string]: components['schemas']['JsonValue'];
             }[];
             grupos_aposta: {
+              [key: string]: components['schemas']['JsonValue'];
+            }[];
+            manual_creation_operations: {
               [key: string]: components['schemas']['JsonValue'];
             }[];
             metas_desempenho: {

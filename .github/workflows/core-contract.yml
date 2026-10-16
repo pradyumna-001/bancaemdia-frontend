@@ -19,9 +19,9 @@ jobs:
       matrix:
         browser: [chromium, firefox, webkit]
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
-      IDENTITY_API_SHA: 547a4d0cfce5308dfe71221a77ad6fd5eb6e47cd
+      IDENTITY_API_SHA: ec46748b00ce97ae3c3cac032f03cc691f7f8908
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -101,12 +101,16 @@ jobs:
           python scripts/check_reviews_junit.py reviews-api-results.xml
           pytest -n 0 tests/integration/test_usuario_privacy_db.py --no-cov --tb=short --junitxml=privacy-api-results.xml
           python ../tests/identity/check_privacidade_results.py privacy-api-results.xml api
+          pytest -n 0 tests/integration/test_manual_creation_db.py --no-cov --tb=short --junitxml=manual-api-results.xml
+          python scripts/check_manual_creation_junit.py manual-api-results.xml
       - name: Comprovar jornada central com SPA pública, API, emissor e banco reais
         working-directory: .identity-api
         env:
           CORE_BROWSER: ${{ matrix.browser }}
           CORE_TRACE_DIR: ${{ github.workspace }}/.identity-api
         run: |
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_manual_contract.py -k '${{ matrix.browser }}' --junitxml=manual-spa-results.xml --tb=short -v
+          python ../tests/identity/check_manual_results.py manual-spa-results.xml '${{ matrix.browser }}'
           python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_privacidade_contract.py -k '${{ matrix.browser }}' --junitxml=privacidade-spa-results.xml --tb=short -v
           python ../tests/identity/check_privacidade_results.py privacidade-spa-results.xml '${{ matrix.browser }}'
           python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_core_contract.py -k '${{ matrix.browser }}' --junitxml=core-results.xml --tb=short -v
@@ -137,6 +141,7 @@ jobs:
             .identity-api/caixa-*.zip
             .identity-api/revisao-*.zip
             .identity-api/privacidade-*.zip
+            .identity-api/manual-*.zip
       - name: Encerrar somente o sandbox deste job
         if: always()
         run: |

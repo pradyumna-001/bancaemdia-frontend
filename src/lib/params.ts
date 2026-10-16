@@ -16,6 +16,12 @@ export const DIMENSOES = {
   banca: 'Banca',
 } as const;
 export type Dimensao = keyof typeof DIMENSOES;
+/** Ação explícita de nova aposta; mantém filtros, sem reutilizar intenção anterior. */
+export function novaApostaDestino(search: string) {
+  const next = new URLSearchParams(search);
+  next.delete('manual_intencao');
+  return '/aposta/nova' + (next.size ? '?' + next.toString() : '');
+}
 export const PERIODOS = {
   '7d': 'Últimos 7 dias',
   '30d': 'Últimos 30 dias',

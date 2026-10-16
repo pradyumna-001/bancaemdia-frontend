@@ -129,7 +129,7 @@
     "number": 29,
     "title": "[ADR-019] Nova aposta — conta temporal e valor de face da freebet",
     "file": "029.md",
-    "dependencies": "#9, #10, #16, #32; #52; #50; frontend PR #94; backend emergencial de identidade durável/consulta da criação manual ainda sem issue/PR"
+    "dependencies": "#9, #10, #16, #32; #52; #50; frontend PR #95/#94; backend #202/PR #203; sandbox único ec46748 com candidatas #201/#199/#197/#195/#193/#189/#187; publicação depende de integração/revalidação"
   },
   {
     "number": 30,

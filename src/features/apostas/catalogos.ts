@@ -56,6 +56,7 @@ export function opcoesApresentacao(
         throw new ApiError('invalid_response');
       return {
         value: item.id,
+        nome: item.nome,
         label: item.nome + (item.ativa ? '' : ' (inativa)'),
       };
     }),

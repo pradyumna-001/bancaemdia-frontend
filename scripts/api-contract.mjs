@@ -159,3 +159,18 @@ export function reviewPolicies(schema) {
     ),
   );
 }
+
+export function manualPolicies(schema) {
+  const path = '/api/v1/apostas-manuais/operacoes/{intencao_id}';
+  const item = schema.paths[path];
+  if (
+    !item?.post?.['x-idempotency'] ||
+    item.get?.['x-permission'] !== 'READ_ONLY'
+  )
+    throw new Error('Contrato de criação manual sem política de recuperação.');
+  return {
+    ...item.post['x-idempotency'],
+    get_permission: item.get['x-permission'],
+    get_automatic_retry: item.get['x-automatic-retry'],
+  };
+}

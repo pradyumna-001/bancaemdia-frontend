@@ -85,7 +85,7 @@ it.each([
   await waitFor(() => {
     expect(screen.getByRole('heading', { name: title })).toBeVisible();
     expect(
-      screen.queryByText(/^Abrindo (privacidade|revisão)…$/),
+      screen.queryByText(/^Abrindo (privacidade|revisão|formulário)…$/),
     ).not.toBeInTheDocument();
   });
 });

@@ -13,8 +13,12 @@ it('catálogo publicado conserva BIGINT, nomes históricos e paginação sem inf
   };
   expect(opcoesApresentacao(response, FILTER_READ_CONTRACT, 'casas')).toEqual({
     options: [
-      { value: '9007199254740993', label: 'Casa antiga (inativa)' },
-      { value: '7', label: 'Casa atual' },
+      {
+        value: '9007199254740993',
+        nome: 'Casa antiga',
+        label: 'Casa antiga (inativa)',
+      },
+      { value: '7', nome: 'Casa atual', label: 'Casa atual' },
     ],
     pagina: 1,
     temMais: true,

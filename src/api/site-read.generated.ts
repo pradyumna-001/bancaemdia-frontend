@@ -1,5 +1,171 @@
 // Generated from the same verified OpenAPI; unavailable routes stay absent.
 export const SITE_READ_CONTRACT = {
+  '/api/v1/apostas-manuais/operacoes/{intencao_id}': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'intencao_id',
+        'aposta_chave',
+        'detalhe_url',
+        'confirmado_em',
+        'recuperavel_ate',
+        'confirmacao_original',
+        'avisos',
+      ],
+      properties: {
+        aposta_chave: { type: 'string' },
+        avisos: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['codigo', 'revisao_id'],
+            properties: {
+              codigo: {
+                type: 'string',
+                enum: ['conta_ausente', 'conta_ambigua'],
+              },
+              encaminhamento: { type: 'string', const: 'revisar_conta' },
+              revisao_id: { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+            },
+          },
+        },
+        confirmacao_original: {
+          type: 'object',
+          required: [
+            'data_aposta',
+            'data_jogo',
+            'conta_casa_id',
+            'criterio_conta',
+            'valor_unidade_centavos',
+            'stake_centavos',
+            'valor_aposta_centavos',
+            'comissao_centavos',
+            'freebet',
+          ],
+          properties: {
+            comissao_centavos: {
+              type: 'string',
+              pattern: '^(0|[1-9][0-9]{0,18})$',
+            },
+            conta_casa_id: {
+              anyOf: [
+                { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+                { type: 'null' },
+              ],
+            },
+            criterio_conta: {
+              type: 'string',
+              enum: ['data_jogo', 'multicontas_explicita'],
+            },
+            data_aposta: { type: 'string' },
+            data_jogo: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            freebet: { type: 'boolean' },
+            stake_centavos: {
+              type: 'string',
+              pattern: '^(0|[1-9][0-9]{0,18})$',
+            },
+            valor_aposta_centavos: {
+              type: 'string',
+              pattern: '^(0|[1-9][0-9]{0,18})$',
+            },
+            valor_unidade_centavos: {
+              type: 'string',
+              pattern: '^(0|[1-9][0-9]{0,18})$',
+            },
+          },
+        },
+        confirmado_em: { type: 'string' },
+        detalhe_url: { type: 'string' },
+        estado: { type: 'string', const: 'confirmada' },
+        intencao_id: { type: 'string' },
+        recuperavel_ate: { type: 'string' },
+      },
+    },
+  },
+  'POST /api/v1/apostas-manuais/operacoes/{intencao_id}': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'intencao_id',
+        'aposta_chave',
+        'detalhe_url',
+        'confirmado_em',
+        'recuperavel_ate',
+        'confirmacao_original',
+        'avisos',
+      ],
+      properties: {
+        aposta_chave: { type: 'string' },
+        avisos: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['codigo', 'revisao_id'],
+            properties: {
+              codigo: {
+                type: 'string',
+                enum: ['conta_ausente', 'conta_ambigua'],
+              },
+              encaminhamento: { type: 'string', const: 'revisar_conta' },
+              revisao_id: { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+            },
+          },
+        },
+        confirmacao_original: {
+          type: 'object',
+          required: [
+            'data_aposta',
+            'data_jogo',
+            'conta_casa_id',
+            'criterio_conta',
+            'valor_unidade_centavos',
+            'stake_centavos',
+            'valor_aposta_centavos',
+            'comissao_centavos',
+            'freebet',
+          ],
+          properties: {
+            comissao_centavos: {
+              type: 'string',
+              pattern: '^(0|[1-9][0-9]{0,18})$',
+            },
+            conta_casa_id: {
+              anyOf: [
+                { type: 'string', pattern: '^[1-9][0-9]{0,18}$' },
+                { type: 'null' },
+              ],
+            },
+            criterio_conta: {
+              type: 'string',
+              enum: ['data_jogo', 'multicontas_explicita'],
+            },
+            data_aposta: { type: 'string' },
+            data_jogo: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            freebet: { type: 'boolean' },
+            stake_centavos: {
+              type: 'string',
+              pattern: '^(0|[1-9][0-9]{0,18})$',
+            },
+            valor_aposta_centavos: {
+              type: 'string',
+              pattern: '^(0|[1-9][0-9]{0,18})$',
+            },
+            valor_unidade_centavos: {
+              type: 'string',
+              pattern: '^(0|[1-9][0-9]{0,18})$',
+            },
+          },
+        },
+        confirmado_em: { type: 'string' },
+        detalhe_url: { type: 'string' },
+        estado: { type: 'string', const: 'confirmada' },
+        intencao_id: { type: 'string' },
+        recuperavel_ate: { type: 'string' },
+      },
+    },
+  },
   '/api/v1/planilhas/campos': {
     query: {},
     response: {

@@ -1,5 +1,9 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
-export type OpcaoFiltro = Readonly<{ value: string; label: string }>;
+export type OpcaoFiltro = Readonly<{
+  value: string;
+  label: string;
+  nome?: string;
+}>;
 export function EscolhaFiltro({
   id: controlId,
   label,
@@ -11,6 +15,7 @@ export function EscolhaFiltro({
   selectedLabel,
   busca,
   children,
+  dentroDeFormulario = false,
 }: {
   id?: string;
   label: string;
@@ -26,11 +31,13 @@ export function EscolhaFiltro({
     atualizando?: boolean;
   };
   children?: ReactNode;
+  dentroDeFormulario?: boolean;
 }) {
   const id = useId();
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const [texto, setTexto] = useState('');
+  const Busca = dentroDeFormulario ? 'div' : 'form';
   function choose(next?: string) {
     onChange(next);
     dialog.current!.close();
@@ -66,7 +73,13 @@ export function EscolhaFiltro({
       >
         <h2 id={id + '-titulo'}>{label}</h2>
         {busca && (
-          <form
+          <Busca
+            onKeyDown={(event) => {
+              if (dentroDeFormulario && event.key === 'Enter') {
+                event.preventDefault();
+                busca.buscar(texto);
+              }
+            }}
             onSubmit={(event) => {
               event.preventDefault();
               busca.buscar(texto);
@@ -80,10 +93,16 @@ export function EscolhaFiltro({
               value={texto}
               onChange={(event) => setTexto(event.target.value)}
             />
-            <button type="submit" disabled={busca.atualizando}>
+            <button
+              type={dentroDeFormulario ? 'button' : 'submit'}
+              disabled={busca.atualizando}
+              onClick={
+                dentroDeFormulario ? () => busca.buscar(texto) : undefined
+              }
+            >
               Buscar
             </button>
-          </form>
+          </Busca>
         )}
         <div className="filtro-opcoes">
           <button type="button" aria-pressed={!value} onClick={() => choose()}>

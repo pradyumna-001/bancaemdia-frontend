@@ -87,3 +87,7 @@ Entrega frontend independente da criação manual #29, por decisão do titular d
 ## Nova aposta #29 — 15/10/2026
 
 Criação manual, freebet e atribuição já existem na main. Falta identidade durável escolhida antes do pedido e consulta do resultado da criação após resposta perdida. UUID interno novo por POST não oferece idempotência HTTP; os testes de repositório da backend #36 não suprem esse protocolo. A #29 permanece bloqueada por essa entrega mínima, sem simular recuperação pela listagem ou inventar endpoint. [Auditoria](../audits/nova-aposta-2026-10-15.md). PR futura contra main com #94 e emergência backend declaradas; sem merge ou publicação.
+
+## Nova aposta #29 — contrato entregue em 15/10/2026
+
+Backend #202/PR #203 resolve a lacuna auditada. Consumidor preserva frontend #95/#94, usa sandbox único ec46748 (127 operações, hash 797c735e0fa6d63f46c3eb1635e569e434154dfc02fb17d27c940ff339cfcf96), sem schemas compostos ou promoção. UUID anterior ao POST, corpo em memória, confirmação autoritativa e recuperação explícita são obrigatórios. Mais seis jornadas reais e 44 aceites API se somam aos inventários anteriores. O job central reserva 30 minutos para 54 jornadas, mantendo timeouts individuais, cobertura, budget e zero skips. [Contrato](../contracts/nova-aposta.md).

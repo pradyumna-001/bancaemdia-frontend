@@ -28,3 +28,7 @@ Exigir testes HTTP/PostgreSQL reais para resposta perdida após commit, repetiç
 ## Continuação do frontend
 
 Branch `feat/29-nova-aposta` inicia após `1428e9a5923dd622a3c54bdeada5f145ff5aa2c6` (frontend #94). PR futura contra main, declarando #94 e a emergência backend. Após a entrega: verificar SHA/hash, reconciliar um único sandbox completo, gerar tipos/políticas, implementar formulário sem cálculos financeiros e provar mobile/desktop nos três browsers. Até lá não há PR de implementação pronta nem autorização de publicação.
+
+## Entrega posterior do backend
+
+Issue #202 e PR #203 suprem a lacuna acima. A auditoria descreve o estado anterior; a implementação frontend #29 usa o protocolo novo e o sandbox único de 127 operações ec46748, sem atribuir idempotência ao POST legado. Ver [contrato vigente](../contracts/nova-aposta.md).

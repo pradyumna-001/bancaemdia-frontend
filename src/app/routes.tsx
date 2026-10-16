@@ -42,6 +42,12 @@ export function loginLoader({ request }: LoaderFunctionArgs) {
   return { destino: destinoInterno(url.searchParams.get('destino')) };
 }
 
+const NovaApostaPage = lazy(() =>
+  import('../features/apostas/nova/NovaApostaPage').then((m) => ({
+    default: m.NovaApostaPage,
+  })),
+);
+
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
   consultarRevisao?: ConsultarRevisao,
@@ -60,6 +66,7 @@ export function createAppRoutes(
       defaultShouldRevalidate,
     }) =>
       (path === '/' ||
+        path === '/aposta/nova' ||
         path === '/enviar' ||
         path === '/resultados' ||
         path === '/banca' ||
@@ -91,6 +98,17 @@ export function createAppRoutes(
         path,
         path === '/' ? (
           <ApostasPage />
+        ) : path === '/aposta/nova' ? (
+          <Suspense
+            fallback={
+              <main className="pagina">
+                <h1>Nova aposta</h1>
+                <p role="status">Abrindo formulário…</p>
+              </main>
+            }
+          >
+            <NovaApostaPage />
+          </Suspense>
         ) : path === '/aposta/:chave' ? (
           <DetalheApostaPage />
         ) : path === '/aposta/:chave/foto' ? (

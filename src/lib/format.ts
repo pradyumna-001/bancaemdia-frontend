@@ -5,11 +5,18 @@ const indisponivel = () => new Error('Valor indisponível.');
 
 /** Conversão textual de entrada BRL; não decide nenhum valor financeiro. */
 export function centavosDaEntrada(valor: string): number {
+  const inteiro = BigInt(centavosExatosDaEntrada(valor));
+  if (inteiro > BigInt(Number.MAX_SAFE_INTEGER)) throw indisponivel();
+  return Number(inteiro);
+}
+
+/** Entrada BRL para contratos BIGINT em string, sem arredondamento. */
+export function centavosExatosDaEntrada(valor: string): string {
   const match = /^(0|[1-9]\d*)(?:[,.](\d{1,2}))?$/.exec(valor.trim());
   if (!match) throw indisponivel();
   const inteiro = BigInt(match[1]! + (match[2] ?? '').padEnd(2, '0'));
-  if (inteiro > BigInt(Number.MAX_SAFE_INTEGER)) throw indisponivel();
-  return Number(inteiro);
+  if (inteiro > 9223372036854775807n) throw indisponivel();
+  return inteiro.toString();
 }
 
 /** Sinal de uma entrada BRL para ajuste, sem decidir o efeito financeiro. */

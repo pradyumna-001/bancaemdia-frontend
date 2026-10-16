@@ -30,6 +30,7 @@ import {
   type Revisao,
 } from './protocol';
 import './detalhe.css';
+import { ConfirmacaoManual } from '../nova/ConfirmacaoManual';
 
 type Intento =
   | { tipo: 'apagar' | 'restaurar' | 'mesma' | 'distinta' }
@@ -295,6 +296,7 @@ function DetalhePagina({
     : undefined;
   return (
     <main className="shell-conteudo aposta-detalhe">
+      <ConfirmacaoManual api={api} chave={chave} search={route.search} />
       <Link className="aposta-voltar" to={returnTo}>
         ← Voltar à lista de apostas
       </Link>

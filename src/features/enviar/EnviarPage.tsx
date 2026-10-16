@@ -11,6 +11,7 @@ import { useAuth } from '../../auth/ProvedorAuth';
 import { useAcesso } from '../acesso/ProvedorAcesso';
 import { ErroApi } from '../../components/ErroApi';
 import { decimal } from '../../lib/format';
+import { novaApostaDestino } from '../../lib/params';
 import { useRetryAfter } from '../../lib/useRetryAfter';
 import { jobIdValido } from './job';
 import { useJob } from './useJob';
@@ -54,6 +55,7 @@ function CanaisEnviar() {
       <Link to={link('prints')} aria-current={prints ? 'page' : undefined}>
         Prints
       </Link>
+      <Link to={novaApostaDestino(location.search)}>Nova aposta</Link>
     </nav>
   );
 }
