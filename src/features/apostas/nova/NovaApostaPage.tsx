@@ -235,7 +235,8 @@ function Formulario({ api }: { api: ReturnType<typeof getApiClient> }) {
       queued.current = value;
       const next = new URLSearchParams(latest.current);
       next.set('manual_intencao', value.id);
-      setSearch(next, { replace: true });
+      if (next.toString() !== latest.current.toString())
+        setSearch(next, { replace: true });
     } catch (error) {
       setLocalError(
         error instanceof Error ? error.message : 'Confira os campos.',

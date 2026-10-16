@@ -97,6 +97,19 @@ async def test_public_spa_manual_creation_recovery(
             )
         await core.fresh_session(page)
         writes = []
+        response_statuses = []
+
+        def observe_response(response):
+            if P in response.url or response.url.endswith("/matriz"):
+                response_statuses.append(
+                    (
+                        "manual" if P in response.url else "matriz",
+                        response.status,
+                        response.headers.get("retry-after"),
+                    )
+                )
+
+        page.on("response", observe_response)
 
         def observe(request):
             if request.method == "POST" and P in request.url:
@@ -228,6 +241,19 @@ async def test_public_spa_manual_creation_recovery(
             await expect(page.get_by_label("Evento", exact=True)).to_have_value(
                 "Campos preservados após recusa"
             )
+            try:
+                await expect(page.get_by_label("Evento", exact=True)).to_be_enabled()
+            except AssertionError as error:
+                recovery = await page.get_by_role(
+                    "heading", name="Confira o registro antes de continuar", exact=True
+                ).count()
+                submit = await page.get_by_role(
+                    "button", name=re.compile("Registrar aposta|Registrando aposta")
+                ).text_content()
+                raise AssertionError(
+                    f"Manual correction locked: recovery={recovery}, submit={submit}, "
+                    f"safe HTTP statuses={response_statuses}"
+                ) from error
             rejected_id = parse_qs(urlparse(page.url).query)["manual_intencao"][0]
             await page.get_by_role(
                 "button", name=re.compile("^Conta que fez a aposta ")

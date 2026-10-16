@@ -110,6 +110,52 @@ test('Nova aposta: resposta perdida recupera por GET sem repetir POST', async ({
   ).toBeVisible();
   expect(posts).toBe(1);
 });
+test('Nova aposta: recusa de conta permite corrigir e reenviar com o mesmo UUID', async ({
+  page,
+}) => {
+  const ids: string[] = [];
+  await page.route('**/api/v1/apostas-manuais/operacoes/*', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    ids.push(route.request().url().split('/').at(-1)!);
+    if (ids.length === 1)
+      return route.fulfill({
+        status: 422,
+        json: {
+          detail: 'manual_account_invalid',
+          campo: 'conta_casa_id',
+          efeito: 'nenhuma_gravacao_neste_pedido',
+        },
+      });
+    await route.continue();
+  });
+  await page.goto(url);
+  await fill(page);
+  await page.getByText('Evento e outros detalhes (opcional)').click();
+  await page.getByRole('button', { name: /^Conta que fez a aposta / }).click();
+  await page.getByRole('button', { name: /Principal — Ana/ }).click();
+  await page
+    .getByRole('button', { name: 'Registrar aposta', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', {
+      name: 'Confira os dados do pedido',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.getByLabel('Odd', { exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: /^Conta que fez a aposta / }).click();
+  await page
+    .getByRole('button', { name: 'Atribuir pela data do jogo', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Registrar aposta', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Registro manual confirmado' }),
+  ).toBeVisible();
+  expect(ids).toHaveLength(2);
+  expect(ids[1]).toBe(ids[0]);
+});
 test('aplicativo público não aceita sessão da fixture de Nova aposta', async ({
   page,
 }) => {
