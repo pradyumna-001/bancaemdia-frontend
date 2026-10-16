@@ -208,9 +208,8 @@ export function AjudaPage({ extensao = false }: { extensao?: boolean }) {
                   </ol>
                   <p>
                     Se o resultado do envio ficar desconhecido, use a consulta
-                    oferecida na tela. A consulta do export pode não comprovar
-                    se o envio foi recebido; ela não autoriza reenviar
-                    automaticamente.
+                    oferecida na tela. A tela informa quando não conseguiu
+                    verificar o recebimento.
                   </p>
                   <div className="acoes">
                     <Link to={destino('/enviar')}>Abrir Enviar</Link>
@@ -278,8 +277,8 @@ export function AjudaPage({ extensao = false }: { extensao?: boolean }) {
                     </li>
                     <li>
                       <strong>Confirme a importação.</strong> A prévia não
-                      registra apostas. A confirmação usa a referência e a
-                      revisão conferidas pelo serviço.
+                      registra apostas. É só ao confirmar que as apostas são
+                      registradas.
                     </li>
                     <li>
                       <strong>Confira o recibo.</strong> Se a resposta não
