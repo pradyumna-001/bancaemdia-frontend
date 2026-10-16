@@ -219,7 +219,7 @@ async def accessibility(page):
     violations = await page.evaluate(
         "async () => (await axe.run(document)).violations.map(v => v.id)"
     )
-    assert violations == [], "Public central screen has accessibility violations"
+    assert violations == [], f"Public central accessibility rule IDs: {violations}"
     original = page.viewport_size
     await page.set_viewport_size({"width": 320, "height": 844})
     assert await page.evaluate("document.documentElement.scrollWidth <= innerWidth")
