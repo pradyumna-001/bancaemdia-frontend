@@ -45,7 +45,7 @@
     "number": 15,
     "title": "[ADR-019] Jobs de upload — estados reais e retomada de observação",
     "file": "015.md",
-    "dependencies": "#9, #10; #50"
+    "dependencies": "#9, #10"
   },
   {
     "number": 16,
@@ -63,7 +63,7 @@
     "number": 18,
     "title": "[ADR-019] Apostas — lista operacional com resumo coerente",
     "file": "018.md",
-    "dependencies": "#9, #10, #16, #17; #32; #52; #50"
+    "dependencies": "#9, #10, #16, #17; #32; #52; #50; backend #186/PR #187 (checks/integração pendentes), também PR #184; #33 independente autorizada em paralelo"
   },
   {
     "number": 19,
@@ -75,61 +75,61 @@
     "number": 20,
     "title": "[ADR-019] Painel — resumo financeiro e séries canônicas",
     "file": "020.md",
-    "dependencies": "#7, #9, #10, #16, #17; #52; #50 (hierarquia grupo/tipster e série diária)"
+    "dependencies": "#7, #9, #10, #16, #17; #52; #50; backend #188/PR #189 (candidata 22d5b77, contém #184); frontend #80/#74/#69/#83; integração e reconciliação com #187/#81/#84 antes de publicação"
   },
   {
     "number": 21,
-    "title": "[ADR-019] Hipotética — dependência de contrato e prioridade explícita",
+    "title": "[ADR-019] Hipotética — comparação histórica seguindo a stake do tipster",
     "file": "021.md",
-    "dependencies": "#50; #20"
+    "dependencies": "#50; #20/PR #85 na integração; fundação PR #80; apresentação PR #83; backend #184/#191 (issue #190), candidata única"
   },
   {
     "number": 22,
     "title": "[ADR-019] Mídia de aposta — autorização e estabilidade visual",
     "file": "022.md",
-    "dependencies": "#9, #11; #50"
+    "dependencies": "#9, #11; #50; backend #192/PR #193 (candidata 71f1a1a); fundação #80/#83; integração do consumidor #19/PR #84 e pin único"
   },
   {
     "number": 23,
     "title": "[ADR-019] E2E central — filtros, contas, revisão e resumos",
     "file": "023.md",
-    "dependencies": "#18, #19, #20, #22; #32; #52"
+    "dependencies": "#18/PR #81, #19/PR #84, #20/PR #85, #22/PR #88; #32/PR #86; #52; backend #184/#187/#189/#193; sandbox único f109655"
   },
   {
     "number": 24,
-    "title": "[ADR-019] Enviar — exportação Telegram e consentimento de gasto",
+    "title": "[ADR-019] Enviar — importação de export do Telegram",
     "file": "024.md",
-    "dependencies": "#15, #16; #52; #50"
+    "dependencies": "#15, #16; #52"
   },
   {
     "number": 25,
     "title": "[ADR-019] Prints web — envio múltiplo e recuperação parcial",
     "file": "025.md",
-    "dependencies": "#15, #22, #24; #52; #50"
+    "dependencies": "#15, #22, #24; #52; #50; backend #195; frontend #89 (sandbox conjunto)"
   },
   {
     "number": 26,
     "title": "[ADR-019] Planilha — prévia, remapeamento e confirmação",
     "file": "026.md",
-    "dependencies": "#9, #10, #16; #52; #50"
+    "dependencies": "#9, #10, #16; #52; #50; backend #197; frontend #90 (sandbox conjunto)"
   },
   {
     "number": 27,
     "title": "[ADR-019] Resultados — um toque com ordem e desfazer seguro",
     "file": "027.md",
-    "dependencies": "#18, #19; #52; #50"
+    "dependencies": "#18, #19; #52; #50; frontend PR #91 e backend #198/PR #199"
   },
   {
     "number": 28,
     "title": "[ADR-019] Revisão — leitura, conta e conflitos por motivo",
     "file": "028.md",
-    "dependencies": "#19, #22, #32; #52; #50"
+    "dependencies": "#19, #22, #32; #52; #50; frontend PR #93; backend #200/PR #201 e candidatas herdadas registradas no pin"
   },
   {
     "number": 29,
     "title": "[ADR-019] Nova aposta — conta temporal e valor de face da freebet",
     "file": "029.md",
-    "dependencies": "#9, #10, #16, #32; #52; #50"
+    "dependencies": "#9, #10, #16, #32; #52; #50; frontend PR #95/#94; backend #202/PR #203; sandbox único ec46748 com candidatas #201/#199/#197/#195/#193/#189/#187; publicação depende de integração/revalidação"
   },
   {
     "number": 30,
@@ -147,13 +147,13 @@
     "number": 32,
     "title": "[ADR-019] Contas e titulares — cadastro, matriz e histórico",
     "file": "032.md",
-    "dependencies": "#9, #10, #11, #16; #52; #50"
+    "dependencies": "#9, #10, #11, #16; #52; #50; frontend PR #85 (base e antecedentes); backend #184/#189 para catálogo; main b916f54 para titulares/contas"
   },
   {
     "number": 33,
     "title": "[ADR-019] Configurações — preferências com efeito explícito",
     "file": "033.md",
-    "dependencies": "#9, #11, #16; #50; #49"
+    "dependencies": "#9, #11, #16; #50; #49; PRs frontend #69/#75/#76/#77/#79; destino de privacidade funcional em #58"
   },
   {
     "number": 34,
@@ -213,7 +213,7 @@
     "number": 52,
     "title": "[ADR-019] Estado de acesso — conta com permissão somente de leitura",
     "file": "052.md",
-    "dependencies": "#9, #10, #11; pradyumna-001/bancaemdia-api#93"
+    "dependencies": "#9, #10, #11 integradas; #16/PR #69; backend #93 integrada em b916f54"
   },
   {
     "number": 53,
@@ -225,7 +225,7 @@
     "number": 54,
     "title": "[ADR-019] Telegram — conectar, consultar e revogar vínculo",
     "file": "054.md",
-    "dependencies": "#9, #10, #11; #52; pradyumna-001/bancaemdia-api#97–102"
+    "dependencies": "#9, #10, #11; #16/PR #69; #52/PR #76; #24/PR #75; backend #97–102 integrado b916f54; endereço do bot pendente de lançamento"
   },
   {
     "number": 55,
@@ -249,7 +249,7 @@
     "number": 58,
     "title": "[ADR-019] Privacidade — exportar registros e encerrar conta",
     "file": "058.md",
-    "dependencies": "#9, #10, #11, #33; #52; pradyumna-001/bancaemdia-api#43"
+    "dependencies": "#9, #10, #11, #33; #52; pradyumna-001/bancaemdia-api#43 integrada; frontend PR #94; independente da #29 por decisão do titular"
   },
   {
     "number": 59,

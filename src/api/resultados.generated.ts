@@ -1,0 +1,48 @@
+// Generated from x-bancaemdia-resultados in the same verified OpenAPI.
+export const RESULTADOS_POLICIES = {
+  'GET /api/v1/resultados/apostas/{chave}': {
+    access: 'READ_ONLY',
+    automatic_mutation_replay: false,
+    cache: 'private, no-store',
+    intention_parameter: null,
+    pagination: null,
+    read_source: 'primary_snapshot',
+    recovery_path: null,
+  },
+  'GET /api/v1/resultados/fila': {
+    access: 'READ_ONLY',
+    automatic_mutation_replay: false,
+    cache: 'private, no-store',
+    intention_parameter: null,
+    pagination: 'keyset_cursor',
+    read_source: 'primary_snapshot',
+    recovery_path: null,
+  },
+  'GET /api/v1/resultados/operacoes/{intention_id}': {
+    access: 'READ_ONLY',
+    automatic_mutation_replay: false,
+    cache: 'private, no-store',
+    intention_parameter: 'intention_id',
+    pagination: null,
+    read_source: 'primary_snapshot',
+    recovery_path: '/api/v1/resultados/operacoes/{intention_id}',
+  },
+  'POST /api/v1/resultados/operacoes/{intention_id}': {
+    access: 'FULL_WRITE',
+    automatic_mutation_replay: false,
+    cache: 'private, no-store',
+    intention_parameter: 'intention_id',
+    pagination: null,
+    read_source: 'primary_transaction',
+    recovery_path: '/api/v1/resultados/operacoes/{intention_id}',
+  },
+  'POST /api/v1/resultados/operacoes/{intention_id}/desfazer': {
+    access: 'FULL_WRITE',
+    automatic_mutation_replay: false,
+    cache: 'private, no-store',
+    intention_parameter: 'intention_id',
+    pagination: null,
+    read_source: 'primary_transaction',
+    recovery_path: '/api/v1/resultados/operacoes/{intention_id}',
+  },
+} as const;

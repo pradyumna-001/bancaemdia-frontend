@@ -11,7 +11,15 @@ export type InvalidField = Readonly<{ scope: 'body' | 'query'; field: string }>;
 
 function invalidFields(body: unknown): readonly InvalidField[] {
   const detail = record(body)?.detail;
-  if (!Array.isArray(detail)) return [];
+  if (!Array.isArray(detail)) {
+    const field = record(body)?.campo;
+    return typeof detail === 'string' &&
+      (detail.startsWith('review_') || detail.startsWith('manual_')) &&
+      typeof field === 'string' &&
+      /^[A-Za-z_][A-Za-z0-9_]{0,79}$/.test(field)
+      ? Object.freeze([Object.freeze({ scope: 'body' as const, field })])
+      : [];
+  }
   const fields: InvalidField[] = [];
   for (const issue of detail.slice(0, 100)) {
     const loc = record(issue)?.loc;
@@ -47,6 +55,7 @@ const httpMessages: Record<number, string> = {
   404: 'Não encontramos o que você procurou.',
   405: 'Esta ação não está disponível.',
   409: 'Os dados mudaram ou este pedido já foi utilizado. Confira o resultado antes de continuar.',
+  410: 'O prazo de consulta deste recibo terminou. Isso não confirma que a alteração foi desfeita.',
   413: 'O arquivo ou pedido ultrapassa o tamanho permitido.',
   422: 'Confira os dados informados e tente novamente.',
   429: 'Muitas tentativas. Aguarde para tentar novamente.',
@@ -56,6 +65,18 @@ const httpMessages: Record<number, string> = {
 
 // Codes are protocol identifiers, never provider messages or arbitrary response text.
 const knownCodes = new Set([
+  'manual_validation_invalid',
+  'manual_account_invalid',
+  'manual_creation_busy',
+  'manual_intention_conflict',
+  'manual_intention_not_found',
+  'manual_receipt_expired',
+  'manual_creation_unavailable',
+  'result_busy',
+  'review_busy',
+  'review_evidence_changed',
+  'review_already_resolved',
+  'review_intention_conflict',
   'account_read_only',
   'access_expired',
   'not_authenticated',
@@ -105,6 +126,7 @@ export class ApiError extends Error {
   readonly status: number;
   readonly code?: string;
   readonly retryAfterMs?: number;
+  readonly retryAfterDeadline?: number;
   readonly requestId?: string;
   readonly outcomeUnknown: boolean;
   readonly invalidFields: readonly InvalidField[];
@@ -132,6 +154,10 @@ export class ApiError extends Error {
     this.retryAfterMs = retryAfterMs(
       options.headers?.get('Retry-After') ?? null,
     );
+    this.retryAfterDeadline =
+      this.retryAfterMs === undefined
+        ? undefined
+        : Date.now() + this.retryAfterMs;
     const id = options.headers?.get('X-Request-Id');
     this.requestId = id && /^[A-Za-z0-9._:-]{1,128}$/.test(id) ? id : undefined;
     this.outcomeUnknown =
@@ -150,7 +176,8 @@ export function httpError(
   const candidate =
     response.headers.get('X-Auth-Error') ??
     value?.code ??
-    record(value?.detail)?.code;
+    record(value?.detail)?.code ??
+    (typeof value?.detail === 'string' ? value.detail : undefined);
   return new ApiError('http', {
     status: response.status,
     headers: response.headers,
