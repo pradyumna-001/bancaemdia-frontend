@@ -217,9 +217,23 @@ async def accessibility(page):
     axe = helpers.ROOT / "node_modules/.pnpm/node_modules/axe-core/axe.min.js"
     await page.evaluate(axe.read_text(encoding="utf8"))
     violations = await page.evaluate(
-        "async () => (await axe.run(document)).violations.map(v => v.id)"
+        """async () => (await axe.run(document)).violations.map(v => ({
+          id: v.id,
+          nodes: v.nodes.map(n => {
+            const el = typeof n.target[0] === 'string'
+              ? document.querySelector(n.target[0]) : null;
+            const ancestry = [];
+            for (let p = el; p && ancestry.length < 8; p = p.parentElement) {
+              const s = getComputedStyle(p);
+              ancestry.push({tag: p.tagName, classes: [...p.classList],
+                color: s.color, background: s.backgroundColor, opacity: s.opacity});
+            }
+            return {ancestry};
+          })
+        }))"""
     )
-    assert violations == [], f"Public central accessibility rule IDs: {violations}"
+    # Static CSS/tag metadata only: no text, HTML, attributes, URLs or input values.
+    assert violations == [], f"Public central accessibility CSS: {violations}"
     original = page.viewport_size
     await page.set_viewport_size({"width": 320, "height": 844})
     assert await page.evaluate("document.documentElement.scrollWidth <= innerWidth")
