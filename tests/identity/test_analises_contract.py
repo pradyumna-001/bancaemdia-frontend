@@ -147,6 +147,8 @@ async def test_public_spa_analises(
         )
         assert user["usuario_id"] != second["usuario_id"]
         await asyncio.sleep(max(0, expiry - time.time()) + 1)
+        # Renew the actual server session after the harness access token expires.
+        await core.fresh_session(page)
         assert (await core.read(page, "/api/v1/billing/status"))[
             "access"
         ] == "READ_ONLY"
@@ -231,6 +233,7 @@ async def test_public_spa_analises(
                     await expect(row).to_contain_text(
                         brl(point[field], signed=field == "lucro_acumulado_centavos")
                     )
+            await core.fresh_session(other)
             assert (await core.read(other, "/api/v1/painel/analises?periodo=all"))[
                 "total_filtrado"
             ]["total_apostas"] == 0

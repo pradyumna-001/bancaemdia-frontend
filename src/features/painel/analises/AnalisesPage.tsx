@@ -158,7 +158,7 @@ function Conteudo({ client }: { client: Client }) {
   );
   const data = analysis.data;
   return (
-    <main className="pagina analises-page">
+    <main className="pagina analises-page numero">
       <header>
         <Link to={'/painel' + location.search}>Voltar ao Painel</Link>
         <h1>Análises</h1>
