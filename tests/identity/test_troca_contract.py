@@ -153,7 +153,16 @@ async def test_public_spa_troca(
             )
             # A concurrently persisted bet changes the canonical confirmation population.
             added = await bet(2)
-            await confirm(page)
+            async with page.expect_response(
+                lambda r: (
+                    r.request.method == "POST"
+                    and r.url.endswith("/api/v1/titulares/trocas")
+                )
+            ) as refusing:
+                await confirm(page)
+            refused = await refusing.value
+            assert refused.status == 409
+            assert (await refused.json())["detail"] == "swap_preview_stale"
             await expect(
                 page.get_by_text("A prévia não pode ser confirmada.", exact=False)
             ).to_be_visible()
@@ -178,6 +187,37 @@ async def test_public_spa_troca(
                     )
                     == 1
                 )
+            retry_after = refused.headers.get("retry-after")
+            if retry_after:
+                assert retry_after.isdigit()
+                delay = int(retry_after)
+                if delay:
+                    await expect(
+                        page.get_by_role("button", name="Preparar outra troca")
+                    ).to_be_disabled()
+                    await expect(
+                        page.get_by_text("O serviço pediu uma pausa", exact=False)
+                    ).to_be_visible()
+                    # Keep the real limiter/window. This is the server's published pause,
+                    # outside the unchanged 30s action timeout, never a clock/limit rewrite.
+                    await asyncio.sleep(delay + 0.1)
+            # A safe owner GET refreshes the real session if needed and must not erase
+            # the already-known requirement for a fresh preview after stale evidence.
+            async with page.expect_response(
+                lambda r: (
+                    r.status == 200
+                    and r.request.method == "GET"
+                    and r.url.endswith("/api/v1/titulares/trocas/intencao")
+                )
+            ) as lookup:
+                await page.get_by_role(
+                    "button", name="Consultar resultado da mesma intenção"
+                ).click()
+            known = await (await lookup.value).json()
+            assert known["estado"] == "PREVIEW" and known["recibo"] is None
+            await expect(
+                page.get_by_role("button", name="Preparar outra troca")
+            ).to_be_enabled()
             await page.get_by_role("button", name="Preparar outra troca").click()
             await page.get_by_role("button", name="Consultar prévia da troca").click()
             await expect(

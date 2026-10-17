@@ -213,5 +213,8 @@ test('leitura preserva consulta e erros limitados respeitam o prazo', async ({
   await expect(
     page.getByRole('button', { name: 'Consultar resultado da mesma intenção' }),
   ).toBeDisabled();
+  await expect(
+    page.getByText(/O serviço pediu uma pausa antes de novas ações/),
+  ).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });

@@ -400,6 +400,12 @@ function Conteudo({ client }: { client: ReturnType<typeof createApiClient> }) {
         </section>
       )}
       {swap.busy && <p role="status">Consultando o resultado da troca…</p>}
+      {swap.waiting && (
+        <p role="status">
+          O serviço pediu uma pausa antes de novas ações. Os botões serão
+          liberados ao terminar; o pedido não será reenviado automaticamente.
+        </p>
+      )}
       {swap.error !== undefined && (
         <ErroApi
           error={swap.error}

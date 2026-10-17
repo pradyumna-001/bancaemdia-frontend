@@ -370,6 +370,10 @@ it.each([
     });
     expect(h.hook.state.renewable).toBe(true);
     expect(h.hook.state.receipt).toBeUndefined();
+    await act(async () => {
+      await h.hook.consult();
+    });
+    expect(h.hook.state.renewable).toBe(true);
     const key = h.hook.state.id;
     act(() => h.hook.reset());
     await act(async () => {

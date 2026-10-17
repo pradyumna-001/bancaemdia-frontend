@@ -127,7 +127,10 @@ export function useTroca(client: ReturnType<typeof createApiClient>) {
           preview: value.previa,
           receipt: value.recibo ?? undefined,
           consulted: true,
-          renewable: !current.uncertain && value.estado === 'EXPIRED',
+          renewable:
+            value.estado !== 'APPLIED' &&
+            !current.uncertain &&
+            (current.renewable || value.estado === 'EXPIRED'),
         });
         if (value.recibo) await refresh();
       } else {

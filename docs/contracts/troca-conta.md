@@ -20,6 +20,8 @@ Erros seguros em português; 401 reautentica, 402 mantém formulário/sessão/le
 
 Uma renovação da mesma sessão durante a validação comercial, antes de qualquer POST da prévia, descarta a identidade não enviada e mantém o formulário para um novo gesto explícito. Não reaproveitar resposta antiga, repetir a intenção ou limpar escrita já enviada como se fosse cancelada.
 
+O middleware do pin publica Retry-After inclusive no conflito 409. Honrar a pausa nas ações e explicá-la na tela. GET de uma intenção já recusada por evidência obsoleta preserva a necessidade de nova prévia; um recibo APPLIED válido prevalece. A prova real aguarda o prazo publicado sem alterar relógio, limites ou timeout de ação.
+
 ## Provas exigidas
 
 Unidades para protocolo/isolamento/identidade/estados; interface nos seis projetos sem skips; API/PostgreSQL/identidade reais para a confirmação, concorrência e recuperação, mais os 34 aceites congelados da API e todos os inventários anteriores. Traces sanitizados antes de upload. Atualizar contrato, manifesto e issue remota. PR contra main, dependente da frontend #100 e backend #207/fontes completas; escopo próprio separado do herdado. Pronta somente com todos os checks verdes no SHA final.
