@@ -44,9 +44,12 @@ async def restore_code(page, key):
 
 async def choose(page, label, option):
     button = page.get_by_role("button", name=re.compile("^" + re.escape(label) + " "))
+    await expect(button).to_be_enabled()
     await button.focus()
+    await expect(button).to_be_focused()
     await page.keyboard.press("Enter")
     dialog = page.get_by_role("dialog", name=label, exact=True)
+    await expect(dialog).to_be_visible()
     await dialog.get_by_role("button", name=option, exact=True).click()
     await expect(dialog).not_to_be_visible()
     await expect(button).to_be_focused()
@@ -353,6 +356,22 @@ async def test_public_spa_troca(
                     page, "/api/v1/titulares/casas/" + str(house) + "/matriz"
                 )
             )["status"] == 401
+        except Exception:
+            try:
+                await page.screenshot(
+                    path=str(
+                        Path(os.environ["CORE_TRACE_DIR"])
+                        / f"troca-{browser_name}-{viewport['width']}-failure.png"
+                    ),
+                    full_page=True,
+                    mask=[
+                        page.locator("#troca-consulta details .numero"),
+                        page.get_by_label("Código de consulta anterior"),
+                    ],
+                )
+            except BrowserError:
+                pass
+            raise
         finally:
             await context.tracing.stop(path=trace)
             core.sanitize_trace(trace)
