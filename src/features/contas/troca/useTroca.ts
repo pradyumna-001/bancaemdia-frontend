@@ -189,8 +189,15 @@ export function useTroca(client: ReturnType<typeof createApiClient>) {
       }
     } finally {
       if (active.current === controller) active.current = undefined;
-      if (alive.current && auth.service.getSnapshot().privateEpoch === epoch)
+      if (alive.current && auth.service.getSnapshot().privateEpoch === epoch) {
+        // A same-person session refresh may fence billing before any POST.
+        // Discard its old response while keeping the unsent form available.
+        if (!sent && kind === 'preview' && !scope.isCurrent()) {
+          update({});
+          setError(new ApiError('cancelled'));
+        }
         setBusy(false);
+      }
     }
   }
   return {

@@ -3,6 +3,7 @@
 import asyncio
 import importlib.util
 import os
+import re
 import secrets
 import sys
 import time
@@ -42,7 +43,7 @@ async def restore_code(page, key):
 
 
 async def choose(page, label, option):
-    button = page.get_by_role("button", name=label, exact=False)
+    button = page.get_by_role("button", name=re.compile("^" + re.escape(label) + " "))
     await button.focus()
     await page.keyboard.press("Enter")
     dialog = page.get_by_role("dialog", name=label, exact=True)

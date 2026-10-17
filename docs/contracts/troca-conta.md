@@ -18,6 +18,8 @@ GET /titulares/trocas/intencao envia a mesma chave no header e permite READ_ONLY
 
 Erros seguros em português; 401 reautentica, 402 mantém formulário/sessão/leitura, 422 não ecoa input, 429/503 respeitam Retry-After. Abortar ao sair/trocar/logout e descartar respostas antigas inclusive após parsing. A confirmação de resultado não usa GET de matriz. Fonte imutável: docs/contracts/troca-confirmacao.md no candidato backend.
 
+Uma renovação da mesma sessão durante a validação comercial, antes de qualquer POST da prévia, descarta a identidade não enviada e mantém o formulário para um novo gesto explícito. Não reaproveitar resposta antiga, repetir a intenção ou limpar escrita já enviada como se fosse cancelada.
+
 ## Provas exigidas
 
 Unidades para protocolo/isolamento/identidade/estados; interface nos seis projetos sem skips; API/PostgreSQL/identidade reais para a confirmação, concorrência e recuperação, mais os 34 aceites congelados da API e todos os inventários anteriores. Traces sanitizados antes de upload. Atualizar contrato, manifesto e issue remota. PR contra main, dependente da frontend #100 e backend #207/fontes completas; escopo próprio separado do herdado. Pronta somente com todos os checks verdes no SHA final.

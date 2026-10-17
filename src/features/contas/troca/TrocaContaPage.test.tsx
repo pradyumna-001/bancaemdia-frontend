@@ -70,6 +70,7 @@ async function open(
     readOnly?: boolean;
     initial?: string;
     key?: string;
+    beforeBilling?: (count: number) => Promise<void>;
     override?: (
       r: Request,
     ) => Promise<Response | undefined> | Response | undefined;
@@ -78,7 +79,7 @@ async function open(
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const ctx = sessionContext({
+  let ctx = sessionContext({
     usuario_id: 1,
     nome: 'Teste',
     email: 'test@example.org',
@@ -102,6 +103,7 @@ async function open(
   const controller = createAccessController(session, queries);
   const api = createTrocaFixture();
   const requests: Request[] = [];
+  let billingCount = 0;
   const client = createApiClient(
     parseConfig({ VITE_API_URL: 'http://127.0.0.1:8000' }),
     {
@@ -109,11 +111,13 @@ async function open(
       fetcher: async (req) => {
         requests.push(req.clone());
         const url = new URL(req.url);
-        if (url.pathname === '/api/v1/billing/status')
+        if (url.pathname === '/api/v1/billing/status') {
+          await options.beforeBilling?.(++billingCount);
           return json({
             ...billingStatus,
             access: options.readOnly ? 'READ_ONLY' : 'FULL_WRITE',
           });
+        }
         const custom = await options.override?.(req);
         if (custom) return custom;
         if (url.pathname.startsWith('/api/v1/filtros/'))
@@ -189,6 +193,10 @@ async function open(
       return hook!;
     },
     requests,
+    rotate: async () => {
+      ctx = { ...ctx, version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:2' };
+      await session.resume();
+    },
     session,
     queries,
     router,
@@ -782,4 +790,43 @@ it('a refused preview preserves the visible form and never queues a write after 
   expect(
     screen.queryByRole('heading', { name: '3. Confira a prévia' }),
   ).not.toBeInTheDocument();
+});
+
+it('a session refresh during access validation discards the unsent identity and preserves a new explicit gesture', async () => {
+  let start!: () => void;
+  let release!: () => void;
+  const started = new Promise<void>((resolve) => {
+    start = resolve;
+  });
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const h = await open({
+    beforeBilling: async (n) => {
+      if (n === 2) {
+        start();
+        await blocked;
+      }
+    },
+  });
+  const epoch = h.session.getSnapshot().privateEpoch;
+  let pending!: Promise<void>;
+  act(() => {
+    pending = h.hook.preview(pedidoTroca);
+  });
+  await act(async () => {
+    await started;
+    await h.rotate();
+    release();
+    await pending;
+  });
+  expect(h.session.getSnapshot().privateEpoch).toBe(epoch);
+  expect(writes(h.requests)).toHaveLength(0);
+  expect(h.hook.state).toEqual({});
+  await waitFor(() => expect(h.hook.canPreview).toBe(true));
+  await act(async () => {
+    await h.hook.preview(pedidoTroca);
+  });
+  expect(writes(h.requests)).toHaveLength(1);
+  expect(h.hook.state.preview).toBeTruthy();
 });
