@@ -269,7 +269,7 @@ async def test_public_spa_analises(
             await expect(
                 page.get_by_role("heading", name="Lucro por esporte")
             ).to_be_visible()
-            await page.goto(core.backend.FRONT + "/sair")
+            await core.open_read_only_logout(page)
             await page.get_by_role("button", name="Confirmar saída", exact=True).click()
             await expect(
                 page.get_by_role("heading", name="Entrar", exact=True)

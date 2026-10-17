@@ -46,6 +46,21 @@ async def fresh_session(page):
     return session["data"]
 
 
+async def open_read_only_logout(page, path="/sair"):
+    # These normal journeys already expired the trial. Wait for that expected
+    # layout and the review counter before one physical confirmation click.
+    # Logout with unavailable billing remains covered by the auth/access tests.
+    await page.goto(backend.FRONT + path)
+    await expect(
+        page.get_by_role(
+            "heading", name="Sua conta está em modo de leitura", exact=True
+        )
+    ).to_be_visible()
+    await expect(
+        page.get_by_text("Consultando fila de revisão…", exact=True)
+    ).to_have_count(0)
+
+
 async def grant(page, engine, uid, seconds=360):
     assert (await request(page, "/api/v1/billing/status"))["status"] == 200
     async with engine.begin() as conn:

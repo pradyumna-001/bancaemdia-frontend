@@ -376,7 +376,7 @@ async def test_public_spa_coleta_owner_devices(
                     await expect(
                         page.get_by_role("button", name="Gerar código de conexão")
                     ).to_be_disabled()
-                    await page.goto(core.backend.FRONT + "/sair")
+                    await core.open_read_only_logout(page)
                     await page.get_by_role(
                         "button", name="Confirmar saída", exact=True
                     ).click()
