@@ -18,6 +18,7 @@ export function siteReadContract(document) {
     '/api/v1/painel/filtrado/diario',
     '/api/v1/painel/filtrado/detalhado/export',
     '/api/v1/painel',
+    '/api/v1/painel/analises',
     '/api/v1/filtros/{dimensao}',
   ];
   function compact(node) {

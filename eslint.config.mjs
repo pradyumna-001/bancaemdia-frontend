@@ -30,6 +30,8 @@ export default tseslint.config(
       'dist-privacidade-fixture/**',
       'dist-manual-fixture/**',
       'dist-coleta-fixture/**',
+      'dist-analises-fixture/**',
+      'dist-analises-proposta/**',
       'dist-hipotetica-fixture/**',
       'dist-apostas-fixture/**',
       'dist-apostas-security/**',

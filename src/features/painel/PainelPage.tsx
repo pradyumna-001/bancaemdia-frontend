@@ -490,6 +490,7 @@ function Conteudo({
 }
 export function PainelPage({ client }: { client?: Client }) {
   const api = client ?? getApiClient();
+  const location = useLocation();
   const auth = useAuth();
   const [search, setSearch] = useSearchParams();
   const [cycle, setCycle] = useState(0);
@@ -501,6 +502,9 @@ export function PainelPage({ client }: { client?: Client }) {
       <header>
         <h1>Painel</h1>
         <p>Resultado do período, lucro diário e grupos de origem.</p>
+        <Link to={'/painel/analises' + location.search}>
+          Análises por esporte e outros recortes
+        </Link>
         <button
           disabled={leitura.waiting}
           onClick={() => setCycle((n) => n + 1)}

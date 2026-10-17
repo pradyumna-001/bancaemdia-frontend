@@ -237,7 +237,7 @@
     "number": 56,
     "title": "[ADR-019] Painel — análises avançadas e evolução de caixa",
     "file": "056.md",
-    "dependencies": "#20, #16, #17; #32; #52; pradyumna-001/bancaemdia-api#105"
+    "dependencies": "#20/#85, #16/#69, #17/#74; #32/#86; #52/#76; frontend PR #99 e antecedentes; backend #105/#158 integrada em b916f54; fontes do pin sandbox 86c82c9; independente da #53"
   },
   {
     "number": 57,

@@ -56,6 +56,11 @@ const ColetaPage = lazy(() =>
     default: m.ColetaPage,
   })),
 );
+const AnalisesPage = lazy(() =>
+  import('../features/painel/analises/AnalisesPage').then((m) => ({
+    default: m.AnalisesPage,
+  })),
+);
 
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
@@ -79,6 +84,7 @@ export function createAppRoutes(
         path === '/enviar' ||
         path === '/resultados' ||
         path === '/banca' ||
+        path === '/painel/analises' ||
         path === '/revisao') &&
       currentUrl.pathname === nextUrl.pathname &&
       currentUrl.search !== nextUrl.search &&
@@ -124,6 +130,17 @@ export function createAppRoutes(
           <FotoPage />
         ) : path === '/painel' ? (
           <PainelPage />
+        ) : path === '/painel/analises' ? (
+          <Suspense
+            fallback={
+              <main className="pagina">
+                <h1>Análises</h1>
+                <p role="status">Abrindo análises…</p>
+              </main>
+            }
+          >
+            <AnalisesPage />
+          </Suspense>
         ) : path === '/contas' || path === '/contas/:titularId' ? (
           <ContasPage />
         ) : path === '/configuracoes' ? (
