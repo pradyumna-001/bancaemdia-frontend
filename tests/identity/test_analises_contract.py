@@ -134,7 +134,7 @@ async def test_public_spa_analises(
             secrets.token_urlsafe(24),
             harness=harness,
         )
-        await core.grant(page, engine_admin, user["usuario_id"])
+        expiry = await core.grant(page, engine_admin, user["usuario_id"], seconds=45)
         seeded = await seed(page, engine_admin, user["usuario_id"])
         await core.write(
             page, "/api/v1/painel/preferencias", {"fuso_horario": "UTC"}, method="PATCH"
@@ -146,7 +146,6 @@ async def test_public_spa_analises(
             harness=harness,
         )
         assert user["usuario_id"] != second["usuario_id"]
-        expiry = await core.grant(page, engine_admin, user["usuario_id"], seconds=3)
         await asyncio.sleep(max(0, expiry - time.time()) + 1)
         assert (await core.read(page, "/api/v1/billing/status"))[
             "access"
