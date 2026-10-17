@@ -312,10 +312,17 @@ async def test_public_spa_manual_creation_recovery(
                 )
 
             await asyncio.sleep(max(0, expiry - time.time() + 1))
-            await core.fresh_session(page)
-            assert (await core.request(page, "/api/v1/billing/status"))["data"][
-                "access"
-            ] == "READ_ONLY"
+            # Observe the SPA's authenticated read, including its session renewal,
+            # rather than issuing a second raw fetch outside the client policy.
+            async with page.expect_response(
+                lambda response: (
+                    response.url.endswith("/api/v1/billing/status")
+                    and response.request.method == "GET"
+                    and response.status == 200
+                )
+            ) as status_response:
+                await core.fresh_session(page)
+            assert (await (await status_response.value).json())["access"] == "READ_ONLY"
             await page.goto(address + "&manual_intencao=" + first_id)
             await page.get_by_role(
                 "button", name="Consultar registro", exact=True
