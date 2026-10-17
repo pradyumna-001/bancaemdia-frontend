@@ -37,7 +37,9 @@ async def fill(page, event, *, freebet=False, account=None):
     await page.get_by_label("Odd", exact=True).fill("2,35")
     await page.get_by_label("Valor em unidades", exact=True).fill("1")
     if freebet:
-        await page.get_by_label("Esta aposta é uma freebet").check()
+        freebet_option = page.get_by_label("Esta aposta é uma freebet")
+        await freebet_option.click()
+        await expect(freebet_option).to_be_checked()
     await page.get_by_text("Evento e outros detalhes (opcional)", exact=True).click()
     await page.get_by_label("Evento", exact=True).fill(event)
     if account:
