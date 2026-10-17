@@ -21,6 +21,12 @@ test('ajuda pública separa canais, preserva filtros e funciona por teclado sem 
     ['Nova aposta', 'Nova aposta', 'Abrir Nova aposta', ''],
     ['Bot do Telegram', 'Bot do Telegram', 'Abrir Conexões', ''],
     ['Excel do Painel', 'Excel do Painel', 'Abrir Painel para exportar', ''],
+    [
+      'Conectar a extensão',
+      'Conectar a extensão',
+      'Gerenciar dispositivos em Coleta',
+      '',
+    ],
     ['Export do Telegram', 'Export do Telegram', 'Abrir Enviar', ''],
   ]) {
     await nav.getByRole('link', { name: new RegExp(`^${label}`) }).focus();

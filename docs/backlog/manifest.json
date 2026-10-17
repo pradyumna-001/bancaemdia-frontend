@@ -159,7 +159,7 @@
     "number": 34,
     "title": "[ADR-019] Coleta — pareamento e instalações da extensão",
     "file": "034.md",
-    "dependencies": "#9, #10, #11; #52; #50; pradyumna-001/bancaemdia-api#107–108"
+    "dependencies": "#9, #10, #11; #52; #50; frontend PR #98 e antecedentes; pradyumna-001/bancaemdia-api#205 e fontes do pin (#184/#187/#189/#193/#195/#197/#199/#201/#203)"
   },
   {
     "number": 35,

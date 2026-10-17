@@ -66,10 +66,18 @@ def serve_public_build():
                     for k, v in self.headers.items()
                     if k.lower() not in {"host", "connection", "accept-encoding"}
                 }
-                with httpx.Client(timeout=15, follow_redirects=False) as client:
+                collection_tls = getattr(self.server, "collection_tls", None)
+                collection = (
+                    collection_tls if path.startswith("/api/v1/coleta/") else None
+                )
+                with httpx.Client(
+                    timeout=15,
+                    follow_redirects=False,
+                    verify=collection[1] if collection else True,
+                ) as client:
                     result = client.request(
                         self.command,
-                        backend.API + self.path,
+                        (collection[0] if collection else backend.API) + self.path,
                         headers=headers,
                         content=body,
                     )

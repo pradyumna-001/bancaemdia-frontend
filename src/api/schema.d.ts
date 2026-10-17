@@ -607,8 +607,8 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * Listar instalações
-     * @description Lista somente instalações do usuário, sem hashes ou segredos.
+     * Listar instalações e sessões próprias
+     * @description Leitura READ_ONLY por sessão web ou Bearer do proprietário, sem X-Coleta-Token. Retorna todas as instalações em id crescente, sem paginação/truncamento, em uma consulta de projeção. Prioriza a sessão aberta; sem aberta, a última por criada_em DESC e id DESC. estado_sessao=sem_sessao e sessao_coleta=null significam nenhuma sessão. aberta/atual e encerrada/ultima_encerrada são estados do banco, não presença online ou validade da credencial. Não altera uso, fronteira, sessão ou captura; no-store.
      */
     get: operations['list_installations_api_v1_coleta_installations_get'];
     put?: never;
@@ -3807,6 +3807,12 @@ export interface components {
        * Format: date-time
        */
       criado_em: string;
+      /**
+       * Estado Sessao
+       * @description Collection session state; never online presence.
+       * @enum {string}
+       */
+      estado_sessao: 'sem_sessao' | 'aberta' | 'encerrada';
       /** Expira Em */
       expira_em: string | null;
       /** Id */
@@ -3824,6 +3830,9 @@ export interface components {
       revogado_em: string | null;
       /** Rotacionado Em */
       rotacionado_em: string | null;
+      /** @description Null only when this installation has no persisted session. */
+      sessao_coleta:
+        components['schemas']['OwnerCollectionSessionResponse'] | null;
       /** Token Prefixo */
       token_prefixo: string | null;
       /** Ultimo Uso Em */
@@ -4654,6 +4663,34 @@ export interface components {
       name: string;
       /** Odd */
       odd: string;
+    };
+    /**
+     * OwnerCollectionSessionResponse
+     * @description Original collection boundary; this is not presence or credential validity.
+     */
+    OwnerCollectionSessionResponse: {
+      /**
+       * Coletar Desde
+       * Format: date-time
+       */
+      coletar_desde: string;
+      /**
+       * Criada Em
+       * Format: date-time
+       */
+      criada_em: string;
+      /** Encerrada Em */
+      encerrada_em: string | null;
+      /**
+       * Selecao
+       * @enum {string}
+       */
+      selecao: 'atual' | 'ultima_encerrada';
+      /**
+       * Sessao Id
+       * Format: uuid
+       */
+      sessao_id: string;
     };
     /** PaginacaoSaida */
     PaginacaoSaida: {
@@ -9723,15 +9760,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: retain the extension outbox. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Invalid collection token. */
       403: {
         headers: {
@@ -9777,9 +9805,10 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description The collection was saved but could not be queued. */
+      /** @description Owner authentication/read dependency unavailable; no collection effects. */
       503: {
         headers: {
+          'Retry-After'?: string;
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
           [name: string]: unknown;

@@ -51,6 +51,11 @@ const NovaApostaPage = lazy(() =>
 const AjudaPage = lazy(() =>
   import('../features/ajuda/AjudaPage').then((m) => ({ default: m.AjudaPage })),
 );
+const ColetaPage = lazy(() =>
+  import('../features/coleta/ColetaPage').then((m) => ({
+    default: m.ColetaPage,
+  })),
+);
 
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
@@ -157,6 +162,17 @@ export function createAppRoutes(
             }
           >
             <RevisaoPage />
+          </Suspense>
+        ) : path === '/coleta' ? (
+          <Suspense
+            fallback={
+              <main className="pagina">
+                <h1>Coleta</h1>
+                <p role="status">Abrindo Coleta…</p>
+              </main>
+            }
+          >
+            <ColetaPage />
           </Suspense>
         ) : path === '/banca' ? (
           <CaixaPage />
