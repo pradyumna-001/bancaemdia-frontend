@@ -1,0 +1,286 @@
+.painel-page > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-16);
+  margin-bottom: var(--espaco-24);
+}
+.painel-page h1 {
+  width: 100%;
+  margin: 0;
+}
+.painel-page h2 {
+  font-size: var(--fonte-secao);
+  margin-top: 0;
+}
+.painel-page button,
+.painel-page summary {
+  min-height: var(--alvo-toque);
+}
+.painel-page button {
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--acao);
+  padding: var(--espaco-8) var(--espaco-12);
+  cursor: pointer;
+}
+.painel-page button:disabled {
+  color: var(--tinta-secundaria);
+  opacity: 0.6;
+  cursor: default;
+}
+.painel-page button[aria-pressed='true'] {
+  background: var(--acao);
+  color: var(--sobre-acao);
+}
+.painel-pilulas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-8);
+}
+.painel-pilulas button {
+  border-radius: var(--raio-pilula);
+}
+.painel-filtros {
+  margin: var(--espaco-16) 0 var(--espaco-24);
+}
+.painel-filtros > summary {
+  cursor: pointer;
+  color: var(--acao);
+  display: flex;
+  align-items: center;
+  text-decoration: underline;
+}
+.painel-resumo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--espaco-24);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  padding: var(--espaco-24);
+}
+.painel-resumo > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-8);
+}
+.painel-resumo strong {
+  font-size: 1.5rem;
+}
+.painel-resumo .painel-valor {
+  text-align: left;
+}
+.painel-valor {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  gap: var(--espaco-4);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.painel-page small,
+.painel-nota {
+  font-size: var(--fonte-pequena);
+  color: var(--tinta-secundaria);
+}
+.painel-page strong.lucro {
+  color: var(--lucro);
+}
+.painel-page strong.perda {
+  color: var(--perda);
+}
+.painel-export {
+  margin-top: var(--espaco-16);
+}
+.painel-export > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo-toque);
+  margin-inline-start: var(--espaco-16);
+}
+.painel-colunas {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  align-items: start;
+  gap: var(--espaco-24);
+}
+.painel-secao {
+  min-width: 0;
+  background: var(--superficie);
+  padding: var(--espaco-24);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  margin: var(--espaco-24) 0;
+}
+.painel-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-16);
+  border-bottom: 1px solid var(--borda);
+  padding: var(--espaco-16) 0;
+}
+.painel-tamanho {
+  display: flex;
+  gap: var(--espaco-8);
+}
+.painel-paginacao {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--espaco-8);
+  padding: var(--espaco-16) 0;
+}
+.painel-paginacao p {
+  width: 100%;
+  text-align: center;
+  order: -1;
+  font-size: var(--fonte-pequena);
+}
+.painel-dias,
+.painel-grupos ul,
+.painel-comparacoes ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.painel-dias > li {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr) minmax(7.5rem, 1fr);
+  gap: var(--espaco-8);
+  align-items: center;
+  padding: var(--espaco-8) 0;
+  border-bottom: 1px solid var(--borda);
+}
+.painel-barra {
+  width: 100%;
+  height: 1.875rem;
+  display: block;
+}
+.painel-barra line {
+  stroke: var(--borda-controle);
+}
+.painel-barra .lucro {
+  fill: var(--lucro);
+}
+.painel-barra .perda {
+  fill: var(--perda);
+}
+.painel-grupos details {
+  border-bottom: 1px solid var(--borda);
+}
+.painel-grupos summary {
+  list-style: none;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 1fr);
+  align-items: center;
+  gap: var(--espaco-8);
+  padding: var(--espaco-16) 0;
+}
+.painel-grupos summary::-webkit-details-marker {
+  display: none;
+}
+.painel-grupos summary > svg {
+  grid-column: 1 / -1;
+}
+.painel-grupo-nome {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-8);
+}
+.painel-grupo-nome > svg {
+  flex-shrink: 0;
+}
+.painel-grupo-nome small {
+  display: block;
+}
+.painel-grupos details[open] .painel-grupo-nome > svg {
+  transform: rotate(90deg);
+}
+.painel-grupos ul {
+  padding-left: var(--espaco-32);
+}
+.painel-grupos li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espaco-16);
+  padding: var(--espaco-12) 0;
+}
+.painel-tabela {
+  margin-top: var(--espaco-16);
+}
+.painel-tabela summary {
+  display: flex;
+  align-items: center;
+  text-decoration: underline;
+  color: var(--acao);
+  cursor: pointer;
+}
+.painel-tabela table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.painel-tabela th,
+.painel-tabela td {
+  text-align: left;
+  border-bottom: 1px solid var(--borda);
+  padding: var(--espaco-8);
+}
+.painel-comparacoes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-24);
+}
+.painel-comparacoes li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--espaco-8);
+  padding: var(--espaco-8) 0;
+  border-bottom: 1px solid var(--borda);
+}
+.painel-comparacoes small {
+  grid-column: 1 / -1;
+}
+.painel-saldo {
+  font-size: 1.375rem;
+}
+@media (max-width: 52rem) {
+  .painel-resumo {
+    grid-template-columns: 1fr 1fr;
+    padding: var(--espaco-16);
+    gap: var(--espaco-24) var(--espaco-16);
+  }
+  .painel-colunas {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .painel-secao {
+    padding: var(--espaco-16);
+    width: 100%;
+  }
+  .painel-hierarquia {
+    order: -1;
+  }
+  .painel-dias > li {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: var(--espaco-8);
+  }
+  .painel-dias > li > .painel-barra {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .painel-dias small {
+    font-size: var(--fonte-pequena);
+  }
+  .painel-grupos summary {
+    grid-template-columns: minmax(0, 1fr) minmax(6.3rem, 1fr);
+  }
+  .painel-comparacoes {
+    grid-template-columns: 1fr;
+  }
+}

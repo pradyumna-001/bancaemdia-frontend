@@ -2,6 +2,16 @@ import { expect, it } from 'vitest';
 import { ApiError } from './error';
 import { recuperacaoErro } from './recovery';
 
+it('expiração da prévia da troca não afirma expiração ou ausência do recibo aplicado', () => {
+  const model = recuperacaoErro(
+    new ApiError('http', { status: 410, code: 'swap_preview_expired' }),
+    'gravacao',
+  );
+  expect(model.title).toBe('A prévia da troca expirou');
+  expect(model.description).toContain('não apaga um recibo');
+  expect(model.action).toBe('previa');
+});
+
 it.each([
   [401, 'entrar'],
   [402, 'assinatura'],
