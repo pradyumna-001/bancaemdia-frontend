@@ -219,7 +219,7 @@
     "number": 53,
     "title": "[ADR-019] Contas — troca temporal de titular com prévia",
     "file": "053.md",
-    "dependencies": "#32; #52; pradyumna-001/bancaemdia-api#94–96"
+    "dependencies": "#32/PR #86; #52/PR #76; frontend PR #99 e antecedentes; backend #94–96 integradas em b916f54; emergencia de confirmacao da previa a criar (auditoria 17/10/2026)"
   },
   {
     "number": 54,

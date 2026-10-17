@@ -107,3 +107,8 @@ Backend #204/PR #205 entrega a projeção web. Consumir uma única árvore real 
 ## Análises #56 — 17/10/2026
 
 Adiantar a #56 enquanto o backend prepara a correção de confirmação da troca de conta #53. Análises e evolução ampliada já integradas em b916f54 (#158); preservar o sandbox único 86c82c9 e seus consumidores. O titular escolheu a proposta A após comparar barras/tabela expansível e tabela compacta nos dois viewports. Resumo/partições usam uma resposta; caixa tem população e frescor explicitamente separados, com linhas interrompidas em null e valores recebidos. Não adicionar filtros ou acumular dinheiro no cliente. Futura PR contra main com frontend #99/fontes do pin declaradas, seis jornadas reais adicionais sem skips, inventários/gates anteriores preservados. [Contrato de Análises](../contracts/analises.md).
+
+## Troca temporal #53 — auditoria de 17/10/2026
+
+A #36 depende das capacidades pendentes #53/#56/#57/#59, além da distribuição verificável na #35. Iniciar pela #53, que completa Contas e titulares. O motor de troca e a idempotência já estão integrados em b916f54, mas a aplicação não compara a evidência de impactos com a prévia apresentada; o hash cobre somente o pedido. Corrigir essa confirmação no servidor antes de concluir a tela, preservando replay de aplicação confirmada, atribuição temporal e explícita, e o pin sandbox único 86c82c9 até a entrega de uma árvore reconciliada. [Auditoria estática e limites](../audits/troca-conta-2026-10-17.md). Solicitação emergencial preparada; não há PR frontend pronta, merge ou publicação.
+
