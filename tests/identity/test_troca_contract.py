@@ -256,6 +256,8 @@ async def test_public_spa_troca(
 
             attempts = []
             lost_statuses = []
+            committed_response = asyncio.Event()
+            loop = asyncio.get_running_loop()
 
             def observe(request):
                 if request.method == "POST" and request.url.endswith(
@@ -267,16 +269,21 @@ async def test_public_spa_troca(
                 if method != "POST" or path != "/api/v1/titulares/trocas":
                     return False
                 lost_statuses.append(response.status_code)
+                loop.call_soon_threadsafe(committed_response.set)
                 return len(lost_statuses) == 1
 
             page.on("request", observe)
             harness.frontend_proxy.after_api_response = lose_committed_response
             await confirm(page)
+            await asyncio.wait_for(committed_response.wait(), timeout=30)
             await expect(
                 page.get_by_text(
                     "O resultado deste pedido ainda não foi confirmado.", exact=False
                 )
             ).to_be_visible()
+            await expect(
+                page.get_by_role("button", name="Consultar resultado da mesma intenção")
+            ).to_be_enabled()
             assert lost_statuses == [200], (
                 "A response must be lost only after a real committed 200"
             )
