@@ -1,6 +1,46 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 const demo = 'http://127.0.0.1:4222';
+
+test('Evolução densa mantém todas as datas e valores acessíveis sem rótulos sobrepostos', async ({
+  page,
+}, testInfo) => {
+  await page.route('**/api/v1/painel?*', async (route) => {
+    const original = await (await route.fetch()).json();
+    const pontos = Array.from({ length: 31 }, (_, i) => ({
+      ...original.evolucao[0],
+      periodo_inicio: '2026-10-' + String(i + 1).padStart(2, '0'),
+      lucro_acumulado_centavos: i % 2 === 0 ? 12345 : -9876,
+      lucro_periodo_centavos: 777,
+    }));
+    await route.fulfill({ json: { ...original, evolucao: pontos } });
+  });
+  await page.goto(demo + '/painel/analises');
+  const banca = page.locator('.analises-banca');
+  const tabela = banca.locator('.serie-valores');
+  await expect(tabela.locator('tbody tr')).toHaveCount(31);
+  await expect(tabela.locator('tbody tr').first()).toHaveText(
+    '01/10/2026+R$ 7,77+R$ 123,45',
+  );
+  await expect(tabela.locator('tbody tr').last()).toHaveText(
+    '31/10/2026+R$ 7,77+R$ 123,45',
+  );
+  const rects = await banca.locator('.grafico-data').evaluateAll((els) =>
+    els.map((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, right: r.right };
+    }),
+  );
+  for (let i = 1; i < rects.length; i++)
+    expect(rects[i]!.left).toBeGreaterThan(rects[i - 1]!.right);
+  await tabela.focus();
+  await page.keyboard.press('End');
+  await expect(tabela.locator('tbody tr').last()).toBeInViewport();
+  await banca.screenshot({
+    path: testInfo.outputPath('evolucao-31-periodos.png'),
+  });
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
 test('Análises: comparação aprovada, tabela, recortes, caixa, teclado e temas', async ({
   page,
 }, testInfo) => {
@@ -40,8 +80,21 @@ test('Análises: comparação aprovada, tabela, recortes, caixa, teclado e temas
       .toBeGreaterThan(0);
   }
   const saldo = page.getByRole('radio', { name: 'Saldo', exact: true });
+  const banca = page.locator('.analises-banca').first();
+  await expect(banca.getByText('Primeiro registro · 20/09/2026')).toBeVisible();
+  await expect(banca.getByText('Acumulado até 10/10/2026')).toBeVisible();
+  await expect(banca.locator('.serie-valores table')).toBeVisible();
+  await expect(banca.locator('.serie-valores tbody tr')).toHaveText([
+    '20/09/2026+R$ 200,00+R$ 200,00',
+    '01/10/2026+R$ 180,00+R$ 380,00',
+    '10/10/2026+R$ 148,00+R$ 528,00',
+  ]);
+  await banca.screenshot({
+    path: testInfo.outputPath('evolucao-lucro-legivel.png'),
+  });
   await saldo.click();
   await expect(saldo).toBeChecked();
+  await expect(banca.locator('polyline')).toHaveCount(2);
   await expect(
     page.getByText('Saldo não informado para esta série.'),
   ).toBeVisible();

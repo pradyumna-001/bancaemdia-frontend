@@ -219,6 +219,17 @@ async def test_public_spa_analises(
                 if await details.get_attribute("open") is None:
                     await details.locator("summary").click()
                 date = point["periodo_inicio"]
+                visible_row = region.locator(".serie-valores").get_by_role("row").filter(
+                    has=page.get_by_role(
+                        "rowheader", name=f"{date[8:10]}/{date[5:7]}/{date[:4]}"
+                    )
+                )
+                await expect(visible_row).to_contain_text(
+                    brl(point["lucro_periodo_centavos"], signed=True)
+                )
+                await expect(visible_row).to_contain_text(
+                    brl(point["lucro_acumulado_centavos"], signed=True)
+                )
                 row = details.get_by_role("row").filter(
                     has=page.get_by_role(
                         "rowheader", name=f"{date[8:10]}/{date[5:7]}/{date[:4]}"

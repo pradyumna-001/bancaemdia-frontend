@@ -39,7 +39,8 @@ export function ComparacaoAnalise({
   return (
     <>
       <p className="analises-nota">
-        Esquerda: prejuízo · direita: lucro · espessura: quantidade de apostas.
+        Prejuízo à esquerda de zero; lucro à direita. Barras mais espessas
+        representam mais apostas.
       </p>
       <ul className="analises-barras">
         {itens.map((b, i) => (
@@ -51,7 +52,12 @@ export function ComparacaoAnalise({
                 {porcentagem(b.roi)}
               </small>
               {tipo === 'por_banca_progressao' && (
-                <small>Progressão: {motivoProgressao(b)}</small>
+                <>
+                  <small>
+                    Capital da banca: {moeda(b.capital_banca_centavos ?? null)}
+                  </small>
+                  <small>Progressão: {motivoProgressao(b)}</small>
+                </>
               )}
             </div>
             <BarraExata desenho={desenho[i]!} />

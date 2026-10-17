@@ -41,15 +41,7 @@ export function EvolucaoCaixa({
         return (
           <section className="analises-banca" key={String(id)}>
             <h3>{values[0]!.banca_nome ?? 'Sem banca atribuída'}</h3>
-            <p>
-              {SERIES_CAIXA[serie]} · datas no eixo horizontal, reais no
-              vertical.
-            </p>
-            {values.every((p) => p[serie] === null) ? (
-              <p>Saldo não informado para esta série.</p>
-            ) : (
-              <LinhaCaixa pontos={values} serie={serie} />
-            )}
+            <LinhaCaixa pontos={values} serie={serie} />
             <details>
               <summary>Ver todos os valores de caixa em tabela</summary>
               <div

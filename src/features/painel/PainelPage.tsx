@@ -15,6 +15,7 @@ import {
   serializarConsulta,
   alterarFiltro,
   DIMENSOES,
+  PERIODOS,
   type Filtro,
 } from '../../lib/params';
 import { useCatalogos } from '../apostas/catalogos';
@@ -421,7 +422,9 @@ function Conteudo({
                     evolucao.data!.evolucao.find((p) => p.banca_id === id)
                       ?.banca_nome ?? 'Sem banca atribuída'
                   }
-                  periodo={String(query.periodo ?? 'Todo o histórico')}
+                  periodo={
+                    PERIODOS[(query.periodo ?? 'all') as keyof typeof PERIODOS]
+                  }
                 />
               ),
             )}
