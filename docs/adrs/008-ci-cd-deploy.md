@@ -10,6 +10,8 @@ Push e pull request executam o SHA exato da branch, inclusive mudanças document
 
 Na #31, a suíte cresceu para 612 E2E. Em 14/10/2026, duas execuções do mesmo SHA concluíram os 1.168 testes unitários e os 612 E2E, mas atingiram os 20 minutos durante as etapas finais de pre-commit/Docker/nginx. O tempo máximo do job passa a 25 minutos para incluir instalação, suíte completa, build da imagem e verificações de rotas/CSP. Os limites individuais dos testes e os gates de cobertura, bundle, Lighthouse, segurança e execução sem skips continuam os mesmos.
 
+Na #56, em 17/10/2026, o inventário chegou a 1.328 unitários e 720 E2E. No SHA 3565b81, ambos os eventos concluíram esses testes, mas a execução da PR atingiu o limite operacional de 25 minutos durante a verificação final de nginx/WebKit (anotação do GitHub: `The job has exceeded the maximum execution time of 25m0s`). A regressão de cadastro de fonte amplia o inventário a 1.329 unitários e 726 E2E. O job reserva agora 30 minutos para instalação e todas as etapas, preservando os limites individuais dos testes, os dois eventos, os três browsers/dois viewports, os gates de cobertura/bundle/Lighthouse/segurança e zero skips. O prazo do job não é uma meta de desempenho do produto.
+
 A #8 acrescenta:
 
 - Cobertura V8 com Vitest da mesma versão, incluindo arquivos não importados em `src/lib` e `src/features`. Mínimo **80% por arquivo** em linhas, statements, funções e branches. Excluídos apenas testes e declarações de tipos; nenhuma exclusão da demonstração. `make test:coverage` executa a suíte inteira e o gate.
