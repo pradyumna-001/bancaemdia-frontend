@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { billingStatus } from './acesso';
 import { createContasFixture } from './contas';
 import { caixaFixture } from './caixa';
+import { analises, caixaAnalises } from './analises';
 // Build separado: nenhuma entrada de sessão simulada participa de dist/.
 export default defineConfig({
   root: fileURLToPath(new URL('./shell/', import.meta.url)),
@@ -41,6 +42,15 @@ export default defineConfig({
           if (url.pathname === '/api/v1/billing/status')
             return send(billingStatus);
           if (req.method === 'GET') {
+            if (url.pathname === '/api/v1/painel/analises')
+              return send(analises);
+            if (url.pathname === '/api/v1/painel') return send(caixaAnalises);
+            if (url.pathname.startsWith('/api/v1/filtros/'))
+              return send({
+                dimensao: url.pathname.split('/').at(-1),
+                data: [],
+                pagination: { page: 1, page_size: 20, total: 0 },
+              });
             if (
               url.pathname.startsWith('/api/v1/caixa') ||
               url.pathname === '/api/v1/titulares/casas/7/matriz'
