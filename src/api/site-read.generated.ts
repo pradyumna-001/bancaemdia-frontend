@@ -3242,6 +3242,73 @@ export const SITE_READ_CONTRACT = {
       },
     },
   },
+  '/api/v1/titulares/trocas/intencao': {
+    query: {},
+    response: {
+      type: 'object',
+      required: ['estado', 'previa', 'recibo', 'previa_expira_em'],
+      properties: {
+        estado: { type: 'string', enum: ['PREVIEW', 'EXPIRED', 'APPLIED'] },
+        previa: {
+          type: 'object',
+          required: [
+            'casa_id',
+            'conta_origem_id',
+            'conta_destino_id',
+            'efetiva_em',
+            'estado_origem',
+            'apostas_afetadas_ids',
+            'aplicada',
+          ],
+          properties: {
+            aplicada: { type: 'boolean' },
+            apostas_afetadas_ids: { type: 'array', items: { type: 'integer' } },
+            casa_id: { type: 'integer' },
+            conta_destino_id: { type: 'integer' },
+            conta_origem_id: { type: 'integer' },
+            efetiva_em: { type: 'string' },
+            estado_origem: {
+              type: 'string',
+              enum: ['DISPONIVEL', 'LIMITADA', 'ENCERRADA'],
+            },
+          },
+        },
+        previa_expira_em: { type: 'string' },
+        recibo: {
+          anyOf: [
+            {
+              type: 'object',
+              required: [
+                'casa_id',
+                'conta_origem_id',
+                'conta_destino_id',
+                'efetiva_em',
+                'estado_origem',
+                'apostas_afetadas_ids',
+                'aplicada',
+              ],
+              properties: {
+                aplicada: { type: 'boolean' },
+                apostas_afetadas_ids: {
+                  type: 'array',
+                  items: { type: 'integer' },
+                },
+                casa_id: { type: 'integer' },
+                conta_destino_id: { type: 'integer' },
+                conta_origem_id: { type: 'integer' },
+                efetiva_em: { type: 'string' },
+                estado_origem: {
+                  type: 'string',
+                  enum: ['DISPONIVEL', 'LIMITADA', 'ENCERRADA'],
+                },
+              },
+            },
+            { type: 'null' },
+          ],
+        },
+      },
+    },
+  },
   '/api/v1/painel/filtrado': {
     query: {
       fresh: { type: 'boolean' },
@@ -6099,6 +6166,60 @@ export const SITE_READ_CONTRACT = {
         criado_em: { type: 'string' },
         id: { type: 'integer' },
         nome: { type: 'string' },
+      },
+    },
+  },
+  'POST /api/v1/titulares/trocas/preview': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'casa_id',
+        'conta_origem_id',
+        'conta_destino_id',
+        'efetiva_em',
+        'estado_origem',
+        'apostas_afetadas_ids',
+        'aplicada',
+      ],
+      properties: {
+        aplicada: { type: 'boolean' },
+        apostas_afetadas_ids: { type: 'array', items: { type: 'integer' } },
+        casa_id: { type: 'integer' },
+        conta_destino_id: { type: 'integer' },
+        conta_origem_id: { type: 'integer' },
+        efetiva_em: { type: 'string' },
+        estado_origem: {
+          type: 'string',
+          enum: ['DISPONIVEL', 'LIMITADA', 'ENCERRADA'],
+        },
+      },
+    },
+  },
+  'POST /api/v1/titulares/trocas': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'casa_id',
+        'conta_origem_id',
+        'conta_destino_id',
+        'efetiva_em',
+        'estado_origem',
+        'apostas_afetadas_ids',
+        'aplicada',
+      ],
+      properties: {
+        aplicada: { type: 'boolean' },
+        apostas_afetadas_ids: { type: 'array', items: { type: 'integer' } },
+        casa_id: { type: 'integer' },
+        conta_destino_id: { type: 'integer' },
+        conta_origem_id: { type: 'integer' },
+        efetiva_em: { type: 'string' },
+        estado_origem: {
+          type: 'string',
+          enum: ['DISPONIVEL', 'LIMITADA', 'ENCERRADA'],
+        },
       },
     },
   },

@@ -1818,9 +1818,29 @@ export interface paths {
     put?: never;
     /**
      * Trocar conta da casa
-     * @description Aplica uma prévia feita com a mesma chave; fecha a origem e abre o destino no instante escolhido.
+     * @description Exige prévia com mesma chave/corpo e evidência idêntica; 409 swap_preview_stale ou 410 swap_preview_expired exigem nova chave/prévia/confirmação. Fecha/abre vigências atomicamente, preservando apostas. Replay aplicado retorna o recibo original; sem retry automático.
      */
     post: operations['aplicar_troca_api_v1_titulares_trocas_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/titulares/trocas/intencao': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Recuperar intenção de troca
+     * @description Leitura do proprietário no primário por Idempotency-Key, inclusive READ_ONLY. APPLIED devolve recibo original. PREVIEW/EXPIRED/404 não provam rollback. Retenção até exclusão da conta; sem reenvio automático.
+     */
+    get: operations['obter_intencao_troca_api_v1_titulares_trocas_intencao_get'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1838,7 +1858,7 @@ export interface paths {
     put?: never;
     /**
      * Prévia de troca de conta
-     * @description Mostra as apostas cuja atribuição difere após a troca, sem alterar as contas.
+     * @description Persiste evidência por usuário/chave para confirmação em até 24h. Repetir devolve a prévia original. IDs são itens para revisão; a troca não migra apostas. Renovar exige nova chave e confirmação. FULL_WRITE/CSRF.
      */
     post: operations['preview_troca_api_v1_titulares_trocas_preview_post'];
     delete?: never;
@@ -5952,6 +5972,21 @@ export interface components {
        * @enum {string}
        */
       estado_origem: 'DISPONIVEL' | 'LIMITADA' | 'ENCERRADA';
+    };
+    /** TrocaIntencaoSaida */
+    TrocaIntencaoSaida: {
+      /**
+       * Estado
+       * @enum {string}
+       */
+      estado: 'PREVIEW' | 'EXPIRED' | 'APPLIED';
+      previa: components['schemas']['TrocaContaSaida'];
+      /**
+       * Previa Expira Em
+       * Format: date-time
+       */
+      previa_expira_em: string;
+      recibo: components['schemas']['TrocaContaSaida'] | null;
     };
     /** TrustRoot */
     TrustRoot: {
@@ -17367,6 +17402,24 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
+      /** @description swap_preview_stale / swap_intention_conflict / swap_invalid: renew with a new key and explicit confirmation. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description swap_preview_expired: preview is older than 24 hours; never proves rollback. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
       /** @description The request body exceeds this endpoint's streaming limit. */
       413: {
         headers: {
@@ -17375,6 +17428,96 @@ export interface operations {
         content: {
           /** @example Content Too Large */
           'text/plain': string;
+        };
+      };
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  obter_intencao_troca_api_v1_titulares_trocas_intencao_get: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrocaIntencaoSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description swap_intention_unknown: no visible record; outcome is not established. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
       /** @description The request does not satisfy the published contract or a domain rule. */
@@ -17464,6 +17607,24 @@ export interface operations {
       };
       /** @description Cookie mutation requires exact Origin and current CSRF proof. */
       403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description swap_preview_stale / swap_intention_conflict / swap_invalid: renew with a new key and explicit confirmation. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description swap_preview_expired: preview is older than 24 hours; never proves rollback. */
+      410: {
         headers: {
           [name: string]: unknown;
         };

@@ -31,6 +31,7 @@ export default tseslint.config(
       'dist-manual-fixture/**',
       'dist-coleta-fixture/**',
       'dist-analises-fixture/**',
+      'dist-troca-fixture/**',
       'dist-analises-proposta/**',
       'dist-hipotetica-fixture/**',
       'dist-apostas-fixture/**',

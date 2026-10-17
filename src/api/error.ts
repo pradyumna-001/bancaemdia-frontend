@@ -65,6 +65,13 @@ const httpMessages: Record<number, string> = {
 
 // Codes are protocol identifiers, never provider messages or arbitrary response text.
 const knownCodes = new Set([
+  'swap_preview_stale',
+  'swap_preview_expired',
+  'swap_intention_conflict',
+  'swap_intention_unknown',
+  'swap_invalid',
+  'swap_invalid_request',
+  'swap_temporarily_unavailable',
   'manual_validation_invalid',
   'manual_account_invalid',
   'manual_creation_busy',

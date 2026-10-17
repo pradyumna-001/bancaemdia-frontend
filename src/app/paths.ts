@@ -6,6 +6,7 @@ export const ROTAS_PROTEGIDAS = [
   { path: '/aposta/:chave', title: 'Aposta' },
   { path: '/aposta/:chave/foto', title: 'Foto da aposta' },
   { path: '/contas/:titularId', title: 'Contas do titular' },
+  { path: '/contas/trocar', title: 'Trocar conta em uso' },
   { path: '/painel/analises', title: 'Análises' },
   { path: '/painel/metas', title: 'Metas' },
   { path: '/configuracoes/conexoes', title: 'Conexões' },

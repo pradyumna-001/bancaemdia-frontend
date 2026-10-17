@@ -243,6 +243,7 @@ function Conteudo({
         Organize quem é o titular e quais contas ele usa em cada casa. A banca e
         o dinheiro de cada conta são informações separadas.
       </p>
+      <Link to={destination('/contas/trocar')}>Trocar conta em uso</Link>
       {id && <Link to={destination('/contas')}>Todos os titulares</Link>}
       {!write.can('POST /api/v1/titulares') && (
         <p>

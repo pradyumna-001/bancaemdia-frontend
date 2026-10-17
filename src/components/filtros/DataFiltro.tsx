@@ -9,10 +9,16 @@ export function DataFiltro({
   label,
   value,
   onChange,
+  help = 'Datas no fuso de São Paulo. O dia final inteiro é incluído.',
+  emptyLabel = 'Sem limite',
+  clearLabel = 'Remover limite',
 }: {
   label: string;
   value?: string;
   onChange: (value?: string) => void;
+  help?: string;
+  emptyLabel?: string;
+  clearLabel?: string;
 }) {
   const id = useId();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -76,9 +82,7 @@ export function DataFiltro({
           focusDay(value ?? diaCivil(new Date()));
         }}
       >
-        <span id={id + '-valor'}>
-          {value ? dateLabel(value) : 'Sem limite'}
-        </span>
+        <span id={id + '-valor'}>{value ? dateLabel(value) : emptyLabel}</span>
       </button>
       <dialog
         className="filtro-dialog"
@@ -87,7 +91,7 @@ export function DataFiltro({
         onClose={() => trigger.current!.focus()}
       >
         <h2 id={id + '-titulo'}>{label}</h2>
-        <p>Datas no fuso de São Paulo. O dia final inteiro é incluído.</p>
+        <p>{help}</p>
         <div className="filtro-mes">
           <button type="button" onClick={() => moveMonth(-1)}>
             Mês anterior
@@ -141,7 +145,7 @@ export function DataFiltro({
             Ontem
           </button>
           <button type="button" onClick={() => choose()}>
-            Remover limite
+            {clearLabel}
           </button>
           <button type="button" onClick={() => dialog.current!.close()}>
             Fechar calendário

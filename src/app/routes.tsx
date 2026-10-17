@@ -61,6 +61,11 @@ const AnalisesPage = lazy(() =>
     default: m.AnalisesPage,
   })),
 );
+const TrocaContaPage = lazy(() =>
+  import('../features/contas/troca/TrocaContaPage').then((m) => ({
+    default: m.TrocaContaPage,
+  })),
+);
 
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
@@ -140,6 +145,17 @@ export function createAppRoutes(
             }
           >
             <AnalisesPage />
+          </Suspense>
+        ) : path === '/contas/trocar' ? (
+          <Suspense
+            fallback={
+              <main className="pagina">
+                <h1>Trocar conta em uso</h1>
+                <p role="status">Abrindo troca…</p>
+              </main>
+            }
+          >
+            <TrocaContaPage />
           </Suspense>
         ) : path === '/contas' || path === '/contas/:titularId' ? (
           <ContasPage />

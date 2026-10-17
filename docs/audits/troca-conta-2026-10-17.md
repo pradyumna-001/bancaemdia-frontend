@@ -1,5 +1,7 @@
 # Troca de conta (#53): confirmação da prévia
 
+Atualização posterior: backend #206/PR #207 entregou a correção e a recuperação. Este documento preserva a auditoria anterior; o estado vigente e o pin completo estão em [docs/contracts/troca-conta.md](../contracts/troca-conta.md). Não representa lacuna ainda sem issue.
+
 Auditoria estática de 17/10/2026. A #53 é a próxima capacidade pendente que antecede o E2E completo #36. Não foi implementada uma tela nem declarado um PR frontend pronto. A correção abaixo pertence à API; a interface permanece responsabilidade do frontend.
 
 ## Versões conferidas
