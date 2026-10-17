@@ -33,6 +33,35 @@ def private_assert(condition):
         pytest.fail("Switch intention invariant failed", pytrace=False)
 
 
+async def open_lookup(page, house, deleted=False):
+    async with page.expect_response(
+        lambda r: (
+            r.request.method == "GET"
+            and r.url.endswith(f"/api/v1/titulares/casas/{house}/matriz")
+            and r.status in {200, 404}
+        )
+    ):
+        await page.goto(
+            core.backend.FRONT
+            + f"/contas/trocar?casa={house}"
+            + ("&apagadas=1" if deleted else "")
+        )
+    # Let real session renewal and its mandatory private-state fence settle
+    # before the next explicit lookup gesture. Never retry a filled intention.
+    if deleted:
+        await expect(
+            page.get_by_role(
+                "heading", name="Sua conta está em modo de leitura", exact=True
+            )
+        ).to_be_visible()
+    await expect(
+        page.get_by_text("Consultando contas elegíveis…", exact=True)
+    ).to_have_count(0)
+    await expect(
+        page.get_by_text("Consultando fila de revisão…", exact=True)
+    ).to_have_count(0)
+
+
 async def restore_code(page, key):
     try:
         await page.get_by_text("Consultar uma troca anterior", exact=True).click()
@@ -294,9 +323,7 @@ async def test_public_spa_troca(
             assert (await core.read(page, "/api/v1/billing/status"))[
                 "access"
             ] == "READ_ONLY"
-            await page.goto(
-                core.backend.FRONT + f"/contas/trocar?casa={house}&apagadas=1"
-            )
+            await open_lookup(page, house, deleted=True)
             await restore_code(page, current_key)
             await expect(
                 page.get_by_text("Os dados do pedido saíram da memória.", exact=False)
@@ -347,7 +374,7 @@ async def test_public_spa_troca(
                     == effective
                 )
             # Same public UUID authorizes nothing for another real identity.
-            await other.goto(core.backend.FRONT + f"/contas/trocar?casa={house}")
+            await open_lookup(other, house)
             await restore_code(other, current_key)
             await other.get_by_role(
                 "button", name="Consultar resultado da mesma intenção"

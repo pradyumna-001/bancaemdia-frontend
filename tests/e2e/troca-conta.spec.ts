@@ -5,9 +5,12 @@ async function choose(page: Page, label: string, name: string) {
   const button = page.getByRole('button', {
     name: new RegExp('^' + label + ' '),
   });
+  await expect(button).toBeEnabled();
   await button.focus();
+  await expect(button).toBeFocused();
   await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog', { name: label });
+  await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name, exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(button).toBeFocused();
@@ -109,10 +112,16 @@ test('resposta perdida e recarga consultam a mesma identidade sem reenviar o cor
     .locator('details .numero')
     .innerText();
   let count = 0;
+  let committed!: () => void;
+  const lostResponse = new Promise<void>((resolve) => {
+    committed = resolve;
+  });
   await page.route('**/api/v1/titulares/trocas', async (route) => {
     count++;
-    await route.fetch();
+    const response = await route.fetch();
+    expect(response.status()).toBe(200);
     await route.abort('failed');
+    committed();
   });
   await page
     .getByRole('button', { name: 'Continuar para confirmação' })
@@ -121,9 +130,13 @@ test('resposta perdida e recarga consultam a mesma identidade sem reenviar o cor
     .getByRole('dialog', { name: 'Confirmar esta troca?' })
     .getByRole('button', { name: 'Confirmar troca' })
     .click();
+  await lostResponse;
   await expect(
     page.getByText(/O resultado deste pedido ainda não foi confirmado/),
   ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Consultar resultado da mesma intenção' }),
+  ).toBeEnabled();
   expect(count).toBe(1);
   await page.reload();
   await page.getByText('Consultar uma troca anterior', { exact: true }).click();
