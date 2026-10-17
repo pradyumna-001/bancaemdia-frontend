@@ -10,6 +10,10 @@ const dados: PontoEvolucao[] = [
     periodo_inicio: '2026-01-01',
     lucro_acumulado_centavos: 1234,
     lucro_periodo_centavos: 9876,
+    depositos_acumulados_centavos: 0,
+    depositos_periodo_centavos: 0,
+    saques_acumulados_centavos: 0,
+    saques_periodo_centavos: 0,
     banca_id: null,
     banca_nome: null,
     saldo_centavos: null,
@@ -71,7 +75,9 @@ it('mostra o acumulado final recebido, sem somar os pontos', () => {
     />,
   );
   expect(screen.getByText('Acumulado até 02/01/2026')).toBeVisible();
-  expect(screen.getByText('+R$ 5,00', { selector: 'strong' })).toBeVisible();
+  expect(
+    screen.getByText('+R$ 5,00', { selector: '.grafico-total' }),
+  ).toBeVisible();
 });
 
 it('usa resumo informado pela API e não soma grupos nem inventa total ausente', () => {

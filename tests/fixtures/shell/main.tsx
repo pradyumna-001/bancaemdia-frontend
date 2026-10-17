@@ -9,6 +9,11 @@ import { createAppQueryClient } from '../../../src/app/queryClient';
 import '../../../src/styles/base.css';
 import { RecoveryPage } from './RecoveryPage';
 import { routeFailures } from './routeFailures';
+import { initializeConfig } from '../../../src/lib/config';
+import { ProvedorAuth } from '../../../src/auth/ProvedorAuth';
+import { createSession, browserExclusive } from '../../../src/auth/session';
+import { initializeApiClient } from '../../../src/api/client';
+import { createAccessController } from '../../../src/features/acesso/controller';
 
 const client = createClient<paths>({ baseUrl: location.origin });
 const consultar = async () => {
@@ -22,13 +27,32 @@ const consultar = async () => {
 const params = new URLSearchParams(location.search);
 const ambiente =
   params.get('ambiente') === 'production' ? 'production' : 'staging';
-createRoot(document.getElementById('root')!).render(
-  <App
-    router={createBrowserRouter([
-      { path: '/testes/recuperacao', element: <RecoveryPage /> },
-      ...routeFailures(createAppRoutes(() => true, consultar)),
-    ])}
-    queryClient={createAppQueryClient()}
-    ambiente={ambiente}
-  />,
-);
+const root = createRoot(document.getElementById('root')!);
+void initializeConfig().then(() => {
+  const queryClient = createAppQueryClient();
+  const auth = createSession({
+    baseUrl: location.origin,
+    queryClient,
+    exclusive: browserExclusive(),
+  });
+  const access = createAccessController(auth, queryClient);
+  const api = initializeApiClient({
+    captureSession: auth.capture,
+    onUnauthorized: auth.unauthorized,
+    onAccessDenied: access.denied,
+    beforeMutation: (operation) => access.run(api, operation, async () => {}),
+  });
+  root.render(
+    <ProvedorAuth service={auth}>
+      <App
+        router={createBrowserRouter([
+          { path: '/testes/recuperacao', element: <RecoveryPage /> },
+          ...routeFailures(createAppRoutes(auth.resume, consultar)),
+        ])}
+        queryClient={queryClient}
+        ambiente={ambiente}
+        access={access}
+      />
+    </ProvedorAuth>,
+  );
+});

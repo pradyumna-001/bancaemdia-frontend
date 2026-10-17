@@ -26,6 +26,8 @@ Facilidade de uso deve ser avaliada por conclusão, erros, tempo e compreensão.
 
 ## Evidência e entrega
 
+Revisão de gráficos de 17/10/2026: evoluções exigem data e valor inicial/final explícitos e leitura tabular por período sempre aberta, além do desenho interativo. Diferenciar lucro acumulado, saldo inicial cadastrado e saldo do recorte sem reconstruir números. Conferir todas as comparações e a matriz, séries densas, lacunas e rótulos sem colisão em ambos os temas/viewports; ver `docs/contracts/analises.md`.
+
 Mudança de tela anexa capturas móvel/desktop nos dois temas e registra cenários/limites; testes exercitam comportamento relevante, sem exigir testes artificiais para ajustes documentais. Estudos com participantes são distintos da revisão visual e dos testes automatizados. Registrar o que foi realmente observado.
 
 Toda entrega de PR segue AGENTS 28: fora de rascunho e todos os checks aplicáveis verdes no SHA final, sem desabilitar gates. Referenciar a issue e ADRs pertinentes. As issues técnicas aplicam os critérios visuais apenas às interfaces que afetam. Novas áreas de produto são explicitadas pelo ADR019, não inferidas da pesquisa visual.

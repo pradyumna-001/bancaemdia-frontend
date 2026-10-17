@@ -10,6 +10,7 @@ export const betsWithUnknownValues = {
       chat_id: null,
       chave: 'descartavel',
       competicao_id: null,
+      conta_atribuicao: 'UNASSIGNED',
       conta_casa_id: null,
       criada_em: null,
       data_aposta: null,

@@ -154,6 +154,45 @@ function setup(initial = context(), exclusive: boolean = true) {
   services.push(service);
   return { service, transport, queryClient, navigate };
 }
+it('encerramento confirmado limpa prova, pedidos/cache privados e avisa outras abas sem segredos', async () => {
+  const initial = context();
+  const queryClient = new QueryClient();
+  const channel = {
+    postMessage: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    close: vi.fn(),
+  };
+  const service = createSession({
+    baseUrl: 'https://site.example.org',
+    queryClient,
+    channel,
+    transport: {
+      read: async () => initial,
+      renew: async () => initial,
+      logout: vi.fn(),
+    },
+  });
+  services.push(service);
+  await service.resume();
+  const scope = service.capture();
+  const clean = vi.fn();
+  service.registerCleanup(clean);
+  queryClient.setQueryData(['privado'], { corpo: 'privado' });
+  service.accountClosed();
+  expect(scope.signal.aborted).toBe(true);
+  expect(scope.isCurrent()).toBe(false);
+  expect(clean).toHaveBeenCalledOnce();
+  expect(queryClient.getQueryData(['privado'])).toBeUndefined();
+  expect(() => service.capture()).toThrow();
+  expect(service.getSnapshot()).toMatchObject({
+    phase: 'anonymous',
+    accountClosed: true,
+  });
+  expect(channel.postMessage).toHaveBeenCalledWith('ended');
+  await service.resume();
+  expect(service.getSnapshot().accountClosed).toBeUndefined();
+});
 it('identidade em memória não inclui prova, versão, capacidade comercial ou tokens no estado público', async () => {
   const { service } = setup();
   await service.resume();
