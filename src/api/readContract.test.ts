@@ -1,0 +1,103 @@
+import { expect, it } from 'vitest';
+import { corresponde, objeto, respostaPublicada } from './readContract';
+import { SITE_READ_CONTRACT } from './site-read.generated';
+import { betsWithUnknownValues } from '../../tests/fixtures/api/responses';
+
+it('JSON recursivo do contrato preserva valores sem aceitar valores não JSON', () => {
+  for (const value of [
+    null,
+    'texto',
+    true,
+    2,
+    [1, { a: false }],
+    { a: { b: [null] } },
+  ])
+    expect(corresponde(value, { json: true })).toBe(true);
+  for (const value of [undefined, Infinity, () => {}, [undefined]])
+    expect(corresponde(value, { json: true })).toBe(false);
+  const cycle: Record<string, unknown> = {};
+  cycle.cycle = cycle;
+  expect(corresponde(cycle, { json: true })).toBe(false);
+  expect(
+    corresponde(
+      { id: 'x', column: 2 },
+      {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        additionalProperties: { type: 'integer' },
+      },
+    ),
+  ).toBe(true);
+  expect(
+    corresponde(
+      { column: 'bad' },
+      { type: 'object', additionalProperties: { type: 'integer' } },
+    ),
+  ).toBe(false);
+});
+
+it('valida a página e os contextos opcionais do documento real, incluindo IDs textuais exatos', () => {
+  const page = betsWithUnknownValues;
+  expect(
+    respostaPublicada(page, SITE_READ_CONTRACT['/api/v1/apostas'].response),
+  ).toBe(page);
+  for (const input of [
+    undefined,
+    null,
+    [],
+    { ...page, data: null },
+    { ...page, pagination: { ...page.pagination, total: 1.2 } },
+    { ...page, data: [{ ...page.data[0], valor_aposta_centavos: '4' }] },
+  ])
+    expect(() =>
+      respostaPublicada(input, SITE_READ_CONTRACT['/api/v1/apostas'].response),
+    ).toThrow();
+  expect(() => respostaPublicada(page, undefined)).toThrow();
+  expect(() => objeto([])).toThrow();
+});
+it('valida as restrições OpenAPI sem coerção, valores padrões ou formatos inventados', () => {
+  expect(
+    corresponde(null, { anyOf: [{ type: 'string' }, { type: 'null' }] }),
+  ).toBe(true);
+  expect(
+    corresponde('x', {
+      type: 'string',
+      enum: ['x'],
+      const: 'x',
+      pattern: '^x$',
+      minLength: 1,
+      maxLength: 1,
+    }),
+  ).toBe(true);
+  expect(corresponde('z', { enum: ['x'], type: 'string' })).toBe(false);
+  expect(corresponde('y', { const: 'x', type: 'string' })).toBe(false);
+  expect(corresponde('', { type: 'string', minLength: 1 })).toBe(false);
+  expect(corresponde('long', { type: 'string', maxLength: 1 })).toBe(false);
+  expect(corresponde('z', { type: 'string', pattern: '^x$' })).toBe(false);
+  expect(corresponde(5, { type: 'string' })).toBe(false);
+  expect(corresponde(2, { type: 'integer', minimum: 1, maximum: 3 })).toBe(
+    true,
+  );
+  expect(corresponde(0, { type: 'integer', minimum: 1 })).toBe(false);
+  expect(corresponde(4, { type: 'integer', maximum: 3 })).toBe(false);
+  expect(corresponde(2.5, { type: 'number' })).toBe(true);
+  expect(corresponde(NaN, { type: 'number' })).toBe(false);
+  expect(corresponde('2', { type: 'number' })).toBe(false);
+  expect(corresponde(2.5, { type: 'integer' })).toBe(false);
+  expect(corresponde(true, { type: 'boolean' })).toBe(true);
+  expect(corresponde('true', { type: 'boolean' })).toBe(false);
+  expect(corresponde([], { type: 'array' })).toBe(false);
+  expect(
+    corresponde([true, false], { type: 'array', items: { type: 'boolean' } }),
+  ).toBe(true);
+  expect(corresponde({}, { type: 'object', required: ['x'] })).toBe(false);
+  expect(corresponde({}, { type: 'object' })).toBe(true);
+  expect(
+    corresponde(
+      { x: null },
+      { type: 'object', properties: { x: { type: 'null' } } },
+    ),
+  ).toBe(true);
+  expect(corresponde(null, { type: 'object' })).toBe(false);
+  expect(corresponde({}, {})).toBe(false);
+});

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { PreferenciaTema } from '../components/PreferenciaTema';
 import { Logo } from '../components/Logo';
 
@@ -9,6 +9,7 @@ export function Placeholder({
   title: string;
   interna?: boolean;
 }) {
+  const location = useLocation();
   return (
     <main className={interna ? 'pagina pagina-interna' : 'pagina'}>
       {!interna && (
@@ -20,6 +21,11 @@ export function Placeholder({
       <p>Esta página está em preparação.</p>
       <p>Você poderá usar este recurso em uma próxima etapa.</p>
       <div className="acoes">
+        {title === 'Configurações' && (
+          <Link to={`/configuracoes/conexoes${location.search}`}>
+            Conexão com o Telegram
+          </Link>
+        )}
         <Link to="/tutorial">Abrir tutorial</Link>
         {!interna && <Link to="/login">Ir para entrar</Link>}
       </div>

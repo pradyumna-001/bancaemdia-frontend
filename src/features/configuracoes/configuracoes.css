@@ -1,0 +1,107 @@
+.configuracoes {
+  max-width: 72rem;
+}
+.configuracoes > header {
+  max-width: var(--largura-leitura);
+  margin-bottom: var(--espaco-32);
+}
+.configuracoes-grid {
+  display: grid;
+  gap: var(--espaco-24);
+  align-items: start;
+}
+.configuracoes-card {
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  padding: var(--espaco-24);
+}
+.configuracoes-card h2 {
+  margin-top: 0;
+}
+.configuracoes-card p {
+  overflow-wrap: anywhere;
+}
+.fuso-form {
+  display: grid;
+  gap: var(--espaco-12);
+  margin-block: var(--espaco-24);
+}
+.fuso-form button {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.fuso-dialog {
+  color: var(--tinta);
+  background: var(--superficie);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-painel);
+  padding: var(--espaco-24);
+  width: min(32rem, calc(100% - var(--espaco-32)));
+  max-height: 85dvh;
+}
+.fuso-dialog::backdrop {
+  background: var(--sombra-modal);
+}
+.fuso-dialog h3 {
+  margin-top: 0;
+}
+.fuso-dialog input {
+  width: 100%;
+  min-height: var(--alvo-toque);
+  margin-block: var(--espaco-8) var(--espaco-16);
+}
+.fuso-opcoes {
+  display: grid;
+  gap: var(--espaco-8);
+  max-height: 45dvh;
+  overflow-y: auto;
+  margin-bottom: var(--espaco-16);
+}
+.fuso-opcoes button {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.fuso-opcoes [aria-pressed='true'] {
+  border: 2px solid var(--acao);
+  font-weight: var(--peso-destaque);
+}
+.configuracoes-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.configuracoes-links li + li {
+  border-top: 1px solid var(--borda);
+  padding-top: var(--espaco-12);
+  margin-top: var(--espaco-12);
+}
+.configuracoes-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo-toque);
+  font-weight: var(--peso-destaque);
+}
+.configuracoes-links p {
+  margin: 0;
+  color: var(--tinta-secundaria);
+}
+@media (min-width: 62rem) {
+  .configuracoes-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .configuracoes-card:last-child {
+    grid-column: 1 / -1;
+  }
+  .configuracoes-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--espaco-24);
+  }
+  .configuracoes-links li + li {
+    border-top: 0;
+    padding-top: 0;
+    margin-top: 0;
+  }
+}

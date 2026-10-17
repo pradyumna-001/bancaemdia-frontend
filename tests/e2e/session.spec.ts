@@ -60,12 +60,18 @@ test('ajuda pública não consulta identidade; páginas de conta conferem o aces
   for (const path of ['/tutorial', '/extensao']) {
     await page.goto(path);
     await expect(
-      page.getByText('Esta página está em preparação.'),
+      page.getByRole('heading', {
+        name: path === '/tutorial' ? 'Tutorial' : 'Extensão',
+        exact: true,
+      }),
     ).toBeVisible();
     await page.bringToFront();
     await page.reload();
     await expect(
-      page.getByText('Esta página está em preparação.'),
+      page.getByRole('heading', {
+        name: path === '/tutorial' ? 'Tutorial' : 'Extensão',
+        exact: true,
+      }),
     ).toBeVisible();
   }
   expect(reads).toBe(0);
@@ -120,7 +126,7 @@ test('guard usa sessão consultada, não concede escrita comercial e mantém she
   await expect(
     page.getByRole('heading', { name: 'Painel', exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole('alert')).toContainText(
+  await expect(page.locator('.aviso-fila[role="alert"]')).toContainText(
     'Não foi possível atualizar a fila',
   );
   expect(new URL(page.url()).searchParams.get('apagadas')).toBe('1');

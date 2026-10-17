@@ -9,6 +9,7 @@ export type AuthState = Readonly<{
   privateEpoch: number;
   error?: ApiError;
   logoutUnconfirmed?: boolean;
+  accountClosed?: boolean;
 }>;
 export type RequestContext = Readonly<{
   signal: AbortSignal;
@@ -79,14 +80,18 @@ export function createSession(options: {
     cleanups.forEach((cleanup) => cleanup());
     return state.privateEpoch + 1;
   };
-  const invalidate = () => {
+  const invalidate = (accountClosed = false) => {
     generation++;
     controls.abort();
     controls = new AbortController();
     inFlight = undefined;
     context = undefined;
     const privateEpoch = clearPrivate();
-    publish({ phase: 'anonymous', privateEpoch });
+    publish({
+      phase: 'anonymous',
+      privateEpoch,
+      ...(accountClosed ? { accountClosed: true } : {}),
+    });
   };
   const setContext = (next: SessionContext) => {
     const changed =
@@ -293,6 +298,13 @@ export function createSession(options: {
     read,
     unauthorized,
     logout,
+    // Called only after the account service confirms anonymization. This clears
+    // local/private state and other tabs; it makes no claim about issuer logout.
+    accountClosed: () => {
+      logoutPerson = undefined;
+      invalidate(true);
+      options.channel?.postMessage('ended');
+    },
     registerCleanup: (cleanup: () => void) => {
       cleanups.add(cleanup);
       return () => {
