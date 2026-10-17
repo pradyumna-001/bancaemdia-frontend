@@ -24,6 +24,90 @@ export default defineConfig({
   ),
   webServer: [
     {
+      command:
+        'pnpm exec vite build --config tests/fixtures/coleta.vite.config.ts && pnpm exec vite preview --config tests/fixtures/coleta.vite.config.ts --host 127.0.0.1 --port 4219 --strictPort',
+      url: 'http://127.0.0.1:4219',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/manual.vite.config.ts && pnpm exec vite preview --config tests/fixtures/manual.vite.config.ts --host 127.0.0.1 --port 4216 --strictPort',
+      url: 'http://127.0.0.1:4216',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/privacidade.vite.config.ts && pnpm exec vite preview --config tests/fixtures/privacidade.vite.config.ts --host 127.0.0.1 --port 4214 --strictPort',
+      url: 'http://127.0.0.1:4214',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/revisao.vite.config.ts && pnpm exec vite preview --config tests/fixtures/revisao.vite.config.ts --host 127.0.0.1 --port 4212 --strictPort',
+      url: 'http://127.0.0.1:4212',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/caixa.vite.config.ts && pnpm exec vite preview --config tests/fixtures/caixa.vite.config.ts --host 127.0.0.1 --port 4210 --strictPort',
+      url: 'http://127.0.0.1:4210',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/resultados.vite.config.ts && pnpm exec vite preview --config tests/fixtures/resultados.vite.config.ts --host 127.0.0.1 --port 4208 --strictPort',
+      url: 'http://127.0.0.1:4208',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/planilha.vite.config.ts && pnpm exec vite preview --config tests/fixtures/planilha.vite.config.ts --host 127.0.0.1 --port 4206 --strictPort',
+      url: 'http://127.0.0.1:4206',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/prints.vite.config.ts && pnpm exec vite preview --config tests/fixtures/prints.vite.config.ts --host 127.0.0.1 --port 4204 --strictPort',
+      url: 'http://127.0.0.1:4204',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/apostas.vite.config.ts && pnpm exec vite preview --config tests/fixtures/apostas.vite.config.ts --host 127.0.0.1 --port 4180 --strictPort',
+      url: 'http://127.0.0.1:4180',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/midia.vite.config.ts && pnpm exec vite preview --config tests/fixtures/midia.vite.config.ts --host 127.0.0.1 --port 4202 --strictPort',
+      url: 'http://127.0.0.1:4202',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/contas.vite.config.ts && pnpm exec vite preview --config tests/fixtures/contas.vite.config.ts --host 127.0.0.1 --port 4183 --strictPort',
+      url: 'http://127.0.0.1:4183',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/painel.vite.config.ts && pnpm exec vite preview --config tests/fixtures/painel.vite.config.ts --host 127.0.0.1 --port 4181 --strictPort',
+      url: 'http://127.0.0.1:4181',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/configuracoes.vite.config.ts && pnpm exec vite preview --config tests/fixtures/configuracoes.vite.config.ts --host 127.0.0.1 --port 4179 --strictPort',
+      url: 'http://127.0.0.1:4179',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/acesso.vite.config.ts && pnpm exec vite preview --config tests/fixtures/acesso.vite.config.ts --host 127.0.0.1 --port 4178 --strictPort',
+      url: 'http://127.0.0.1:4178',
+      reuseExistingServer: false,
+    },
+    {
       env: {
         VITE_API_URL: 'http://127.0.0.1:8000',
         VITE_APP_ENV: 'production',
@@ -38,6 +122,12 @@ export default defineConfig({
       command:
         'pnpm exec vite build --config tests/fixtures/shell.vite.config.ts && pnpm exec vite preview --config tests/fixtures/shell.vite.config.ts --host 127.0.0.1 --port 4175 --strictPort',
       url: 'http://127.0.0.1:4175',
+      reuseExistingServer: false,
+    },
+    {
+      command:
+        'pnpm exec vite build --config tests/fixtures/enviar.vite.config.ts && pnpm exec vite preview --config tests/fixtures/enviar.vite.config.ts --host 127.0.0.1 --port 4176 --strictPort',
+      url: 'http://127.0.0.1:4176',
       reuseExistingServer: false,
     },
   ],

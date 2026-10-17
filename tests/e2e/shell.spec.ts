@@ -127,14 +127,13 @@ test('fila vazia, erro e recuperação não fabricam contador nem bloqueiam nave
         }),
   );
   await page.goto('http://127.0.0.1:4175/?ambiente=production');
-  await expect(page.getByRole('alert')).toContainText(
-    'Não foi possível atualizar',
-  );
+  const avisoFila = page.locator('.aviso-fila');
+  await expect(avisoFila).toContainText('Não foi possível atualizar');
   await expect(page.getByRole('note')).toHaveCount(0);
   await expect(page.getByRole('link', { name: /Revisão/ })).toHaveCount(0);
   falha = false;
-  await page.getByRole('button', { name: 'Tentar novamente' }).click();
-  await expect(page.getByRole('alert')).toHaveCount(0);
+  await avisoFila.getByRole('button', { name: 'Tentar novamente' }).click();
+  await expect(avisoFila).toHaveCount(0);
   await expect(page.getByRole('link', { name: /Revisão/ })).toHaveCount(0);
   if (testInfo.project.name.endsWith('mobile')) {
     await page.setViewportSize({ width: 320, height: 568 });
@@ -153,11 +152,16 @@ test('fila vazia, erro e recuperação não fabricam contador nem bloqueiam nave
 });
 
 test('build público não permite abrir a sessão simulada', async ({ page }) => {
-  await page.goto('/tests/fixtures/shell/index.html');
-  await expect(
-    page.getByRole('heading', { name: 'Não achei esta página' }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('navigation', { name: 'Navegação principal', exact: true }),
-  ).toHaveCount(0);
+  for (const fixture of ['shell', 'enviar']) {
+    await page.goto(`/tests/fixtures/${fixture}/index.html`);
+    await expect(
+      page.getByRole('heading', { name: 'Não achei esta página' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('navigation', {
+        name: 'Navegação principal',
+        exact: true,
+      }),
+    ).toHaveCount(0);
+  }
 });

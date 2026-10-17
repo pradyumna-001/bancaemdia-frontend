@@ -22,13 +22,26 @@ for (const [name, browserType] of Object.entries({
       });
       for (const path of ['/tutorial', '/extensao']) {
         await page.goto(`http://127.0.0.1:8080${path}`);
-        await expect(
-          page.getByText('Esta página está em preparação.'),
-        ).toBeVisible();
-        await page.reload();
-        await expect(
-          page.getByText('Esta página está em preparação.'),
-        ).toBeVisible();
+        for (const reload of [false, true]) {
+          if (reload) await page.reload();
+          await expect(
+            page.getByRole('heading', {
+              name: path === '/tutorial' ? 'Tutorial' : 'Extensão',
+              exact: true,
+            }),
+          ).toBeVisible();
+          await expect(
+            path === '/tutorial'
+              ? page.getByRole('region', {
+                  name: 'Export do Telegram',
+                  exact: true,
+                })
+              : page.getByRole('heading', {
+                  name: 'O download ainda não está disponível',
+                  exact: true,
+                }),
+          ).toBeVisible();
+        }
       }
       for (const [path, title, action] of [
         ['/login', 'Entrar', 'Entrar com minha conta'],
