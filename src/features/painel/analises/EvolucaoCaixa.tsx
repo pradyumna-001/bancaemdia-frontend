@@ -55,15 +55,17 @@ export function EvolucaoCaixa({
               <div
                 className="analises-tabela"
                 role="region"
-                aria-label="Tabela de evolução de caixa"
+                aria-label={
+                  'Tabela de evolução de caixa: ' +
+                  (id === null
+                    ? 'sem banca atribuída'
+                    : `${values[0]!.banca_nome ?? 'Banca sem nome'}, banca ${id}`)
+                }
                 // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Região rolável exige foco para rolagem por teclado, verificada em e2e.
                 tabIndex={0}
               >
                 <table>
-                  <caption>
-                    Valores por período e acumulados publicados; não
-                    recalculados no site
-                  </caption>
+                  <caption>Valores por período e acumulados</caption>
                   <thead>
                     <tr>
                       <th scope="col">Data inicial</th>

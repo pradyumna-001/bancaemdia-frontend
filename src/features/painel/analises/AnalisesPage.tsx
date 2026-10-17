@@ -370,8 +370,8 @@ function Conteudo({ client }: { client: Client }) {
               <section id="analises-outros" className="analises-secao">
                 <h2>Outros recortes</h2>
                 <p>
-                  Abra o que deseja analisar. Cada partição usa o mesmo recorte
-                  das análises ao vivo.
+                  Abra o que deseja analisar. Cada comparação usa o mesmo
+                  recorte das análises ao vivo.
                 </p>
                 {RECORTES.map(({ tipo, titulo, ajuda }) => (
                   <details key={tipo} className="analises-recorte">

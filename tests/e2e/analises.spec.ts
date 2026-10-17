@@ -45,6 +45,22 @@ test('Análises: comparação aprovada, tabela, recortes, caixa, teclado e temas
   await expect(
     page.getByText('Saldo não informado para esta série.'),
   ).toBeVisible();
+  for (const detail of await page.locator('.analises-page details').all()) {
+    if ((await detail.getAttribute('open')) === null)
+      await detail.locator(':scope > summary').click();
+  }
+  await expect(
+    page.getByRole('region', {
+      name: 'Tabela de evolução de caixa: Banca principal, banca 1',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('region', {
+      name: 'Tabela de evolução de caixa: sem banca atribuída',
+      exact: true,
+    }),
+  ).toBeVisible();
   for (const theme of ['claro', 'escuro']) {
     await page.evaluate(
       (t) => (document.documentElement.dataset.tema = t),

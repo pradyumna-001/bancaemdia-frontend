@@ -11,6 +11,14 @@ import {
   type Particao,
 } from './protocol';
 
+const NOMES: Record<Particao, string> = {
+  por_esporte: 'esportes',
+  faixas_odds: 'faixas de odds',
+  heatmap: 'dias e horários',
+  quartis_stake: 'faixas de valor de face',
+  por_banca_progressao: 'progressão por banca',
+};
+
 export function ComparacaoAnalise({
   itens,
   tipo,
@@ -58,7 +66,7 @@ export function ComparacaoAnalise({
         <div
           className="analises-tabela"
           role="region"
-          aria-label="Dados da comparação"
+          aria-label={'Dados da comparação: ' + NOMES[tipo]}
           // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Região rolável exige foco para rolagem por teclado, verificada em e2e.
           tabIndex={0}
         >
