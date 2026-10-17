@@ -255,20 +255,31 @@ async def test_public_spa_troca(
                 )
 
             attempts = []
+            lost_statuses = []
 
-            async def lose_committed_response(route):
-                attempts.append(route.request.headers["idempotency-key"])
-                response = await route.fetch()
-                assert response.status == 200
-                await route.abort("failed")
+            def observe(request):
+                if request.method == "POST" and request.url.endswith(
+                    "/api/v1/titulares/trocas"
+                ):
+                    attempts.append(request.headers["idempotency-key"])
 
-            await page.route("**/api/v1/titulares/trocas", lose_committed_response)
+            def lose_committed_response(method, path, response):
+                if method != "POST" or path != "/api/v1/titulares/trocas":
+                    return False
+                lost_statuses.append(response.status_code)
+                return len(lost_statuses) == 1
+
+            page.on("request", observe)
+            harness.frontend_proxy.after_api_response = lose_committed_response
             await confirm(page)
             await expect(
                 page.get_by_text(
                     "O resultado deste pedido ainda não foi confirmado.", exact=False
                 )
             ).to_be_visible()
+            assert lost_statuses == [200], (
+                "A response must be lost only after a real committed 200"
+            )
             private_assert(attempts == [current_key])
             # Natural expiry, no modification of timestamps or limits to bypass permissions.
             await asyncio.sleep(max(0, expiry - time.time()) + 1)
@@ -290,6 +301,7 @@ async def test_public_spa_troca(
                 page.get_by_role("heading", name="Troca confirmada")
             ).to_be_visible()
             private_assert(attempts == [current_key])
+            assert lost_statuses == [200]
             async with engine_admin.connect() as conn:
                 assert (
                     await conn.scalar(
@@ -373,6 +385,7 @@ async def test_public_spa_troca(
                 pass
             raise
         finally:
+            harness.frontend_proxy.after_api_response = None
             await context.tracing.stop(path=trace)
             core.sanitize_trace(trace)
             await context.close()
