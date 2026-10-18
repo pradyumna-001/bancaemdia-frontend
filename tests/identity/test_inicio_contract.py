@@ -148,7 +148,9 @@ async def test_public_spa_inicio(harness, engine_admin, viewport, browser_name):
                     "button", name="Cadastrar conta", exact=True
                 ).click()
             account = await (await created.value).json()
-            assert account["estado"] == "DISPONIVEL" and not account["ativa"]
+            assert account["estado"] == "DISPONIVEL"
+            assert account["intervalo_ativo"] is None
+            assert account["historico_uso"] == []
             await expect(
                 page.get_by_text(
                     "Conta cadastrada. A ativação é uma ação separada.", exact=True
