@@ -619,8 +619,16 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
             "status"
         ] == 404
         # The actual provider now owns cookie/CSRF lookup, clearing and confirmation.
+        # Select the real window before navigation. Activating an inactive
+        # Firefox target during the click can overlap the SPA focus revalidation.
+        await pages[0].bring_to_front()
         await pages[0].goto(backend.FRONT + "/sair")
-        await pages[0].get_by_role("button", name="Confirmar saída").click()
+        async with pages[0].expect_response(
+            lambda r: r.url.endswith("/auth/logout") and r.request.method == "POST"
+        ) as pending_logout:
+            await pages[0].get_by_role("button", name="Confirmar saída").click()
+        logout = await pending_logout.value
+        assert logout.status == 200 and await logout.json() == {"logged_out": True}
         await expect(
             pages[0].get_by_role("heading", name="Entrar", exact=True)
         ).to_be_visible()
@@ -734,8 +742,14 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         assert (await browser_request(pa, "/api/v1/apostas"))["data"]["pagination"][
             "total"
         ] == 0
+        await pa.bring_to_front()
         await pa.goto(backend.FRONT + "/sair")
-        await pa.get_by_role("button", name="Confirmar saída").click()
+        async with pa.expect_response(
+            lambda r: r.url.endswith("/auth/logout") and r.request.method == "POST"
+        ) as pending_logout:
+            await pa.get_by_role("button", name="Confirmar saída").click()
+        logout = await pending_logout.value
+        assert logout.status == 200 and await logout.json() == {"logged_out": True}
         await expect(
             pa.get_by_role("heading", name="Entrar", exact=True)
         ).to_be_visible()
@@ -1498,6 +1512,7 @@ async def test_public_spa_aposta_photo(harness, engine_admin, viewport):
         )
         # Enter through the SPA so its real Web Lock/session flow renews short
         # issuer tokens after the wait; raw fetch intentionally does not renew.
+        await page.bring_to_front()
         await page.goto(url)
         await expect(
             page.get_by_role("heading", name="Foto da aposta", exact=True)
@@ -1539,11 +1554,22 @@ async def test_public_spa_aposta_photo(harness, engine_admin, viewport):
             foreign["status"] == missing["status"] == 404
             and foreign["data"] == missing["data"]
         )
+        await other.bring_to_front()
         await other.goto(url)
-        await other.get_by_role("button", name="Abrir foto", exact=True).click()
+        async with other.expect_response(
+            lambda r: (
+                "/api/v1/apostas/" in r.url
+                and r.url.endswith("/foto")
+                and r.request.method == "GET"
+            )
+        ) as pending_foreign_photo:
+            await other.get_by_role("button", name="Abrir foto", exact=True).click()
+        foreign_photo = await pending_foreign_photo.value
+        assert foreign_photo.status == 404
         await expect(
             other.get_by_text("Não há foto disponível para consulta nesta aposta.")
         ).to_be_visible()
+        await page.bring_to_front()
         await page.goto(backend.FRONT + "/sair")
         async with page.expect_response(
             lambda r: r.url.endswith("/auth/logout") and r.request.method == "POST"

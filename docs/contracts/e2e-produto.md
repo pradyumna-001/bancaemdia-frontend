@@ -62,6 +62,13 @@ uma falha na primeira ainda permite diagnosticar a segunda. Os códigos de saíd
 o inventário XML continuam obrigatórios; qualquer falha reprova o job. Não há
 `continue-on-error`, skip ou aumento do timeout.
 
+Nos percursos com várias janelas, a janela é trazida à frente antes de navegar
+para a ação privada. Isso separa a seleção da janela do clique da tarefa, sem
+suprimir o evento de foco ou a revalidação real de sessão. Saída exige também
+POST 200/`logged_out=true`; foto de outro usuário exige GET 404 antes da mensagem
+da interface. Cada ação mantém um clique, sem replay, sleeps, cliques forçados ou
+mudança dos timeouts. Os aceites de sessão, isolamento e interface são preservados.
+
 Banco, identidades, processos e chaves são descartáveis e isolados por caso. Expiração
 usa o relógio real do banco e espera o prazo publicado. Falhas de rede cortam a resposta
 depois do commit real; não fabricam JSON, resultado financeiro ou confirmação. Nada
