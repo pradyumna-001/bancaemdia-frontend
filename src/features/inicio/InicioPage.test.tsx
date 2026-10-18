@@ -242,6 +242,22 @@ it.each(['AWAITING_CARD', 'PAST_DUE', 'CANCELED', 'EXPIRED', null] as const)(
       expect(screen.getByText(/Criar a conta não inicia/)).toBeVisible();
   },
 );
+it('cartão pendente antes do rollout respeita FULL_WRITE publicado sem inventar bloqueio', async () => {
+  await open({
+    status: {
+      ...billingStatus,
+      status: 'AWAITING_CARD',
+      trial_confirmed: false,
+      access: 'FULL_WRITE',
+    },
+  });
+  await screen.findByRole('heading', { name: 'Prepare a conta da casa' });
+  expect(screen.getByText('Confirmação do cartão pendente')).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Abrir Nova aposta' })).toBeVisible();
+  expect(
+    screen.queryByText(/^Período gratuito confirmado/),
+  ).not.toBeInTheDocument();
+});
 it('trial sem confirmação não é descrito como confirmado nem datas dão permissão', async () => {
   await open({
     status: { ...billingStatus, access: 'READ_ONLY', trial_confirmed: false },

@@ -36,12 +36,20 @@ async def test_public_spa_inicio(harness, engine_admin, viewport, browser_name):
         browser = await getattr(playwright, browser_name).launch()
         context = await browser.new_context(viewport=viewport)
         page = await context.new_page()
+        # Before rollout the API intentionally grants FULL_WRITE, even when
+        # the card is pending. This scenario exercises an enforced new signup.
+        async with engine_admin.begin() as conn:
+            await conn.execute(text("SELECT billing_activate_rollout()"))
         user, _ = await core.backend.register(
             page,
             uuid4().hex + "@example.org",
             secrets.token_urlsafe(24),
             harness=harness,
         )
+        initial_access = await core.request(page, "/api/v1/billing/status")
+        assert initial_access["status"] == 200
+        assert initial_access["data"]["access"] == "READ_ONLY"
+        assert initial_access["data"]["status"] == "AWAITING_CARD"
         async with engine_admin.begin() as conn:
             house = await conn.scalar(
                 text(
