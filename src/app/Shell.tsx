@@ -156,6 +156,18 @@ export function Shell({
         )}
         <AvisoAcesso />
         {children}
+        {location.pathname === '/' && (
+          <aside
+            className="hipotetica-entrada"
+            aria-label="Comparação histórica"
+          >
+            <p>
+              <Link to={{ pathname: '/e-se', search: location.search }}>
+                E se eu seguisse a stake do tipster?
+              </Link>
+            </p>
+          </aside>
+        )}
       </div>
       <nav className="nav-mobile" aria-label="Navegação principal no celular">
         {abas.filter((aba) => aba.mobile).map(link)}

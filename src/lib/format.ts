@@ -84,6 +84,11 @@ export function moeda(centavos: InteiroExato | null, sinal = false): string {
   return moedaMenor(centavos, 'BRL', sinal, 2);
 }
 
+/** Centavos decimais ideais publicados pelo servidor, sem arredondar a decisão. */
+export function moedaCentavosDecimais(valor: string, sinal = false): string {
+  return `R$ ${numeroDecimal(valor, -2, 2, sinal)}`;
+}
+
 /** Preço recebido da API Stripe: cadência e escala não definem um plano local. */
 export function precoAssinatura(
   amountMinor: InteiroExato | null,

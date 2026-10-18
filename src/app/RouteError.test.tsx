@@ -59,6 +59,7 @@ it.each([
   '/coleta',
   '/configuracoes/privacidade',
   '/calculadoras',
+  '/e-se',
   '/senha',
 ])(
   '404/405/500 em %s mantêm navegação guardada e ocultam dados internos',

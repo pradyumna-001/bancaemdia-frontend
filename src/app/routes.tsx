@@ -26,6 +26,16 @@ import { ContasPage } from '../features/contas/ContasPage';
 import { ResultadosPage } from '../features/resultados/ResultadosPage';
 import { CaixaPage } from '../features/caixa/CaixaPage';
 
+const CalculadorasPage = lazy(() =>
+  import('../features/calculadoras/CalculadorasPage').then((m) => ({
+    default: m.CalculadorasPage,
+  })),
+);
+const HipoteticaPage = lazy(() =>
+  import('../features/hipotetica/HipoteticaPage').then((m) => ({
+    default: m.HipoteticaPage,
+  })),
+);
 const RevisaoPage = lazy(() =>
   import('../features/revisao/RevisaoPage').then((m) => ({
     default: m.RevisaoPage,
@@ -144,6 +154,20 @@ export function createAppRoutes(
           <DetalheApostaPage />
         ) : path === '/aposta/:chave/foto' ? (
           <FotoPage />
+        ) : path === '/calculadoras' || path === '/e-se' ? (
+          <Suspense
+            fallback={
+              <main className="pagina">
+                <p role="status">Abrindo página…</p>
+              </main>
+            }
+          >
+            {path === '/calculadoras' ? (
+              <CalculadorasPage />
+            ) : (
+              <HipoteticaPage />
+            )}
+          </Suspense>
         ) : path === '/painel' ? (
           <PainelPage />
         ) : path === '/painel/analises' ? (

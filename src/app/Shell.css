@@ -226,3 +226,6 @@
     margin: auto auto max(var(--espaco-16), env(safe-area-inset-bottom));
   }
 }
+.hipotetica-entrada {
+  padding: var(--espaco-24);
+}

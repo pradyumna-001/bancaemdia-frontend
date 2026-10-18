@@ -40,6 +40,14 @@ from tests.identity import journey as backend
 
 ROOT = Path(__file__).resolve().parents[2]
 DIST = ROOT / "dist"
+IDENTITY_BROWSER = os.environ.get("PRODUCT_BROWSER", "chromium")
+assert IDENTITY_BROWSER in {"chromium", "firefox", "webkit"}
+
+
+@pytest.fixture(autouse=True)
+def record_browser_evidence(request):
+    request.node.user_properties.append(("executed_browser", IDENTITY_BROWSER))
+
 
 _resource_spec = importlib.util.spec_from_file_location(
     "frontend_owned_runtime", Path(__file__).with_name("harness_resources.py")
@@ -223,7 +231,7 @@ async def test_public_spa_telegram_import(
     harness,
     engine_admin,
     viewport,
-    browser_name="chromium",
+    browser_name=IDENTITY_BROWSER,
     after_import=None,
     trace_dir=None,
     sanitize_trace=None,
@@ -544,7 +552,7 @@ async def test_public_spa_telegram_import(
 )
 async def test_public_spa_real_identity_cookie_contract(harness, viewport):
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch()
+        browser = await getattr(playwright, IDENTITY_BROWSER).launch()
         contexts = [await browser.new_context(viewport=viewport) for _ in range(2)]
         pages = [await context.new_page() for context in contexts]
         violations = []
@@ -647,7 +655,7 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
     import jwt
 
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch()
+        browser = await getattr(playwright, IDENTITY_BROWSER).launch()
         a, b = [await browser.new_context(viewport=viewport) for _ in range(2)]
         pa, pb = await a.new_page(), await b.new_page()
         email_a, email_b = (uuid4().hex + "@example.org" for _ in range(2))
@@ -774,7 +782,7 @@ async def test_public_spa_account_registration_and_recovery(
 
     try:
         async with async_playwright() as playwright:
-            browser = await playwright.chromium.launch()
+            browser = await getattr(playwright, IDENTITY_BROWSER).launch()
             original = await browser.new_context(viewport=viewport)
             recovering = await browser.new_context(viewport=viewport)
             repeated = await browser.new_context(viewport=viewport)
@@ -915,7 +923,7 @@ async def test_public_spa_expired_confirmation(
     """Real expired issuer mail, not a modified/synthetic token or a frozen clock."""
     try:
         async with async_playwright() as playwright:
-            browser = await playwright.chromium.launch()
+            browser = await getattr(playwright, IDENTITY_BROWSER).launch()
             context = await browser.new_context(viewport=viewport)
             page = await context.new_page()
             email = uuid4().hex + "@example.org"
@@ -961,7 +969,7 @@ async def test_public_spa_expired_confirmation(
 async def test_public_spa_commercial_access(harness, engine_admin, viewport, request):
     """Real server expiry and read-only SPA, no payment or production data."""
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch()
+        browser = await getattr(playwright, IDENTITY_BROWSER).launch()
         context = await browser.new_context(viewport=viewport)
         page = await context.new_page()
         violations = []
@@ -1157,6 +1165,84 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
         await expect(
             page.get_by_role("link", name="Importar histórico em Enviar")
         ).to_have_attribute("href", "/enviar?casa=7&apagadas=1")
+        # The actual SPA uses each authenticated, stateless operation in READ_ONLY.
+        await page.goto(backend.FRONT + "/calculadoras?casa=7&apagadas=1")
+        await expect(
+            page.get_by_role("heading", name="Calculadoras", exact=True)
+        ).to_be_visible()
+        await page.get_by_label("Nome do resultado 1").fill("A")
+        await page.get_by_label("Nome do resultado 2").fill("B")
+        await page.get_by_label("Odd do resultado 1").fill("2")
+        await page.get_by_label("Odd do resultado 2").fill("2")
+        await page.get_by_role("checkbox").check()
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/mercado-justo")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["outcomes"][0][
+            "fair_probability"
+        ] == "0.50000000"
+        await page.get_by_role(
+            "link", name="Distribuir entre resultados", exact=True
+        ).click()
+        await page.get_by_label("Odd do resultado 1").fill("2,1")
+        await page.get_by_label("Odd do resultado 2").fill("2,1")
+        await page.get_by_label("Entrada total (R$)").fill("100,00")
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/distribuir-entre-resultados")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["minimum_profit_centavos"] == 500
+        await page.get_by_role("link", name="Cobertura ao vivo", exact=True).click()
+        await page.get_by_label("Entrada original (R$)").fill("100,00")
+        await page.get_by_label("Odd original", exact=True).fill("1,5")
+        await page.get_by_label("Odd oposta", exact=True).fill("3")
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/cobertura-ao-vivo")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["hedge_stake_centavos"] == 5000
+        await page.get_by_role("link", name="Percentual da banca", exact=True).click()
+        await page.get_by_label("Banca informada (R$)").fill("100,00")
+        await page.get_by_label("Percentual (%)", exact=True).fill("1,25")
+        async with page.expect_response(
+            lambda r: r.url.endswith("/calculadoras/percentual-banca")
+        ) as pending:
+            await page.get_by_role(
+                "button", name="Consultar resultado", exact=True
+            ).click()
+        response = await pending.value
+        assert response.status == 200
+        await expect(
+            page.get_by_role("heading", name="Resultado informado pelo serviço")
+        ).to_be_visible()
+        assert (await response.json())["data"]["stake_centavos"] == 125
+        await expect(
+            page.get_by_role("link", name="Voltar para Apostas")
+        ).to_have_attribute(
+            "href", "/apostas?casa=7&apagadas=1&ferramenta=percentual-banca"
+        )
         # Simulate the sandbox provider's confirmed paid period; never a live checkout.
         async with engine_admin.begin() as conn:
             price = await conn.scalar(
@@ -1201,7 +1287,7 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
 async def test_public_spa_timezone_preference(harness, engine_admin, viewport):
     """Actual preference PATCH/GET, cookie/CSRF, persistence and tenant isolation."""
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch()
+        browser = await getattr(playwright, IDENTITY_BROWSER).launch()
         context = await browser.new_context(viewport=viewport)
         other_context = await browser.new_context(viewport=viewport)
         page = await context.new_page()
@@ -1336,7 +1422,7 @@ async def test_public_spa_aposta_photo(harness, engine_admin, viewport):
         return result
 
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch()
+        browser = await getattr(playwright, IDENTITY_BROWSER).launch()
         context = await browser.new_context(viewport=viewport)
         other_context = await browser.new_context(viewport=viewport)
         page, other = await context.new_page(), await other_context.new_page()

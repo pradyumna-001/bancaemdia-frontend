@@ -39,8 +39,9 @@ export type Filtro =
   | 'apagadas'
   | 'revisao';
 export type RecursoFiltros =
-  'apostas' | 'painel' | 'metricas' | 'export' | 'resultados';
+  'apostas' | 'painel' | 'metricas' | 'export' | 'resultados' | 'hipotetica';
 export const RECURSOS_FILTROS = {
+  hipotetica: '/api/v1/painel/hipotetica',
   apostas: '/api/v1/apostas',
   painel: '/api/v1/painel/filtrado',
   metricas: '/api/v1/painel/filtrado/metricas',

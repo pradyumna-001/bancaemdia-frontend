@@ -580,8 +580,8 @@ it('page provides actionable empty and invalid matrix states', async () => {
   await screen.findByText(/Esta casa precisa de uma conta em uso/);
 });
 
-it('page validates time without writing, makes closure explicit and allows editing an unconfirmed preview', async () => {
-  const h = await open({
+async function openEmptyPreview() {
+  return open({
     page: true,
     override: async (req) =>
       new URL(req.url).pathname === PREVIEW
@@ -592,10 +592,11 @@ it('page validates time without writing, makes closure explicit and allows editi
           })
         : undefined,
   });
+}
+
+it('page validates time before writing and accepts an explicit corrected time', async () => {
+  const h = await openEmptyPreview();
   await form();
-  await choose('Estado final da conta anterior', 'Encerrada');
-  expect(screen.getByText(/Encerrar preserva o histórico/)).toBeVisible();
-  await choose('Fuso da hora informada', 'UTC +00:00');
   fireEvent.change(screen.getByLabelText('Hora da troca'), {
     target: { value: '25:00' },
   });
@@ -613,9 +614,30 @@ it('page validates time without writing, makes closure explicit and allows editi
     screen.getByRole('button', { name: 'Consultar prévia da troca' }),
   );
   await screen.findByRole('heading', { name: '3. Confira a prévia' });
+});
+
+it('page makes closure explicit and shows a preview without affected bets', async () => {
+  await openEmptyPreview();
+  await form();
+  await choose('Estado final da conta anterior', 'Encerrada');
+  expect(screen.getByText(/Encerrar preserva o histórico/)).toBeVisible();
+  await choose('Fuso da hora informada', 'UTC +00:00');
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Consultar prévia da troca' }),
+  );
+  await screen.findByRole('heading', { name: '3. Confira a prévia' });
   expect(
     screen.getAllByText(/Nenhuma aposta existente indicada/)[0],
   ).toBeVisible();
+});
+
+it('page permits editing an unconfirmed preview and explicitly changing its house', async () => {
+  const h = await openEmptyPreview();
+  await form();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Consultar prévia da troca' }),
+  );
+  await screen.findByRole('heading', { name: '3. Confira a prévia' });
   fireEvent.click(
     screen.getByRole('button', { name: 'Alterar dados da troca' }),
   );

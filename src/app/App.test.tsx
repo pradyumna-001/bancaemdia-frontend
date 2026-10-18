@@ -68,6 +68,7 @@ it.each([
   ['/contas/42', 'Contas do titular'],
   ['/assinatura', 'Assinatura'],
   ['/calculadoras', 'Calculadoras'],
+  ['/e-se', 'E se eu seguisse a stake do tipster?'],
   ['/painel/analises', 'Análises'],
   ['/painel/metas', 'Metas'],
   ['/inicio', 'Primeiro uso'],

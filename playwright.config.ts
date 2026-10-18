@@ -23,6 +23,15 @@ export default defineConfig({
     })),
   ),
   webServer: [
+    ...[
+      ['calculadoras', 4187],
+      ['hipotetica', 4200],
+      ['assinatura', 4186],
+    ].map(([fixture, port]) => ({
+      command: `pnpm exec vite build --config tests/fixtures/${fixture}.vite.config.ts && pnpm exec vite preview --config tests/fixtures/${fixture}.vite.config.ts --host 127.0.0.1 --port ${port} --strictPort`,
+      url: `http://127.0.0.1:${port}`,
+      reuseExistingServer: false,
+    })),
     {
       command:
         'pnpm exec vite build --config tests/fixtures/inicio.vite.config.ts && pnpm exec vite preview --config tests/fixtures/inicio.vite.config.ts --host 127.0.0.1 --port 4227 --strictPort',
