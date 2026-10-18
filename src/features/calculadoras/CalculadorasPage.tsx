@@ -718,7 +718,7 @@ export function CalculadorasPage({
         </p>
       )}
       <footer>
-        <Link to={`/apostas${location.search}`}>Voltar para Apostas</Link>
+        <Link to={'/' + location.search}>Voltar para Apostas</Link>
       </footer>
     </main>
   );

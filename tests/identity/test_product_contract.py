@@ -107,8 +107,7 @@ async def test_public_spa_matching(
                 )
                 assert len(rows) == 2 and all(row.selecionada for row in rows)
             await page.goto(
-                core.backend.FRONT
-                + f"/apostas?casa={house}&conta={accounts[0]}&periodo=all"
+                core.backend.FRONT + f"/?casa={house}&conta={accounts[0]}&periodo=all"
             )
             await expect(
                 page.get_by_role("heading", name="Apostas", exact=True)

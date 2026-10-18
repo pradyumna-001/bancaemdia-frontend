@@ -135,10 +135,7 @@ test('Calculadoras legíveis nos temas, formulário acessível e ferramenta na U
   ).toBe(true);
   await expect(
     page.getByRole('link', { name: 'Voltar para Apostas' }),
-  ).toHaveAttribute(
-    'href',
-    '/apostas?casa=7&apagadas=1&ferramenta=percentual-banca',
-  );
+  ).toHaveAttribute('href', '/?casa=7&apagadas=1&ferramenta=percentual-banca');
   expect(app.writes).toHaveLength(1);
   expect(errors).toEqual([]);
 });

@@ -155,10 +155,7 @@ it('envia nomes/odds decimais exatos em READ_ONLY, mostra resultado e limpa ao e
   expect(app.writes[0]!.headers.get('X-CSRF-Token')).toBeTruthy();
   expect(
     screen.getByRole('link', { name: 'Voltar para Apostas' }),
-  ).toHaveAttribute(
-    'href',
-    '/apostas?casa=7&apagadas=1&ferramenta=mercado-justo',
-  );
+  ).toHaveAttribute('href', '/?casa=7&apagadas=1&ferramenta=mercado-justo');
   await app.user.click(screen.getByText('Premissas e método do serviço'));
   expect(
     screen.getByText('Retirar a margem não prevê as probabilidades reais.'),

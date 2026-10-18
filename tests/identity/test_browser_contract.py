@@ -1240,9 +1240,11 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
         assert (await response.json())["data"]["stake_centavos"] == 125
         await expect(
             page.get_by_role("link", name="Voltar para Apostas")
-        ).to_have_attribute(
-            "href", "/apostas?casa=7&apagadas=1&ferramenta=percentual-banca"
-        )
+        ).to_have_attribute("href", "/?casa=7&apagadas=1&ferramenta=percentual-banca")
+        await page.get_by_role("link", name="Voltar para Apostas").click()
+        await expect(
+            page.get_by_role("heading", name="Apostas", exact=True)
+        ).to_be_visible()
         # Simulate the sandbox provider's confirmed paid period; never a live checkout.
         async with engine_admin.begin() as conn:
             price = await conn.scalar(
