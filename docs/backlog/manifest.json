@@ -243,7 +243,7 @@
     "number": 57,
     "title": "[ADR-019] Painel — metas de desempenho e fuso horário",
     "file": "057.md",
-    "dependencies": "#20, #16; #52; pradyumna-001/bancaemdia-api#105"
+    "dependencies": "#20/#85, #16/#69; #52/#76; frontend #101/#100/#80 e antecedentes; backend #105/#158 integrado b916f54; pin completo 5f5f062, publicacao de sandbox bloqueada"
   },
   {
     "number": 58,

@@ -190,29 +190,35 @@ it('alterna visualizações pela URL sem refetch nem perder páginas, filtros ou
   const app = await open({
     search: '?page_size=2&casa=7&apagadas=todas&x=1&x=2',
   });
-  await screen.findByRole('heading', { name: 'Flamengo × Palmeiras' });
+  const list = within(screen.getByRole('region', { name: 'Lista de apostas' }));
+  const controls = within(
+    list.getByRole('group', { name: 'Visualização de apostas' }),
+  );
+  await list.findByRole('heading', { name: 'Flamengo × Palmeiras' });
   expect(
-    screen.getByRole('button', { name: 'Lista compacta' }),
+    controls.getByRole('button', { name: 'Lista compacta' }),
   ).toHaveAttribute('aria-pressed', 'true');
-  await userEvent.click(screen.getByRole('button', { name: 'Mostrar mais' }));
-  await screen.findByRole('heading', { name: 'Grêmio × Internacional' });
+  await userEvent.click(list.getByRole('button', { name: 'Mostrar mais' }));
+  await list.findByRole('heading', { name: 'Grêmio × Internacional' });
   const requests = app.reads.length;
-  await userEvent.click(screen.getByRole('button', { name: 'Cartões' }));
+  await userEvent.click(controls.getByRole('button', { name: 'Cartões' }));
   expect(app.router.state.location.search).toContain('visualizacao=cartoes');
   expect(
     new URLSearchParams(app.router.state.location.search).getAll('x'),
   ).toEqual(['1', '2']);
-  expect(screen.getAllByRole('article')).toHaveLength(3);
+  expect(list.getAllByRole('article')).toHaveLength(3);
   expect(
-    screen.getByRole('article', { name: 'Flamengo × Palmeiras' }),
+    list.getByRole('article', { name: 'Flamengo × Palmeiras' }),
   ).not.toHaveClass('aposta-linha--compacta');
   expect(screen.getByText('R$ 923,45')).toBeVisible();
-  await userEvent.click(screen.getByRole('button', { name: 'Lista compacta' }));
+  await userEvent.click(
+    controls.getByRole('button', { name: 'Lista compacta' }),
+  );
   expect(
-    screen.getByRole('article', { name: 'Flamengo × Palmeiras' }),
+    list.getByRole('article', { name: 'Flamengo × Palmeiras' }),
   ).toHaveClass('aposta-linha--compacta');
   await act(() => app.router.navigate(-1));
-  expect(screen.getByRole('button', { name: 'Cartões' })).toHaveAttribute(
+  expect(controls.getByRole('button', { name: 'Cartões' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );

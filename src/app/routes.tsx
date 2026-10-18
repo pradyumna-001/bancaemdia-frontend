@@ -66,6 +66,11 @@ const TrocaContaPage = lazy(() =>
     default: m.TrocaContaPage,
   })),
 );
+const MetasPage = lazy(() =>
+  import('../features/painel/metas/MetasPage').then((m) => ({
+    default: m.MetasPage,
+  })),
+);
 
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
@@ -90,6 +95,7 @@ export function createAppRoutes(
         path === '/resultados' ||
         path === '/banca' ||
         path === '/painel/analises' ||
+        path === '/painel/metas' ||
         path === '/revisao') &&
       currentUrl.pathname === nextUrl.pathname &&
       currentUrl.search !== nextUrl.search &&
@@ -145,6 +151,17 @@ export function createAppRoutes(
             }
           >
             <AnalisesPage />
+          </Suspense>
+        ) : path === '/painel/metas' ? (
+          <Suspense
+            fallback={
+              <main className="pagina">
+                <h1>Metas</h1>
+                <p role="status">Abrindo metas…</p>
+              </main>
+            }
+          >
+            <MetasPage />
           </Suspense>
         ) : path === '/contas/trocar' ? (
           <Suspense

@@ -25,6 +25,12 @@ export default defineConfig({
   webServer: [
     {
       command:
+        'pnpm exec vite build --config tests/fixtures/metas.vite.config.ts && pnpm exec vite preview --config tests/fixtures/metas.vite.config.ts --host 127.0.0.1 --port 4226 --strictPort',
+      url: 'http://127.0.0.1:4226',
+      reuseExistingServer: false,
+    },
+    {
+      command:
         'pnpm exec vite build --config tests/fixtures/troca.vite.config.ts && pnpm exec vite preview --config tests/fixtures/troca.vite.config.ts --host 127.0.0.1 --port 4225 --strictPort',
       url: 'http://127.0.0.1:4225',
       reuseExistingServer: false,

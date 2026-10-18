@@ -20,6 +20,8 @@ export function siteReadContract(document) {
     '/api/v1/painel/filtrado/detalhado/export',
     '/api/v1/painel',
     '/api/v1/painel/analises',
+    '/api/v1/painel/metas',
+    '/api/v1/painel/metas/{meta_id}',
     '/api/v1/filtros/{dimensao}',
   ];
   function compact(node) {
@@ -71,6 +73,9 @@ export function siteReadContract(document) {
         : [],
     ),
     ...selected.map((path) => [path, 'get']),
+    ['/api/v1/painel/metas', 'post'],
+    ['/api/v1/painel/metas/{meta_id}', 'patch'],
+    ['/api/v1/painel/metas/{meta_id}', 'delete'],
     ['/api/v1/apostas/{chave}', 'patch'],
     ['/api/v1/caixa', 'post'],
     ['/api/v1/caixa/contas/{conta_casa_id}/banca', 'patch'],

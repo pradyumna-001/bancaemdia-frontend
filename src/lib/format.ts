@@ -158,6 +158,38 @@ export function decimal(valor: DecimalRecebido | null): string {
   return valor === null ? NAO_INFORMADO : numeroDecimal(valor);
 }
 
+/** Configuração decimal legada de metas: preserva precisão e unidade da API. */
+function decimalReduzido(valor: string, deslocamento = 0, minimo = 0): string {
+  const [inteiro, fracao = ''] = numeroDecimal(valor, deslocamento).split(',');
+  const casas = fracao.replace(/0+$/, '').padEnd(minimo, '0');
+  return inteiro! + (casas ? ',' + casas : '');
+}
+export function moedaDecimalCentavos(valor: string): string {
+  const texto = decimalReduzido(valor, -2, 2);
+  return texto.startsWith('−') ? '−R$ ' + texto.slice(1) : 'R$ ' + texto;
+}
+export function percentualDecimal(valor: string | null): string {
+  return valor === null ? NAO_INFORMADO : decimalReduzido(valor, 2) + '%';
+}
+export function decimalEditavel(valor: string, deslocamento = 0): string {
+  return decimalReduzido(valor, deslocamento)
+    .replaceAll('.', '')
+    .replace('−', '-');
+}
+/** Conversão textual de unidade; não calcula alvo, progresso ou resultado. */
+export function decimalDaEntrada(valor: string, deslocamento = 0): string {
+  const texto = valor.trim();
+  if (!/^[+-]?(?:0|[1-9]\d{0,23})(?:[,.]\d{1,8})?$/.test(texto))
+    throw indisponivel();
+  const normalizado = decimalEditavel(
+    texto.replace(',', '.'),
+    deslocamento,
+  ).replace(',', '.');
+  const [inteiro, fracao = ''] = normalizado.replace(/^-/, '').split('.');
+  if (inteiro!.length > 18 || fracao.length > 6) throw indisponivel();
+  return normalizado;
+}
+
 export function odd(valor: DecimalRecebido | null): string {
   return valor === null ? NAO_INFORMADO : numeroDecimal(valor, 0, 2);
 }

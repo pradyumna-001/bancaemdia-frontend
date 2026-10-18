@@ -443,7 +443,7 @@ function Conteudo({ client }: { client: Client }) {
         <Link to={'/configuracoes' + location.search}>
           Ajustar o fuso das análises
         </Link>{' '}
-        ·{' '}
+        · <Link to={'/painel/metas' + location.search}>Metas opcionais</Link> ·{' '}
         <Link to={'/contas' + location.search}>
           Financeiro por conta e titular
         </Link>

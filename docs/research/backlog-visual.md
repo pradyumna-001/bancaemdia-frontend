@@ -39,3 +39,5 @@ Toda entrega de PR segue AGENTS 28: fora de rascunho e todos os checks aplicáve
 Os números locais dos ADRs reiniciam por semana. Mapeamento para GitHub: ADR 014 → #1–#8; ADR 015 → #9–#15; ADR 016 → #16–#23; ADR 017 → #24–#30; ADR 018 → #31–#39.
 
 Esta revisão altera especificação, não implementa a próxima issue, não muda prioridades, estimativas, responsáveis ou estados e não declara trabalho futuro concluído. As implementações #1–#6 permanecem vinculadas aos PRs #40–#45, aguardando o fluxo de revisão/merge.
+
+Metas #57: /painel/metas é opcional, com lista de atual/alvo/base/progresso e status separados, todos publicados pela API. Formulário começa vazio, declara unidades e usa pickers próprios; não recomenda quantidade de apostas ou objetivo financeiro. Progresso null, negativo e acima de 100% é legível sem medidor enganoso. Escopo global no intervalo da meta é explícito, com filtros do Painel preservados sem aplicação presumida. Arquivar confirma e mantém consulta; incerteza não ganha reenvio nem falsa confirmação por lista. Fuso compartilhado com Configurações. Ver docs/contracts/metas.md.

@@ -508,6 +508,9 @@ export function PainelPage({ client }: { client?: Client }) {
         <Link to={'/painel/analises' + location.search}>
           Análises por esporte e outros recortes
         </Link>
+        <Link to={'/painel/metas' + location.search}>
+          Metas opcionais e fuso
+        </Link>
         <button
           disabled={leitura.waiting}
           onClick={() => setCycle((n) => n + 1)}

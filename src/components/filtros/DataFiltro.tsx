@@ -1,10 +1,11 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { diaCivil, diaValido, deslocarDia } from '../../lib/datasFiltro';
+const formatoDia = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'UTC',
+  dateStyle: 'long',
+});
 const dateLabel = (day: string) =>
-  new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'UTC',
-    dateStyle: 'long',
-  }).format(new Date(day + 'T12:00:00Z'));
+  formatoDia.format(new Date(day + 'T12:00:00Z'));
 export function DataFiltro({
   label,
   value,
