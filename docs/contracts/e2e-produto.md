@@ -24,6 +24,12 @@ na árvore API. A disponibilidade permanece `sandbox_reconciliation`.
 
 ## Matriz e evidências
 
+A suíte visual ampliada tem 936 execuções. O limite global do job de qualidade é
+40 minutos para incluir instalação/build, a matriz inteira e os gates finais de
+hooks/nginx/Docker: a rodada de 930 casos levou 28min55s antes desses gates finais.
+Isso dimensiona a execução total; mantém os limites de cada caso/asserção,
+zero retries no Playwright, inventários completos, cobertura e budget de produção.
+
 A [matriz por capacidade](../validation/produto.md) distingue apresentação simulada,
 SPA/API reais e integrações externas pendentes. Todos os workflows anteriores são
 preservados e apontam para o mesmo pin. O suplemento `product-contract.yml` acrescenta:
@@ -60,7 +66,7 @@ de vínculo e URLs de protocolo não são evidência publicável.
 Consolidação e Hipotética são executadas sequencialmente como provas independentes:
 uma falha na primeira ainda permite diagnosticar a segunda. Os códigos de saída e
 o inventário XML continuam obrigatórios; qualquer falha reprova o job. Não há
-`continue-on-error`, skip ou aumento do timeout.
+`continue-on-error`, skip ou aumento dos limites de cada caso/asserção.
 
 Nos percursos com várias janelas, a janela é trazida à frente antes de navegar
 para a ação privada. Isso separa a seleção da janela do clique da tarefa, sem
