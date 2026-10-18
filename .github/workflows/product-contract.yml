@@ -87,9 +87,13 @@ jobs:
         env:
           CORE_TRACE_DIR: ${{ github.workspace }}/.identity-api
         run: |
-          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_product_contract.py -k '${{ matrix.browser }}' --junitxml=product-matching-results.xml --tb=short -v
-          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_hipotetica_contract.py -k '${{ matrix.browser }}' --junitxml=product-hypothesis-results.xml --tb=short -v
+          matching_status=0
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_product_contract.py -k '${{ matrix.browser }}' --junitxml=product-matching-results.xml --tb=short -v || matching_status=$?
+          hypothesis_status=0
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_hipotetica_contract.py -k '${{ matrix.browser }}' --junitxml=product-hypothesis-results.xml --tb=short -v || hypothesis_status=$?
           python ../tests/identity/check_product_results.py . '${{ matrix.browser }}' '${{ github.event.pull_request.head.sha || github.sha }}'
+          test "$matching_status" -eq 0
+          test "$hypothesis_status" -eq 0
       - name: Provar invariantes da Hipotética e consolidação no mesmo PostgreSQL
         if: matrix.browser == 'chromium'
         working-directory: .identity-api

@@ -53,6 +53,11 @@ começam após autenticação/seed e passam pelo sanitizador e gate independente
 de upload: sem argumentos, resultados, rede, recursos ou storage. Segredos, códigos
 de vínculo e URLs de protocolo não são evidência publicável.
 
+Consolidação e Hipotética são executadas sequencialmente como provas independentes:
+uma falha na primeira ainda permite diagnosticar a segunda. Os códigos de saída e
+o inventário XML continuam obrigatórios; qualquer falha reprova o job. Não há
+`continue-on-error`, skip ou aumento do timeout.
+
 Banco, identidades, processos e chaves são descartáveis e isolados por caso. Expiração
 usa o relógio real do banco e espera o prazo publicado. Falhas de rede cortam a resposta
 depois do commit real; não fabricam JSON, resultado financeiro ou confirmação. Nada
@@ -60,6 +65,14 @@ usa pagamento, aposta ou conta reais. Reflow320, dois temas, teclado/foco e axe 
 mantidos nas suítes de interface e conferidos nos fluxos reais pertinentes.
 
 ## Limites e lançamento
+
+O helper de estresse da API gera IDs int64 arbitrários. O percurso web usa IDs
+de diálogo dentro da [faixa publicada pelo Telegram](https://core.telegram.org/api/bots/ids),
+sem alterar as provas de estresse do servidor. Inteiros JSON inseguros continuam
+sendo recusados pelo transporte, inclusive em contexto de consolidação; nunca
+são arredondados. Um caso visual dedicado exige erro seguro e contraste no botão
+de recuperação em hover/foco, nos dois temas. O percurso real também espera o
+título do detalhe carregado antes de auditar a página, para comprovar a UI de sucesso.
 
 Este ensaio pode ser concluído antes dos merges, por decisão do titular. Não é versão
 integrada em main nem autorização de produção. #38 continua bloqueada pelo pin e

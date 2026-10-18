@@ -52,7 +52,15 @@ async def test_public_spa_matching(
             house, accounts = await matching.accounts(engine_admin, engine_app, uid)
             ticket = "synthetic-" + uuid4().hex
             raw = matching.house_payload(ticket)
-            tip = matching.telegram_payload(ticket)
+            # The backend stress helper defaults to arbitrary int64 IDs. A web
+            # journey uses real Bot API dialog/message ranges instead; unsafe
+            # JSON integers must still be rejected, never rounded by the client.
+            # https://core.telegram.org/api/bots/ids
+            tip = matching.telegram_payload(
+                ticket,
+                chat=uuid4().int % (2**40 - 1) + 1,
+                message=uuid4().int % (2**30 - 1) + 1,
+            )
             if order == "house-first":
                 house_bet = await matching.intake_house(engine_app, uid, house, raw)
                 tip_bet = await matching.intake_telegram(engine_app, uid, tip)
@@ -114,6 +122,9 @@ async def test_public_spa_matching(
             ).to_be_visible()
             await expect(page.locator(".aposta-linha")).to_have_count(1)
             await page.get_by_role("link", name="Azul - Verde", exact=True).click()
+            await expect(
+                page.get_by_role("heading", level=1, name="Azul - Verde", exact=True)
+            ).to_be_visible()
             detail = await core.read(page, "/api/v1/apostas/" + key)
             assert detail["aposta"]["conta_casa_id"] == accounts[0]
             assert len(detail["consolidacoes"]) == 1
