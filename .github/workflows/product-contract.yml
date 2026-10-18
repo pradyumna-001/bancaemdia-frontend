@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      IDENTITY_API_SHA: 25825111bc84126eb48841641adbb47385becf4f
+      IDENTITY_API_SHA: 136f36094119edb09bea1343743c1c50ef460d93
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -98,10 +98,14 @@ jobs:
         if: matrix.browser == 'chromium'
         working-directory: .identity-api
         run: |
-          pytest -n 0 tests/integration/test_hipotetica_db.py tests/unit/test_hipotetica.py tests/contract/test_hipotetica_contract.py --no-cov --tb=short --junitxml=product-hypothesis-api-results.xml
-          python scripts/check_hipotetica_results.py product-hypothesis-api-results.xml
-          pytest -n 0 tests/integration/cruzamento/test_consolidacao.py --no-cov --tb=short --junitxml=product-matching-api-results.xml
-          python ../tests/identity/check_matching_results.py product-matching-api-results.xml
+          matching_api_status=0
+          pytest -n 0 tests/integration/cruzamento/test_consolidacao.py --no-cov --tb=short --junitxml=product-matching-api-results.xml || matching_api_status=$?
+          python ../tests/identity/check_matching_results.py product-matching-api-results.xml || matching_api_status=$?
+          hypothesis_api_status=0
+          pytest -n 0 tests/integration/test_hipotetica_db.py tests/unit/test_hipotetica.py tests/contract/test_hipotetica_contract.py tests/unit/test_identity_transport.py --no-cov --tb=short --junitxml=product-hypothesis-api-results.xml || hypothesis_api_status=$?
+          python scripts/check_hipotetica_results.py product-hypothesis-api-results.xml || hypothesis_api_status=$?
+          test "$matching_api_status" -eq 0
+          test "$hypothesis_api_status" -eq 0
       - name: Verificar privacidade dos traces antes de publicar
         if: always()
         id: trace_privacy

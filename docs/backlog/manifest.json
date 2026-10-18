@@ -171,7 +171,7 @@
     "number": 36,
     "title": "[ADR-019] E2E completo — produto integrado e permissões",
     "file": "036.md",
-    "dependencies": "#23, #30, #31, #32, #33, #34, #35; #51; #53; #54; #55; #56; #57; #58; #59; frontend PR #103/#78/#87/#77 e antecedentes; backend #191 e fontes do pin único 2582511; ensaio sandbox, integração/revalidação antes de publicação"
+    "dependencies": "#23, #30, #31, #32, #33, #34, #35; #51; #53; #54; #55; #56; #57; #58; #59; frontend PR #103/#78/#87/#77 e antecedentes; backend #191 e fontes do pin único 136f360; ensaio sandbox, integração/revalidação antes de publicação"
   },
   {
     "number": 37,
