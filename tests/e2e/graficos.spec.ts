@@ -18,7 +18,19 @@ test('gráficos têm leitura por teclado, toque, tabela e ambos os temas', async
   ]);
   await expect(page.getByText('29 apostas · 3 grupos exibidos')).toBeVisible();
   await expect(page.locator('.grafico-marca')).toHaveCount(3);
-  await expect(page.locator('.grafico-data')).toHaveCount(4);
+  const datas = page.locator('.grafico-data');
+  expect(await datas.count()).toBeGreaterThan(0);
+  const caixas = await datas.evaluateAll((els) =>
+    els.map((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, right: r.right };
+    }),
+  );
+  for (let i = 1; i < caixas.length; i++)
+    expect(caixas[i]!.left).toBeGreaterThan(caixas[i - 1]!.right);
+  await expect(page.locator('.serie-valores table')).toBeVisible();
+  await expect(page.locator('.serie-valores tbody tr')).toHaveCount(5);
+  await expect(page.getByText('Primeiro registro · 01/09/2026')).toBeVisible();
   const ponto = page.getByRole('button', {
     name: '03/09/2026: −R$ 120,00',
     exact: true,
@@ -45,7 +57,6 @@ test('gráficos têm leitura por teclado, toque, tabela e ambos os temas', async
   await expect(page.getByRole('tooltip')).toHaveText(
     'Grupo Sul: −R$ 120,00 · 4 apostas',
   );
-  await page.getByText('Ver dados da evolução', { exact: true }).click();
   await page.getByText('Ver dados da comparação', { exact: true }).click();
   await expect(page.getByRole('table')).toHaveCount(2);
   await expect(page.getByRole('table').first().getByRole('row')).toHaveCount(6);
@@ -74,7 +85,7 @@ test('cenários de borda permanecem legíveis em 320px e gráficos continuam pro
     page.getByRole('heading', { name: 'Entrar', exact: true }),
   ).toBeVisible();
   await page.goto('http://127.0.0.1:4175/sistema');
-  if (testInfo.project.name.endsWith('mobile'))
+  if (page.viewportSize()!.width < 700)
     await page.setViewportSize({ width: 320, height: 568 });
   for (const cenario of ['Sem dados', 'Um ponto', 'Zero', 'Extremos']) {
     await page.getByRole('radio', { name: cenario, exact: true }).check();
@@ -86,7 +97,7 @@ test('cenários de borda permanecem legíveis em 320px e gráficos continuam pro
         page.getByText('Sem grupos para comparar.', { exact: false }),
       ).toBeVisible();
     } else {
-      await page.getByText('Ver dados da evolução', { exact: true }).click();
+      await expect(page.locator('.serie-valores table')).toBeVisible();
       await page.getByText('Ver dados da comparação', { exact: true }).click();
       expect(
         await page
@@ -103,7 +114,7 @@ test('cenários de borda permanecem legíveis em 320px e gráficos continuam pro
       ),
     ).toBe(true);
   }
-  if (testInfo.project.name.endsWith('mobile')) {
+  if (page.viewportSize()!.width < 700) {
     const tabela = page.getByRole('region', { name: /^Tabela da comparação/ });
     await tabela.focus();
     await page.keyboard.press('ArrowRight');

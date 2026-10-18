@@ -128,8 +128,8 @@ export function BarrasLucro({
             ))}
           </ul>
           <p className="grafico-nota">
-            À esquerda de zero: prejuízo. À direita: lucro. A espessura
-            representa a raiz quadrada da quantidade de apostas.
+            Prejuízo à esquerda de zero; lucro à direita. Barras mais espessas
+            representam mais apostas.
           </p>
           <div className="grafico-leitura numero">
             {atual ? (

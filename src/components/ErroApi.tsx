@@ -19,6 +19,7 @@ export type ErrorField = Readonly<{
 
 export function ErroApi({
   error,
+  contexto,
   intent,
   conflict,
   destination = '/',
@@ -26,6 +27,7 @@ export function ErroApi({
   actions = {},
 }: {
   error: unknown;
+  contexto?: string;
   intent: ErrorIntent;
   conflict?: ConflictContext;
   destination?: string;
@@ -61,9 +63,12 @@ export function ErroApi({
       ref={region}
       tabIndex={-1}
       className="erro-api"
-      aria-labelledby={`${id}-titulo`}
+      aria-labelledby={
+        contexto ? `${id}-contexto ${id}-titulo` : `${id}-titulo`
+      }
       aria-describedby={`${id}-mensagem`}
     >
+      {contexto && <p id={`${id}-contexto`}>{contexto}</p>}
       <h2 id={`${id}-titulo`}>{model.title}</h2>
       <p id={`${id}-mensagem`} role="alert">
         {model.description}

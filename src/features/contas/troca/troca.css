@@ -1,0 +1,65 @@
+.troca-pagina {
+  max-width: 54rem;
+}
+.troca-intro {
+  max-width: 42rem;
+  color: var(--tinta-secundaria);
+}
+.troca-campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-16);
+  width: 100%;
+  min-width: 0;
+  padding: var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+}
+.troca-campos > p,
+.troca-campos > button {
+  grid-column: 1 / -1;
+}
+.troca-campos > button,
+.troca-pagina .troca-primaria,
+.troca-pagina dialog button:last-child {
+  background: var(--acao);
+  color: var(--sobre-acao);
+  border-color: var(--acao);
+}
+.troca-resumo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-16);
+  padding: var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+}
+.troca-resumo dt {
+  color: var(--tinta-secundaria);
+}
+.troca-resumo dd {
+  margin: var(--espaco-4) 0 0;
+  font-weight: var(--peso-destaque);
+}
+.troca-itens {
+  max-height: 12rem;
+  overflow: auto;
+}
+.troca-pagina section > button + button {
+  margin-inline-start: var(--espaco-8);
+}
+@media (max-width: 36rem) {
+  .troca-campos,
+  .troca-resumo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .troca-pagina section > button {
+    width: 100%;
+    margin-block: var(--espaco-4);
+  }
+  .troca-pagina section > button + button {
+    margin-inline-start: 0;
+  }
+}

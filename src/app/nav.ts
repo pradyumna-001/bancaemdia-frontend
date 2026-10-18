@@ -72,6 +72,13 @@ export const ABAS = [
     desktop: false,
   },
   {
+    path: '/inicio',
+    title: 'Primeiro uso',
+    icone: 'enviar',
+    mobile: false,
+    desktop: false,
+  },
+  {
     path: '/configuracoes',
     title: 'Configurações',
     icone: 'configuracoes',
