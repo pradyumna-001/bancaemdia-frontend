@@ -2,6 +2,7 @@
 PNPM ?= pnpm
 API_DIR ?= ../bancaemdia-api
 OPENAPI_SOURCE ?=
+TEST_ARGS ?=
 
 .PHONY: install dev lint typecheck test test\:coverage test\:e2e build check\:bundle measure\:lighthouse gen-types up
 
@@ -18,10 +19,10 @@ typecheck:
 	$(PNPM) typecheck
 
 test:
-	$(PNPM) test
+	$(PNPM) test $(TEST_ARGS)
 
 test\:coverage:
-	$(PNPM) test:coverage
+	$(PNPM) test:coverage $(TEST_ARGS)
 
 test\:e2e:
 	$(PNPM) test:e2e

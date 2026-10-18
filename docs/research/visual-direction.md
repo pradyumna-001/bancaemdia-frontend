@@ -24,4 +24,6 @@ As etapas seguintes devem construir marca (#5), navegação (#6), gráficos (#7)
 
 ## Aplicação no planejamento
 
+Revisão dos gráficos em 17/10/2026 por solicitação do titular: uma linha sem valores por data e sem referência inicial não atende à tarefa. Evoluções mostram primeiro/último registro, saldo inicial cadastrado com escopo correto e tabela compacta sempre aberta com valores recebidos por período. Anotações no desenho não se sobrepõem; séries densas conservam todos os valores na leitura tabular, sem depender de hover. Aplicar a revisão a todos os gráficos, incluindo comparações, no celular e desktop. Ver `docs/contracts/analises.md`.
+
 A revisão das 39 issues está nos ADRs 014–018, com [critérios comuns de interface e entrega](backlog-visual.md) e aceite específico por tarefa. As orientações substituem a cópia visual do monólito e preservam contratos, funcionalidades e disciplina de qualidade.

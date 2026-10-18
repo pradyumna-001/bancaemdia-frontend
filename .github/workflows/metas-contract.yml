@@ -1,0 +1,104 @@
+name: E2E metas com API real
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: metas-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  metas:
+    name: E2E metas reais (${{ matrix.browser }}, ${{ github.event_name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      IDENTITY_API_SHA: 5f5f06276114d35e062db45bc54c61c4cb6fc3ec
+      APP_ENV: testing
+      JWT_ALGORITHM: RS256
+      JWT_AUDIENCE: bancaemdia-api
+      JWT_ISSUER: bancaemdia-api
+      JWT_SECRET_KEY: unused-for-rs256-acceptance
+      REDIS_URL: redis://localhost:6379/0
+      RATE_LIMIT_STORAGE: memory://
+      OTEL_EXPORTER_OTLP_ENDPOINT: ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: pradyumna-001/bancaemdia-api
+          ref: ${{ env.IDENTITY_API_SHA }}
+          path: .identity-api
+          persist-credentials: false
+      - name: Conferir versão única do backend de sandbox
+        run: |
+          test "$(git -C .identity-api rev-parse HEAD)" = "$IDENTITY_API_SHA"
+          test "$(python3 -c 'import json; print(json.load(open("config/api-contract.json"))["commit"])')" = "$IDENTITY_API_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm install --global pnpm@10.34.6
+      - run: make install build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e '.identity-api[dev]'
+      - run: ruff check tests/identity && ruff format --check tests/identity
+      - name: Provar limpeza do ambiente antes e depois do bootstrap
+        run: python -m pytest -c .identity-api/pyproject.toml --noconftest -o addopts='' --import-mode=importlib tests/identity/test_harness_resources.py --no-cov -n 0
+      - run: python -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Gerar credenciais exclusivamente descartáveis e mascaradas
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_password=$(openssl rand -hex 24)
+          admin_password=$(openssl rand -hex 24)
+          echo "::add-mask::$db_password"
+          echo "::add-mask::$admin_password"
+          echo "POSTGRES_PASSWORD=$db_password" >> "$GITHUB_ENV"
+          echo "KC_BOOTSTRAP_ADMIN_USERNAME=identity-admin-$(openssl rand -hex 8)" >> "$GITHUB_ENV"
+          echo "KC_BOOTSTRAP_ADMIN_PASSWORD=$admin_password" >> "$GITHUB_ENV"
+          echo "TEST_DATABASE_URL=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+          echo "DATABASE_URL_REPLICA=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+      - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d --wait postgres mailpit
+      - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d issuer
+      - run: docker compose -f tests/identity/upload-compose.yml up -d --wait redis
+      - name: Provar Metas na SPA publica, identidade e banco reais
+        working-directory: .identity-api
+        env:
+          CORE_TRACE_DIR: ${{ github.workspace }}/.identity-api
+        run: |
+          python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_metas_contract.py -k '${{ matrix.browser }}' --junitxml=metas-spa-results.xml --tb=short -v
+          python ../tests/identity/check_metas_results.py metas-spa-results.xml '${{ matrix.browser }}'
+      - name: Verificar privacidade dos traces antes de publicar
+        if: always()
+        id: trace_privacy
+        working-directory: .identity-api
+        run: python ../tests/identity/trace_privacy.py --check-dir .
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.trace_privacy.outcome == 'success'
+        with:
+          name: metas-${{ matrix.browser }}-${{ github.event_name }}-${{ github.run_id }}
+          if-no-files-found: error
+          include-hidden-files: true
+          path: |
+            .identity-api/metas-*-results.xml
+            .identity-api/metas-*.zip
+            .identity-api/metas-*.png
+      - name: Encerrar somente o sandbox deste job
+        if: always()
+        run: |
+          docker compose -f tests/identity/upload-compose.yml down
+          docker compose -f .identity-api/tests/identity/docker-compose.yml down

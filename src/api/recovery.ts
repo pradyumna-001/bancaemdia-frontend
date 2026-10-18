@@ -34,9 +34,15 @@ export function recuperacaoErro(
     );
   if (safe.status === 402)
     return result(
-      'Sua conta está em modo de leitura',
+      'Este pedido foi bloqueado para escrita',
       'Você pode consultar e exportar seus dados. O formulário foi preservado; conferir a assinatura não reenvia este pedido.',
       'assinatura',
+    );
+  if (safe.status === 410 && safe.code === 'swap_preview_expired')
+    return result(
+      'A prévia da troca expirou',
+      'O prazo para confirmar esta prévia terminou. Consulte a mesma intenção se houver resultado desconhecido; a expiração não apaga um recibo de troca já confirmada.',
+      'previa',
     );
   if (safe.status === 409) {
     if (conflict === 'estado')
