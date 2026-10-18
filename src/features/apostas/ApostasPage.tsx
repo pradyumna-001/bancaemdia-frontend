@@ -476,6 +476,7 @@ export function ApostasPage({
                   : 'Envie suas apostas para acompanhar os resultados aqui.'}
             </p>
             <Link to={entry + location.search}>{entryLabel}</Link>
+            <Link to={'/inicio' + location.search}>Ajuda para começar</Link>
             {visao.page > 1 && (
               <Link to={'/?' + firstPageSearch.toString()}>
                 Voltar à primeira página

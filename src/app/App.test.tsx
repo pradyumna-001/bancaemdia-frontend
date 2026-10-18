@@ -70,6 +70,7 @@ it.each([
   ['/calculadoras', 'Calculadoras'],
   ['/painel/analises', 'Análises'],
   ['/painel/metas', 'Metas'],
+  ['/inicio', 'Primeiro uso'],
   ['/sistema', 'Sistema'],
   ['/tutorial', 'Tutorial'],
   ['/extensao', 'Extensão'],

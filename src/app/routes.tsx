@@ -71,6 +71,11 @@ const MetasPage = lazy(() =>
     default: m.MetasPage,
   })),
 );
+const InicioPage = lazy(() =>
+  import('../features/inicio/InicioPage').then((m) => ({
+    default: m.InicioPage,
+  })),
+);
 
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
@@ -178,6 +183,17 @@ export function createAppRoutes(
           <ContasPage />
         ) : path === '/configuracoes' ? (
           <ConfiguracoesPage />
+        ) : path === '/inicio' ? (
+          <Suspense
+            fallback={
+              <main className="pagina">
+                <h1>Primeiro uso</h1>
+                <p role="status">Abrindo primeiros passos…</p>
+              </main>
+            }
+          >
+            <InicioPage />
+          </Suspense>
         ) : path === '/configuracoes/privacidade' ? (
           <Suspense
             fallback={

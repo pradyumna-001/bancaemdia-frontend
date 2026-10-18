@@ -113,6 +113,11 @@ it('catálogo canônico mantém rotas e ícones registrados', () => {
         "assinatura",
       ],
       [
+        "/inicio",
+        "Primeiro uso",
+        "enviar",
+      ],
+      [
         "/configuracoes",
         "Configurações",
         "configuracoes",

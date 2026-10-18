@@ -255,6 +255,6 @@
     "number": 59,
     "title": "[ADR-019] Primeiro uso — acesso, contas e canais de entrada",
     "file": "059.md",
-    "dependencies": "#12, #32, #24, #34; #51; #54; #52"
+    "dependencies": "#12/#83; #32/#86; #24/#75; #34/#99; #51; #54; #52/#76; #29/#96; #25/#90; #26/#91; #35/#98; frontend #102/#101/#100 e antecedentes; backend pin completo 5f5f062, sandbox com publicacao bloqueada"
   }
 ]
