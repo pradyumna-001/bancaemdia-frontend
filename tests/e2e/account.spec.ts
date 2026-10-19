@@ -31,6 +31,7 @@ test('conta pública: opções mantêm o retorno, sem senha local e sem ativar a
   await expect(
     page.locator('input[type="password"],input[type="email"]'),
   ).toHaveCount(0);
+  await page.getByText('Não conseguiu continuar?').click();
   await expect(
     page.getByText(/Criar uma conta não ativa uma assinatura/),
   ).toBeVisible();
@@ -40,6 +41,7 @@ test('conta pública: opções mantêm o retorno, sem senha local e sem ativar a
     page.getByRole('heading', { name: 'Esqueci minha senha', exact: true }),
   ).toBeVisible();
   expect(new URL(page.url()).searchParams.get('destino')).toBe(destination);
+  await page.getByText('Não conseguiu continuar?').click();
   await expect(
     page.getByText(/Se houver uma conta para o e-mail informado/),
   ).toBeVisible();
@@ -93,7 +95,15 @@ test('cadastro/confirmação/recuperação usam somente os intents suportados, s
     const action = page.locator('.conta-acoes button');
     await expect(action).toBeEnabled();
     entry = undefined;
-    await action.click();
+    await Promise.all([
+      page.waitForURL(
+        (url) =>
+          url.origin === 'http://127.0.0.1:8000' &&
+          url.pathname === '/auth/start',
+        { waitUntil: 'load' },
+      ),
+      action.click(),
+    ]);
     await expect.poll(() => entry?.searchParams.get('intent')).toBe(intent);
     expect(entry!.searchParams.get('return_to')).toBe('/painel?apagadas=1');
     expect(entry!.hash).toBe('');
@@ -174,13 +184,21 @@ test('telas de conta são operáveis nos dois temas, com teclado e reflow 320px'
   ]) {
     await page.goto(path);
     await expect(page.locator('.conta-acoes button')).toBeEnabled();
+    await expect(page.getByRole('radio')).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { name: 'Próximo passo' }),
+    ).toHaveCount(0);
     for (const theme of ['claro', 'escuro']) {
-      await page
-        .getByRole('radio', {
-          name: theme === 'claro' ? 'Claro' : 'Escuro',
-          exact: true,
-        })
-        .check();
+      await page.emulateMedia({
+        colorScheme: theme === 'claro' ? 'light' : 'dark',
+      });
+      await expect(page.locator('html')).toHaveAttribute('data-tema', theme);
+      const panel = await page.locator('.conta-painel').boundingBox();
+      expect(panel).not.toBeNull();
+      expect(
+        Math.abs(panel!.x + panel!.width / 2 - page.viewportSize()!.width / 2),
+      ).toBeLessThan(2);
+      expect(panel!.width).toBeLessThanOrEqual(448);
       expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
       expect(
         await page.evaluate(

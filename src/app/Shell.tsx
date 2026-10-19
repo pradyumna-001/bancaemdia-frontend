@@ -13,6 +13,7 @@ import {
 } from '../features/revisao/estatisticas';
 import { ABAS, abaAtual } from './nav';
 import './Shell.css';
+import { AvisoAcesso } from '../features/acesso/AvisoAcesso';
 
 export function Shell({
   children,
@@ -153,7 +154,20 @@ export function Shell({
             </button>
           </div>
         )}
+        <AvisoAcesso />
         {children}
+        {location.pathname === '/' && (
+          <aside
+            className="hipotetica-entrada"
+            aria-label="Comparação histórica"
+          >
+            <p>
+              <Link to={{ pathname: '/e-se', search: location.search }}>
+                E se eu seguisse a stake do tipster?
+              </Link>
+            </p>
+          </aside>
+        )}
       </div>
       <nav className="nav-mobile" aria-label="Navegação principal no celular">
         {abas.filter((aba) => aba.mobile).map(link)}

@@ -60,12 +60,18 @@ test('ajuda pública não consulta identidade; páginas de conta conferem o aces
   for (const path of ['/tutorial', '/extensao']) {
     await page.goto(path);
     await expect(
-      page.getByText('Esta página está em preparação.'),
+      page.getByRole('heading', {
+        name: path === '/tutorial' ? 'Tutorial' : 'Extensão',
+        exact: true,
+      }),
     ).toBeVisible();
     await page.bringToFront();
     await page.reload();
     await expect(
-      page.getByText('Esta página está em preparação.'),
+      page.getByRole('heading', {
+        name: path === '/tutorial' ? 'Tutorial' : 'Extensão',
+        exact: true,
+      }),
     ).toBeVisible();
   }
   expect(reads).toBe(0);
@@ -120,7 +126,7 @@ test('guard usa sessão consultada, não concede escrita comercial e mantém she
   await expect(
     page.getByRole('heading', { name: 'Painel', exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole('alert')).toContainText(
+  await expect(page.locator('.aviso-fila[role="alert"]')).toContainText(
     'Não foi possível atualizar a fila',
   );
   expect(new URL(page.url()).searchParams.get('apagadas')).toBe('1');
@@ -220,4 +226,49 @@ test('saída incerta limpa conteúdo e oferece reconciliação sem repetir grava
     page.getByRole('heading', { name: 'Entrar', exact: true }),
   ).toBeVisible();
   expect(posts).toBe(1);
+});
+
+test('primeiro foco preserva o primeiro clique de saída e consulta dentro da trava', async ({
+  page,
+  context,
+}) => {
+  const current = session();
+  let reads = 0;
+  let posts = 0;
+  let ended = false;
+  await mockApi(context, async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === '/auth/session') {
+      reads++;
+      await respond(
+        route,
+        ended ? { code: 'not_authenticated' } : current,
+        ended ? 401 : 200,
+      );
+    } else if (path === '/auth/logout') {
+      expect(route.request().headers()['x-csrf-token']).toBe(
+        current.csrf_token,
+      );
+      posts++;
+      ended = true;
+      await respond(route, { logged_out: true });
+    } else await respond(route, stats());
+  });
+  await page.bringToFront();
+  await page.goto('/sair');
+  const button = page.getByRole('button', {
+    name: 'Confirmar saída',
+    exact: true,
+  });
+  await expect(button).toBeEnabled();
+  const initial = reads;
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(button).toBeVisible();
+  expect(reads).toBe(initial);
+  await button.click();
+  await expect(
+    page.getByRole('heading', { name: 'Entrar', exact: true }),
+  ).toBeVisible();
+  expect(posts).toBe(1);
+  expect(reads).toBe(initial + 1);
 });

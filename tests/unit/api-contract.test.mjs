@@ -7,6 +7,10 @@ import {
   operationPolicies,
   paginationPolicies,
   verifiedSchema,
+  requireIntegratedContract,
+  resultsPolicies,
+  reviewPolicies,
+  manualPolicies,
 } from '../../scripts/api-contract.mjs';
 
 const bytes = Buffer.from(
@@ -27,6 +31,77 @@ const pin = {
   schemaPath: 'tests/contract/schemas/openapi.json',
   sha256: createHash('sha256').update(bytes).digest('hex'),
 };
+
+it('Manual extrai identidade por caminho, retenção, READ_ONLY e ausência de retry do mesmo schema', () => {
+  const policy = {
+    identity: 'path.intencao_id',
+    scope: 'authenticated_user',
+    automatic_retry: false,
+    retention_days: 90,
+    expired_identity_reusable: false,
+  };
+  expect(
+    manualPolicies({
+      paths: {
+        '/api/v1/apostas-manuais/operacoes/{intencao_id}': {
+          post: { 'x-idempotency': policy },
+          get: { 'x-permission': 'READ_ONLY', 'x-automatic-retry': false },
+        },
+      },
+    }),
+  ).toEqual({
+    ...policy,
+    get_permission: 'READ_ONLY',
+    get_automatic_retry: false,
+  });
+  expect(() => manualPolicies({ paths: {} })).toThrow();
+  expect(() =>
+    manualPolicies({
+      paths: {
+        '/api/v1/apostas-manuais/operacoes/{intencao_id}': {
+          post: { 'x-idempotency': policy },
+          get: { 'x-permission': 'FULL_WRITE' },
+        },
+      },
+    }),
+  ).toThrow();
+});
+
+it('Revisão extrai CAS/consumo/acesso do mesmo documento, sem replay automático', () => {
+  const policy = {
+    access: 'FULL_WRITE',
+    precondition: 'opaque_evidence_cas',
+    automatic_mutation_replay: false,
+    consumption: 'restart_page_1',
+  };
+  expect(
+    reviewPolicies({
+      paths: {
+        '/review': { post: { 'x-bancaemdia-review': policy }, get: {} },
+      },
+    }),
+  ).toEqual({ 'POST /review': policy });
+});
+
+it('Resultados extrai matriz/cursor/intenção da mesma fonte sem habilitar replay automático', () => {
+  const policy = {
+    access: 'FULL_WRITE',
+    automatic_mutation_replay: false,
+    intention_parameter: 'intention_id',
+  };
+  const document = {
+    paths: {
+      '/api/v1/resultados/operacoes/{intention_id}': {
+        post: { 'x-bancaemdia-resultados': policy },
+        get: {},
+      },
+    },
+  };
+  expect(resultsPolicies(document)).toEqual({
+    'POST /api/v1/resultados/operacoes/{intention_id}': policy,
+  });
+  expect(operationPolicies(document).idempotent).toEqual([]);
+});
 
 it('só aceita commit completo, caminho e SHA-256 fixados', () => {
   expect(contractSource(pin)).toContain('/' + pin.commit + '/');
@@ -99,9 +174,59 @@ it('deriva políticas de headers e multipart do próprio contrato', () => {
     uploads: [],
   });
 });
-it('referência versionada usa somente o snapshot oficial integrado', async () => {
+it('referência versionada usa somente o snapshot oficial imutável, com estado explícito', async () => {
   const actual = JSON.parse(await readFile('config/api-contract.json', 'utf8'));
   expect(contractSource(actual)).toMatch(
     /raw\.githubusercontent\.com\/pradyumna-001\/bancaemdia-api\/[a-f0-9]{40}\/tests\/contract\/schemas\/openapi\.json$/,
   );
+});
+it('candidato autenticado não se passa por contrato integrado nem pode publicar', () => {
+  const candidate = {
+    ...pin,
+    availability: {
+      kind: 'pull_request',
+      url: 'https://github.com/pradyumna-001/bancaemdia-api/pull/184',
+      integratedBaseline: 'b'.repeat(40),
+    },
+  };
+  expect(contractSource(candidate)).toContain(pin.commit);
+  expect(() => requireIntegratedContract(candidate)).toThrow('merge backend');
+  expect(() => requireIntegratedContract(pin)).not.toThrow();
+  for (const availability of [
+    { ...candidate.availability, url: 'https://example.org/184' },
+    { ...candidate.availability, integratedBaseline: 'main' },
+    { ...candidate.availability, kind: 'integrated' },
+  ])
+    expect(() => contractSource({ ...pin, availability })).toThrow('candidato');
+});
+it('reconciliação usa uma árvore imutável da API e mantém o bloqueio de publicação', () => {
+  const availability = {
+    kind: 'sandbox_reconciliation',
+    url: `https://github.com/${pin.repository}/tree/${pin.commit}`,
+    integratedBaseline: 'b'.repeat(40),
+    sources: [
+      { pullRequest: 189, commit: 'c'.repeat(40) },
+      { pullRequest: 193, commit: 'd'.repeat(40) },
+    ],
+  };
+  expect(contractSource({ ...pin, availability })).toContain(pin.commit);
+  expect(() => requireIntegratedContract({ ...pin, availability })).toThrow(
+    'merge backend',
+  );
+  for (const changes of [
+    { url: `https://github.com/${pin.repository}/tree/main` },
+    { sources: [{ pullRequest: 193, commit: 'main' }] },
+    { sources: [availability.sources[0], availability.sources[0]] },
+    {
+      sources: [
+        { pullRequest: -1, commit: 'c'.repeat(40) },
+        availability.sources[1],
+      ],
+    },
+    { sources: undefined },
+    { integratedBaseline: 'main' },
+  ])
+    expect(() =>
+      contractSource({ ...pin, availability: { ...availability, ...changes } }),
+    ).toThrow('candidato');
 });

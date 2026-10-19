@@ -92,7 +92,7 @@ React Router 7 e TanStack Query fornecem roteamento e cache; openapi-fetch e MSW
 
 ## Geração de tipos
 
-`make gen-types` baixa o [snapshot OpenAPI oficial de bancaemdia-api](https://github.com/pradyumna-001/bancaemdia-api/blob/bd055417459f796fed960b5b37efb33a9744419f/tests/contract/schemas/openapi.json), fixado no commit `bd055417459f796fed960b5b37efb33a9744419f` já integrado em `main`. [config/api-contract.json](config/api-contract.json) fixa commit e SHA-256 dos bytes. Após conferir o hash, `openapi-typescript` gera `src/api/schema.d.ts` e políticas de upload/idempotência em `src/api/operations.generated.ts`, ambos versionados e verificados por drift na CI. Nenhum schema de PR é promovido ou concatenado.
+`make gen-types` baixa o [OpenAPI completo da árvore real de ensaio](https://github.com/pradyumna-001/bancaemdia-api/blob/136f36094119edb09bea1343743c1c50ef460d93/tests/contract/schemas/openapi.json), fixado no commit `136f36094119edb09bea1343743c1c50ef460d93`, com 129 operações. É sandbox reconciliado autorizado para testes, ainda sujeito aos merges administrativos; publicação continua bloqueada. [config/api-contract.json](config/api-contract.json) fixa commit, SHA-256 e fontes imutáveis. Após conferir o hash, `openapi-typescript` gera tipos, políticas e descritores do mesmo documento, todos versionados e verificados por drift na CI. Não há concatenação de schemas nem promoção do sandbox à main. [Versão, provas e limites da composição](docs/contracts/e2e-produto.md).
 
 Para reproduzir sem rede, use o mesmo snapshot pinado de um checkout verificado:
 

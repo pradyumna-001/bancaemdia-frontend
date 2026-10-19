@@ -16,9 +16,16 @@ Revisado pela #49/#11/#12, última revisão em 02/10/2026, conforme ADR019. Cont
 - Sessão não implica permissão comercial. 401 reautentica; 402 account_read_only preserva consulta/exportação e oferece Assinatura. Capacidade vem do servidor; não depende só do verbo HTTP.
 - Idempotency-Key por intenção quando exigido (ex.: Caixa, Checkout, troca); não aplicar retry automático genérico a mutações. Timeout pode deixar resultado desconhecido, exigindo reconciliação.
 - Paginação conforme endpoint, atualmente page/page_size nas listas principais; Mostrar mais pode acumular páginas sem inventar cursor.
-- Job 202 usa status/progresso reais. Cancelar polling não cancela processamento. Autorização/recusa de gasto depende de contrato ainda ausente (#50), antes de executar fluxo que exige consentimento.
+- Job 202 usa status/progresso reais. Cancelar polling não cancela processamento. Conforme decisão de 06/10/2026 no ADR019, o usuário envia o export e acompanha o resultado, sem estimativa/aviso de custo de processamento nem aprovação de gasto. Limites máximos de gasto por usuário são internos ao backend; não há dependência de novo protocolo de aprovação na #50.
 
 ## Consequences
+
+O primeiro foco de um documento recém-carregado usa a consulta inicial do guard;
+não dispara outra conferência que esconda o controle no primeiro clique. O retorno
+à janela só revalida após um `blur` observado nesse documento. A revalidação por
+visibilidade, os eventos entre abas e as consultas dentro do Web Lock permanecem.
+Um retorno real `blur` → `focus` continua cancelando respostas privadas antigas e
+não repete mutations. As provas distinguem primeira ativação de retorno à janela.
 
 A #12 substitui os placeholders de conta por páginas que encaminham os intents login/signup/recover, com ações explícitas e retorno validado. Credenciais, confirmação, labels/validação de campos e reenvios ficam no emissor hospedado. Criar conta não ativa assinatura; não há formulário/endpoints locais de senha nem convite inventado. Parâmetros transitórios de protocolo saem da URL antes da renderização e dos destinos antes de navegação/persistência do fragmento. Recuperação interrompida não anuncia revogação; somente conclusão de intent=recover o faz. Detalhes e limites de documentos externos em `docs/contracts/conta.md`.
 
