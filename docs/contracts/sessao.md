@@ -18,6 +18,13 @@ Compose local aponta à mesma origem 8080, preservando CSP `connect-src 'self'`.
 
 ## Concorrência, expiração e saída
 
+O primeiro foco de um documento recém-carregado usa a consulta inicial do guard;
+não dispara outra conferência que esconda o controle no primeiro clique. O retorno
+à janela só revalida após um `blur` observado nesse documento. A revalidação por
+visibilidade, os eventos entre abas e as consultas dentro do Web Lock permanecem.
+Um retorno real `blur` → `focus` continua cancelando respostas privadas antigas e
+não repete mutations. As provas distinguem primeira ativação de retorno à janela.
+
 Web Lock exclusivo `bancaemdia:identity` serializa consulta/refresh/logout entre abas da origem. Cada aquisição consulta `/auth/session` novamente; se outra aba renovou, não emite outro grant. Refresh precisa mudar versão na mesma pessoa/família e retornar `refresh_required=false`. Sem Web Locks, sessão ainda válida pode ser lida, mas refresh/logout não são enviados; a interface oferece reentrada e não confirma saída.
 
 BroadcastChannel transmite apenas `changed`, `ending`, `ended`, `logout_failed`. Não transmite pessoa, CSRF, versão ou cookie. Receber mudança exige consulta à API; logout remoto limpa dados locais imediatamente. Eventos não concedem autenticação.

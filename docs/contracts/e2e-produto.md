@@ -24,7 +24,7 @@ na árvore API. A disponibilidade permanece `sandbox_reconciliation`.
 
 ## Matriz e evidências
 
-A suíte visual ampliada tem 936 execuções. O limite global do job de qualidade é
+A suíte visual ampliada tem 942 execuções. O limite global do job de qualidade é
 40 minutos para incluir instalação/build, a matriz inteira e os gates finais de
 hooks/nginx/Docker: a rodada de 930 casos levou 28min55s antes desses gates finais.
 Isso dimensiona a execução total; mantém os limites de cada caso/asserção,
@@ -67,6 +67,13 @@ Consolidação e Hipotética são executadas sequencialmente como provas indepen
 uma falha na primeira ainda permite diagnosticar a segunda. Os códigos de saída e
 o inventário XML continuam obrigatórios; qualquer falha reprova o job. Não há
 `continue-on-error`, skip ou aumento dos limites de cada caso/asserção.
+
+O primeiro foco de um documento recém-carregado usa a consulta inicial do guard;
+não dispara outra conferência que esconda o controle no primeiro clique. O retorno
+à janela só revalida após um `blur` observado nesse documento. A revalidação por
+visibilidade, os eventos entre abas e as consultas dentro do Web Lock permanecem.
+Um retorno real `blur` → `focus` continua cancelando respostas privadas antigas e
+não repete mutations. As provas distinguem primeira ativação de retorno à janela.
 
 Nos percursos com várias janelas, a janela é trazida à frente antes de navegar
 para a ação privada. Isso separa a seleção da janela do clique da tarefa, sem
