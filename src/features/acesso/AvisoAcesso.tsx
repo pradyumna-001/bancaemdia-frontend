@@ -7,9 +7,11 @@ import './acesso.css';
 export function AvisoAcesso() {
   const access = useAcesso();
   const location = useLocation();
-  if (!access || access.phase === 'write') return null;
+  // Shell announces initial checking in reserved header space. Reading stays
+  // available without inserting a temporary warning above the page's data.
+  if (!access || access.phase === 'write' || access.phase === 'checking')
+    return null;
   const unknown = access.phase === 'unknown';
-  const checking = access.phase === 'checking';
   const retry =
     !unknown || recuperacaoErro(access.error, 'leitura').action === 'tentar';
   const ends =
@@ -18,18 +20,14 @@ export function AvisoAcesso() {
     <section className="aviso-acesso" aria-label="Acesso à conta">
       <div>
         <h2>
-          {checking
-            ? 'Conferindo acesso à conta…'
-            : unknown
-              ? 'Não foi possível conferir seu acesso'
-              : 'Sua conta está em modo de leitura'}
+          {unknown
+            ? 'Não foi possível conferir seu acesso'
+            : 'Sua conta está em modo de leitura'}
         </h2>
         <p role={unknown ? 'alert' : 'status'}>
-          {checking
-            ? 'Você pode continuar consultando seus dados enquanto conferimos as ações disponíveis.'
-            : unknown
-              ? 'A consulta e a exportação continuam disponíveis. As ações de escrita aguardam uma nova confirmação do serviço.'
-              : 'Você pode consultar e exportar seus dados. Para voltar a enviar ou alterar dados, confira sua assinatura.'}
+          {unknown
+            ? 'A consulta e a exportação continuam disponíveis. As ações de escrita aguardam uma nova confirmação do serviço.'
+            : 'Você pode consultar e exportar seus dados. Para voltar a enviar ou alterar dados, confira sua assinatura.'}
         </p>
         {unknown && access.error && (
           <p>{recuperacaoErro(access.error, 'leitura').description}</p>
@@ -47,7 +45,7 @@ export function AvisoAcesso() {
         )}
       </div>
       <div className="acesso-acoes">
-        {!checking && retry && (
+        {retry && (
           <button
             type="button"
             disabled={access.checking || access.waiting}
@@ -56,11 +54,9 @@ export function AvisoAcesso() {
             {access.checking ? 'Conferindo acesso…' : 'Conferir acesso'}
           </button>
         )}
-        {!checking && (
-          <Link to={{ pathname: '/assinatura', search: location.search }}>
-            Ver assinatura
-          </Link>
-        )}
+        <Link to={{ pathname: '/assinatura', search: location.search }}>
+          Ver assinatura
+        </Link>
       </div>
     </section>
   );

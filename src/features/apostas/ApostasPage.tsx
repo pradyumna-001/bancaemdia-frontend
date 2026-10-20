@@ -325,7 +325,11 @@ export function ApostasPage({
         <Filtros recurso="apostas" catalogos={catalogos} contrato={contrato} />
       </details>
       {!adapter.bloqueios.length && (
-        <section className="apostas-resumo" aria-label="Resumo desta visão">
+        <section
+          className="apostas-resumo"
+          aria-label="Resumo desta visão"
+          aria-busy={summary.isFetching}
+        >
           <h2>Resumo desta visão</h2>
           {summaryAdapter.bloqueios.length ? (
             <p>
@@ -333,39 +337,49 @@ export function ApostasPage({
               cada aposta continuam na lista.
             </p>
           ) : summary.isPending ? (
-            <p role="status">Carregando resumo…</p>
+            <p className="somente-leitor" role="status">
+              Carregando resumo…
+            </p>
           ) : null}
-          {!summaryAdapter.bloqueios.length && summary.data && (
-            <>
-              <dl className="apostas-indicadores">
-                <div>
-                  <dt>Apostas</dt>
-                  <dd className="numero">{summary.data.total}</dd>
-                </div>
-                <div>
-                  <dt>Valor apostado</dt>
-                  <dd className="numero">{summary.data.giro}</dd>
-                </div>
-                <div>
-                  <dt>Lucro</dt>
-                  <dd className="numero">{summary.data.lucro}</dd>
-                </div>
-                <div>
-                  <dt>ROI</dt>
-                  <dd className="numero">{summary.data.roi}</dd>
-                </div>
-              </dl>
-              <p className="legenda">
-                Valores financeiros dos resultados já liquidados. Apostas
-                pendentes, anuladas e em Revisão ficam fora desses valores.
-              </p>
-              <p className="legenda">
-                Resumo dos mesmos filtros da lista, consultado em{' '}
-                {summary.data.instante}. A lista e o resumo podem refletir
-                alterações feitas entre as consultas.
-              </p>
-            </>
-          )}
+          {!summaryAdapter.bloqueios.length &&
+            (summary.data || summary.isPending) && (
+              <>
+                <dl className="apostas-indicadores">
+                  <div>
+                    <dt>Apostas</dt>
+                    <dd className="numero">{summary.data?.total ?? '…'}</dd>
+                  </div>
+                  <div>
+                    <dt>Valor apostado</dt>
+                    <dd className="numero">{summary.data?.giro ?? '…'}</dd>
+                  </div>
+                  <div>
+                    <dt>Lucro</dt>
+                    <dd className="numero">{summary.data?.lucro ?? '…'}</dd>
+                  </div>
+                  <div>
+                    <dt>ROI</dt>
+                    <dd
+                      className={`numero${(summary.data?.roi.length ?? 0) > 18 ? ' numero-extenso' : ''}`}
+                    >
+                      {summary.data?.roi ?? '…'}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="legenda">
+                  Valores financeiros dos resultados já liquidados. Apostas
+                  pendentes, anuladas e em Revisão ficam fora desses valores.
+                </p>
+                <p className="legenda">
+                  Resumo dos mesmos filtros da lista, consultado em{' '}
+                  <span className="apostas-instante numero">
+                    {summary.data?.instante ?? '…'}
+                  </span>
+                  . A lista e o resumo podem refletir alterações feitas entre as
+                  consultas.
+                </p>
+              </>
+            )}
           {summary.error && (
             <ErroApi
               contexto="Resumo de apostas"
@@ -383,7 +397,7 @@ export function ApostasPage({
         </section>
       )}
       <section
-        className="apostas-lista"
+        className={`apostas-lista${list.isPending && enabled && !adapter.bloqueios.length ? ' apostas-lista--carregando' : ''}`}
         aria-label="Lista de apostas"
         aria-busy={list.isFetching}
       >

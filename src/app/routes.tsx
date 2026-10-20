@@ -162,7 +162,7 @@ export function createAppRoutes(
         ? false
         : defaultShouldRevalidate,
     hydrateFallbackElement: (
-      <main className="pagina">
+      <main className="pagina pagina-interna rota-carregando">
         <p role="status">Abrindo página…</p>
       </main>
     ),
@@ -181,7 +181,7 @@ export function createAppRoutes(
         element: (
           <Suspense
             fallback={
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <p role="status">Abrindo página…</p>
               </main>
             }
@@ -202,7 +202,7 @@ export function createAppRoutes(
         ) : path === '/aposta/nova' ? (
           <Suspense
             fallback={
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <h1>Nova aposta</h1>
                 <p role="status">Abrindo formulário…</p>
               </main>
@@ -217,7 +217,7 @@ export function createAppRoutes(
         ) : path === '/calculadoras' || path === '/e-se' ? (
           <Suspense
             fallback={
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <p role="status">Abrindo página…</p>
               </main>
             }
@@ -233,7 +233,7 @@ export function createAppRoutes(
         ) : path === '/painel/analises' ? (
           <Suspense
             fallback={
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <h1>Análises</h1>
                 <p role="status">Abrindo análises…</p>
               </main>
@@ -244,7 +244,7 @@ export function createAppRoutes(
         ) : path === '/painel/metas' ? (
           <Suspense
             fallback={
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <h1>Metas</h1>
                 <p role="status">Abrindo metas…</p>
               </main>
@@ -255,7 +255,7 @@ export function createAppRoutes(
         ) : path === '/contas/trocar' ? (
           <Suspense
             fallback={
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <h1>Trocar conta em uso</h1>
                 <p role="status">Abrindo troca…</p>
               </main>
@@ -270,7 +270,7 @@ export function createAppRoutes(
         ) : path === '/inicio' ? (
           <Suspense
             fallback={
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <h1>Primeiro uso</h1>
                 <p role="status">Abrindo primeiros passos…</p>
               </main>
@@ -281,7 +281,7 @@ export function createAppRoutes(
         ) : path === '/configuracoes/privacidade' ? (
           <Suspense
             fallback={
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <h1>Privacidade</h1>
                 <p role="status">Abrindo privacidade…</p>
               </main>
@@ -305,7 +305,7 @@ export function createAppRoutes(
         ) : path === '/revisao' ? (
           <Suspense
             fallback={
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <h1>Revisão</h1>
                 <p role="status">Abrindo revisão…</p>
               </main>
@@ -316,7 +316,7 @@ export function createAppRoutes(
         ) : path === '/coleta' ? (
           <Suspense
             fallback={
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <h1>Coleta</h1>
                 <p role="status">Abrindo Coleta…</p>
               </main>
@@ -339,7 +339,7 @@ export function createAppRoutes(
       element: (
         <Suspense
           fallback={
-            <main className="pagina">
+            <main className="pagina pagina-interna rota-carregando">
               <h1>{title}</h1>
               <p role="status">Abrindo ajuda…</p>
             </main>
@@ -355,7 +355,7 @@ export function createAppRoutes(
         ? protectedRoute(path, <AccountPage path={path} />)
         : {
             hydrateFallbackElement: (
-              <main className="pagina">
+              <main className="pagina pagina-interna rota-carregando">
                 <p role="status">Abrindo página…</p>
               </main>
             ),

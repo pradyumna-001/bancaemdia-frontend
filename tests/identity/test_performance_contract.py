@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.parse import quote
 from uuid import uuid4
 
+import httpx
 import pytest
 from playwright.async_api import async_playwright
 
@@ -31,6 +32,79 @@ seed = load("frontend_performance_seed", "performance_seed.py")
 banco = core.banco
 harness = core.harness
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def spawn_owned_tls(harness, public, private):
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "bancaemdia.main:app",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "58443",
+            "--ssl-certfile",
+            str(public),
+            "--ssl-keyfile",
+            str(private),
+            "--no-access-log",
+        ],
+        cwd=harness.root,
+        env=harness.env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    harness.processes.append(process)
+    return process
+
+
+@pytest.fixture
+async def performance_transport(harness, tmp_path):
+    # Coleta intentionally refuses plain HTTP. Reuse its real TLS proof rather
+    # than trusting invented forwarding headers or weakening the API requirement.
+    collection = load("frontend_performance_collection", "test_coleta_contract.py")
+    public, private = collection.tls_files(tmp_path)
+    upstream = "https://127.0.0.1:58443"
+    creating = asyncio.create_task(
+        asyncio.to_thread(spawn_owned_tls, harness, public, private)
+    )
+    try:
+        process = await asyncio.shield(creating)
+    except asyncio.CancelledError:
+        # Finish registration before the enclosing runtime cleans its processes.
+        await creating
+        raise
+    try:
+        async with httpx.AsyncClient(
+            base_url=upstream, verify=str(public), timeout=15
+        ) as client:
+            for _ in range(100):
+                assert process.poll() is None, (
+                    "Owned performance TLS API failed to start"
+                )
+                try:
+                    if (
+                        await client.get("/api/v1/coleta/installations")
+                    ).status_code == 401:
+                        break
+                except httpx.ConnectError:
+                    pass
+                await asyncio.sleep(0.1)
+            else:
+                raise AssertionError("Owned performance TLS API unavailable")
+        harness.frontend_proxy.collection_tls = (upstream, str(public))
+        yield
+    finally:
+        harness.frontend_proxy.collection_tls = None
+        if process.poll() is None:
+            process.terminate()
+            try:
+                await asyncio.to_thread(process.wait, 15)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                await asyncio.to_thread(process.wait, 15)
 
 
 def resolved_routes(initial):
@@ -93,7 +167,7 @@ async def run_measurement(payload, profile, output):
 
 @pytest.mark.parametrize("profile", ["mobile", "desktop"])
 async def test_public_spa_cold_performance(
-    harness, engine_admin, engine_app, como, profile
+    harness, performance_transport, engine_admin, engine_app, como, profile
 ):
     pin = json.loads((ROOT / "config/api-contract.json").read_text(encoding="utf-8"))
     actual_api = (

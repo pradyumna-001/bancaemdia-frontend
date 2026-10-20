@@ -40,6 +40,24 @@ Os headers de compressão são os do nginx estático e são verificados também 
 container. O proxy do ensaio conserva bytes e políticas da API; compressão de
 HTML/CSS/JS/SVG não inclui credenciais ou respostas JSON privadas.
 
+A prontidão é capturada no fim da navegação medida, antes de a auditoria de cache
+sair e voltar à página. O coletor herda integralmente o teste oficial de BFCache;
+testes comparam todos os artefatos, auditorias, pesos e perfis originais. Não se
+espera uma segunda navegação terminar para aprovar o placeholder da primeira.
+Em Apostas, a prova também exige as cem linhas reais da página solicitada.
+
+O status de acesso/fila ocupa espaço fixo no cabeçalho. O carregamento da rota,
+lista e resumo reserva espaço, com reticências enquanto os valores não chegaram;
+nenhum zero financeiro é fabricado. Casas decimais extensas continuam legíveis e
+inteiras. Leitura não espera billing, e os avisos de erro/modo de leitura conservam
+ações e mensagens. A regressão de apresentação libera as três respostas em ordens
+separadas e verifica geometria nos três navegadores/dois viewports.
+
+Coleta usa o mesmo listener HTTPS e certificado descartável verificado da sua
+prova existente. A recusa de HTTP não é contornada por cabeçalhos inventados ou
+validação TLS desabilitada. O processo pertence ao harness e é encerrado também
+se a preparação falhar; somente a rota Coleta usa esse upstream.
+
 ## Relatórios e segurança
 
 Lighthouse bruto inclui informações que não podem virar artefatos públicos.

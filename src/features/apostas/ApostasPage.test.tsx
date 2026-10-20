@@ -301,6 +301,9 @@ it('contrato candidato preserva filtros não publicados e não reutiliza a lista
   ).toBeVisible();
   expect(screen.queryByRole('article')).not.toBeInTheDocument();
   expect(listRequests(app.reads)).toHaveLength(1);
+  expect(
+    screen.getByRole('region', { name: 'Lista de apostas' }),
+  ).not.toHaveClass('apostas-lista--carregando');
   expect(app.router.state.location.search).toContain('apagadas=1');
 });
 it('erro de atualização mantém dados, permite nova leitura explícita e não repete escrita', async () => {

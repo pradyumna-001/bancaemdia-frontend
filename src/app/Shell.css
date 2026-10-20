@@ -10,6 +10,7 @@
   border-bottom: 1px solid var(--borda);
 }
 .shell-identidade {
+  position: relative;
   max-width: 76rem;
   margin: auto;
   padding: var(--espaco-16) var(--espaco-32);
@@ -17,6 +18,15 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--espaco-16);
+}
+.shell-consulta {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: var(--espaco-32);
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-pequena);
+  line-height: 1;
+  pointer-events: none;
 }
 .shell-identidade > a {
   display: inline-flex;
@@ -85,6 +95,9 @@
 }
 .shell-conteudo .pagina-interna {
   min-height: 20rem;
+}
+.shell-conteudo .rota-carregando {
+  min-block-size: 100svh;
 }
 .shell-conteudo:focus:not(:focus-visible) {
   outline: none;
@@ -172,6 +185,9 @@
   }
   .shell-identidade {
     padding: var(--espaco-12) var(--espaco-16);
+  }
+  .shell-consulta {
+    inset-inline-start: var(--espaco-16);
   }
   .shell-conteudo {
     padding: var(--espaco-24) var(--espaco-16)

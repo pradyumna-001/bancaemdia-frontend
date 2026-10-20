@@ -1,4 +1,3 @@
-/* global document */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { availableParallelism, arch, platform } from 'node:os';
@@ -7,7 +6,10 @@ import { launch } from 'chrome-launcher';
 import { chromium } from '@playwright/test';
 import puppeteer from 'puppeteer-core';
 import lighthouse from 'lighthouse';
-import desktopConfig from 'lighthouse/core/config/desktop-config.js';
+import {
+  MeasurementPageProof,
+  measurementConfig,
+} from './measurement-page-proof.mjs';
 import { inspectBundle, inspectRouteSplitting } from './check-bundle.mjs';
 import {
   API_PIN,
@@ -236,16 +238,20 @@ try {
           )
             compressedJs = true;
         });
-        const config =
-          profile === 'desktop'
-            ? { ...desktopConfig, settings: { ...desktopConfig.settings } }
-            : { extends: 'lighthouse:default', settings: {} };
+        const measuredPage = new MeasurementPageProof(
+          target.heading,
+          route.id === 'apostas' ? 100 : undefined,
+        );
+        const config = measurementConfig(profile, measuredPage);
         config.settings.screenEmulation = {
           ...PROFILES[profile],
           mobile: profile === 'mobile',
           deviceScaleFactor: profile === 'mobile' ? 1.75 : 1,
           disabled: false,
         };
+        // Keep the original cache artifact, dependencies and audit. Its inherited
+        // getArtifact still runs the full test; an earlier read-only hook captures
+        // the measured page before that audit's extra trip through history.
         const result = await lighthouse(
           new URL(target.path, origin).href,
           {
@@ -279,28 +285,9 @@ try {
           lhr.configSettings.screenEmulation.height !== PROFILES[profile].height
         )
           throw new Error('PERFORMANCE_WRONG_THROTTLING');
-        // Do not wait for missing data after measurement and then approve the
-        // score of a loading placeholder. Inspect the document Lighthouse saw.
-        const { headingVerified, settled } = await page.evaluate((heading) => {
-          const title = document.querySelector('main h1');
-          const loading = [
-            ...document.querySelectorAll('[role="status"]'),
-          ].some(
-            (node) =>
-              node.getClientRects().length > 0 &&
-              /^(Abrindo|Carregando|Consultando|Conferindo)/.test(
-                node.textContent?.trim() || '',
-              ),
-          );
-          return {
-            headingVerified:
-              !!title?.getClientRects().length &&
-              title.textContent?.trim() === heading,
-            settled:
-              !loading &&
-              !document.querySelector('[aria-busy="true"],main .erro-api'),
-          };
-        }, target.heading);
+        // Never wait after measurement to approve a loading placeholder. The
+        // gatherer captured this document before the later BFCache audit trip.
+        const { headingVerified, settled } = measuredPage.getProof();
         const authenticated = route.private
           ? await page.evaluate(
               async () =>

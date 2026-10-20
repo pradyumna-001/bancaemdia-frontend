@@ -29,8 +29,16 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--espaco-24);
 }
+.apostas-instante {
+  display: inline-block;
+  min-inline-size: 26ch;
+}
+.apostas-lista--carregando {
+  min-block-size: 100svh;
+}
 .apostas-indicadores dd {
   margin: 0;
+  min-block-size: 2lh;
   font-size: var(--fonte-secao);
   font-weight: var(--peso-destaque);
   overflow-wrap: anywhere;
@@ -39,6 +47,9 @@
 .aposta-valores dt,
 .aposta-detalhes dt {
   color: var(--tinta-secundaria);
+}
+.apostas-indicadores .numero-extenso {
+  font-size: var(--fonte-pequena);
 }
 .apostas-itens {
   list-style: none;

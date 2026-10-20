@@ -34,6 +34,7 @@ core, load, resolved_routes = (
 seed = load("frontend_accessibility_seed", "performance_seed.py")
 banco = core.banco
 harness = core.harness
+performance_transport = measurement.performance_transport
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -271,7 +272,13 @@ async def interactions(page, browser_name, context):
 @pytest.mark.parametrize("browser_name", ["chromium", "firefox", "webkit"])
 @pytest.mark.parametrize("profile", ["mobile", "desktop"])
 async def test_public_spa_large_accessibility(
-    harness, engine_admin, engine_app, como, browser_name, profile
+    harness,
+    performance_transport,
+    engine_admin,
+    engine_app,
+    como,
+    browser_name,
+    profile,
 ):
     viewport = (
         {"width": 390, "height": 844}

@@ -38,6 +38,15 @@ teve performance 69, acessibilidade 100, boas práticas 92, LCP 4.985 ms e CLS 0
 Incluía erro da API de identidade indisponível e não era aprovação de release.
 A medição real da #37 substitui essa referência para os gates de release.
 
+O diagnóstico inicial da #37 no SHA `7af29532a6be42ec24b98d6a4aee2a11e08041e8`
+foi reprovado: 23 amostras desktop, com Apostas em performance 75, LCP 645 ms e
+CLS 1,241 na primeira navegação. O inventário ficou incompleto e não aprova release.
+O artefato auditado `12284474500` pertence ao run `39467166681`. Ele motivou reserva
+de espaço no carregamento, status compacto no cabeçalho e resumo estável, sem
+remover valores. A prontidão é agora lida antes da navegação extra do teste de
+cache; o teste oficial permanece inteiro. A Coleta reutiliza seu listener HTTPS
+verificado. Os novos resultados precisam ser conferidos no SHA final completo.
+
 Lazy loading de páginas, subconjuntos locais de Source Sans 3, UTF-8 antes do tema
 e gzip estático preservam funcionalidades e contratos. O build local inicial da
 #37 mediu 115.380 bytes gzip. Esse valor precisa ser confirmado no commit final.
