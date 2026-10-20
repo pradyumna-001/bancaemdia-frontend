@@ -8,11 +8,17 @@ junto ao estado dos checks da PR. A configuração de medição por si só não 
 release. Este computador não possui Docker; PostgreSQL, emissor e API descartáveis
 rodam na CI.
 
-A ferramenta nativa interrompeu as tentativas no Chrome por não conseguir
-identificar a URL com segurança, inclusive após a página local ser aberta pelo
-titular. Nenhum zoom ou uso de leitor foi concluído ou contabilizado nessas
-tentativas. As provas automatizadas e seus limites assistivos ficam separados;
-não substituem um ensaio manual não realizado.
+A ferramenta nativa interrompeu o controle do Chrome por não conseguir confirmar
+a URL com segurança. Em 20/10/2026, o titular fez o ensaio solicitado de zoom
+200%/400% na demonstração isolada de Apostas e confirmou que tudo permanecia
+normal e legível. Esse resultado é um relato do titular sobre apresentação com
+dados simulados, separado das provas autenticadas com API real.
+
+O titular dispensou explicitamente o ensaio manual com Narrador. Ele não foi
+executado e não bloqueia o aceite da #37, conforme decisão no corpo canônico da
+issue. As verificações automatizadas de teclado, foco, contraste, árvore de
+acessibilidade e alternativas tabulares continuam obrigatórias, com inventário
+completo nos três browsers/dois viewports e zero skips.
 
 ## Reprodução
 
@@ -54,6 +60,13 @@ Os subconjuntos somam 106.712 bytes, preservando originais, licença, contornos,
 avanços e recursos tabulares. Não houve biblioteca de gráficos ou cálculo financeiro
 adicionado ao cliente.
 
+O diagnóstico local das correções de carregamento mediu 149.982 bytes gzip na
+pior rota inicial, incluindo preloads, e 117.042 bytes na base comum. Passaram
+48 casos selecionados em Chromium mobile/desktop e nove medições públicas
+(três de Tutorial, três de Extensão e três de Entrar), todas com os três scores >=95,
+LCP<2.500 ms e CLS<0,1. Esses dados locais não substituem os resultados
+autenticados, o inventário completo ou os checks do SHA final.
+
 ## Interações e limites assistivos
 
 Event Timing observa cliques reais nas duas visualizações de 100 apostas, com
@@ -66,7 +79,7 @@ obrigatórias nos três browsers. TBT Lighthouse permanece outra métrica.
 
 Axe, contraste, árvore de acessibilidade em memória e teclado não certificam toda
 a experiência com leitor de tela. Ensaios manuais de zoom/leitor, ferramentas e
-limitações precisam ser registrados separadamente. Não houve teste com participantes
+limitações precisam ser registrados separadamente. Não houve estudo com participantes
 nem coletor em produção; não se afirma P75 de INP em campo. Publicação continua
 bloqueada pelo pin sandbox e pelos aceites administrativos de #38/#39.
 

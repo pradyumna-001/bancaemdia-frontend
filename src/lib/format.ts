@@ -2,6 +2,38 @@ export type InteiroExato = number | bigint | string;
 export type DecimalRecebido = number | string;
 export const NAO_INFORMADO = 'Não informado';
 const indisponivel = () => new Error('Valor indisponível.');
+// Only locale configuration is shared. No value, identity or formatted result
+// survives a call; repeated rows do not recreate the expensive ICU machinery.
+const moedasSuportadas = new Set(Intl.supportedValuesOf('currency'));
+const inteiroFormatado = new Intl.NumberFormat('pt-BR');
+const moedasFormatadas = new Map<string, Intl.NumberFormat>();
+const datasFormatadas = new Map<string, Intl.DateTimeFormat>();
+const eixosFormatados = [1, 2].map(
+  (maximumFractionDigits) =>
+    new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      notation: 'compact',
+      maximumFractionDigits,
+      minimumFractionDigits: 0,
+    }),
+);
+function formatoMoeda(currency: string, casas?: number) {
+  const key = `${currency}:${casas ?? 'iso'}`;
+  let formato = moedasFormatadas.get(key);
+  if (!formato) {
+    formato = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency,
+      currencyDisplay: currency === 'BRL' ? 'symbol' : 'code',
+      ...(casas === undefined
+        ? {}
+        : { minimumFractionDigits: casas, maximumFractionDigits: casas }),
+    });
+    moedasFormatadas.set(key, formato);
+  }
+  return formato;
+}
 
 /** Conversão textual de entrada BRL; não decide nenhum valor financeiro. */
 export function centavosDaEntrada(valor: string): number {
@@ -48,27 +80,18 @@ export function moedaMenor(
   casas?: number,
 ): string {
   if (valor === null) return NAO_INFORMADO;
-  if (!Intl.supportedValuesOf('currency').includes(currency))
-    throw indisponivel();
-  const formato = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency,
-    currencyDisplay: currency === 'BRL' ? 'symbol' : 'code',
-  });
-  const digitos = casas ?? formato.resolvedOptions().maximumFractionDigits!;
+  if (!moedasSuportadas.has(currency)) throw indisponivel();
+  const digitos =
+    casas ?? formatoMoeda(currency).resolvedOptions().maximumFractionDigits!;
   if (!Number.isInteger(digitos) || digitos < 0 || digitos > 4)
     throw indisponivel();
   const inteiro = inteiroExato(valor);
   const absoluto = inteiro < 0n ? -inteiro : inteiro;
   const escala = 10n ** BigInt(digitos);
   const fracao = (absoluto % escala).toString().padStart(digitos, '0');
-  const partes = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency,
-    currencyDisplay: currency === 'BRL' ? 'symbol' : 'code',
-    minimumFractionDigits: digitos,
-    maximumFractionDigits: digitos,
-  }).formatToParts(absoluto / escala);
+  const partes = formatoMoeda(currency, digitos).formatToParts(
+    absoluto / escala,
+  );
   const prefixo = inteiro < 0n ? '−' : sinal && inteiro > 0n ? '+' : '';
   return (
     prefixo +
@@ -154,7 +177,7 @@ function numeroDecimal(
         : '';
   return (
     prefixo +
-    new Intl.NumberFormat('pt-BR').format(BigInt(inteiro)) +
+    inteiroFormatado.format(BigInt(inteiro)) +
     (fracao ? `,${fracao}` : '')
   );
 }
@@ -246,15 +269,22 @@ export function dataHora(instante: string | null, fuso: string): string {
     throw new Error('Data indisponível.');
   dataCivil(instante.slice(0, 10));
   try {
-    const formato = new Intl.DateTimeFormat('pt-BR', {
-      timeZone: fuso,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    });
+    let formato = datasFormatadas.get(fuso);
+    if (!formato) {
+      formato = new Intl.DateTimeFormat('pt-BR', {
+        timeZone: fuso,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      });
+      // Unknown server-provided zones cannot grow a process-wide cache forever.
+      if (datasFormatadas.size === 16)
+        datasFormatadas.delete(datasFormatadas.keys().next().value!);
+      datasFormatadas.set(fuso, formato);
+    }
     return `${formato.format(new Date(instante))} (${formato.resolvedOptions().timeZone})`;
   } catch {
     throw new Error('Data indisponível.');
@@ -264,11 +294,7 @@ export function dataHora(instante: string | null, fuso: string): string {
 /** Escala compacta apenas para eixos; resumo e tabela preservam centavos exatos. */
 export function moedaEixo(centavos: number): string {
   if (!Number.isSafeInteger(centavos)) throw new Error('Valor indisponível.');
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    notation: 'compact',
-    maximumFractionDigits: Math.abs(centavos) < 100000 ? 2 : 1,
-    minimumFractionDigits: 0,
-  }).format(centavos / 100);
+  return eixosFormatados[Math.abs(centavos) < 100000 ? 1 : 0]!.format(
+    centavos / 100,
+  );
 }

@@ -513,7 +513,7 @@ it('falha de catálogos e nome histórico conserva ID, permite recuperação exp
     'Não foi possível consultar o nome. O identificador foi preservado.',
   );
   expect(
-    screen.getByRole('button', { name: 'Remover filtro Casa' }),
+    screen.getByRole('button', { name: /^Remover filtro Casa:/ }),
   ).toHaveTextContent('Casa: Identificador 7');
   app.respond(defaultResponse);
   await userEvent.click(

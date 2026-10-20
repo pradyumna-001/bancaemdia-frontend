@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { apostaExemplo, resumoExemplo } from '../fixtures/apostas';
 import { billingStatus } from '../fixtures/acesso';
+import { diario, grupos, legado, filtrado } from '../fixtures/painel';
+import { analises, caixaAnalises } from '../fixtures/analises';
+import { caixaFixture } from '../fixtures/caixa';
+import { createContasFixture } from '../fixtures/contas';
+import { filaResultado } from '../fixtures/resultados';
+import { unlinkedTelegram } from '../fixtures/telegram';
 
 function gate() {
   let release!: () => void;
@@ -8,6 +14,23 @@ function gate() {
     release = resolve;
   });
   return { ready, release };
+}
+function watchLayout() {
+  const state = {
+    supported: PerformanceObserver.supportedEntryTypes.includes('layout-shift'),
+    value: 0,
+  };
+  Object.defineProperty(window, '__loadingStability', { value: state });
+  if (state.supported)
+    new PerformanceObserver((entries) => {
+      for (const event of entries.getEntries()) {
+        const shift = event as PerformanceEntry & {
+          hadRecentInput: boolean;
+          value: number;
+        };
+        if (!shift.hadRecentInput) state.value += shift.value;
+      }
+    }).observe({ type: 'layout-shift', buffered: true });
 }
 
 test('respostas independentes preservam a posicao da leitura e o espaco do resumo', async ({
@@ -20,24 +43,7 @@ test('respostas independentes preservam a posicao da leitura e o espaco do resum
     'Access-Control-Allow-Origin': 'http://127.0.0.1:4173',
     'Access-Control-Allow-Credentials': 'true',
   };
-  await page.addInitScript(() => {
-    const state = {
-      supported:
-        PerformanceObserver.supportedEntryTypes.includes('layout-shift'),
-      value: 0,
-    };
-    Object.defineProperty(window, '__loadingStability', { value: state });
-    if (state.supported)
-      new PerformanceObserver((entries) => {
-        for (const event of entries.getEntries()) {
-          const shift = event as PerformanceEntry & {
-            hadRecentInput: boolean;
-            value: number;
-          };
-          if (!shift.hadRecentInput) state.value += shift.value;
-        }
-      }).observe({ type: 'layout-shift', buffered: true });
-  });
+  await page.addInitScript(watchLayout);
   await page.route('http://127.0.0.1:8000/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     let json: unknown;
@@ -165,3 +171,122 @@ test('respostas independentes preservam a posicao da leitura e o espaco do resum
     summary.release();
   }
 });
+
+for (const [path, ready] of [
+  ['/painel', '.painel-resumo'],
+  ['/banca', '.caixa-resumo'],
+  ['/resultados', '.resultado-atual'],
+  ['/contas', '.contas-grid'],
+  ['/contas/1', '#contas-cadastro'],
+  ['/painel/analises', '.analises-resumo'],
+  ['/configuracoes/conexoes', '#telegram-estado'],
+])
+  test(`consulta inicial de ${path} conserva o titulo e nao desloca a leitura`, async ({
+    page,
+  }, info) => {
+    const data = gate(),
+      billing = gate();
+    const caixa = caixaFixture(),
+      contas = createContasFixture();
+    const cors = {
+      'Access-Control-Allow-Origin': 'http://127.0.0.1:4173',
+      'Access-Control-Allow-Credentials': 'true',
+    };
+    await page.addInitScript(watchLayout);
+    await page.route('http://127.0.0.1:8000/**', async (route) => {
+      const url = new URL(route.request().url());
+      const p = url.pathname;
+      expect(route.request().method()).toBe('GET');
+      let json: unknown;
+      if (p === '/auth/session')
+        json = {
+          usuario_id: 1,
+          nome: 'Sandbox',
+          email: 'sandbox@example.org',
+          session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
+          csrf_token: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',
+          refresh_required: false,
+          access_expires_at: '2030-01-01T00:00:00Z',
+          session_expires_at: '2030-01-02T00:00:00Z',
+        };
+      else if (p === '/api/v1/billing/status') {
+        await billing.ready;
+        json = billingStatus;
+      } else if (p === '/api/v1/revisao/stats')
+        json = {
+          total: 30,
+          por_motivo: { FOTO: 30 },
+          mais_antiga_em: null,
+          idade_maxima_segundos: 0,
+        };
+      else {
+        await data.ready;
+        if (p === '/api/v1/painel/filtrado/diario') json = diario;
+        else if (p === '/api/v1/painel/filtrado/grupos') json = grupos;
+        else if (p === '/api/v1/painel/filtrado') json = filtrado;
+        else if (p === '/api/v1/painel/analises') json = analises;
+        else if (p === '/api/v1/painel')
+          json = path === '/painel/analises' ? caixaAnalises : legado;
+        else if (p === '/api/v1/resultados/fila') json = filaResultado();
+        else if (p === '/api/v1/telegram/link') json = unlinkedTelegram;
+        else if (
+          p.startsWith('/api/v1/caixa') ||
+          p.startsWith('/api/v1/casas/')
+        )
+          json = caixa.handle('GET', url).data;
+        else json = contas.handle('GET', url);
+        expect(json, p).toBeDefined();
+      }
+      await route.fulfill({ json, headers: cors });
+    });
+    try {
+      await page.goto(path!);
+      await expect(page.locator('main h1')).toBeVisible();
+      await expect(
+        page.locator('main .consulta-carregando').first(),
+      ).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      const before = await page.locator('main h1').boundingBox();
+      await page.screenshot({ path: info.outputPath('consulta.png') });
+      data.release();
+      billing.release();
+      await expect(page.locator(ready!).first()).toBeVisible();
+      await expect(page.locator('main .consulta-carregando')).toHaveCount(0);
+      await expect(page.locator('main .erro-api')).toHaveCount(0);
+      if (path === '/banca') {
+        const label = await page
+          .locator('.caixa-saldo-controles .filtro-escolha > span')
+          .boundingBox();
+        const picker = await page
+          .getByRole('button', {
+            name: 'Saldo até a data Sem limite',
+            exact: true,
+          })
+          .boundingBox();
+        expect(label!.y + label!.height).toBeLessThanOrEqual(picker!.y);
+      }
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      const after = await page.locator('main h1').boundingBox();
+      expect(Math.abs(before!.y - after!.y)).toBeLessThanOrEqual(1);
+      const timing = await page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              __loadingStability: { supported: boolean; value: number };
+            }
+          ).__loadingStability,
+      );
+      if (info.project.name.startsWith('chromium'))
+        expect(timing.supported).toBe(true);
+      if (timing.supported) expect(timing.value).toBeLessThan(0.1);
+      await page.screenshot({ path: info.outputPath('dados.png') });
+    } finally {
+      data.release();
+      billing.release();
+    }
+  });

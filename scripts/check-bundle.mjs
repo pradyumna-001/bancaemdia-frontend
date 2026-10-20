@@ -84,13 +84,40 @@ export function inspectBundle(directory, limit = INITIAL_JS_LIMIT) {
     bytes: bytes.length,
     gzipBytes: gzipSync(bytes, { level: 9 }).length,
   }));
-  const totalGzipBytes = assets.reduce(
-    (sum, asset) => sum + asset.gzipBytes,
-    0,
+  const baseGzipBytes = assets.reduce((sum, asset) => sum + asset.gzipBytes, 0);
+  const hints = /<meta id="rotas-iniciais" content="([^"]*)">/.exec(html);
+  const routePreloads = hints
+    ? JSON.parse(
+        hints[1]
+          .replaceAll('&quot;', '"')
+          .replaceAll('&lt;', '<')
+          .replaceAll('&gt;', '>')
+          .replaceAll('&amp;', '&'),
+      )
+    : [];
+  const routeBudgets = routePreloads.map(({ path, files: hints }) => {
+    const additional = new Set(
+      hints.filter((file) => file.endsWith('.js') && !files.has(file)),
+    );
+    return {
+      path,
+      gzipBytes:
+        baseGzipBytes +
+        [...additional].reduce(
+          (sum, file) => sum + gzipSync(read(file), { level: 9 }).length,
+          0,
+        ),
+    };
+  });
+  const totalGzipBytes = Math.max(
+    baseGzipBytes,
+    ...routeBudgets.map((route) => route.gzipBytes),
   );
   return {
     limitBytes: limit,
     totalGzipBytes,
+    baseGzipBytes,
+    routeBudgets,
     passed: totalGzipBytes <= limit,
     assets,
   };

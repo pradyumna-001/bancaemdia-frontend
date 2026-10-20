@@ -1,4 +1,5 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
+import './filtros.css';
 export type OpcaoFiltro = Readonly<{
   value: string;
   label: string;

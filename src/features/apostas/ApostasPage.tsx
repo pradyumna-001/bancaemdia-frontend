@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { novaApostaDestino } from '../../lib/params';
+import { novaApostaDestino } from '../../lib/novaApostaDestino';
 import { getApiClient, type createApiClient } from '../../api/client';
 import { recuperacaoErro } from '../../api/recovery';
 import { SITE_READ_CONTRACT } from '../../api/site-read.generated';

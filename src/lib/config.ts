@@ -84,12 +84,20 @@ async function readRuntimeConfig(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    const response = await fetcher('/config.json', {
-      cache: 'no-store',
-      credentials: 'omit',
-      redirect: 'error',
-      signal: controller.signal,
-    });
+    const bootstrap = globalThis as typeof globalThis & {
+      bancaemdiaConfigInicial?: () => Promise<Response> | undefined;
+    };
+    const pending =
+      fetcher === globalThis.fetch
+        ? bootstrap.bancaemdiaConfigInicial?.()
+        : undefined;
+    const response = await (pending ??
+      fetcher('/config.json', {
+        cache: 'no-store',
+        credentials: 'omit',
+        redirect: 'error',
+        signal: controller.signal,
+      }));
     if (!response.ok)
       throw new ConfigError(
         'Não foi possível carregar a configuração do site. Tente novamente.',

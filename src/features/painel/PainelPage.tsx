@@ -241,6 +241,12 @@ function Conteudo({
       s.set('diario_inicio', value);
       return s;
     });
+  if (diario.isPending)
+    return (
+      <p role="status" className="consulta-carregando">
+        Consultando os dias…
+      </p>
+    );
   return (
     <>
       {raw && !start && (
@@ -289,7 +295,6 @@ function Conteudo({
               </button>
             ))}
           </div>
-          {diario.isPending && <p role="status">Consultando os dias…</p>}
           {diario.error && (
             <Falha
               contexto="Lucro por dia"
@@ -323,7 +328,7 @@ function Conteudo({
             Abra um grupo para conferir os tipsters. O total permanece visível.
           </p>
           {grupos.isPending && (
-            <p role="status">
+            <p role="status" className="consulta-carregando">
               {selection
                 ? 'Consultando os grupos…'
                 : 'Aguardando o recorte do diário…'}
@@ -523,13 +528,13 @@ export function PainelPage({ client }: { client?: Client }) {
           <button
             key={k}
             onClick={() => setSearch(alterarFiltro(search, k as Filtro))}
-            aria-label={`Remover filtro ${DIMENSOES[k as keyof typeof DIMENSOES] ?? k}`}
           >
+            <span className="somente-leitor">Remover filtro </span>
             <span>
               {DIMENSOES[k as keyof typeof DIMENSOES] ?? k}:{' '}
               {catalogos[k as keyof typeof catalogos]?.selecionada?.label ?? v}
             </span>{' '}
-            ×
+            <span aria-hidden="true">×</span>
           </button>
         ))}
       </div>

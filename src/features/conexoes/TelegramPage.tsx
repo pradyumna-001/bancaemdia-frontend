@@ -274,7 +274,11 @@ export function TelegramPage({
         Este link é ilustrativo. O endereço real do bot será divulgado no
         lançamento.
       </p>
-      {query.isPending && <p role="status">Consultando conexão…</p>}
+      {query.isPending && (
+        <p role="status" className="consulta-carregando">
+          Consultando conexão…
+        </p>
+      )}
       {query.error && (
         <ErroApi
           error={query.error}

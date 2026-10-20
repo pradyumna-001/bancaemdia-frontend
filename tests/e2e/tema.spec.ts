@@ -70,9 +70,20 @@ test('tema acompanha sistema, persiste escolha e funciona por teclado nos dois t
   expect(
     await page.evaluate(() =>
       [400, 600, 700].every((weight) =>
-        document.fonts.check(weight + ' 16px "Source Sans 3"'),
+        document.fonts.check(weight + ' 16px "Bancaemdia Interface"'),
       ),
     ),
+  ).toBe(true);
+  // The renamed Latin subset handles the interface. Explicitly exercise the
+  // original complete OFL family for a glyph outside that subset as well.
+  expect(
+    await page.evaluate(async () => {
+      const loaded = await document.fonts.load('400 16px "Source Sans 3"', 'Ж');
+      return (
+        loaded.length > 0 &&
+        document.fonts.check('400 16px "Source Sans 3"', 'Ж')
+      );
+    }),
   ).toBe(true);
   expect(fonts.length).toBeGreaterThan(0);
   expect(

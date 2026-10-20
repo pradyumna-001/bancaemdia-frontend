@@ -245,8 +245,8 @@ function Conteudo({ client }: { client: Client }) {
             key={key}
             disabled={blocked}
             onClick={() => change(key as Filtro)}
-            aria-label={'Remover filtro ' + (FILTRO_LABELS[key] ?? key)}
           >
+            <span className="somente-leitor">Remover filtro </span>
             {FILTRO_LABELS[key] ?? key}:{' '}
             {catalogos[key as keyof typeof catalogos]?.selecionada?.label ??
               (key === 'periodo'
@@ -254,7 +254,7 @@ function Conteudo({ client }: { client: Client }) {
                 : key === 'apagadas'
                   ? VISIBILIDADE[value]
                   : value)}{' '}
-            ×
+            <span aria-hidden="true">×</span>
           </button>
         ))}
       </div>
@@ -280,7 +280,11 @@ function Conteudo({ client }: { client: Client }) {
           : 'Todas as casas'}
         . Tipster e mercado presentes no endereço também são aplicados.
       </p>
-      {analysis.isPending && <p role="status">Consultando análises…</p>}
+      {analysis.isPending && (
+        <p role="status" className="consulta-carregando">
+          Consultando análises…
+        </p>
+      )}
       {!!analysis.error &&
         fail(analysis.error, () => void analysis.refetch(), 'Análises ao vivo')}
       {data && (

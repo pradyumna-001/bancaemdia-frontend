@@ -29,6 +29,55 @@ export const API_PIN = JSON.parse(
 const demand = (condition, code) => {
   if (!condition) throw new Error(code);
 };
+/** Stdin may contain HttpOnly cookies. Parser/URL errors must never echo it. */
+export function parseMeasurementInput(serialized) {
+  try {
+    const input = JSON.parse(serialized);
+    const origin = new URL(input.origin);
+    demand(
+      ['http:', 'https:'].includes(origin.protocol) &&
+        origin.hostname === '127.0.0.1' &&
+        !origin.username &&
+        !origin.password &&
+        origin.pathname === '/' &&
+        !origin.search &&
+        !origin.hash &&
+        input.apiSha === API_PIN.commit,
+      'INVALID',
+    );
+    const routeInputs = new Map(input.routes.map((route) => [route.id, route]));
+    demand(
+      routeInputs.size === ROUTES.length &&
+        input.routes.length === ROUTES.length &&
+        ROUTES.every((route) => routeInputs.has(route.id)),
+      'INVALID',
+    );
+    for (const route of routeInputs.values()) {
+      const url = new URL(route.path, origin);
+      demand(
+        url.origin === origin.origin &&
+          !url.hash &&
+          route.path.startsWith('/') &&
+          !route.path.startsWith('//') &&
+          typeof route.heading === 'string' &&
+          !!route.heading,
+        'INVALID',
+      );
+    }
+    demand(
+      Array.isArray(input.cookies) &&
+        input.cookies.length > 0 &&
+        input.cookies.every(
+          (cookie) => cookie.httpOnly && cookie.domain === '127.0.0.1',
+        ),
+      'INVALID',
+    );
+    return { input, origin, routeInputs };
+  } catch {
+    // Do not attach the original cause: JSON/URL errors can include credentials.
+    throw new Error('PERFORMANCE_INPUT_INVALID');
+  }
+}
 const object = (value, required, optional = []) => {
   demand(
     value && typeof value === 'object' && !Array.isArray(value),
@@ -174,7 +223,7 @@ export function inspectPerformanceReport(
     object(
       sample,
       ['route', 'run', 'scores', 'lcpMs', 'cls', 'tbtMs', 'proofs'],
-      ['failedAudits'],
+      ['failedAudits', 'httpStatuses'],
     );
     const route = ROUTES.find((r) => r.id === sample.route);
     demand(
@@ -212,6 +261,25 @@ export function inspectPerformanceReport(
           'REPORT_DIAGNOSTICS_INVALID',
         );
         seen.add(audit.id);
+      }
+    }
+    if (sample.httpStatuses !== undefined) {
+      demand(
+        Array.isArray(sample.httpStatuses) && sample.httpStatuses.length <= 500,
+        'REPORT_HTTP_INVALID',
+      );
+      const seen = new Set();
+      for (const entry of sample.httpStatuses) {
+        object(entry, ['status', 'count']);
+        demand(
+          Number.isInteger(entry.status) &&
+            finite(entry.status, 100, 599) &&
+            !seen.has(entry.status) &&
+            Number.isInteger(entry.count) &&
+            finite(entry.count, 1, 10000),
+          'REPORT_HTTP_INVALID',
+        );
+        seen.add(entry.status);
       }
     }
     object(sample.proofs, [

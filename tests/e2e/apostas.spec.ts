@@ -328,7 +328,7 @@ test('Filtros removíveis conservam histórico, resumo equivalente e retorno por
     page.getByRole('button', { name: 'Estado Pendente' }),
   ).toBeFocused();
   await page
-    .getByRole('button', { name: 'Remover filtro Visibilidade' })
+    .getByRole('button', { name: /^Remover filtro Visibilidade:/ })
     .click();
   await expect(page).not.toHaveURL(/apagadas=/);
   await page.goBack();
@@ -336,7 +336,7 @@ test('Filtros removíveis conservam histórico, resumo equivalente e retorno por
   await page.reload();
   await page.getByText('Filtrar apostas — há filtros ativos').click();
   await expect(
-    page.getByRole('button', { name: 'Remover filtro Casa' }),
+    page.getByRole('button', { name: /^Remover filtro Casa:/ }),
   ).toContainText('Nome autorizado');
   await expect
     .poll(() =>

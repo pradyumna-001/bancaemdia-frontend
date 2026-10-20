@@ -254,11 +254,8 @@ export function Filtros({
           {(Object.entries(visao.valores) as [Filtro, string][]).map(
             ([key, value]) => (
               <li key={key}>
-                <button
-                  type="button"
-                  aria-label={'Remover filtro ' + pillLabels[key]}
-                  onClick={() => alterar(key)}
-                >
+                <button type="button" onClick={() => alterar(key)}>
+                  <span className="somente-leitor">Remover filtro </span>
                   {pillLabels[key]}: {name(key, value)}
                   {adapter.preservados.includes(key)
                     ? ' — preservado, não aplicado nesta área'

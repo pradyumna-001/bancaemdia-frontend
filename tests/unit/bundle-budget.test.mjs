@@ -1,5 +1,11 @@
 // @vitest-environment node
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  readFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -75,6 +81,30 @@ it('reprova excesso real em dependência inicial e conta preload de dynamic impo
     '<script src="/assets/app.js"></script><link rel="modulepreload" href="/assets/lazy.js">',
   );
   expect(inspectBundle(dir).passed).toBe(false);
+});
+it('o pior preload de rota entra no budget inicial sem somar rotas alternativas', () => {
+  const { dir } = fixture();
+  const baseline = inspectBundle(dir);
+  const hints = [
+    {
+      path: '/painel',
+      files: ['assets/lazy.js', 'assets/shared.js', 'assets/lazy.js'],
+    },
+    { path: '/contas', files: ['assets/shared.js'] },
+  ];
+  const html = readFileSync(join(dir, 'index.html'), 'utf8');
+  writeFileSync(
+    join(dir, 'index.html'),
+    '<meta id="rotas-iniciais" content="' +
+      JSON.stringify(hints).replaceAll('"', '&quot;') +
+      '">' +
+      html,
+  );
+  const report = inspectBundle(dir);
+  expect(report.passed).toBe(false);
+  expect(report.baseGzipBytes).toBe(baseline.totalGzipBytes);
+  expect(report.routeBudgets[1].gzipBytes).toBe(baseline.totalGzipBytes);
+  expect(report.totalGzipBytes).toBe(report.routeBudgets[0].gzipBytes);
 });
 it('falha fechado com arquivo/import ausente ou referência externa', () => {
   const { dir, manifest } = fixture();

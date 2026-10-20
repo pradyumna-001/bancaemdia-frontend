@@ -36,6 +36,28 @@ score abaixo da meta, escolher só a amostra rápida, remover caso ou substituir
 ausência por zero. TBT é diagnóstico e não substitui INP. JS inicial permanece
 <=200.000 bytes gzip; manifesto e tráfego devem preservar separação por rota.
 
+O bootstrap autorizado por hash antecipa somente JS/CSS públicos da rota atual e
+suas dependências estáticas, a partir dos nomes emitidos pelo build. Não lê query,
+identidade ou dados e não executa páginas antes do guard. Caminhos fixos têm
+precedência sobre parâmetros. Outras rotas continuam lazy; o budget inclui a
+pior carga inicial com esses preloads, sem somar rotas alternativas nem omitir a
+rota antecipada. Falha na dica mantém a carga normal e o tema funcionando.
+
+CSS antecipado só se torna stylesheet após recebimento e após o parser registrar
+os estilos de entrada, em ordem determinística. Se o carregador normal já pediu
+esse estilo, a dica não o aplica outra vez. Erro ou atraso preserva o caminho
+normal do Vite. Seletores reutilizáveis importam seu próprio CSS; abrir Caixa ou
+Contas diretamente não depende de ter visitado outra página. A ajuda pública usa
+o construtor puro de destino, separado dos descritores de validação da API.
+
+A leitura de `config.json` pode começar durante o download do JS: sem cookie,
+sem Referer e com o mesmo prazo de cinco segundos até receber o corpo completo.
+Somente essa resposta pública é entregue uma vez ao carregador central, que
+mantém a validação de status, MIME, campos e URL. Ausência da antecipação usa o
+caminho normal; uma nova inicialização não reutiliza resposta consumida. Isso não
+consulta identidade nem fornece sessão, CSRF ou acesso. Hints de assets também
+omitem Referer; parâmetros de protocolo não são transmitidos por essas dicas.
+
 Os headers de compressão são os do nginx estático e são verificados também no
 container. O proxy do ensaio conserva bytes e políticas da API; compressão de
 HTML/CSS/JS/SVG não inclui credenciais ou respostas JSON privadas.
@@ -45,6 +67,8 @@ sair e voltar à página. O coletor herda integralmente o teste oficial de BFCac
 testes comparam todos os artefatos, auditorias, pesos e perfis originais. Não se
 espera uma segunda navegação terminar para aprovar o placeholder da primeira.
 Em Apostas, a prova também exige as cem linhas reais da página solicitada.
+Erros de acesso ou fila no layout externo também reprovam a medição. O aviso
+de READ_ONLY confirmado pelo servidor preserva o acesso de leitura e não é erro.
 
 O status de acesso/fila ocupa espaço fixo no cabeçalho. O carregamento da rota,
 lista e resumo reserva espaço, com reticências enquanto os valores não chegaram;
@@ -52,6 +76,13 @@ nenhum zero financeiro é fabricado. Casas decimais extensas continuam legíveis
 inteiras. Leitura não espera billing, e os avisos de erro/modo de leitura conservam
 ações e mensagens. A regressão de apresentação libera as três respostas em ordens
 separadas e verifica geometria nos três navegadores/dois viewports.
+
+Painel, Caixa, Resultados, titulares, Análises e Telegram reservam a região da
+resposta inicial para impedir que seções já visíveis saltem. Consulta de billing
+em andamento não é apresentada como recusa de escrita; controles continuam
+bloqueados e avisos confirmados permanecem. Formatadores reutilizam somente
+configurações de Intl, nunca valores, nomes ou resultados privados. O cache de
+fusos é limitado e a precisão textual do dinheiro permanece a mesma.
 
 Coleta usa o mesmo listener HTTPS e certificado descartável verificado da sua
 prova existente. A recusa de HTTP não é contornada por cabeçalhos inventados ou
@@ -67,6 +98,8 @@ Cookie não vai para argumentos, ambiente, URL, configuração pública ou stora
 
 O JSON permitido contém somente versões, perfil/ambiente, contagens, budget,
 métricas numéricas, IDs estáticos de auditoria e resultados booleanos por rota.
+Diagnóstico HTTP contém somente status e contagens numéricas, sem endpoint,
+cabeçalhos, mensagens ou corpo, e não transforma falha de prontidão em aprovação.
 Gate de privacidade é independente do aceite numérico: um diagnóstico abaixo da
 meta pode ser publicado se tiver somente os campos permitidos, mas reprova o job.
 Campos adicionais, browser/perfil/pin incorretos, duplicação e ausência bloqueiam
@@ -79,6 +112,11 @@ Revisão adicional usa população grande, dois temas, teclado/foco, reflow, amp
 nomes/papéis/ordem de leitura e alternativa tabular. Espaço da mídia é reservado
 antes dos bytes, com carregamento por gesto e ampliação acessível.
 
+O percurso de teclado conta apenas paradas efetivas: conteúdo de details/dialog
+fechados, fieldsets desabilitados e regiões inert não são controles disponíveis.
+Grupo de rádios tem uma parada. Pontos SVG precisam do anel de foco desenhado
+opaco de pelo menos três pixels; uma sombra decorativa não comprova foco.
+
 Event Timing observa gestos de navegador em jornadas com API real; latência até o
 próximo paint e tempo até concluir a tarefa são conceitos separados. Registro
 abaixo da resolução da API não vira zero. Não usar relógio alterado, TBT ou evento
@@ -88,6 +126,12 @@ telemetria no produto ou prova de P75 de campo neste sandbox.
 O relatório de validação registra quais ferramentas assistivas e ampliações foram
 de fato ensaiadas, ambiente, limitações e participantes, se houver. Axe, Lighthouse
 e árvore de acessibilidade não certificam por si sós usabilidade ou WCAG integral.
+
+Em 20/10/2026, o titular confirmou a legibilidade no ensaio de zoom 200%/400% da
+demonstração de Apostas e dispensou explicitamente o ensaio manual com Narrador.
+O ensaio dispensado não é contabilizado como executado nem bloqueia o aceite da
+#37. Os gates automatizados assistivos e seus inventários permanecem integrais,
+sem skips; não se afirma certificação de leitor de tela.
 
 ## Fontes e carregamento
 

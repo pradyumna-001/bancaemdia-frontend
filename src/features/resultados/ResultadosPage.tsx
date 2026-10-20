@@ -14,6 +14,7 @@ import { rotuloEstado } from '../../lib/termos';
 import { useRetryAfter } from '../../lib/useRetryAfter';
 import { useCatalogos } from '../apostas/catalogos';
 import { useOperacao } from '../importar/useOperacao';
+import { useAcesso } from '../acesso/ProvedorAcesso';
 import {
   contextoConta,
   DESFAZER,
@@ -93,6 +94,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
     filtersOpen,
   );
   const op = useOperacao();
+  const access = useAcesso();
   const { cancel } = op;
   const [recibos, setRecibos] = useState<Recibo[]>([]);
   const [consumed, setConsumed] = useState<string[]>([]);
@@ -478,7 +480,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
           conferir.
         </p>
       )}
-      {!op.can(REGISTRAR) && (
+      {!op.can(REGISTRAR) && access?.phase !== 'checking' && (
         <section className="resultados-nota">
           <h2>Resultados em consulta</h2>
           <p>
@@ -606,7 +608,9 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
         />
       )}
       {fila.isPending && !adapter.bloqueios.length && (
-        <p role="status">Consultando apostas pendentes…</p>
+        <p role="status" className="consulta-carregando">
+          Consultando apostas pendentes…
+        </p>
       )}
       {atual && (
         <section

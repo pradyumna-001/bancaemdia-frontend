@@ -36,7 +36,9 @@ export function renderedPageProof(heading, expectedBets) {
       !!title?.getClientRects().length && title.textContent?.trim() === heading,
     settled:
       !loading &&
-      !document.querySelector('[aria-busy="true"],main .erro-api') &&
+      !document.querySelector(
+        '[aria-busy="true"],main .erro-api,.aviso-fila,.aviso-acesso [role="alert"]',
+      ) &&
       (expectedBets === undefined ||
         document.querySelectorAll('.aposta-linha').length === expectedBets),
   };

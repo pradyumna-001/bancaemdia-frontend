@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { diaCivil, diaValido, deslocarDia } from '../../lib/datasFiltro';
+import './filtros.css';
 const formatoDia = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
   dateStyle: 'long',

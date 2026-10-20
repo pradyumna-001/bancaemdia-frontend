@@ -82,3 +82,28 @@ certificação assistiva. Registrar ferramentas, ampliação efetiva e limitaç�
 A reserva de execução considera o novo inventário completo, sem mudar prazos do
 aplicativo, limites de pedidos ou metas de aceite. O pin continua em sandbox, com
 publicação bloqueada; a revisão administrativa e #38/#39 mantêm aceites próprios.
+
+O mesmo bootstrap autorizado por hash recebe do build um catálogo de assets
+públicos. Antecipar a rota atual e suas dependências estáticas reduz a espera
+entre entrada e import dinâmico; nenhuma consulta ou credencial participa da
+seleção. O tráfego deve continuar sem carregar outras páginas. O gate gzip mede
+também a pior rota antecipada, além da base comum, com teste de excesso real.
+Isso segue o manifesto e os preloads descritos na
+[integração do Vite](https://vite.dev/guide/backend-integration) e no
+[modulepreload](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/modulepreload).
+
+Estilos antecipados só são aplicados depois de recebidos, após os estilos de
+entrada e sem disputar uma solicitação já assumida pelo carregador normal. Os
+pickers carregam seu próprio CSS, e links públicos usam utilitários puros sem
+trazer descritores da API. As provas incluem abertura direta, sem navegação prévia.
+
+O mesmo bootstrap pode iniciar a leitura pública de `config.json` em paralelo ao
+JS. Não envia cookie ou Referer e mantém o prazo de cinco segundos até receber o
+corpo; o carregador central consome uma vez e valida todos os campos normalmente.
+Configuração pública não comprova identidade ou acesso. Hints também omitem
+Referer para não propagar parâmetros de protocolo antes do bootstrap da SPA.
+
+As regressões liberam respostas iniciais e billing separadamente para conferir
+posição/CLS das áreas afetadas. Intl compartilha configurações, sem manter valores
+privados em cache. Diagnóstico HTTP publica apenas status/contagem numéricos,
+com gate negativo para mensagens, endpoints ou campos extras.

@@ -99,6 +99,11 @@ h2 {
 .numero {
   font-variant-numeric: lining-nums tabular-nums;
 }
+.consulta-carregando {
+  /* Keep later sections outside the reading area until this initial response
+     replaces its status. Errors and empty results retain their own actions. */
+  min-block-size: 100svh;
+}
 ::selection {
   color: var(--sobre-acao);
   background: var(--acao);

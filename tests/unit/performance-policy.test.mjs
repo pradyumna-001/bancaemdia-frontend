@@ -12,8 +12,68 @@ import {
   REPETITIONS,
   ROUTES,
   inspectPerformanceReport,
+  parseMeasurementInput,
   referenceThrottling,
 } from '../../scripts/performance-policy.mjs';
+
+function measurementInput() {
+  return {
+    origin: 'http://127.0.0.1:56803',
+    apiSha: API_PIN.commit,
+    routes: ROUTES.map((route) => ({
+      id: route.id,
+      path: route.path,
+      heading: route.title,
+    })),
+    cookies: [
+      { domain: '127.0.0.1', httpOnly: true, value: 'privado-de-teste' },
+    ],
+  };
+}
+it('entrada conserva cookie somente na estrutura em memória e exige o catálogo completo', () => {
+  const input = measurementInput();
+  const parsed = parseMeasurementInput(JSON.stringify(input));
+  expect(parsed.input.cookies).toEqual(input.cookies);
+  expect(parsed.origin.origin).toBe(input.origin);
+  expect(parsed.routeInputs.size).toBe(ROUTES.length);
+  input.routes.push(input.routes[0]);
+  expect(() => parseMeasurementInput(JSON.stringify(input))).toThrow(
+    'PERFORMANCE_INPUT_INVALID',
+  );
+});
+it('JSON truncado nunca aparece no erro ou em sua causa', () => {
+  const raw = JSON.stringify(measurementInput()).slice(0, -1);
+  let caught;
+  try {
+    parseMeasurementInput(raw);
+  } catch (error) {
+    caught = error;
+  }
+  expect(caught).toBeInstanceOf(Error);
+  expect(caught.message).toBe('PERFORMANCE_INPUT_INVALID');
+  expect(caught.cause).toBeUndefined();
+  expect(caught.stack).not.toContain('privado-de-teste');
+});
+it.each(['url-malformada', 'credencial-na-origem', 'rota-malformada'])(
+  'URL privada nunca aparece no erro: %s',
+  (failure) => {
+    const input = measurementInput();
+    if (failure === 'url-malformada') input.origin = 'http://[privado-de-teste';
+    if (failure === 'credencial-na-origem')
+      input.origin = 'http://privado-de-teste@127.0.0.1';
+    if (failure === 'rota-malformada')
+      input.routes[0].path = 'http://[privado-de-teste';
+    let caught;
+    try {
+      parseMeasurementInput(JSON.stringify(input));
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught.message).toBe('PERFORMANCE_INPUT_INVALID');
+    expect(caught.cause).toBeUndefined();
+    expect(caught.stack).not.toContain('privado-de-teste');
+  },
+);
 
 function report(profile = 'mobile') {
   return {
@@ -276,6 +336,14 @@ it.each([
     r.dataset.email = 'private-content';
   },
   (r) => {
+    r.samples[0].httpStatuses = [
+      { status: 200, count: 1, url: 'private-content' },
+    ];
+  },
+  (r) => {
+    r.samples[0].httpStatuses = [{ status: 'private-content', count: 1 }];
+  },
+  (r) => {
     r.failure = { code: 'private-content', route: ROUTES[0].id, run: 1 };
   },
 ])(
@@ -292,3 +360,17 @@ it.each([
     }
   },
 );
+it('diagnóstico HTTP aceita apenas status e contagens numéricas, sem aprovar falhas', () => {
+  const r = report();
+  r.samples[0].httpStatuses = [
+    { status: 200, count: 4 },
+    { status: 429, count: 1 },
+  ];
+  expect(inspectPerformanceReport(r).complete).toBe(true);
+  r.samples[0].proofs.dataSettled = false;
+  expect(() => inspectPerformanceReport(r)).toThrow('RELEASE_TARGETS');
+  r.samples[0].httpStatuses.push({ status: 429, count: 1 });
+  expect(() => inspectPerformanceReport(r, { requirePass: false })).toThrow(
+    'REPORT_HTTP_INVALID',
+  );
+});

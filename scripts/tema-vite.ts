@@ -1,13 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
+import { routePreloads } from './route-preload';
 
 export function temaInicial(): Plugin {
   return {
     name: 'tema-antes-da-pintura',
     transformIndexHtml: {
       order: 'post',
-      handler(html) {
+      handler(html, context) {
         const script = readFileSync(
           fileURLToPath(
             new URL('../src/styles/tema-inicial.js', import.meta.url),
@@ -26,9 +27,24 @@ export function temaInicial(): Plugin {
           ) > 1024
         )
           throw new Error('Declaração UTF-8 ausente ou tardia no HTML.');
+        const hints = context?.bundle ? routePreloads(context.bundle) : [];
+        const metadata = hints.length
+          ? '\n<meta id="rotas-iniciais" content="' +
+            JSON.stringify(hints)
+              .replaceAll('&', '&amp;')
+              .replaceAll('"', '&quot;')
+              .replaceAll('<', '&lt;')
+              .replaceAll('>', '&gt;') +
+            '">'
+          : '';
         return html.replace(
           charset,
-          (tag) => tag + '\n<script id="tema-inicial">' + script + '</script>',
+          (tag) =>
+            tag +
+            metadata +
+            '\n<script id="tema-inicial">' +
+            script +
+            '</script>',
         );
       },
     },

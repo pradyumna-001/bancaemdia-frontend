@@ -19,6 +19,7 @@ import {
   REPETITIONS,
   ROUTES,
   inspectPerformanceReport,
+  parseMeasurementInput,
   referenceThrottling,
 } from './performance-policy.mjs';
 
@@ -34,44 +35,15 @@ for await (const chunk of process.stdin) {
   if (serialized.length > 100_000)
     throw new Error('PERFORMANCE_INPUT_TOO_LARGE');
 }
-const input = JSON.parse(serialized);
-serialized = '';
-const origin = new URL(input.origin);
-if (
-  !['http:', 'https:'].includes(origin.protocol) ||
-  origin.hostname !== '127.0.0.1' ||
-  origin.pathname !== '/' ||
-  origin.search ||
-  origin.hash ||
-  input.apiSha !== API_PIN.commit
-)
-  throw new Error('PERFORMANCE_SANDBOX_REQUIRED');
-const routeInputs = new Map(input.routes.map((route) => [route.id, route]));
-if (
-  routeInputs.size !== ROUTES.length ||
-  ROUTES.some((route) => !routeInputs.has(route.id))
-)
-  throw new Error('PERFORMANCE_ROUTES_REQUIRED');
-for (const route of routeInputs.values()) {
-  const url = new URL(route.path, origin);
-  if (
-    url.origin !== origin.origin ||
-    url.hash ||
-    !route.path.startsWith('/') ||
-    route.path.startsWith('//') ||
-    typeof route.heading !== 'string' ||
-    !route.heading
-  )
-    throw new Error('PERFORMANCE_ROUTE_INVALID');
+let parsed;
+try {
+  parsed = parseMeasurementInput(serialized);
+} finally {
+  serialized = '';
 }
+const { input, origin, routeInputs } = parsed;
 let cookies = input.cookies;
 input.cookies = undefined;
-if (
-  !Array.isArray(cookies) ||
-  !cookies.length ||
-  cookies.some((cookie) => !cookie.httpOnly || cookie.domain !== '127.0.0.1')
-)
-  throw new Error('PERFORMANCE_REAL_COOKIE_REQUIRED');
 const transferCookie = ({
   name,
   value,
@@ -204,6 +176,7 @@ try {
         let apiWrites = 0;
         let identityReads = 0;
         let successfulSessionRead = false;
+        const httpStatuses = new Map();
         page.on('request', (request) => {
           const url = new URL(request.url());
           const asset = url.pathname.replace(/^\//, '');
@@ -224,6 +197,15 @@ try {
         });
         page.on('response', (response) => {
           const url = new URL(response.url());
+          if (
+            url.origin === origin.origin &&
+            (url.pathname.startsWith('/api/') ||
+              url.pathname.startsWith('/auth/'))
+          )
+            httpStatuses.set(
+              response.status(),
+              (httpStatuses.get(response.status()) || 0) + 1,
+            );
           if (
             url.origin === origin.origin &&
             url.pathname === '/auth/session' &&
@@ -318,6 +300,9 @@ try {
           lcpMs: lhr.audits['largest-contentful-paint'].numericValue,
           cls: lhr.audits['cumulative-layout-shift'].numericValue,
           tbtMs: lhr.audits['total-blocking-time'].numericValue,
+          httpStatuses: [...httpStatuses]
+            .sort(([a], [b]) => a - b)
+            .map(([status, count]) => ({ status, count })),
           failedAudits: Object.entries(lhr.audits)
             .filter(
               ([id, audit]) =>

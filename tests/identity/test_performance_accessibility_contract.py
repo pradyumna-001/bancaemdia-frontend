@@ -36,6 +36,11 @@ banco = core.banco
 harness = core.harness
 performance_transport = measurement.performance_transport
 ROOT = Path(__file__).resolve().parents[2]
+KEYBOARD_PROBE = (
+    (ROOT / "scripts/keyboard-probe.mjs")
+    .read_text(encoding="utf8")
+    .replace("export function ", "function ", 1)
+)
 
 
 def require(condition, code):
@@ -60,8 +65,8 @@ async def settled(page, target):
 
 async def keyboard(page, private):
     # Fresh navigation starts focus at the document; use actual trusted keys.
-    await page.keyboard.press("Tab")
     if private:
+        await page.keyboard.press("Tab")
         require(
             await page.locator(".pular-conteudo").evaluate(
                 "el => el === document.activeElement"
@@ -69,14 +74,9 @@ async def keyboard(page, private):
             "A11Y_SKIP_LINK",
         )
         await page.keyboard.press("Enter")
-    steps = await page.evaluate(
-        """privatePage => {
-          const scope = document.querySelector(privatePage ? '#conteudo' : 'main');
-          return Math.min(4, [...scope.querySelectorAll(
-            'a[href],button,input,textarea,summary,[tabindex]'
-          )].filter(el => el.tabIndex >= 0 && !el.disabled && el.getClientRects().length).length);
-        }""",
-        private,
+    scope = "#conteudo" if private else "body"
+    steps = min(
+        4, await page.evaluate(f"({KEYBOARD_PROBE})", {"scope": scope, "mode": "count"})
     )
     require(steps > 0, "A11Y_PAGE_ACTION_REQUIRED")
     # Stop at the real controls of short pages rather than testing browser chrome.
@@ -84,13 +84,7 @@ async def keyboard(page, private):
         await page.keyboard.press("Tab")
         require(
             await page.evaluate(
-                """() => {
-                  const el = document.activeElement;
-                  if (!el || el === document.body || !el.getClientRects().length) return false;
-                  const style = getComputedStyle(el);
-                  return el.matches(':focus-visible') &&
-                    (style.outlineStyle !== 'none' || style.boxShadow !== 'none');
-                }"""
+                f"({KEYBOARD_PROBE})", {"scope": scope, "mode": "focus"}
             ),
             "A11Y_VISIBLE_KEYBOARD_FOCUS",
         )
@@ -318,6 +312,9 @@ async def test_public_spa_large_accessibility(
                             observed[status] = observed.get(status, 0) + 1
 
                     active.on("response", observe_response)
+                    # Public/private contexts alternate. Focus before navigation,
+                    # not during the keyboard gesture under examination.
+                    await active.bring_to_front()
                     await active.emulate_media(
                         color_scheme="light" if theme == "claro" else "dark"
                     )

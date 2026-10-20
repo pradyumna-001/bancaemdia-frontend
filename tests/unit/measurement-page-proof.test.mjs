@@ -9,6 +9,13 @@ import {
   renderedPageProof,
 } from '../../scripts/measurement-page-proof.mjs';
 
+// Resolve the official audit modules before unit assertion deadlines. Both
+// complete configurations are still initialized and compared inside each case;
+// actual cold navigation is measured separately against the public build.
+await initializeConfig('navigation', undefined, {
+  onlyCategories: ['performance', 'accessibility', 'best-practices'],
+});
+
 afterEach(() => {
   document.body.innerHTML = '';
   vi.restoreAllMocks();
@@ -81,6 +88,22 @@ it('exige o tamanho real da pagina grande, sem aprovar lista vazia', () => {
   page('<main><h1>Apostas</h1><article class="aposta-linha"></article></main>');
   expect(renderedPageProof('Apostas', 100).settled).toBe(false);
   expect(renderedPageProof('Apostas', 1).settled).toBe(true);
+});
+it.each([
+  '<aside class="aviso-acesso"><p role="alert">Não foi possível consultar o acesso.</p></aside>',
+  '<div class="aviso-fila" role="alert">Não foi possível consultar a fila.</div>',
+])('recusa erro do layout fora do conteudo: %s', (content) => {
+  page(content + '<main><h1>Apostas</h1></main>');
+  expect(renderedPageProof('Apostas').settled).toBe(false);
+});
+it('permite leitura com acesso READ_ONLY confirmado pelo servidor', () => {
+  page(
+    '<aside class="aviso-acesso"><p role="status">Acesso somente para leitura.</p></aside><main><h1>Apostas</h1></main>',
+  );
+  expect(renderedPageProof('Apostas')).toEqual({
+    headingVerified: true,
+    settled: true,
+  });
 });
 it('preserva a prova medida quando a auditoria de cache navega depois', async () => {
   page('<main><h1>Apostas</h1></main>');
