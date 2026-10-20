@@ -195,6 +195,15 @@ async def test_public_spa_historical_comparison(
         # first logout gesture while Playwright is focusing a background tab.
         await page.bring_to_front()
         await page.goto(backend.FRONT + "/sair")
+        await expect(
+            page.get_by_text("Consultando fila de revisão…", exact=True)
+        ).to_have_count(0)
+        await expect(
+            page.get_by_text("Conferindo acesso e fila…", exact=True)
+        ).to_have_count(0)
+        await expect(
+            page.get_by_text("Conferindo acesso à conta…", exact=True)
+        ).to_have_count(0)
         async with page.expect_response(
             lambda r: r.url.endswith("/auth/logout") and r.request.method == "POST"
         ) as pending_logout:

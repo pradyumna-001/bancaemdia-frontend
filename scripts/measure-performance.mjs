@@ -6,6 +6,7 @@ import { launch } from 'chrome-launcher';
 import { chromium } from '@playwright/test';
 import puppeteer from 'puppeteer-core';
 import lighthouse from 'lighthouse';
+import { prepareMeasurementSession } from './prepare-measurement-session.mjs';
 import {
   MeasurementPageProof,
   measurementConfig,
@@ -167,6 +168,10 @@ try {
       try {
         if (route.private) await context.setCookie(...cookies);
         page = await context.newPage();
+        if (route.private) {
+          await page.goto(new URL('/config.json', origin).href);
+          await page.evaluate(prepareMeasurementSession);
+        }
         const cdp = await page.createCDPSession();
         await cdp.send('Network.enable');
         await cdp.send('Network.clearBrowserCache');

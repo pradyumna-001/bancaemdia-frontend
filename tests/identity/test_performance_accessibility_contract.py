@@ -16,7 +16,7 @@ from uuid import uuid4
 
 import pytest
 from playwright.async_api import Error as PlaywrightError
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, expect
 
 _spec = importlib.util.spec_from_file_location(
     "frontend_accessibility_measurement",
@@ -226,10 +226,11 @@ async def interactions(page, browser_name, context):
         await page.evaluate(
             "() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))"
         )
-        require(
-            await button.get_attribute("aria-pressed") == "true",
-            "INTERACTION_RESULT_REQUIRED",
-        )
+        try:
+            await expect(button).to_have_attribute("aria-pressed", "true")
+        except AssertionError:
+            # Keep the retrying assertion, without publishing its private DOM.
+            pytest.fail("INTERACTION_RESULT_REQUIRED", pytrace=False)
         require(
             await page.locator(".aposta-linha").count() == 100, "LARGE_LIST_REQUIRED"
         )
@@ -314,11 +315,16 @@ async def test_public_spa_large_accessibility(
                     active.on("response", observe_response)
                     # Public/private contexts alternate. Focus before navigation,
                     # not during the keyboard gesture under examination.
-                    await active.bring_to_front()
+                    if not route["private"]:
+                        await active.bring_to_front()
                     await active.emulate_media(
                         color_scheme="light" if theme == "claro" else "dark"
                     )
                     try:
+                        if route["private"]:
+                            await measurement.session_setup.prepare_session(
+                                active, core.backend.FRONT
+                            )
                         await active.goto(core.backend.FRONT + target["path"])
                         await settled(active, target)
                         require(
@@ -365,9 +371,13 @@ async def test_public_spa_large_accessibility(
                         {"route": route["id"], "theme": theme, "passed": True}
                     )
             root = next(t for t in targets if t["id"] == "apostas")
+            await measurement.session_setup.prepare_session(page, core.backend.FRONT)
             await page.goto(core.backend.FRONT + root["path"])
             await settled(page, root)
-            timing = await interactions(page, browser_name, private)
+            try:
+                timing = await interactions(page, browser_name, private)
+            except PlaywrightError:
+                pytest.fail("A11Y_INTERACTION_FAILED", pytrace=False)
             require(graphs > 0, "A11Y_GRAPH_INVENTORY_EMPTY")
             report = {
                 "schema": 1,

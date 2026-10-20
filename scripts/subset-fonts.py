@@ -13,7 +13,7 @@ from fontTools.pens.recordingPen import DecomposingRecordingPen
 from fontTools.ttLib import TTFont
 
 ROOT = Path(__file__).resolve().parents[1] / "public/fontes"
-RANGES = "U+0000-024F,U+2000-206F,U+20A0-20CF,U+2190-22FF"
+RANGES = "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20A0-20CF,U+2122,U+2190-2199,U+2212,U+2215,U+221A,U+221E,U+2264-2265,U+FEFF,U+FFFD"
 SOURCES = {
     "regular": "63de0da0cc05298e2e9c6e5cef506d8454ca665f6e668a99d94f51174b9256ed",
     "semibold": "c248b0a178c362916db7c853ed640db77f184d19a0ed9fa5591fa707d3089635",

@@ -55,7 +55,11 @@
   list-style: none;
   padding: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--espaco-16);
+}
+.apostas-itens > li {
+  min-width: 0;
 }
 .apostas-lista-cabecalho {
   display: flex;
@@ -97,6 +101,7 @@
   border-top: 1px solid var(--borda);
 }
 .aposta-linha {
+  min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(9rem, 1fr) minmax(0, 1.4fr);
   gap: var(--espaco-16);

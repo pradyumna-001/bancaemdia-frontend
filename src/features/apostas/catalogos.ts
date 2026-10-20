@@ -104,7 +104,9 @@ export function useCatalogos(
             selected,
             query,
           ],
-          enabled: enabled && (!selected || !!id),
+          enabled:
+            enabled &&
+            (selected ? !!id : !!visao.valores[key] || !!searches[key]),
           retryOnMount: false,
           queryFn: async ({ signal }: { signal: AbortSignal }) => {
             // Keep the original safe-read recovery after the shared deadline.
@@ -157,6 +159,10 @@ export function useCatalogos(
       return [
         key,
         {
+          abrir: () =>
+            setSearches((old) =>
+              old[key] ? old : { ...old, [key]: { q: '', page: 1 } },
+            ),
           fase: query.isError ? 'erro' : query.data ? 'pronto' : 'carregando',
           options: query.data?.options ?? [],
           consulta: search.q,

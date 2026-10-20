@@ -1,12 +1,20 @@
 """Synthetic facts in the real disposable database, never response overrides."""
 
+import importlib.util
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 from uuid import uuid4
 
 from bancaemdia import models
 from bancaemdia.cli.refresh_painel import refresh_painel
 from sqlalchemy import insert, select, text
+
+_spec = importlib.util.spec_from_file_location(
+    "performance_session_setup", Path(__file__).with_name("measurement_session.py")
+)
+session_setup = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(session_setup)
 
 
 async def seed_large(core, page, engine_admin, engine_app, como, uid):
@@ -163,6 +171,9 @@ async def seed_large(core, page, engine_admin, engine_app, como, uid):
             engine_app, como, uid, accounts[0], evento=f"Leitura de teste {i:02d}"
         )
     await refresh_painel(engine_admin)
+    # Large database setup may outlive the fixture's 30-second access token.
+    # Renew through the real HTTP contract before checking the actual population.
+    await session_setup.prepare_session(page, core.backend.FRONT)
     await core.fresh_session(page)
     listed = await core.read(page, "/api/v1/apostas?periodo=all&page_size=100")
     async with engine_admin.connect() as conn:

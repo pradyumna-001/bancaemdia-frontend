@@ -15,6 +15,7 @@ import { EscolhaFiltro, type OpcaoFiltro } from './EscolhaFiltro';
 import { DataFiltro } from './DataFiltro';
 import './filtros.css';
 export type CatalogoFiltro = Readonly<{
+  abrir?: () => void;
   fase: 'pronto' | 'carregando' | 'erro';
   options: readonly OpcaoFiltro[];
   tentar?: () => void;
@@ -119,6 +120,7 @@ export function Filtros({
             <div key={key}>
               <EscolhaFiltro
                 label={label}
+                onOpen={catalogo?.abrir}
                 value={visao.valores[key]}
                 options={catalogo?.fase === 'pronto' ? catalogo.options : []}
                 disabled={!catalogo}

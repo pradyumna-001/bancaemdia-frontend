@@ -205,6 +205,7 @@ function Conteudo({ client }: { client: Client }) {
               <EscolhaFiltro
                 key={key}
                 label={DIMENSOES[key]}
+                onOpen={c?.abrir}
                 value={visao.valores[key]}
                 selectedLabel={c?.selecionada?.label}
                 options={c?.options ?? []}

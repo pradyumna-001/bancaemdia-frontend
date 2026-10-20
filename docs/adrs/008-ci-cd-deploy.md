@@ -107,3 +107,13 @@ As regressões liberam respostas iniciais e billing separadamente para conferir
 posição/CLS das áreas afetadas. Intl compartilha configurações, sem manter valores
 privados em cache. Diagnóstico HTTP publica apenas status/contagem numéricos,
 com gate negativo para mensagens, endpoints ou campos extras.
+
+Catálogos sem seleção aguardam a abertura do seletor; identidades selecionadas
+continuam consultadas na entrada. A rolagem de evoluções extensas permite
+adiar layout fora da viewport, mantendo os registros no DOM e na árvore
+acessível. Tamanho intrínseco provisório se aplica somente ao eixo vertical:
+mobile continua sem overflow horizontal nos três navegadores. Apostas mantém a
+altura natural de cada linha, inclusive ao alternar entre cartões e lista.
+As amostras frias
+renovam a sessão real na preparação, sem alterar validade, limites ou relógio;
+essa preparação não substitui a navegação medida nem as provas de expiração.

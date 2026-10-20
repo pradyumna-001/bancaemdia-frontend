@@ -29,6 +29,7 @@ def load(name, filename):
 
 core = load("frontend_performance_core", "test_core_contract.py")
 seed = load("frontend_performance_seed", "performance_seed.py")
+session_setup = load("frontend_measurement_session", "measurement_session.py")
 banco = core.banco
 harness = core.harness
 ROOT = Path(__file__).resolve().parents[2]
@@ -193,6 +194,9 @@ async def test_public_spa_cold_performance(
                 core, page, engine_admin, engine_app, como, uid
             )
             await core.fresh_session(page)
+            # Only the measurement browser owns the rotating session afterwards.
+            cookies = await context.cookies(core.backend.FRONT)
+            await page.close()
             output = (
                 Path(os.environ["PERFORMANCE_REPORT_DIR"])
                 / f"performance-{profile}.json"
@@ -201,7 +205,7 @@ async def test_public_spa_cold_performance(
                 {
                     "origin": core.backend.FRONT,
                     "apiSha": actual_api,
-                    "cookies": await context.cookies(core.backend.FRONT),
+                    "cookies": cookies,
                     "dataset": dataset,
                     "routes": resolved_routes(initial),
                 },

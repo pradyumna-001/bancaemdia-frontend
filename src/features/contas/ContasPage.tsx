@@ -597,6 +597,7 @@ function Conteudo({
             {!id && (
               <EscolhaFiltro
                 label="Casa"
+                onOpen={houses?.abrir}
                 value={filters.valores.casa}
                 options={houses?.options ?? []}
                 selectedLabel={houses?.selecionada?.label}
@@ -769,6 +770,7 @@ function Conteudo({
                   </label>
                   <EscolhaFiltro
                     label="Casa da nova conta"
+                    onOpen={houses?.abrir}
                     value={newHouse}
                     resetLabel="Escolher casa"
                     options={houses?.options ?? []}

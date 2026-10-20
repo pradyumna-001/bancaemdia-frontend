@@ -56,7 +56,7 @@ verificado. Os novos resultados precisam ser conferidos no SHA final completo.
 Lazy loading de páginas, subconjuntos locais de Source Sans 3, UTF-8 antes do tema
 e gzip estático preservam funcionalidades e contratos. O build local inicial da
 #37 mediu 115.380 bytes gzip. Esse valor precisa ser confirmado no commit final.
-Os subconjuntos somam 106.712 bytes, preservando originais, licença, contornos,
+Os subconjuntos somam 67.252 bytes, preservando originais, licença, contornos,
 avanços e recursos tabulares. Não houve biblioteca de gráficos ou cálculo financeiro
 adicionado ao cliente.
 
@@ -67,7 +67,23 @@ pior rota inicial, incluindo preloads, e 117.042 bytes na base comum. Passaram
 LCP<2.500 ms e CLS<0,1. Esses dados locais não substituem os resultados
 autenticados, o inventário completo ou os checks do SHA final.
 
+A conferência local de 20/10/2026 passou em lint, tipos e 1.640 testes de 107
+arquivos, sem falhas ou skips. O build seguinte mediu 150.166 bytes gzip na pior
+rota inicial e 117.010 na base comum. Com os subconjuntos menores, nove novas
+amostras públicas atingiram performance 98–99, acessibilidade/boas práticas 100,
+LCP entre 2.008 e 2.272 ms e CLS 0,029 ou menor. Continuam sendo diagnóstico
+local, separado das 192 amostras autenticadas exigidas no SHA da PR.
+
 ## Interações e limites assistivos
+
+A rodada de `8b7127c` não foi aprovada: incluiu 401 de acesso durante a medição,
+falha de inventário após seed, foco de seletores/fixture e preparação de processo.
+Esses resultados não contam como evidência de aprovação. A preparação da medição
+passa a renovar o acesso real de 30 segundos antes de cada navegação privada,
+sem ampliar sua validade, aquecer JS da SPA ou repetir amostras. O teste de
+interação aguarda o resultado da navegação dentro do prazo original; foco após
+fechamento atrasado de picker respeita o próximo gesto. O commit final deve
+executar novamente todos os gates, inclusive jornadas anteriores.
 
 Event Timing observa cliques reais nas duas visualizações de 100 apostas, com
 CPU 4× e rede 150 ms/200.000 bytes/s no Chromium. Com suporte à API confirmado,

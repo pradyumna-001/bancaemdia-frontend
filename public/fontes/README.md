@@ -15,8 +15,8 @@ Licença: SIL Open Font License 1.1, cópia original em [OFL-source-sans-3.md](O
 ## Subconjuntos web — #37
 
 Os três arquivos `bancaemdia-interface-*-latin.woff2` derivam dos originais acima.
-Atendem português, latim estendido, pontuação, moedas, setas e símbolos matemáticos
-usados na interface. Os originais completos continuam no fallback para outros
+Atendem português, latim básico, pontuação, moedas e os símbolos da interface.
+Os três subconjuntos somam 67.252 bytes. Os originais completos continuam no fallback para outros
 caracteres; nenhum alfabeto é removido da aplicação.
 
 A família interna da versão modificada é **Bancaemdia Interface**, respeitando o

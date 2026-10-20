@@ -79,7 +79,8 @@ export function DataFiltro({
         ref={trigger}
         aria-labelledby={id + '-label ' + id + '-valor'}
         aria-haspopup="dialog"
-        onClick={() => {
+        onClick={(event) => {
+          event.currentTarget.focus({ preventScroll: true });
           dialog.current!.showModal();
           focusDay(value ?? diaCivil(new Date()));
         }}
@@ -90,7 +91,15 @@ export function DataFiltro({
         className="filtro-dialog"
         ref={dialog}
         aria-labelledby={id + '-titulo'}
-        onClose={() => trigger.current!.focus()}
+        onClose={() => {
+          const active = document.activeElement;
+          if (
+            !active ||
+            active === document.body ||
+            dialog.current?.contains(active)
+          )
+            trigger.current?.focus();
+        }}
       >
         <h2 id={id + '-titulo'}>{label}</h2>
         <p>{help}</p>

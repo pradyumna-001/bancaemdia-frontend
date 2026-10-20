@@ -30,6 +30,28 @@ obtido pelo emissor real é transportado em memória entre amostras privadas;
 storage da aplicação não concede sessão. Retorno do emissor, refresh e Web Lock
 continuam sendo operados pela SPA/API. Páginas públicas de ajuda e intents de conta não consultam identidade no carregamento. O gesto de entrada consulta a sessão antes de iniciar o fluxo hospedado, preservando erros de disponibilidade na própria tela. Consulta recusada não enfileira intent; troca de jornada descarta navegação pendente. Voltar ao site passa pelo guard real do destino. Erro/saída incerta já publicados em memória continuam bloqueando novo fluxo.
 
+A fixture de identidade emite acesso de apenas 30 segundos. Antes do inventário
+inicial e de cada navegação privada, o preparador renova uma vez pela API real,
+com CSRF atual e Web Lock. Usa um documento JSON público sem JS/fontes da SPA;
+Lighthouse limpa o cache depois e mede a navegação inteira, guard e dados reais.
+O navegador do seed é fechado antes de transferir o cookie ao medidor, para não
+concorrer com a rotação em outro navegador. Nenhuma validade, limite ou relógio
+é alterado. Falha na preparação reprova o ensaio; não repete nem substitui uma
+amostra. As jornadas próprias de expiração/renovação continuam obrigatórias.
+
+Evoluções por banca usam `content-visibility: auto`, com tamanho
+intrínseco provisório somente no eixo vertical fora da viewport, sem impor
+largura ao gráfico. A lista de apostas usa a altura natural de cada linha.
+Todos os registros e períodos continuam
+no DOM e na árvore acessível; não há recorte adicional, mudança de valores nem
+remoção das tabelas abertas. Foco, rolagem e abertura de detalhes nos três
+navegadores fazem parte dos ensaios obrigatórios.
+
+Catálogos sem seleção carregam quando seu seletor é aberto. Filtros ativos e os
+nomes das identidades continuam consultados na entrada, com identificadores
+exatos e nomes indisponíveis explícitos. Busca, paginação, estado da URL e o
+prazo Retry-After compartilhado permanecem; reabrir não repete falhas conhecidas.
+
 Todas as amostras exigem performance/acessibilidade/boas práticas >=95, LCP
 estritamente menor que 2.500 ms e CLS estritamente menor que 0,1. Não arredondar
 score abaixo da meta, escolher só a amostra rápida, remover caso ou substituir

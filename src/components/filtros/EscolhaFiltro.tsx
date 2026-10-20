@@ -11,6 +11,7 @@ export function EscolhaFiltro({
   value,
   options,
   onChange,
+  onOpen,
   disabled = false,
   resetLabel = 'Sem filtro',
   selectedLabel,
@@ -23,6 +24,7 @@ export function EscolhaFiltro({
   value?: string;
   options: readonly OpcaoFiltro[];
   onChange: (value?: string) => void;
+  onOpen?: () => void;
   disabled?: boolean;
   resetLabel?: string;
   selectedLabel?: string;
@@ -54,8 +56,10 @@ export function EscolhaFiltro({
         aria-labelledby={id + '-label ' + id + '-valor'}
         aria-haspopup="dialog"
         aria-controls={id}
-        onClick={() => {
+        onClick={(event) => {
+          event.currentTarget.focus({ preventScroll: true });
           setTexto(busca?.consulta ?? '');
+          onOpen?.();
           dialog.current!.showModal();
         }}
       >
@@ -70,7 +74,15 @@ export function EscolhaFiltro({
         id={id}
         className="filtro-dialog"
         aria-labelledby={id + '-titulo'}
-        onClose={() => trigger.current!.focus()}
+        onClose={() => {
+          const active = document.activeElement;
+          if (
+            !active ||
+            active === document.body ||
+            dialog.current?.contains(active)
+          )
+            trigger.current?.focus();
+        }}
       >
         <h2 id={id + '-titulo'}>{label}</h2>
         {busca && (
