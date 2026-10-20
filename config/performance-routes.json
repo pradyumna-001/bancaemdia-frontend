@@ -1,0 +1,226 @@
+[
+  {
+    "id": "apostas",
+    "path": "/",
+    "title": "Apostas",
+    "private": true,
+    "module": "src/features/apostas/ApostasPage.tsx"
+  },
+  {
+    "id": "painel",
+    "path": "/painel",
+    "title": "Painel",
+    "private": true,
+    "module": "src/features/painel/PainelPage.tsx"
+  },
+  {
+    "id": "enviar",
+    "path": "/enviar",
+    "title": "Enviar",
+    "private": true,
+    "module": "src/features/enviar/EnviarPage.tsx"
+  },
+  {
+    "id": "coleta",
+    "path": "/coleta",
+    "title": "Coleta",
+    "private": true,
+    "module": "src/features/coleta/ColetaPage.tsx"
+  },
+  {
+    "id": "banca",
+    "path": "/banca",
+    "title": "Caixa",
+    "private": true,
+    "module": "src/features/caixa/CaixaPage.tsx"
+  },
+  {
+    "id": "resultados",
+    "path": "/resultados",
+    "title": "Resultados",
+    "private": true,
+    "module": "src/features/resultados/ResultadosPage.tsx"
+  },
+  {
+    "id": "revisao",
+    "path": "/revisao",
+    "title": "Revisão",
+    "private": true,
+    "module": "src/features/revisao/RevisaoPage.tsx"
+  },
+  {
+    "id": "contas",
+    "path": "/contas",
+    "title": "Contas e titulares",
+    "private": true,
+    "module": "src/features/contas/ContasPage.tsx"
+  },
+  {
+    "id": "calculadoras",
+    "path": "/calculadoras",
+    "title": "Calculadoras",
+    "private": true,
+    "module": "src/features/calculadoras/CalculadorasPage.tsx"
+  },
+  {
+    "id": "assinatura",
+    "path": "/assinatura",
+    "title": "Assinatura",
+    "private": true,
+    "module": "src/features/assinatura/AssinaturaPage.tsx"
+  },
+  {
+    "id": "inicio",
+    "path": "/inicio",
+    "title": "Primeiro uso",
+    "private": true,
+    "module": "src/features/inicio/InicioPage.tsx"
+  },
+  {
+    "id": "configuracoes",
+    "path": "/configuracoes",
+    "title": "Configurações",
+    "private": true,
+    "module": "src/features/configuracoes/ConfiguracoesPage.tsx"
+  },
+  {
+    "id": "e-se",
+    "path": "/e-se",
+    "title": "E se?",
+    "private": true,
+    "module": "src/features/hipotetica/HipoteticaPage.tsx"
+  },
+  {
+    "id": "aposta-nova",
+    "path": "/aposta/nova",
+    "title": "Nova aposta",
+    "private": true,
+    "module": "src/features/apostas/nova/NovaApostaPage.tsx"
+  },
+  {
+    "id": "aposta-chave",
+    "path": "/aposta/:chave",
+    "title": "Aposta",
+    "private": true,
+    "module": "src/features/apostas/detalhe/DetalheApostaPage.tsx"
+  },
+  {
+    "id": "aposta-chave-foto",
+    "path": "/aposta/:chave/foto",
+    "title": "Foto da aposta",
+    "private": true,
+    "module": "src/features/midia/FotoPage.tsx"
+  },
+  {
+    "id": "contas-titularId",
+    "path": "/contas/:titularId",
+    "title": "Contas do titular",
+    "private": true,
+    "module": "src/features/contas/ContasPage.tsx"
+  },
+  {
+    "id": "contas-trocar",
+    "path": "/contas/trocar",
+    "title": "Trocar conta em uso",
+    "private": true,
+    "module": "src/features/contas/troca/TrocaContaPage.tsx"
+  },
+  {
+    "id": "painel-analises",
+    "path": "/painel/analises",
+    "title": "Análises",
+    "private": true,
+    "module": "src/features/painel/analises/AnalisesPage.tsx"
+  },
+  {
+    "id": "painel-metas",
+    "path": "/painel/metas",
+    "title": "Metas",
+    "private": true,
+    "module": "src/features/painel/metas/MetasPage.tsx"
+  },
+  {
+    "id": "configuracoes-conexoes",
+    "path": "/configuracoes/conexoes",
+    "title": "Conexões",
+    "private": true,
+    "module": "src/features/conexoes/TelegramPage.tsx"
+  },
+  {
+    "id": "configuracoes-privacidade",
+    "path": "/configuracoes/privacidade",
+    "title": "Privacidade",
+    "private": true,
+    "module": "src/features/configuracoes/privacidade/PrivacidadePage.tsx"
+  },
+  {
+    "id": "sistema",
+    "path": "/sistema",
+    "title": "Sistema",
+    "private": true,
+    "module": "src/features/sistema/SistemaPage.tsx"
+  },
+  {
+    "id": "tutorial",
+    "path": "/tutorial",
+    "title": "Tutorial",
+    "private": false,
+    "module": "src/features/ajuda/AjudaPage.tsx"
+  },
+  {
+    "id": "extensao",
+    "path": "/extensao",
+    "title": "Extensão",
+    "private": false,
+    "module": "src/features/ajuda/AjudaPage.tsx"
+  },
+  {
+    "id": "login",
+    "path": "/login",
+    "title": "Entrar",
+    "private": false,
+    "module": "src/features/conta/AccountPage.tsx"
+  },
+  {
+    "id": "criar-conta",
+    "path": "/criar-conta",
+    "title": "Criar conta",
+    "private": false,
+    "module": "src/features/conta/AccountPage.tsx"
+  },
+  {
+    "id": "esqueci-senha",
+    "path": "/esqueci-senha",
+    "title": "Esqueci minha senha",
+    "private": false,
+    "module": "src/features/conta/AccountPage.tsx"
+  },
+  {
+    "id": "redefinir-senha",
+    "path": "/redefinir-senha",
+    "title": "Redefinir senha",
+    "private": false,
+    "module": "src/features/conta/AccountPage.tsx"
+  },
+  {
+    "id": "confirmar-email",
+    "path": "/confirmar-email",
+    "title": "Confirmar e-mail",
+    "private": false,
+    "module": "src/features/conta/AccountPage.tsx"
+  },
+  {
+    "id": "senha",
+    "path": "/senha",
+    "title": "Alterar senha",
+    "private": true,
+    "module": "src/features/conta/AccountPage.tsx"
+  },
+  {
+    "id": "sair",
+    "path": "/sair",
+    "title": "Sair",
+    "private": true,
+    "module": "src/features/conta/AccountPage.tsx"
+  }
+]

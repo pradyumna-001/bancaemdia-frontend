@@ -547,15 +547,18 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
     { timeout: 5000 },
   );
   fireEvent.click(screen.getByText('Filtrar apostas — há filtros ativos'));
-  await screen.findByRole(
+  const filters = within(
+    screen.getByRole('region', { name: 'Filtros da visão' }),
+  );
+  await filters.findByRole(
     'button',
     { name: 'Casa Opção histórica (inativa)' },
     { timeout: 5000 },
   );
   await userEvent.click(
-    screen.getByRole('button', { name: 'Casa Opção histórica (inativa)' }),
+    filters.getByRole('button', { name: 'Casa Opção histórica (inativa)' }),
   );
-  const dialog = screen.getByRole('dialog', { name: 'Casa' });
+  const dialog = filters.getByRole('dialog', { name: 'Casa' });
   app.respond((req) =>
     new URL(req.url).pathname.includes('/filtros/')
       ? Promise.resolve(json({}, 429, { 'Retry-After': '70' }))
@@ -576,7 +579,7 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
     within(dialog).queryByRole('button', { name: 'Buscar' }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole('button', { name: 'Tentar carregar casa' }),
+    filters.queryByRole('button', { name: 'Tentar carregar casa' }),
   ).not.toBeInTheDocument();
   const catalogReads = app.reads.filter((req) =>
     new URL(req.url).pathname.includes('/filtros/'),
@@ -589,7 +592,7 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
     await vi.advanceTimersByTimeAsync(10);
   });
   expect(
-    screen.getByText(
+    filters.getByText(
       'Não foi possível consultar o nome. O identificador foi preservado.',
     ),
   ).toBeInTheDocument();
@@ -605,13 +608,13 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
   ).toHaveLength(catalogReads);
   app.respond(defaultResponse);
   fireEvent.click(
-    screen.getByRole('button', { name: 'Consultar nome de casa' }),
+    filters.getByRole('button', { name: 'Consultar nome de casa' }),
   );
   await act(async () => {
     await vi.advanceTimersByTimeAsync(10);
   });
   expect(
-    screen.getByRole('button', { name: 'Casa Opção histórica (inativa)' }),
+    filters.getByRole('button', { name: 'Casa Opção histórica (inativa)' }),
   ).toBeInTheDocument();
   expect(
     app.reads.filter((req) => new URL(req.url).pathname.includes('/filtros/')),

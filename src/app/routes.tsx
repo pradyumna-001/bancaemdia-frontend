@@ -7,24 +7,68 @@ import {
 import { destinoInterno } from '../auth/destinoInterno';
 import { exigirSessao, semSessao, type ConsultarSessao } from '../auth/guard';
 import { RequireSession } from '../auth/RequireSession';
+import type { ConsultarRevisao } from '../features/revisao/estatisticas';
+import { AccountPage } from '../features/conta/AccountPage';
 import { Placeholder } from './Placeholder';
 import { ErrorPage, RouteError } from './RouteError';
 import { ROTAS_AUTH, ROTAS_PROTEGIDAS, ROTAS_PUBLICAS } from './paths';
 import { Shell } from './Shell';
-import { SistemaPage } from '../features/sistema/SistemaPage';
-import type { ConsultarRevisao } from '../features/revisao/estatisticas';
-import { AccountPage } from '../features/conta/AccountPage';
-import { EnviarPage } from '../features/enviar/EnviarPage';
-import { TelegramPage } from '../features/conexoes/TelegramPage';
-import { AssinaturaPage } from '../features/assinatura/AssinaturaPage';
-import { ConfiguracoesPage } from '../features/configuracoes/ConfiguracoesPage';
-import { PainelPage } from '../features/painel/PainelPage';
-import { ApostasPage } from '../features/apostas/ApostasPage';
-import { DetalheApostaPage } from '../features/apostas/detalhe/DetalheApostaPage';
-import { FotoPage } from '../features/midia/FotoPage';
-import { ContasPage } from '../features/contas/ContasPage';
-import { ResultadosPage } from '../features/resultados/ResultadosPage';
-import { CaixaPage } from '../features/caixa/CaixaPage';
+const SistemaPage = lazy(() =>
+  import('../features/sistema/SistemaPage').then((m) => ({
+    default: m.SistemaPage,
+  })),
+);
+const EnviarPage = lazy(() =>
+  import('../features/enviar/EnviarPage').then((m) => ({
+    default: m.EnviarPage,
+  })),
+);
+const TelegramPage = lazy(() =>
+  import('../features/conexoes/TelegramPage').then((m) => ({
+    default: m.TelegramPage,
+  })),
+);
+const AssinaturaPage = lazy(() =>
+  import('../features/assinatura/AssinaturaPage').then((m) => ({
+    default: m.AssinaturaPage,
+  })),
+);
+const ConfiguracoesPage = lazy(() =>
+  import('../features/configuracoes/ConfiguracoesPage').then((m) => ({
+    default: m.ConfiguracoesPage,
+  })),
+);
+const PainelPage = lazy(() =>
+  import('../features/painel/PainelPage').then((m) => ({
+    default: m.PainelPage,
+  })),
+);
+const ApostasPage = lazy(() =>
+  import('../features/apostas/ApostasPage').then((m) => ({
+    default: m.ApostasPage,
+  })),
+);
+const DetalheApostaPage = lazy(() =>
+  import('../features/apostas/detalhe/DetalheApostaPage').then((m) => ({
+    default: m.DetalheApostaPage,
+  })),
+);
+const FotoPage = lazy(() =>
+  import('../features/midia/FotoPage').then((m) => ({ default: m.FotoPage })),
+);
+const ContasPage = lazy(() =>
+  import('../features/contas/ContasPage').then((m) => ({
+    default: m.ContasPage,
+  })),
+);
+const ResultadosPage = lazy(() =>
+  import('../features/resultados/ResultadosPage').then((m) => ({
+    default: m.ResultadosPage,
+  })),
+);
+const CaixaPage = lazy(() =>
+  import('../features/caixa/CaixaPage').then((m) => ({ default: m.CaixaPage })),
+);
 
 const CalculadorasPage = lazy(() =>
   import('../features/calculadoras/CalculadorasPage').then((m) => ({
@@ -131,7 +175,23 @@ export function createAppRoutes(
     ),
     // A failed guard has no proven private context. Child failures keep the guarded shell.
     errorElement: <RouteError />,
-    children: [{ index: true, element, errorElement: <RouteError internal /> }],
+    children: [
+      {
+        index: true,
+        element: (
+          <Suspense
+            fallback={
+              <main className="pagina">
+                <p role="status">Abrindo página…</p>
+              </main>
+            }
+          >
+            {element}
+          </Suspense>
+        ),
+        errorElement: <RouteError internal />,
+      },
+    ],
   });
   return [
     ...ROTAS_PROTEGIDAS.map(({ path, title }) =>

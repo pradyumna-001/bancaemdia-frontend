@@ -5,6 +5,7 @@ own disposable PostgreSQL/OIDC/SMTP. This server stands in for the same-origin p
 """
 
 import asyncio
+import gzip
 import hashlib
 import importlib.util
 import io
@@ -131,7 +132,21 @@ def serve_public_build():
                 )
                 if target.suffix == ".js":
                     content_type = "application/javascript"
+            # Match the production static server. Never compress protocol/API
+            # responses here, nor replace real response bytes for measurement.
+            compressed = (
+                path != "/config.json"
+                and len(content) >= 1024
+                and content_type
+                in {"text/html", "text/css", "application/javascript", "image/svg+xml"}
+                and "gzip" in self.headers.get("Accept-Encoding", "").lower()
+            )
+            if compressed:
+                content = gzip.compress(content, compresslevel=6, mtime=0)
             self.send_response(200)
+            if compressed:
+                self.send_header("Content-Encoding", "gzip")
+                self.send_header("Vary", "Accept-Encoding")
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Security-Policy", csp)
             self.send_header("Cache-Control", "no-store")

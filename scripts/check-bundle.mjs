@@ -5,6 +5,24 @@ import { pathToFileURL } from 'node:url';
 
 export const INITIAL_JS_LIMIT = 200_000;
 
+export function inspectRouteSplitting(directory, modules) {
+  const root = resolve(directory);
+  const manifest = JSON.parse(
+    readFileSync(resolve(root, '.vite/manifest.json'), 'utf8'),
+  );
+  const initial = new Set(
+    inspectBundle(root).assets.map((asset) => asset.file),
+  );
+  const routes = [...new Set(modules)].map((module) => {
+    const chunk = manifest[module];
+    if (!chunk?.isDynamicEntry || !chunk.file || initial.has(chunk.file))
+      throw new Error('Tela não está separada da carga inicial: ' + module);
+    return { module, file: chunk.file };
+  });
+  if (!routes.length) throw new Error('Catálogo de telas ausente.');
+  return routes;
+}
+
 export function inspectBundle(directory, limit = INITIAL_JS_LIMIT) {
   const root = resolve(directory);
   const read = (file) => {
@@ -83,6 +101,15 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const report = inspectBundle('dist');
+  const catalog = JSON.parse(
+    readFileSync('config/performance-routes.json', 'utf8'),
+  );
+  report.routeChunks = inspectRouteSplitting(
+    'dist',
+    catalog
+      .filter((route) => route.module !== 'src/features/conta/AccountPage.tsx')
+      .map((route) => route.module),
+  );
   mkdirSync('reports', { recursive: true });
   writeFileSync('reports/bundle.json', JSON.stringify(report, null, 2) + '\n');
   console.log(

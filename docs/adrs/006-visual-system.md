@@ -28,7 +28,7 @@ A #12 aplica esta fundação às telas de conta: painel único de leitura, títu
 
 - A #4 aplica a fundação às páginas provisórias e erros existentes. Não inventa telas financeiras nem libera acesso às rotas protegidas.
 - Marca/wordmark/favicon são definidos na #5, conforme decisão abaixo; shell e navegação ficam na #6; gráficos na #7. O seletor será acomodado pelo shell quando ele existir.
-- Fontes locais dispensam CDN e mantêm CSP restrita, mas os três arquivos somam aproximadamente 456 KiB; o navegador busca os pesos usados e o texto pode aparecer com fallback enquanto carregam. O orçamento completo de desempenho permanece na #8.
+- Fontes locais dispensam CDN e mantêm CSP restrita. Os três originais completos somam aproximadamente 456 KiB; a entrega web da #37 usa os subconjuntos descritos abaixo, preservando os originais como fallback. O texto pode aparecer com fallback enquanto a fonte carrega. Budget inicial e medição permanecem nos gates da #8/#37.
 - A configuração nginx agora é um artefato do build, inseparável do HTML. Ver [runbook](../runbooks/deploy.md).
 - Validar móvel/desktop, teclado, axe, persistência, pre-paint, sincronização e storage bloqueado. CI também verifica a imagem nginx com CSP real.
 
@@ -55,3 +55,18 @@ O favicon é um "b" geométrico desenhado em SVG, com fundo azul de ação e tra
 `src/marca/favicon.svg` é a fonte editável com referências a tokens. O plugin Vite resolve essas referências da regra `:root` de `tokens.css` e emite `dist/favicon.svg`, servido também em desenvolvimento. Não há CSS externo, estilos inline ou cores literais duplicadas no código-fonte. nginx serve SVG com MIME correto, sem cache persistente e sem fallback de SPA para ícone ausente.
 
 Cabeçalhos provisórios, login, erro de rota, falha de configuração e carregamento inicial usam a mesma assinatura. Não são introduzidos shell, novo acento, dependência ou fonte adicional.
+
+## Entrega web das fontes — #37, 20/10/2026
+
+A direção tipográfica continua Source Sans 3. Três subconjuntos WOFF2 locais
+cobrem latim, pontuação, moeda, setas e símbolos matemáticos usados pela interface
+(106.712 bytes no conjunto). Os três originais completos permanecem como fallback
+para outros alfabetos. `font-display: swap` continua em todas as faces.
+
+A OFL reserva o nome “Source”; a derivação usa internamente **Bancaemdia Interface**,
+com copyright/licença preservados. `scripts/subset-fonts.py`, com ferramentas pinadas,
+confere hashes dos originais, contornos, avanços e recursos tabulares/kerning, gera o
+manifesto e permite reproduzir os arquivos sem deriva. Não muda desenho, métrica,
+pesos, identidade da marca ou licença. Preloads alcançam somente os arquivos menores.
+Ver [proveniência](../../public/fontes/README.md) e
+[contrato de desempenho](../contracts/performance-acessibilidade.md).

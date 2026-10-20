@@ -16,6 +16,11 @@ import {
   type EstatisticasRevisao,
 } from '../features/revisao/estatisticas';
 
+// The shell assertions do not measure Vite's source compilation. Compile the
+// actual page before their deadlines, as the former eager route import did.
+// Cold loading of built chunks is measured separately against the real API.
+await import('../features/apostas/ApostasPage');
+
 const limpar: Array<() => void> = [];
 beforeEach(() => {
   vi.spyOn(api, 'getApiClient').mockReturnValue(

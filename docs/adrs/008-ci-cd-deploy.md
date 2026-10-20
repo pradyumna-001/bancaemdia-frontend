@@ -49,3 +49,36 @@ A configuração proposta e o procedimento administrativo estão em [branch-prot
 ## Revisão #28 — 15/10/2026
 
 Backend #200/PR #201 entrega o protocolo pendente. Sandbox único 547a4d0cfce5308dfe71221a77ad6fd5eb6e47cd incorpora #201 ao b37a3f8 e preserva todas as operações anteriores. OpenAPI de 125 operações, hash 09cf9fbb4b46a8dfc20fc4f4a3c97c3b88000612308cfb4e1e8fd4565901854a; sem união de schemas ou publicação. Seis jornadas reais de Revisão e 56 aceites PostgreSQL são acrescentados às provas anteriores. Job central reserva 25 minutos para o inventário ampliado, sem mudar limites de teste/pedido, cobertura, budget JS ou regra de zero skips. [Contrato](../contracts/revisao.md).
+
+## Medição autenticada e dados grandes — #37, 20/10/2026
+
+`performance-contract.yml` acrescenta dois perfis de medição e três browsers de
+acessibilidade. O catálogo inclui todas as 32 rotas reais. Cada rota tem três
+navegações frias em cada perfil: 192 amostras, sem selecionar a melhor. Cada uma
+exige scores >=95 nas três categorias, LCP<2.500 ms e CLS<0,1. Inventário ausente,
+redirect, erro, fallback ou dados ainda carregando reprovam. O gate JS inicial de
+200.000 bytes gzip e todos os inventários anteriores continuam ativos.
+
+Build público e sessão HttpOnly reais usam a API única 136f360, PostgreSQL e
+emissor descartáveis. Mais de 5.000 apostas, 40 tipsters/mercados e 90 dias exercitam
+as áreas autenticadas. Cookie circula somente em memória/stdin; nunca em argumentos,
+ambiente, arquivo ou relatório. JSON público permite somente versões, contagens,
+IDs do catálogo, métricas e provas booleanas. DOM, URLs privadas, Lighthouse bruto,
+cabeçalhos, screenshots e JUnit autenticado não são publicados por este workflow.
+O gate de privacidade é independente do aceite numérico.
+
+As páginas são lazy por rota, verificadas no grafo do build e nas requisições do
+ensaio. gzip HTML/CSS/JS/SVG usa a configuração do servidor estático; não transforma
+respostas da API. A medição antiga da #8 permanece diagnóstica, com sua falha de
+rede identificada; não substitui o ensaio real e não aprova release.
+
+Teclado, foco, duas aparências, reflow e equivalentes tabulares são ensaiados nos
+três browsers/dois viewports com a população grande. Event Timing mede gestos
+confiáveis separadamente de TBT; valores abaixo da resolução são censurados. Nem
+laboratório nem árvore acessível comprovam P75 de campo, uso com participantes ou
+certificação assistiva. Registrar ferramentas, ampliação efetiva e limitações em
+[validacão](../validation/performance-acessibilidade.md).
+
+A reserva de execução considera o novo inventário completo, sem mudar prazos do
+aplicativo, limites de pedidos ou metas de aceite. O pin continua em sandbox, com
+publicação bloqueada; a revisão administrativa e #38/#39 mantêm aceites próprios.

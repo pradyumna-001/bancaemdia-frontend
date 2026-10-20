@@ -14,10 +14,21 @@ export function temaInicial(): Plugin {
           ),
           'utf8',
         ).replaceAll('\r\n', '\n');
-        // Inserir antes dos estilos: React e config podem demorar ou falhar.
+        // Charset stays within the first 1024 bytes. The theme still precedes
+        // styles, without changing its exact CSP-authorized source.
+        const charset = /<meta\s+charset=["']UTF-8["']\s*\/?>/i;
+        const match = charset.exec(html);
+        if (
+          !match ||
+          Buffer.byteLength(
+            html.slice(0, match.index + match[0].length),
+            'utf8',
+          ) > 1024
+        )
+          throw new Error('Declaração UTF-8 ausente ou tardia no HTML.');
         return html.replace(
-          '<head>',
-          '<head>\n<script id="tema-inicial">' + script + '</script>',
+          charset,
+          (tag) => tag + '\n<script id="tema-inicial">' + script + '</script>',
         );
       },
     },

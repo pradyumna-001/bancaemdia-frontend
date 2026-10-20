@@ -11,6 +11,15 @@ import { RouteError } from './RouteError';
 import { createAppQueryClient } from './queryClient';
 import { createAppRoutes } from './routes';
 
+// Compile actual page modules before the unit cases, as eager routes previously
+// did. Guards/rendering keep their original assertion deadlines. Cold downloads
+// and parsing are measured against the public build by the performance proof.
+await Promise.all(
+  Object.values(import.meta.glob('../features/**/*Page.tsx')).map((load) =>
+    load(),
+  ),
+);
+
 const disposers: Array<() => void> = [];
 beforeEach(() => {
   vi.spyOn(api, 'getApiClient').mockReturnValue(

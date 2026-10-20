@@ -1,0 +1,24 @@
+{
+  "unicode_range": "U+0000-024F,U+2000-206F,U+20A0-20CF,U+2190-22FF",
+  "internal_family": "Bancaemdia Interface",
+  "fonts": [
+    {
+      "file": "bancaemdia-interface-regular-latin.woff2",
+      "source_sha256": "63de0da0cc05298e2e9c6e5cef506d8454ca665f6e668a99d94f51174b9256ed",
+      "sha256": "1a2a1d72cc51e668309686fff2a549e148bfe77096599be9e768921b238bbcd2",
+      "bytes": 35244
+    },
+    {
+      "file": "bancaemdia-interface-semibold-latin.woff2",
+      "source_sha256": "c248b0a178c362916db7c853ed640db77f184d19a0ed9fa5591fa707d3089635",
+      "sha256": "3c44824ecc5ad1c4eaed3eeb4c86ee0d85c6e8ee195a7341d1ebcc46b26f97f8",
+      "bytes": 35624
+    },
+    {
+      "file": "bancaemdia-interface-bold-latin.woff2",
+      "source_sha256": "12954097ebbad6749ee1c81a143d555c263420115892211529fe6f51794b8439",
+      "sha256": "7c7b6315e513cb236f39a6c039e604ccff611709193c3aaec37365346b3e3c6a",
+      "bytes": 35844
+    }
+  ]
+}

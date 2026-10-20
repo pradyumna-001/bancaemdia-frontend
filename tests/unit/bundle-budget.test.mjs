@@ -6,6 +6,7 @@ import { randomBytes } from 'node:crypto';
 import { afterEach, expect, it } from 'vitest';
 import {
   inspectBundle,
+  inspectRouteSplitting,
   INITIAL_JS_LIMIT,
 } from '../../scripts/check-bundle.mjs';
 
@@ -52,6 +53,20 @@ it('mede entrada, imports estáticos e tema sem contar shared duas vezes ou lazy
   ]);
   expect(inspectBundle(dir, report.totalGzipBytes).passed).toBe(true);
   expect(inspectBundle(dir, report.totalGzipBytes - 1).passed).toBe(false);
+});
+it('reprova página voltando à entrada ou preload, inclusive com manifesto ausente', () => {
+  const { dir, manifest } = fixture();
+  manifest.lazy.isDynamicEntry = true;
+  writeFileSync(join(dir, '.vite/manifest.json'), JSON.stringify(manifest));
+  expect(inspectRouteSplitting(dir, ['lazy', 'lazy'])).toHaveLength(1);
+  expect(() => inspectRouteSplitting(dir, [])).toThrow(/Catálogo/);
+  expect(() => inspectRouteSplitting(dir, ['missing'])).toThrow(/separada/);
+  expect(() => inspectRouteSplitting(dir, ['shared'])).toThrow(/separada/);
+  writeFileSync(
+    join(dir, 'index.html'),
+    '<script src="/assets/app.js"></script><link rel="modulepreload" href="/assets/lazy.js">',
+  );
+  expect(() => inspectRouteSplitting(dir, ['lazy'])).toThrow(/separada/);
 });
 it('reprova excesso real em dependência inicial e conta preload de dynamic import', () => {
   const { dir } = fixture();
