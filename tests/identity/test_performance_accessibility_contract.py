@@ -7,6 +7,7 @@ import asyncio
 import importlib.util
 import json
 import os
+import re
 import secrets
 import subprocess
 import sys
@@ -302,6 +303,14 @@ async def test_public_spa_large_accessibility(
             for theme in ("claro", "escuro"):
                 for route, target in zip(catalog, targets, strict=True):
                     active = page if route["private"] else public_page
+                    statuses = {}
+
+                    def observe_response(response, observed=statuses):
+                        if response.url.startswith(core.backend.FRONT + "/api/"):
+                            status = response.status
+                            observed[status] = observed.get(status, 0) + 1
+
+                    active.on("response", observe_response)
                     await active.emulate_media(
                         color_scheme="light" if theme == "claro" else "dark"
                     )
@@ -329,10 +338,25 @@ async def test_public_spa_large_accessibility(
                         del tree
                         if route["id"] == "aposta-chave-foto":
                             await photo(active)
+                    except pytest.fail.Exception as error:
+                        code = str(error)
+                        if not re.fullmatch(r"A11Y_[A-Z_]+", code):
+                            raise
+                        # Catalog ID and numeric statuses only: no private URL,
+                        # response text, DOM, identity or request arguments.
+                        http = ",".join(
+                            f"{status}x{count}"
+                            for status, count in sorted(statuses.items())
+                        )
+                        pytest.fail(
+                            f"{code}:{route['id']}:{theme}:HTTP={http}", pytrace=False
+                        )
                     except PlaywrightError:
                         pytest.fail(
                             f"A11Y_ROUTE_FAILED:{route['id']}:{theme}", pytrace=False
                         )
+                    finally:
+                        active.remove_listener("response", observe_response)
                     samples.append(
                         {"route": route["id"], "theme": theme, "passed": True}
                     )
