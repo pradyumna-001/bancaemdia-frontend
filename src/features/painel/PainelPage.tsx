@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/ProvedorAuth';
@@ -224,6 +224,9 @@ function Conteudo({
         ),
       ),
   });
+  // One chart and its always-open period table per banca: render the large
+  // series in interruptible work instead of one long task on arrival.
+  const evolucaoExibida = useDeferredValue(evolucao.data);
   const diaryWait = leitura.waiting;
   const groupWait = leitura.waiting;
   let rows: ReturnType<typeof juntarGrupos> = [];
@@ -409,31 +412,33 @@ function Conteudo({
             tentar={() => void evolucao.refetch()}
           />
         )}
-        {evolucao.data && legacyAllowed && (
+        {evolucaoExibida && legacyAllowed && (
           <>
             <p className="painel-nota">
               Evolução materializada · pode usar semanas ou meses nos períodos
               longos. Consulta distinta do diário ao vivo. Última consolidação:{' '}
-              {dataHora(evolucao.data.atualizado_em, 'America/Sao_Paulo')}.
+              {dataHora(evolucaoExibida.atualizado_em, 'America/Sao_Paulo')}.
             </p>
-            {[...new Set(evolucao.data.evolucao.map((p) => p.banca_id))].map(
-              (id) => (
+            <div className="painel-evolucoes">
+              {[
+                ...new Set(evolucaoExibida.evolucao.map((p) => p.banca_id)),
+              ].map((id) => (
                 <GraficoEvolucao
                   key={String(id)}
-                  dados={evolucao.data!.evolucao.filter(
+                  dados={evolucaoExibida.evolucao.filter(
                     (p) => p.banca_id === id,
                   )}
                   titulo={
-                    evolucao.data!.evolucao.find((p) => p.banca_id === id)
+                    evolucaoExibida.evolucao.find((p) => p.banca_id === id)
                       ?.banca_nome ?? 'Sem banca atribuída'
                   }
                   periodo={
                     PERIODOS[(query.periodo ?? 'all') as keyof typeof PERIODOS]
                   }
                 />
-              ),
-            )}
-            {!evolucao.data.evolucao.length && (
+              ))}
+            </div>
+            {!evolucaoExibida.evolucao.length && (
               <p>
                 Sem evolução consolidada. Escolha outro período ou envie
                 apostas.
