@@ -9,6 +9,10 @@ export type ModuleInfoLike = {
   code?: string | null;
 };
 export type GetModuleInfo = (id: string) => ModuleInfoLike | null;
+export type ChunkMeta = {
+  getModuleInfo: GetModuleInfo;
+  getModuleIds?: () => Iterable<string>;
+};
 
 /** Pages whose own code (outside the entry) stays below this size are light. */
 export const LIGHT_PAGE_BYTES = 30_000;
@@ -87,23 +91,48 @@ export function createRouteChunks() {
     light.set(page, result);
     return result;
   };
-  return (id: string, { getModuleInfo }: { getModuleInfo: GetModuleInfo }) => {
-    const info = getModuleInfo(id);
+  const placed = new Map<string, string | string[] | undefined>();
+  const place = (
+    get: GetModuleInfo,
+    id: string,
+  ): string | string[] | undefined => {
+    if (placed.has(id)) return placed.get(id);
+    // A dependency cycle is answered conservatively while it is resolved.
+    placed.set(id, undefined);
+    const result = decide(get, id);
+    placed.set(id, result);
+    return result;
+  };
+  const decide = (
+    get: GetModuleInfo,
+    id: string,
+  ): string | string[] | undefined => {
+    const info = get(id);
     if (!info || info.dynamicImporters.length) return undefined;
     // Entry modules stay in the entry chunk instead of being pulled elsewhere.
-    if (inEntry(getModuleInfo, id)) return 'index';
-    const pages = pagesOf(getModuleInfo, id);
-    const heavy = [...pages].every((page) => !isLight(getModuleInfo, page));
+    if (inEntry(get, id)) return 'index';
+    const pages = pagesOf(get, id);
+    const heavy = [...pages].every((page) => !isLight(get, page));
     if (pages.size >= SHARED_MIN_PAGES && heavy) return 'rotas-comum';
     if (pages.size < 2 || !normalize(id).includes('/src/')) return undefined;
     // A few hundred bytes are cheaper in the entry than one queued request.
     // Only leaves join it, so the entry never gains a new static dependency.
     if (
       (info.code?.length ?? Infinity) < TINY_SHARED_BYTES &&
-      info.importedIds.every((dependency) => inEntry(getModuleInfo, dependency))
+      info.importedIds.every((dependency) => inEntry(get, dependency))
     )
       return 'index';
-    const names = [...pages]
+    // Heavy pages already download the shared chunk: a module only they use,
+    // whose own dependencies are already there, saves them one request.
+    if (
+      heavy &&
+      info.importedIds.every(
+        (dependency) =>
+          inEntry(get, dependency) || place(get, dependency) === 'rotas-comum',
+      )
+    )
+      return 'rotas-comum';
+    return [...pages]
       .map((page) =>
         normalize(page)
           .split('/')
@@ -111,9 +140,46 @@ export function createRouteChunks() {
           .replace(/\.tsx?$/, ''),
       )
       .sort();
+  };
+  let pageSets: string[][] | undefined;
+  return (id: string, { getModuleInfo, getModuleIds }: ChunkMeta) => {
+    const pages = place(getModuleInfo, id);
+    if (!Array.isArray(pages)) return pages;
+    // A group whose pages are all in a larger group joins it: those pages
+    // download one chunk instead of one per exact page set. Only when the
+    // module's dependencies are the entry or that same family, so the added
+    // pages gain no other chunk.
+    pageSets ??= [...(getModuleIds?.() ?? [])]
+      .map((other) => place(getModuleInfo, other))
+      .filter((other): other is string[] => Array.isArray(other));
+    const within = (inner: string[], outer: string[]) =>
+      inner.every((page) => outer.includes(page));
+    const dependencies = getModuleInfo(id)!.importedIds.map((dependency) =>
+      inEntry(getModuleInfo, dependency)
+        ? 'index'
+        : place(getModuleInfo, dependency),
+    );
+    const group = pageSets
+      .filter(
+        (other) =>
+          within(pages, other) &&
+          dependencies.every(
+            (dependency) =>
+              dependency === 'index' ||
+              (Array.isArray(dependency) && within(dependency, other)),
+          ),
+      )
+      .reduce(
+        (best, other) =>
+          other.length > best.length ||
+          (other.length === best.length && other.join('|') < best.join('|'))
+            ? other
+            : best,
+        pages,
+      );
     return (
       'compartilhado-' +
-      createHash('sha256').update(names.join('|')).digest('hex').slice(0, 8)
+      createHash('sha256').update(group.join('|')).digest('hex').slice(0, 8)
     );
   };
 }

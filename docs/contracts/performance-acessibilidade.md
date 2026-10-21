@@ -70,7 +70,13 @@ menos três páginas pesadas; páginas leves (código próprio abaixo de 30.000 
 nunca dependem desse grupo. Demais módulos compartilhados mantêm o agrupamento por
 conjunto exato de páginas, e páginas e entrada continuam separadas. Módulos
 compartilhados pequenos (menos de 2.000 bytes) e sem dependências próprias fora
-da entrada acompanham a entrada. O CSS é um arquivo único, carregado antes da
+da entrada acompanham a entrada. Módulo usado só por páginas pesadas, com
+dependências já em `rotas-comum` ou na entrada, entra em `rotas-comum`. Um grupo
+cujas páginas estão todas num grupo maior se une a ele quando suas dependências
+são a entrada ou essa mesma família; páginas leves nunca ganham `rotas-comum`.
+O carregador da rota protegida inicia a importação da página em paralelo com a
+consulta de sessão; nada é renderizado nem consultado antes do guard, e a página
+renderiza sem nova suspensão quando o módulo já chegou. O CSS é um arquivo único, carregado antes da
 pintura; nenhuma rota enfileira folhas de estilo próprias.
 
 O bootstrap autorizado por hash antecipa somente JS/CSS públicos da rota atual e

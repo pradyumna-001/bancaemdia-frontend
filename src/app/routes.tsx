@@ -13,82 +13,71 @@ import { Placeholder } from './Placeholder';
 import { ErrorPage, RouteError } from './RouteError';
 import { ROTAS_AUTH, ROTAS_PROTEGIDAS, ROTAS_PUBLICAS } from './paths';
 import { Shell } from './Shell';
-const SistemaPage = lazy(() =>
-  import('../features/sistema/SistemaPage').then((m) => ({
-    default: m.SistemaPage,
-  })),
+import { paginaCarregavel } from './paginaCarregavel';
+const SistemaPage = paginaCarregavel(
+  () => import('../features/sistema/SistemaPage'),
+  (m) => m.SistemaPage,
 );
-const EnviarPage = lazy(() =>
-  import('../features/enviar/EnviarPage').then((m) => ({
-    default: m.EnviarPage,
-  })),
+const EnviarPage = paginaCarregavel(
+  () => import('../features/enviar/EnviarPage'),
+  (m) => m.EnviarPage,
 );
-const TelegramPage = lazy(() =>
-  import('../features/conexoes/TelegramPage').then((m) => ({
-    default: m.TelegramPage,
-  })),
+const TelegramPage = paginaCarregavel(
+  () => import('../features/conexoes/TelegramPage'),
+  (m) => m.TelegramPage,
 );
-const AssinaturaPage = lazy(() =>
-  import('../features/assinatura/AssinaturaPage').then((m) => ({
-    default: m.AssinaturaPage,
-  })),
+const AssinaturaPage = paginaCarregavel(
+  () => import('../features/assinatura/AssinaturaPage'),
+  (m) => m.AssinaturaPage,
 );
-const ConfiguracoesPage = lazy(() =>
-  import('../features/configuracoes/ConfiguracoesPage').then((m) => ({
-    default: m.ConfiguracoesPage,
-  })),
+const ConfiguracoesPage = paginaCarregavel(
+  () => import('../features/configuracoes/ConfiguracoesPage'),
+  (m) => m.ConfiguracoesPage,
 );
-const PainelPage = lazy(() =>
-  import('../features/painel/PainelPage').then((m) => ({
-    default: m.PainelPage,
-  })),
+const PainelPage = paginaCarregavel(
+  () => import('../features/painel/PainelPage'),
+  (m) => m.PainelPage,
 );
-const ApostasPage = lazy(() =>
-  import('../features/apostas/ApostasPage').then((m) => ({
-    default: m.ApostasPage,
-  })),
+const ApostasPage = paginaCarregavel(
+  () => import('../features/apostas/ApostasPage'),
+  (m) => m.ApostasPage,
 );
-const DetalheApostaPage = lazy(() =>
-  import('../features/apostas/detalhe/DetalheApostaPage').then((m) => ({
-    default: m.DetalheApostaPage,
-  })),
+const DetalheApostaPage = paginaCarregavel(
+  () => import('../features/apostas/detalhe/DetalheApostaPage'),
+  (m) => m.DetalheApostaPage,
 );
-const FotoPage = lazy(() =>
-  import('../features/midia/FotoPage').then((m) => ({ default: m.FotoPage })),
+const FotoPage = paginaCarregavel(
+  () => import('../features/midia/FotoPage'),
+  (m) => m.FotoPage,
 );
-const ContasPage = lazy(() =>
-  import('../features/contas/ContasPage').then((m) => ({
-    default: m.ContasPage,
-  })),
+const ContasPage = paginaCarregavel(
+  () => import('../features/contas/ContasPage'),
+  (m) => m.ContasPage,
 );
-const ResultadosPage = lazy(() =>
-  import('../features/resultados/ResultadosPage').then((m) => ({
-    default: m.ResultadosPage,
-  })),
+const ResultadosPage = paginaCarregavel(
+  () => import('../features/resultados/ResultadosPage'),
+  (m) => m.ResultadosPage,
 );
-const CaixaPage = lazy(() =>
-  import('../features/caixa/CaixaPage').then((m) => ({ default: m.CaixaPage })),
+const CaixaPage = paginaCarregavel(
+  () => import('../features/caixa/CaixaPage'),
+  (m) => m.CaixaPage,
 );
 
-const CalculadorasPage = lazy(() =>
-  import('../features/calculadoras/CalculadorasPage').then((m) => ({
-    default: m.CalculadorasPage,
-  })),
+const CalculadorasPage = paginaCarregavel(
+  () => import('../features/calculadoras/CalculadorasPage'),
+  (m) => m.CalculadorasPage,
 );
-const HipoteticaPage = lazy(() =>
-  import('../features/hipotetica/HipoteticaPage').then((m) => ({
-    default: m.HipoteticaPage,
-  })),
+const HipoteticaPage = paginaCarregavel(
+  () => import('../features/hipotetica/HipoteticaPage'),
+  (m) => m.HipoteticaPage,
 );
-const RevisaoPage = lazy(() =>
-  import('../features/revisao/RevisaoPage').then((m) => ({
-    default: m.RevisaoPage,
-  })),
+const RevisaoPage = paginaCarregavel(
+  () => import('../features/revisao/RevisaoPage'),
+  (m) => m.RevisaoPage,
 );
-const PrivacidadePage = lazy(() =>
-  import('../features/configuracoes/privacidade/PrivacidadePage').then((m) => ({
-    default: m.PrivacidadePage,
-  })),
+const PrivacidadePage = paginaCarregavel(
+  () => import('../features/configuracoes/privacidade/PrivacidadePage'),
+  (m) => m.PrivacidadePage,
 );
 
 export function loginLoader({ request }: LoaderFunctionArgs) {
@@ -96,40 +85,61 @@ export function loginLoader({ request }: LoaderFunctionArgs) {
   return { destino: destinoInterno(url.searchParams.get('destino')) };
 }
 
-const NovaApostaPage = lazy(() =>
-  import('../features/apostas/nova/NovaApostaPage').then((m) => ({
-    default: m.NovaApostaPage,
-  })),
+const NovaApostaPage = paginaCarregavel(
+  () => import('../features/apostas/nova/NovaApostaPage'),
+  (m) => m.NovaApostaPage,
 );
 
 const AjudaPage = lazy(() =>
   import('../features/ajuda/AjudaPage').then((m) => ({ default: m.AjudaPage })),
 );
-const ColetaPage = lazy(() =>
-  import('../features/coleta/ColetaPage').then((m) => ({
-    default: m.ColetaPage,
-  })),
+const ColetaPage = paginaCarregavel(
+  () => import('../features/coleta/ColetaPage'),
+  (m) => m.ColetaPage,
 );
-const AnalisesPage = lazy(() =>
-  import('../features/painel/analises/AnalisesPage').then((m) => ({
-    default: m.AnalisesPage,
-  })),
+const AnalisesPage = paginaCarregavel(
+  () => import('../features/painel/analises/AnalisesPage'),
+  (m) => m.AnalisesPage,
 );
-const TrocaContaPage = lazy(() =>
-  import('../features/contas/troca/TrocaContaPage').then((m) => ({
-    default: m.TrocaContaPage,
-  })),
+const TrocaContaPage = paginaCarregavel(
+  () => import('../features/contas/troca/TrocaContaPage'),
+  (m) => m.TrocaContaPage,
 );
-const MetasPage = lazy(() =>
-  import('../features/painel/metas/MetasPage').then((m) => ({
-    default: m.MetasPage,
-  })),
+const MetasPage = paginaCarregavel(
+  () => import('../features/painel/metas/MetasPage'),
+  (m) => m.MetasPage,
 );
-const InicioPage = lazy(() =>
-  import('../features/inicio/InicioPage').then((m) => ({
-    default: m.InicioPage,
-  })),
+const InicioPage = paginaCarregavel(
+  () => import('../features/inicio/InicioPage'),
+  (m) => m.InicioPage,
 );
+
+// Each protected path's page module starts loading with its session read.
+const PAGINAS: Readonly<Record<string, { carregar: () => void }>> = {
+  '/': ApostasPage,
+  '/aposta/nova': NovaApostaPage,
+  '/aposta/:chave': DetalheApostaPage,
+  '/aposta/:chave/foto': FotoPage,
+  '/calculadoras': CalculadorasPage,
+  '/e-se': HipoteticaPage,
+  '/painel': PainelPage,
+  '/painel/analises': AnalisesPage,
+  '/painel/metas': MetasPage,
+  '/contas/trocar': TrocaContaPage,
+  '/contas': ContasPage,
+  '/contas/:titularId': ContasPage,
+  '/configuracoes': ConfiguracoesPage,
+  '/inicio': InicioPage,
+  '/configuracoes/privacidade': PrivacidadePage,
+  '/assinatura': AssinaturaPage,
+  '/configuracoes/conexoes': TelegramPage,
+  '/enviar': EnviarPage,
+  '/resultados': ResultadosPage,
+  '/revisao': RevisaoPage,
+  '/coleta': ColetaPage,
+  '/banca': CaixaPage,
+  '/sistema': SistemaPage,
+};
 
 export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
@@ -141,7 +151,10 @@ export function createAppRoutes(
   const protectedRoute = (path: string, element: ReactNode): RouteObject => ({
     path,
     caseSensitive: true,
-    loader: guard,
+    loader: () => {
+      if (Object.hasOwn(PAGINAS, path)) PAGINAS[path]!.carregar();
+      return guard();
+    },
     shouldRevalidate: ({
       currentUrl,
       nextUrl,

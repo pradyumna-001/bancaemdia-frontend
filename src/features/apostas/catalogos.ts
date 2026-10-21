@@ -87,8 +87,10 @@ export function useCatalogos(
     ativo && !!contrato[endpoint] && auth?.state.phase === 'authenticated';
   const dimensions = keys.filter((key) => dimensoes.includes(key));
   const current = dimensions.map((key) => searches[key] ?? { q: '', page: 1 });
+  // Disabled catalogs return no options at all: they need no query observers
+  // (one per dimension and mode), which every render would otherwise rebuild.
   const queries = useQueries({
-    queries: dimensions.flatMap((key, index) =>
+    queries: (enabled ? dimensions : []).flatMap((key, index) =>
       [false, true].map((selected) => {
         const search = current[index]!;
         const id = selected ? visao.valores[key] : undefined;
