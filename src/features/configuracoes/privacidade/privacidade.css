@@ -1,0 +1,60 @@
+.privacidade {
+  display: grid;
+  gap: var(--espaco-32);
+}
+.privacidade header,
+.privacidade-secao {
+  max-width: var(--largura-leitura);
+}
+.privacidade-secao {
+  padding: var(--espaco-24);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+.privacidade-secao h2 {
+  margin-top: 0;
+}
+.privacidade-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-16);
+  margin-block: var(--espaco-16);
+}
+.privacidade-aviso {
+  max-width: var(--largura-leitura);
+  padding: var(--espaco-16);
+  border-inline-start: 3px solid var(--acao);
+  background: var(--superficie-secundaria);
+  overflow-wrap: anywhere;
+}
+.privacidade-confirmacao {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-12);
+  min-height: var(--alvo-toque);
+}
+.privacidade-confirmacao input {
+  flex: 0 0 auto;
+}
+.privacidade dialog {
+  color: var(--tinta);
+  background: var(--superficie);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-painel);
+  padding: var(--espaco-24);
+  width: min(36rem, calc(100% - var(--espaco-32)));
+  max-height: 85dvh;
+  overflow-y: auto;
+}
+.privacidade dialog::backdrop {
+  background: var(--sombra-modal);
+}
+@media (max-width: 40rem) {
+  .privacidade-secao {
+    padding: var(--espaco-16);
+  }
+  .privacidade-acoes > button {
+    width: 100%;
+  }
+}

@@ -201,6 +201,10 @@ test('tentativa explícita faz só GET, bloqueia clique duplicado e mantém hist
   await expect(
     page.getByRole('heading', { name: 'Análises', exact: true }),
   ).toBeVisible();
+  await expect(page.locator('#analises-esportes')).toBeVisible();
+  await expect(
+    page.locator('#analises-caixa .analises-banca').first(),
+  ).toBeVisible();
   await expect(page.locator('#conteudo')).toBeFocused();
   expect(methods).toEqual(['GET', 'GET']);
   expect(new URL(page.url()).searchParams.get('casa')).toBe('Bet 365');
@@ -231,7 +235,13 @@ test('429/503 respeitam prazo e escrita incerta não oferece reenvio; flags da f
   });
   for (const value of [429, 503]) {
     status = value;
+    const failure = page.getByRole('heading', {
+      name: /^(Aguarde para tentar novamente|O serviço está temporariamente indisponível)$/,
+    });
     await page.goto(`${fixture}/coleta${suffix}`);
+    // A same-document navigation can still show the prior refusal until reload.
+    // Settle that document before reloading; assert the new status/focus below.
+    await expect(failure).toBeVisible();
     await page.reload();
     await expect(
       page.getByRole('heading', {

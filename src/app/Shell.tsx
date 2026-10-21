@@ -13,6 +13,8 @@ import {
 } from '../features/revisao/estatisticas';
 import { ABAS, abaAtual } from './nav';
 import './Shell.css';
+import { AvisoAcesso } from '../features/acesso/AvisoAcesso';
+import { useAcesso } from '../features/acesso/ProvedorAcesso';
 
 export function Shell({
   children,
@@ -22,6 +24,7 @@ export function Shell({
   consultarRevisao?: ConsultarRevisao;
 }) {
   const location = useLocation();
+  const access = useAcesso();
   const revalidation = useRevalidator();
   const recoveringError = useRef(false);
   const [menuEm, setMenuEm] = useState<string | null>(null);
@@ -39,6 +42,14 @@ export function Shell({
     },
   });
   const total = fila.data?.total ?? 0;
+  const checkingAccess = access?.phase === 'checking';
+  const loadingMessage = checkingAccess
+    ? fila.isPending
+      ? 'Conferindo acesso e fila…'
+      : 'Conferindo acesso à conta…'
+    : fila.isPending
+      ? 'Consultando fila de revisão…'
+      : '';
   const abas = ABAS.filter((aba) => aba.path !== '/revisao' || total > 0);
   const secundarias = abas.filter((aba) => !aba.mobile);
   useEffect(() => {
@@ -103,6 +114,9 @@ export function Shell({
       </a>
       <header className="shell-topo">
         <div className="shell-identidade">
+          <span className="shell-consulta" role="status">
+            {loadingMessage}
+          </span>
           <Link
             to={{ pathname: '/', search: location.search }}
             aria-label="bancaemdia — Apostas"
@@ -133,11 +147,6 @@ export function Shell({
         ref={conteudo}
         tabIndex={-1}
       >
-        {fila.isPending && (
-          <p className="aviso-fila" role="status">
-            Consultando fila de revisão…
-          </p>
-        )}
         {fila.isError && (
           <div className="aviso-fila" role="alert">
             <p>
@@ -153,7 +162,20 @@ export function Shell({
             </button>
           </div>
         )}
+        <AvisoAcesso />
         {children}
+        {location.pathname === '/' && (
+          <aside
+            className="hipotetica-entrada"
+            aria-label="Comparação histórica"
+          >
+            <p>
+              <Link to={{ pathname: '/e-se', search: location.search }}>
+                E se eu seguisse a stake do tipster?
+              </Link>
+            </p>
+          </aside>
+        )}
       </div>
       <nav className="nav-mobile" aria-label="Navegação principal no celular">
         {abas.filter((aba) => aba.mobile).map(link)}

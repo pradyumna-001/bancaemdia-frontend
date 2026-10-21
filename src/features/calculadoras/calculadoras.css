@@ -1,0 +1,169 @@
+.calculadoras > header,
+.calculadoras > section,
+.calculadoras > nav,
+.calculadoras > fieldset {
+  margin-block-end: var(--espaco-24);
+}
+.calculadoras p {
+  max-width: 65ch;
+}
+.calculadoras-escolha {
+  border: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--espaco-8);
+}
+.calculadoras-escolha legend {
+  margin-block-end: var(--espaco-8);
+  font-weight: var(--peso-destaque);
+}
+.calculadoras form .calculadoras-escolha {
+  margin-block: var(--espaco-24);
+}
+.calculadoras-escolha label,
+.calculadora-confirmar {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-12);
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-12);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-controle);
+  cursor: pointer;
+}
+.calculadoras-escolha input,
+.calculadora-confirmar input {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  accent-color: var(--acao);
+}
+.calculadora-confirmar {
+  margin-block: var(--espaco-24);
+}
+.calculadora-resultado-entrada {
+  min-width: 0;
+  padding: var(--espaco-16);
+  margin: 0 0 var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-controle);
+}
+.calculadora-resultado-entrada legend {
+  font-weight: var(--peso-destaque);
+  padding-inline: var(--espaco-4);
+}
+.calculadora-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--espaco-16);
+}
+.calculadora-campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-8);
+  margin-block-end: var(--espaco-16);
+}
+.calculadora-campo label {
+  font-weight: var(--peso-destaque);
+}
+.calculadora-campo input {
+  width: 100%;
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-12);
+  background: var(--superficie);
+  color: var(--tinta);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-controle);
+}
+.calculadora-ajuda,
+.calculadora-vazio {
+  color: var(--tinta-secundaria);
+}
+.calculadora-campo p {
+  margin: 0;
+  font-size: var(--fonte-pequena);
+}
+.calculadora-secundario {
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-16);
+  background: var(--superficie);
+  color: var(--acao);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-controle);
+}
+.calculadora-validacao,
+.calculadora-avisos {
+  border-inline-start: 3px solid var(--perda);
+  padding: var(--espaco-16);
+}
+.calculadora-resposta {
+  border-block-start: 1px solid var(--borda);
+  padding-block-start: var(--espaco-24);
+  margin-block-start: var(--espaco-32);
+}
+.calculadora-metricas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--espaco-16);
+}
+.calculadora-metricas dt {
+  color: var(--tinta-secundaria);
+}
+.calculadora-metricas dd {
+  margin: var(--espaco-4) 0 0;
+  font-weight: var(--peso-destaque);
+}
+.calculadora-tabela {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-block: var(--espaco-24);
+}
+.calculadora-tabela table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.calculadora-tabela caption {
+  text-align: start;
+  font-weight: var(--peso-destaque);
+  padding-block-end: var(--espaco-8);
+}
+.calculadora-tabela th,
+.calculadora-tabela td {
+  text-align: start;
+  padding: var(--espaco-12);
+  border-block-end: 1px solid var(--borda);
+  min-width: 8rem;
+}
+.calculadora-tabela td {
+  white-space: nowrap;
+}
+.calculadoras details {
+  margin-block: var(--espaco-24);
+}
+.calculadoras summary {
+  cursor: pointer;
+  padding-block: var(--espaco-12);
+  min-height: var(--alvo-toque);
+}
+.calculadoras details p {
+  margin-block-start: var(--espaco-16);
+}
+.calculadoras footer {
+  margin-block-start: var(--espaco-32);
+}
+
+.calculadoras-escolha a {
+  display: flex;
+  align-items: center;
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-12);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-controle);
+  text-decoration: none;
+}
+.calculadoras-escolha a[aria-current='page'] {
+  border-color: var(--acao);
+  background: var(--superficie-secundaria);
+  font-weight: var(--peso-destaque);
+}

@@ -26,6 +26,10 @@ Facilidade de uso deve ser avaliada por conclusão, erros, tempo e compreensão.
 
 ## Evidência e entrega
 
+Troca de conta #53: /contas/trocar mantém o contexto da matriz, formulário estreito em etapas, origem/destino, data/hora/fuso e estado final explícitos. Prévia mostra consequências e IDs para revisão; confirmação separada preserva o histórico. Código de consulta fica em detalhe e só é copiado por gesto; nenhum storage da intenção. Recarga exige consulta manual desse código. Estados de leitura/erro/concorrência/resultado incerto têm ações próprias. Especificação de aceite em `docs/contracts/troca-conta.md`.
+
+Revisão de gráficos de 17/10/2026: evoluções exigem data e valor inicial/final explícitos e leitura tabular por período sempre aberta, além do desenho interativo. Diferenciar lucro acumulado, saldo inicial cadastrado e saldo do recorte sem reconstruir números. Conferir todas as comparações e a matriz, séries densas, lacunas e rótulos sem colisão em ambos os temas/viewports; ver `docs/contracts/analises.md`.
+
 Mudança de tela anexa capturas móvel/desktop nos dois temas e registra cenários/limites; testes exercitam comportamento relevante, sem exigir testes artificiais para ajustes documentais. Estudos com participantes são distintos da revisão visual e dos testes automatizados. Registrar o que foi realmente observado.
 
 Toda entrega de PR segue AGENTS 28: fora de rascunho e todos os checks aplicáveis verdes no SHA final, sem desabilitar gates. Referenciar a issue e ADRs pertinentes. As issues técnicas aplicam os critérios visuais apenas às interfaces que afetam. Novas áreas de produto são explicitadas pelo ADR019, não inferidas da pesquisa visual.
@@ -35,3 +39,9 @@ Toda entrega de PR segue AGENTS 28: fora de rascunho e todos os checks aplicáve
 Os números locais dos ADRs reiniciam por semana. Mapeamento para GitHub: ADR 014 → #1–#8; ADR 015 → #9–#15; ADR 016 → #16–#23; ADR 017 → #24–#30; ADR 018 → #31–#39.
 
 Esta revisão altera especificação, não implementa a próxima issue, não muda prioridades, estimativas, responsáveis ou estados e não declara trabalho futuro concluído. As implementações #1–#6 permanecem vinculadas aos PRs #40–#45, aguardando o fluxo de revisão/merge.
+
+Metas #57: /painel/metas é opcional, com lista de atual/alvo/base/progresso e status separados, todos publicados pela API. Formulário começa vazio, declara unidades e usa pickers próprios; não recomenda quantidade de apostas ou objetivo financeiro. Progresso null, negativo e acima de 100% é legível sem medidor enganoso. Escopo global no intervalo da meta é explícito, com filtros do Painel preservados sem aplicação presumida. Arquivar confirma e mantém consulta; incerteza não ganha reenvio nem falsa confirmação por lista. Fuso compartilhado com Configurações. Ver docs/contracts/metas.md.
+
+## Primeiro uso #59 — 18/10/2026
+
+Guia privado opcional /inicio, com acesso real, uma próxima ação destacada e explicação de titular/conta sob demanda. Presença por totais globais do proprietário inclui apagadas, arquivados e inativas; não é snapshot conjunto, recibo ou prova de atribuição. Sessão e assinatura são separadas; trial_confirmed e can(operation) prevalecem. Links preservam filtros; formulários existentes revalidam escrita. Sem tour, percentual inventado ou conclusão local. Bot/extensão aguardam lançamento. Medição de laboratório usa tarefas/resultados/durações de vocabulário fixo e gate que recusa campos livres; nenhum coletor de produto é presumido. Pin 5f5f062 e bloqueio de produção mantidos. Seis jornadas reais adicionais, preservando inventários anteriores. PR contra main com dependências #102/#101/#100 e operacionais. Ver [contrato](../contracts/primeiro-uso.md).

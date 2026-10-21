@@ -28,13 +28,13 @@ A #12 aplica esta fundação às telas de conta: painel único de leitura, títu
 
 - A #4 aplica a fundação às páginas provisórias e erros existentes. Não inventa telas financeiras nem libera acesso às rotas protegidas.
 - Marca/wordmark/favicon são definidos na #5, conforme decisão abaixo; shell e navegação ficam na #6; gráficos na #7. O seletor será acomodado pelo shell quando ele existir.
-- Fontes locais dispensam CDN e mantêm CSP restrita, mas os três arquivos somam aproximadamente 456 KiB; o navegador busca os pesos usados e o texto pode aparecer com fallback enquanto carregam. O orçamento completo de desempenho permanece na #8.
+- Fontes locais dispensam CDN e mantêm CSP restrita. Os três originais completos somam aproximadamente 456 KiB; a entrega web da #37 usa os subconjuntos descritos abaixo, preservando os originais como fallback. O texto pode aparecer com fallback enquanto a fonte carrega. Budget inicial e medição permanecem nos gates da #8/#37.
 - A configuração nginx agora é um artefato do build, inseparável do HTML. Ver [runbook](../runbooks/deploy.md).
 - Validar móvel/desktop, teclado, axe, persistência, pre-paint, sincronização e storage bloqueado. CI também verifica a imagem nginx com CSP real.
 
 ## Gráficos — #7
 
-Componentes SVG próprios recebem tipos gerados do OpenAPI. Evolução mantém datas proporcionais e eixo zero; comparação mantém comprimento ∝ |lucro| e espessura ∝ √n. Nenhum componente calcula lucro acumulado ou agrega bancas. Linha sem área preenchida, rótulos legíveis nos eixos, resumo recebido em destaque, seleção discreta, dados por foco/toque/ponteiro e tabela equivalente seguem a direção de leitura simples. Valores fora da precisão segura são erro explícito.
+Componentes SVG próprios recebem tipos gerados do OpenAPI. Evolução mantém datas proporcionais e eixo zero; comparação mantém comprimento ∝ |lucro| e espessura ∝ √n. Nenhum componente calcula lucro acumulado ou agrega bancas. Linha sem área preenchida, rótulos legíveis nos eixos, resumo recebido em destaque e seleção discreta seguem a direção de leitura simples. Revisão do titular de 17/10/2026 exige primeiro/último registro com data/valor e tabela compacta por período sempre visíveis, além de foco/toque/ponteiro. Saldo inicial cadastrado é separado do primeiro acumulado e não promete abertura da janela. Anotações não se sobrepõem em séries densas; todos os registros permanecem acessíveis sem hover. Valores fora da precisão segura são erro explícito.
 
 Demonstração identificada como fictícia em `/sistema`, mantendo proteção de sessão. Casos de borda, limites e evidências em [validação dos gráficos](../charts-validation.md). O formatador central de centavos é introduzido apenas na extensão necessária; o restante da #16 permanece no backlog.
 
@@ -55,3 +55,21 @@ O favicon é um "b" geométrico desenhado em SVG, com fundo azul de ação e tra
 `src/marca/favicon.svg` é a fonte editável com referências a tokens. O plugin Vite resolve essas referências da regra `:root` de `tokens.css` e emite `dist/favicon.svg`, servido também em desenvolvimento. Não há CSS externo, estilos inline ou cores literais duplicadas no código-fonte. nginx serve SVG com MIME correto, sem cache persistente e sem fallback de SPA para ícone ausente.
 
 Cabeçalhos provisórios, login, erro de rota, falha de configuração e carregamento inicial usam a mesma assinatura. Não são introduzidos shell, novo acento, dependência ou fonte adicional.
+
+## Entrega web das fontes — #37, 20/10/2026
+
+A direção tipográfica continua Source Sans 3. Cada peso tem dois subconjuntos WOFF2
+locais separados por `unicode-range`: o principal (português, pontuação e setas da
+interface; 49.296 bytes nos três pesos) é pré-carregado; o complementar (moedas
+estrangeiras, símbolos e pontuação raros; 17.236 bytes nos três) só é pedido quando
+a página exibe um desses caracteres. As sub-rotinas CFF são expandidas sem alterar
+contornos ou hints. Os três originais completos permanecem como fallback para outros
+alfabetos. `font-display: swap` continua em todas as faces.
+
+A OFL reserva o nome “Source”; a derivação usa internamente **Bancaemdia Interface**,
+com copyright/licença preservados. `scripts/subset-fonts.py`, com ferramentas pinadas,
+confere hashes dos originais, contornos, avanços e recursos tabulares/kerning, gera o
+manifesto e permite reproduzir os arquivos sem deriva. Não muda desenho, métrica,
+pesos, identidade da marca ou licença. Preloads alcançam somente os arquivos menores.
+Ver [proveniência](../../public/fontes/README.md) e
+[contrato de desempenho](../contracts/performance-acessibilidade.md).

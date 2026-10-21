@@ -1,0 +1,190 @@
+name: Performance e acessibilidade com API real
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: performance-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  performance:
+    name: Performance real (${{ matrix.profile }}, ${{ github.event_name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [mobile, desktop]
+        browser: [chromium]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      IDENTITY_API_SHA: 37b130282c0d4a240f152b72fc76933074f38e4e
+      APP_ENV: testing
+      JWT_ALGORITHM: RS256
+      JWT_AUDIENCE: bancaemdia-api
+      JWT_ISSUER: bancaemdia-api
+      JWT_SECRET_KEY: unused-for-rs256-acceptance
+      REDIS_URL: redis://localhost:6379/0
+      RATE_LIMIT_STORAGE: memory://
+      OTEL_EXPORTER_OTLP_ENDPOINT: ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: pradyumna-001/bancaemdia-api
+          ref: ${{ env.IDENTITY_API_SHA }}
+          path: .identity-api
+          persist-credentials: false
+      - name: Conferir versão única do backend de sandbox
+        run: |
+          test "$(git -C .identity-api rev-parse HEAD)" = "$IDENTITY_API_SHA"
+          test "$(python3 -c 'import json; print(json.load(open("config/api-contract.json"))["commit"])')" = "$IDENTITY_API_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm install --global pnpm@10.34.6
+      - run: make install build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e '.identity-api[dev]'
+      - run: ruff check tests/identity && ruff format --check tests/identity
+      - name: Provar limpeza do ambiente antes e depois do bootstrap
+        run: python -m pytest -c .identity-api/pyproject.toml --noconftest -o addopts='' --import-mode=importlib tests/identity/test_harness_resources.py --no-cov -n 0
+      - run: python -m playwright install --with-deps chromium ${{ matrix.browser }}
+      - name: Instalar Chromium da versao JavaScript travada para Lighthouse
+        run: pnpm exec playwright install chromium
+      - name: Gerar credenciais exclusivamente descartáveis e mascaradas
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_password=$(openssl rand -hex 24)
+          admin_password=$(openssl rand -hex 24)
+          echo "::add-mask::$db_password"
+          echo "::add-mask::$admin_password"
+          echo "POSTGRES_PASSWORD=$db_password" >> "$GITHUB_ENV"
+          echo "KC_BOOTSTRAP_ADMIN_USERNAME=identity-admin-$(openssl rand -hex 8)" >> "$GITHUB_ENV"
+          echo "KC_BOOTSTRAP_ADMIN_PASSWORD=$admin_password" >> "$GITHUB_ENV"
+          echo "TEST_DATABASE_URL=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+          echo "DATABASE_URL_REPLICA=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+      - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d --wait postgres mailpit
+      - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d issuer
+      - run: docker compose -f tests/identity/upload-compose.yml up -d --wait redis
+      - name: Reproduzir fontes e conferir deriva
+        run: |
+          pip install -r scripts/font-requirements.txt
+          python scripts/subset-fonts.py
+          git diff --exit-code -- public/fontes
+      - name: Medir todas as rotas em tres navegacoes frias
+        working-directory: .identity-api
+        env:
+          PERFORMANCE_REPORT_DIR: ${{ github.workspace }}/reports/performance
+        run: python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_performance_contract.py -k '${{ matrix.profile }}' --tb=no -v
+      - name: Aceitar inventario completo e metas no SHA atual
+        run: node scripts/check-performance.mjs reports/performance/performance-${{ matrix.profile }}.json
+      - name: Auditar campos antes de publicar inclusive falhas numericas
+        if: always()
+        id: privacy
+        run: node scripts/check-performance.mjs reports/performance/performance-${{ matrix.profile }}.json --privacy-only
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.privacy.outcome == 'success'
+        with:
+          name: performance-${{ matrix.profile }}-${{ github.event_name }}-${{ github.run_id }}
+          if-no-files-found: error
+          path: reports/performance/performance-${{ matrix.profile }}.json
+      - name: Encerrar somente o sandbox deste job
+        if: always()
+        run: |
+          docker compose -f tests/identity/upload-compose.yml down
+          docker compose -f .identity-api/tests/identity/docker-compose.yml down
+  accessibility:
+    name: Acessibilidade real (${{ matrix.browser }}, ${{ github.event_name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      IDENTITY_API_SHA: 37b130282c0d4a240f152b72fc76933074f38e4e
+      APP_ENV: testing
+      JWT_ALGORITHM: RS256
+      JWT_AUDIENCE: bancaemdia-api
+      JWT_ISSUER: bancaemdia-api
+      JWT_SECRET_KEY: unused-for-rs256-acceptance
+      REDIS_URL: redis://localhost:6379/0
+      RATE_LIMIT_STORAGE: memory://
+      OTEL_EXPORTER_OTLP_ENDPOINT: ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: pradyumna-001/bancaemdia-api
+          ref: ${{ env.IDENTITY_API_SHA }}
+          path: .identity-api
+          persist-credentials: false
+      - name: Conferir versão única do backend de sandbox
+        run: |
+          test "$(git -C .identity-api rev-parse HEAD)" = "$IDENTITY_API_SHA"
+          test "$(python3 -c 'import json; print(json.load(open("config/api-contract.json"))["commit"])')" = "$IDENTITY_API_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm install --global pnpm@10.34.6
+      - run: make install build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e '.identity-api[dev]'
+      - run: ruff check tests/identity && ruff format --check tests/identity
+      - name: Provar limpeza do ambiente antes e depois do bootstrap
+        run: python -m pytest -c .identity-api/pyproject.toml --noconftest -o addopts='' --import-mode=importlib tests/identity/test_harness_resources.py --no-cov -n 0
+      - run: python -m playwright install --with-deps chromium ${{ matrix.browser }}
+      - name: Gerar credenciais exclusivamente descartáveis e mascaradas
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_password=$(openssl rand -hex 24)
+          admin_password=$(openssl rand -hex 24)
+          echo "::add-mask::$db_password"
+          echo "::add-mask::$admin_password"
+          echo "POSTGRES_PASSWORD=$db_password" >> "$GITHUB_ENV"
+          echo "KC_BOOTSTRAP_ADMIN_USERNAME=identity-admin-$(openssl rand -hex 8)" >> "$GITHUB_ENV"
+          echo "KC_BOOTSTRAP_ADMIN_PASSWORD=$admin_password" >> "$GITHUB_ENV"
+          echo "TEST_DATABASE_URL=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+          echo "DATABASE_URL_REPLICA=postgresql+asyncpg://identity_test:$db_password@127.0.0.1:55432/bancaemdia_identity" >> "$GITHUB_ENV"
+      - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d --wait postgres mailpit
+      - run: docker compose -f .identity-api/tests/identity/docker-compose.yml up -d issuer
+      - run: docker compose -f tests/identity/upload-compose.yml up -d --wait redis
+      - name: Auditar populacao grande nos dois temas e viewports
+        working-directory: .identity-api
+        env:
+          PERFORMANCE_REPORT_DIR: ${{ github.workspace }}/reports/accessibility
+        run: python -m pytest -c pyproject.toml -n 0 --import-mode=importlib -p tests.conftest ../tests/identity/test_performance_accessibility_contract.py -k '${{ matrix.browser }}' --tb=no -v
+      - name: Auditar inventario e privacidade antes de publicar
+        if: always()
+        id: privacy
+        run: node scripts/check-accessibility.mjs reports/accessibility '${{ matrix.browser }}'
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.privacy.outcome == 'success'
+        with:
+          name: accessibility-${{ matrix.browser }}-${{ github.event_name }}-${{ github.run_id }}
+          if-no-files-found: error
+          path: reports/accessibility/*.json
+      - name: Encerrar somente o sandbox deste job
+        if: always()
+        run: |
+          docker compose -f tests/identity/upload-compose.yml down
+          docker compose -f .identity-api/tests/identity/docker-compose.yml down

@@ -11,3 +11,27 @@ Arquivos originais apenas renomeados, sem alteração de conteúdo:
 | source-sans-3-bold.woff2     | SourceSans3-Bold.otf.woff2     | 700  | 12954097ebbad6749ee1c81a143d555c263420115892211529fe6f51794b8439 |
 
 Licença: SIL Open Font License 1.1, cópia original em [OFL-source-sans-3.md](OFL-source-sans-3.md). Carregamento pela mesma origem, sem CDN, com `font-display: swap`.
+
+## Subconjuntos web — #37
+
+Os arquivos `bancaemdia-interface-*-latin.woff2` e
+`bancaemdia-interface-*-latin-complemento.woff2` derivam dos originais acima. Cada
+peso é dividido por `unicode-range`: o principal atende português, latim básico,
+pontuação e as setas da interface e é pré-carregado (49.296 bytes nos três pesos);
+o complementar reúne moedas estrangeiras e símbolos/pontuação raros (17.236 bytes) e
+só é pedido pelo navegador quando a página exibe um desses caracteres. Kerning entre
+um caractere de cada parte não se aplica. As sub-rotinas CFF são expandidas
+(`desubroutinize`), sem alterar contornos, hints ou avanços. Os originais completos continuam no fallback para outros
+caracteres; nenhum alfabeto é removido da aplicação.
+
+A família interna da versão modificada é **Bancaemdia Interface**, respeitando o
+nome reservado `Source` da OFL. O desenho continua sendo o de Source Sans 3.
+Copyright, licença e créditos permanecem nos arquivos. Ver [OFL sobre subconjuntos
+e nomes reservados](https://openfontlicense.org/webfonts-and-reserved-font-names/).
+
+Reprodução: `python -m pip install -r scripts/font-requirements.txt` e
+`python scripts/subset-fonts.py`, na raiz do repositório. A ferramenta fixa versões,
+confere os hashes de origem e compara contornos, avanços e recursos de números
+tabulares/lining e kerning. [subsets.json](subsets.json) registra faixas, tamanhos e
+checksums resultantes. CSS mantém os pesos 400/600/700, `font-display: swap` e as
+mesmas métricas; preload usa apenas arquivos da própria origem.
