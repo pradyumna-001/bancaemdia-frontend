@@ -65,8 +65,9 @@ html {
 @media (min-width: 48rem) {
   html {
     /* Desktop classic scrollbars: loading and loaded heights never move the
-       shell sideways. Narrow screens keep their full width. */
-    scrollbar-gutter: stable;
+       shell sideways; both edges keep centred panels centred. Narrow screens
+       keep their full width. */
+    scrollbar-gutter: stable both-edges;
   }
 }
 body {

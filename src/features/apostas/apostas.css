@@ -109,10 +109,14 @@
   border-radius: var(--raio-painel);
   background: var(--superficie);
   padding: var(--espaco-24);
-  /* Off-screen rows keep DOM and accessibility tree; only rendering is skipped.
-     Rendered rows remember their real size; estimates follow the mode. */
-  content-visibility: auto;
+  /* Estimate used only while a long-list row below is skipped. */
   contain-intrinsic-size: none auto 16rem;
+}
+/* Long lists skip rendering of off-screen rows after the first twelve; DOM and
+   accessibility tree stay complete. Short lists and the first screen render
+   normally. Rendered rows remember their real size. */
+.apostas-itens > li:nth-child(n + 13) > .aposta-linha {
+  content-visibility: auto;
 }
 .aposta-contexto {
   position: relative;
