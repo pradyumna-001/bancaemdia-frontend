@@ -1,7 +1,7 @@
 # Calculadoras — #55 / ADR019
 
 Revalidação #36 em 18/10/2026: consumidor e provas recuperados do PR #78 no pin
-único real 136f360 (129 operações). As operações e schemas das quatro calculadoras
+único real 37b1302 (129 operações). As operações e schemas das quatro calculadoras
 permanecem idênticos. O limite monetário específico da API é validado no protocolo
 da ferramenta; o formatador compartilhado mantém os outros contratos BIGINT.
 As quatro consultas pela SPA em READ_ONLY são obrigatórias nos três navegadores

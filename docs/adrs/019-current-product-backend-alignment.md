@@ -2,7 +2,7 @@
 
 Atualização #36 (18/10/2026): ensaiar a composição frontend #103/#78/#87/#77
 contra main, sem PR empilhada ou merge administrativo. Corrigir omissões de
-consumidores na árvore conjunta e usar uma API real completa 136f360, 129 operações,
+consumidores na árvore conjunta e usar uma API real completa 37b1302, 129 operações,
 com #191 acrescida às 128 anteriores intactas. Preservar todos os inventários e
 adicionar identidade nos três browsers, calculadoras READ_ONLY e duplicidade
 Casa × Telegram. [Contrato](../contracts/e2e-produto.md). Pin permanece sandbox;

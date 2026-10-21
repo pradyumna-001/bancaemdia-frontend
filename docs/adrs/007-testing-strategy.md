@@ -1,7 +1,7 @@
 # ADR 007: Testes de tarefas, contratos e release
 
 Revalidação #36 em 18/10/2026: a árvore conjunta inclui Calculadoras/Hipotética,
-pin único real 136f360 (129 operações) e suplemento de 66 jornadas por evento.
+pin único real 37b1302 (129 operações) e suplemento de 66 jornadas por evento.
 As 106 execuções anteriores e todos os gates são preservados. Identidade completa
 agora é provada também em Firefox/WebKit; Casa × Telegram usa ambas as ordens.
 [Contrato e limites](../contracts/e2e-produto.md), [matriz por capacidade](../validation/produto.md).

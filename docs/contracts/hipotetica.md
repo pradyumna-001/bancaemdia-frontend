@@ -1,7 +1,7 @@
 # Hipotética — frontend #21
 
 Revalidação da composição #36 em 18/10/2026: consumidor recuperado no pin real
-único `136f36094119edb09bea1343743c1c50ef460d93`, 129 operações, hash
+único `37b130282c0d4a240f152b72fc76933074f38e4e`, 129 operações, hash
 `04f091f45b327f4fe87d629afa0a2df4fca84674686fd4e145be35bb0b0460dd`.
 A árvore agora preserva diário/grupos e as demais capacidades do pin 5f5f062,
 acrescentando o código da #191. Seis jornadas reais da Hipotética e seus aceites

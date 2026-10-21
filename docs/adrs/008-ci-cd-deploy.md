@@ -59,7 +59,7 @@ exige scores >=95 nas três categorias, LCP<2.500 ms e CLS<0,1. Inventário ause
 redirect, erro, fallback ou dados ainda carregando reprovam. O gate JS inicial de
 200.000 bytes gzip e todos os inventários anteriores continuam ativos.
 
-Build público e sessão HttpOnly reais usam a API única 136f360, PostgreSQL e
+Build público e sessão HttpOnly reais usam a API única 37b1302, PostgreSQL e
 emissor descartáveis. Mais de 5.000 apostas, 40 tipsters/mercados e 90 dias exercitam
 as áreas autenticadas. Cookie circula somente em memória/stdin; nunca em argumentos,
 ambiente, arquivo ou relatório. JSON público permite somente versões, contagens,

@@ -3,7 +3,7 @@
 ## Versão e população
 
 O ensaio usa o build público do SHA frontend e a API única
-`136f36094119edb09bea1343743c1c50ef460d93`, pin/hash de
+`37b130282c0d4a240f152b72fc76933074f38e4e`, pin/hash de
 `config/api-contract.json`. A dependência frontend é a #104, diretamente contra
 main. A disponibilidade continua `sandbox_reconciliation`: integração
 administrativa, revalidação e publicação têm aceites próprios.
