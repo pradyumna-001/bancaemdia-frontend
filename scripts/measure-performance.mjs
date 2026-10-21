@@ -299,6 +299,17 @@ try {
         const beforeLcp = (
           lhr.audits['network-requests']?.details?.items ?? []
         ).filter((item) => item.networkEndTime <= observedLcp);
+        // Counts and observed milliseconds only; endpoints are not published.
+        const apiBefore = beforeLcp.filter((item) => {
+          try {
+            return /^\/(api|auth)\//.test(new URL(item.url).pathname);
+          } catch {
+            return false;
+          }
+        });
+        const tasksBefore = (
+          lhr.audits['main-thread-tasks']?.details?.items ?? []
+        ).filter((task) => task.startTime < observedLcp);
         const lcpNode = (
           lhr.audits['lcp-breakdown-insight']?.details?.items ?? []
         ).find((item) => item?.type === 'node');
@@ -336,6 +347,16 @@ try {
                 (sum, item) => sum + (item.transferSize || 0),
                 0,
               ),
+            ),
+            apiBefore: apiBefore.length,
+            lastApiEndMs: Math.round(
+              Math.max(0, ...apiBefore.map((item) => item.networkEndTime)),
+            ),
+            cpuBeforeMs: Math.round(
+              tasksBefore.reduce((sum, task) => sum + task.duration, 0),
+            ),
+            longestTaskMs: Math.round(
+              Math.max(0, ...tasksBefore.map((task) => task.duration)),
             ),
           },
           proofs: {

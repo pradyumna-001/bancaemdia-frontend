@@ -397,6 +397,10 @@ it('diagnóstico LCP aceita apenas projeção e números, sem aprovar falhas', (
     observedMs: 912,
     requestsBefore: 21,
     bytesBefore: 230000,
+    apiBefore: 4,
+    lastApiEndMs: 880,
+    cpuBeforeMs: 310,
+    longestTaskMs: 42,
   };
   expect(inspectPerformanceReport(r).complete).toBe(true);
   r.samples[0].lcpMs = 2600;
@@ -406,6 +410,8 @@ it('diagnóstico LCP aceita apenas projeção e números, sem aprovar falhas', (
     ['element', 'section#privado'],
     ['observedMs', -1],
     ['requestsBefore', 1.5],
+    ['cpuBeforeMs', -3],
+    ['longestTaskMs', 2.5],
     ['url', 'http://127.0.0.1/api/v1/apostas'],
   ]) {
     const bad = report();

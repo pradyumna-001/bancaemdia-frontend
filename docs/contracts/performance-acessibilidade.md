@@ -141,7 +141,10 @@ Diagnóstico HTTP contém somente status e contagens numéricas, sem endpoint,
 cabeçalhos, mensagens ou corpo, e não transforma falha de prontidão em aprovação.
 Diagnóstico de LCP contém somente a tag e a primeira classe do último passo do
 seletor do elemento (vocabulário do próprio código, sem id, atributo ou texto), o
-LCP observado e a contagem/bytes das requisições concluídas antes dele.
+LCP observado, a contagem/bytes das requisições concluídas antes dele, quantas
+delas são de API/identidade e quando a última terminou, e a soma e a maior das
+tarefas do processo principal iniciadas antes do LCP observado; nenhum endereço é
+publicado.
 Gate de privacidade é independente do aceite numérico: um diagnóstico abaixo da
 meta pode ser publicado se tiver somente os campos permitidos, mas reprova o job.
 Campos adicionais, browser/perfil/pin incorretos, duplicação e ausência bloqueiam

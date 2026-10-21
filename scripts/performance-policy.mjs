@@ -302,6 +302,10 @@ export function inspectPerformanceReport(
         'observedMs',
         'requestsBefore',
         'bytesBefore',
+        'apiBefore',
+        'lastApiEndMs',
+        'cpuBeforeMs',
+        'longestTaskMs',
       ]);
       const d = sample.lcpDiagnostic;
       demand(
@@ -310,7 +314,10 @@ export function inspectPerformanceReport(
           Number.isInteger(d.requestsBefore) &&
           finite(d.requestsBefore, 0, 10_000) &&
           Number.isInteger(d.bytesBefore) &&
-          finite(d.bytesBefore, 0, 1e9),
+          finite(d.bytesBefore, 0, 1e9) &&
+          ['apiBefore', 'lastApiEndMs', 'cpuBeforeMs', 'longestTaskMs'].every(
+            (key) => Number.isInteger(d[key]) && finite(d[key], 0, 120_000),
+          ),
         'REPORT_DIAGNOSTICS_INVALID',
       );
     }
