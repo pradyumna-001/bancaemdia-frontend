@@ -281,3 +281,54 @@ Narrador: ensaio manual **dispensado pelo titular**; não foi executado nem apro
 Zoom 200%/400%: confirmação manual do titular.
 
 Não houve merge, deploy, alteração de backend ou promoção do contrato sandbox.
+
+## Continuação 2 de 21/10/2026
+
+A API pinada passou a `37b1302` (#106/#209, leituras JSON comprimidas pela API).
+No `5778ec2`, desktop e acessibilidade Firefox/WebKit passaram; Chromium reprovou
+no push com `INTERACTION_LATENCY_EXCEEDED:232` e aprovou no PR; mobile reprovou
+em 15 rotas. Rotas leves ficaram em 2,42 s e as que carregam `rotas-comum` no
+degrau seguinte (cerca de 2,575 s); Painel com TBT 199–374 ms.
+
+### Diagnóstico (laboratório local, dados sintéticos, Lighthouse 13.5 simulate)
+
+- O LCP simulado é limitado pela banda: tudo que termina antes do LCP observado
+  divide a mesma conexão simulada, e os resultados saltam em degraus de uma ida
+  e volta (150 ms). As três fontes pré-carregadas somavam 61 KB do caminho.
+- Latência da troca Cartões/Lista: o clique não alterava nada visível; a
+  navegação renderiza como transição e a primeira pintura só vinha depois do
+  render, commit e layout das 100 linhas (até 336 ms com CPU 4×).
+- Painel: `moeda()` via `formatToParts` era o maior custo de CPU (93 ms com CPU
+  4×), e o gráfico de evolução recalculava rótulos em laço O(n²); cada consulta
+  concluída re-renderizava os 40 gráficos e as comparações.
+
+### Mudanças
+
+- Fontes: cada peso dividido por `unicode-range` em parte principal pré-carregada
+  (49.296 bytes nos três pesos, antes 60.872) e complementar sob demanda; mesma
+  faixa total, contornos, hints e avanços idênticos aos originais.
+- `moedaMenor`: molde por formato derivado do `formatToParts` de amostras e
+  conferido na criação (sem valores guardados); teste de equivalência exata com o
+  caminho anterior. `dataHora` guarda o fuso resolvido junto do formatador.
+- `LinhaEvolucao` calcula posição e rótulo de cada ponto uma vez por render;
+  evolução, comparações e grupos do Painel memoizados.
+- Botão de visualização e classe da lista em Apostas mudam no quadro seguinte ao
+  gesto; a URL continua a fonte do modo e voltar/avançar descarta a escolha
+  pendente. Resumo das linhas sem dependência do modo (a classe da lista decide
+  texto ou ícone).
+
+Laboratório com CPU 4×: troca 344–888 ms antes, 104–232 ms depois (sem traço; o runner do CI mede abaixo do laboratório). LCP mobile de
+Enviar, Metas, Revisão e Troca passou de 2,54–2,61 s para 2,36–2,44 s.
+
+### Alternativas medidas e descartadas
+
+- Entrada pequena com sessão antecipada e React em paralelo: 2,52–2,63 s (fila
+  de conexões); revertido.
+- CSS por rota (menos bytes, mais requisições): pior. CSS embutida no HTML: o
+  documento passa da primeira janela TCP e ganha uma ida e volta.
+- `react-router` de produção por alias: duplicou o pacote.
+- Fonte variável oficial (24,8 KB para os três pesos): sem hints nos glifos e
+  contornos diferentes das estáticas; mesma classe de troca que o titular recusou
+  para os hints, não aplicada.
+- Pré-carregar só o peso regular: troca visível de fonte nos títulos (CLS).
+- Remoção de hints CFF: não aplicada, por decisão do titular.

@@ -103,7 +103,7 @@ it('fontes locais são WOFF2 e todas as faces usam swap', () => {
     expect(declarations['font-display']).toBe('swap');
     expect(declarations.src).toMatch(/url\(['"]?\/fontes\//);
   });
-  expect(faces).toBe(6);
+  expect(faces).toBe(9);
   expect(
     readFileSync(
       new URL('../../public/fontes/OFL-source-sans-3.md', import.meta.url),

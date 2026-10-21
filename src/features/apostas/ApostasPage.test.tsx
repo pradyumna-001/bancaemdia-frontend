@@ -224,6 +224,20 @@ it('alterna visualizações pela URL sem refetch nem perder páginas, filtros ou
     'aria-pressed',
     'true',
   );
+  // The choice answered by the button never outlives the URL that replaced it.
+  expect(
+    controls.getByRole('button', { name: 'Lista compacta' }),
+  ).toHaveAttribute('aria-pressed', 'false');
+  expect(
+    list.getByRole('article', { name: 'Flamengo × Palmeiras' }).closest('ul'),
+  ).not.toHaveClass('apostas-itens--compactos');
+  await act(() => app.router.navigate(-1));
+  expect(
+    controls.getByRole('button', { name: 'Lista compacta' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(
+    list.getByRole('article', { name: 'Flamengo × Palmeiras' }).closest('ul'),
+  ).toHaveClass('apostas-itens--compactos');
   expect(app.reads).toHaveLength(requests);
   expect(
     listRequests(app.reads).every(

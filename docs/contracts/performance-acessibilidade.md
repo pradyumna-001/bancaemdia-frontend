@@ -39,6 +39,12 @@ concorrer com a rotação em outro navegador. Nenhuma validade, limite ou relóg
 é alterado. Falha na preparação reprova o ensaio; não repete nem substitui uma
 amostra. As jornadas próprias de expiração/renovação continuam obrigatórias.
 
+O botão de visualização de Apostas e a classe da lista mudam juntos no quadro
+seguinte ao gesto, enquanto a navegação renderiza; a URL continua a única fonte do
+modo, e qualquer mudança dela, inclusive voltar/avançar, descarta a escolha
+pendente. Seções do Painel que não mudaram não renderizam de novo quando
+outra consulta termina, e os formatadores reutilizam só configuração de Intl.
+
 Evoluções por banca usam `content-visibility: auto`, com tamanho
 intrínseco provisório somente no eixo vertical fora da viewport, sem impor
 largura ao gráfico. A lista de apostas usa a altura natural de cada linha.
@@ -173,7 +179,11 @@ sem skips; não se afirma certificação de leitor de tela.
 
 Source Sans 3 conserva seus contornos, métricas, pesos e recursos numéricos. A
 versão web otimizada usa nome interno distinto em respeito à OFL; os originais
-completos permanecem no fallback. Origem, licença, versões da ferramenta e hashes
+completos permanecem no fallback. Cada peso é dividido por `unicode-range` em uma
+parte principal pré-carregada (texto em português, pontuação e setas da interface) e
+uma complementar pedida apenas quando a página exibe um caractere raro; juntas cobrem
+exatamente a faixa anterior, com contornos, hints e avanços idênticos aos originais.
+Origem, licença, versões da ferramenta e hashes
 estão em `public/fontes/README.md` e `subsets.json`. A declaração UTF-8 precede o
 tema dentro dos primeiros 1.024 bytes, e o tema continua antes dos estilos com o
 mesmo texto autorizado por hash CSP. Não relaxar CSP para obter score.

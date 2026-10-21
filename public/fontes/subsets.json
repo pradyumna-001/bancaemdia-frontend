@@ -4,21 +4,45 @@
   "fonts": [
     {
       "file": "bancaemdia-interface-regular-latin.woff2",
+      "unicode_range": "U+0000-00FF,U+2000-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+2028-202F,U+205F-206F,U+20AC,U+2190,U+2192,U+2212,U+FEFF",
       "source_sha256": "63de0da0cc05298e2e9c6e5cef506d8454ca665f6e668a99d94f51174b9256ed",
-      "sha256": "a4a290bf9039ddea391377f3b958bb2c173869e002e6630889d8e8a73e3bbbdd",
-      "bytes": 20204
+      "sha256": "da5c1a262d40fc48e528c0c145fd75c49ce65bac7edf4bb6bc83d0a7401a15ee",
+      "bytes": 16392
+    },
+    {
+      "file": "bancaemdia-interface-regular-latin-complemento.woff2",
+      "unicode_range": "U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2015-2017,U+201B,U+201F-2021,U+2023-2025,U+2027,U+2030-205E,U+20A0-20AB,U+20AD-20CF,U+2122,U+2191,U+2193-2199,U+2215,U+221A,U+221E,U+2264-2265,U+FFFD",
+      "source_sha256": "63de0da0cc05298e2e9c6e5cef506d8454ca665f6e668a99d94f51174b9256ed",
+      "sha256": "8a0853dc4a7f34eddcac79f171aacf0b131dcd00ae92209071d2899ad8f6e642",
+      "bytes": 5648
     },
     {
       "file": "bancaemdia-interface-semibold-latin.woff2",
+      "unicode_range": "U+0000-00FF,U+2000-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+2028-202F,U+205F-206F,U+20AC,U+2190,U+2192,U+2212,U+FEFF",
       "source_sha256": "c248b0a178c362916db7c853ed640db77f184d19a0ed9fa5591fa707d3089635",
-      "sha256": "b839a8a06b2d8ad04686a3edbeddcfb8ad256b08a5b2420250c475709d14db47",
-      "bytes": 20336
+      "sha256": "a3e6904333d3cf11a8bf08babf29c095b58f2d7c4b8312d073b61c22e42b8c4c",
+      "bytes": 16480
+    },
+    {
+      "file": "bancaemdia-interface-semibold-latin-complemento.woff2",
+      "unicode_range": "U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2015-2017,U+201B,U+201F-2021,U+2023-2025,U+2027,U+2030-205E,U+20A0-20AB,U+20AD-20CF,U+2122,U+2191,U+2193-2199,U+2215,U+221A,U+221E,U+2264-2265,U+FFFD",
+      "source_sha256": "c248b0a178c362916db7c853ed640db77f184d19a0ed9fa5591fa707d3089635",
+      "sha256": "1098f88f64c7a4dd19d8e64d57f966bfb444c254d01ac84525e4786eb099979f",
+      "bytes": 5756
     },
     {
       "file": "bancaemdia-interface-bold-latin.woff2",
+      "unicode_range": "U+0000-00FF,U+2000-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+2028-202F,U+205F-206F,U+20AC,U+2190,U+2192,U+2212,U+FEFF",
       "source_sha256": "12954097ebbad6749ee1c81a143d555c263420115892211529fe6f51794b8439",
-      "sha256": "bf8a34aedc3831f0a5f081e3c04dcdb9db28ba0a76ba305b43cd0535a87fe203",
-      "bytes": 20332
+      "sha256": "edb8fac28b66f3f223f5ea14906c632ec3192597d93324232a43a2a203ba26f7",
+      "bytes": 16424
+    },
+    {
+      "file": "bancaemdia-interface-bold-latin-complemento.woff2",
+      "unicode_range": "U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2015-2017,U+201B,U+201F-2021,U+2023-2025,U+2027,U+2030-205E,U+20A0-20AB,U+20AD-20CF,U+2122,U+2191,U+2193-2199,U+2215,U+221A,U+221E,U+2264-2265,U+FFFD",
+      "source_sha256": "12954097ebbad6749ee1c81a143d555c263420115892211529fe6f51794b8439",
+      "sha256": "30a8aa0c361a138b3ba5278a20785468f5ad4514aaaf36d03e174b095f32e9b7",
+      "bytes": 5832
     }
   ]
 }

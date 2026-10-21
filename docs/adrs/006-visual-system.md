@@ -58,10 +58,13 @@ Cabeçalhos provisórios, login, erro de rota, falha de configuração e carrega
 
 ## Entrega web das fontes — #37, 20/10/2026
 
-A direção tipográfica continua Source Sans 3. Três subconjuntos WOFF2 locais
-cobrem latim, pontuação, moeda, setas e símbolos matemáticos usados pela interface
-(60.872 bytes no conjunto, com sub-rotinas CFF expandidas sem alterar contornos ou hints). Os três originais completos permanecem como fallback
-para outros alfabetos. `font-display: swap` continua em todas as faces.
+A direção tipográfica continua Source Sans 3. Cada peso tem dois subconjuntos WOFF2
+locais separados por `unicode-range`: o principal (português, pontuação e setas da
+interface; 49.296 bytes nos três pesos) é pré-carregado; o complementar (moedas
+estrangeiras, símbolos e pontuação raros; 17.236 bytes nos três) só é pedido quando
+a página exibe um desses caracteres. As sub-rotinas CFF são expandidas sem alterar
+contornos ou hints. Os três originais completos permanecem como fallback para outros
+alfabetos. `font-display: swap` continua em todas as faces.
 
 A OFL reserva o nome “Source”; a derivação usa internamente **Bancaemdia Interface**,
 com copyright/licença preservados. `scripts/subset-fonts.py`, com ferramentas pinadas,

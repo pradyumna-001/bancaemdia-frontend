@@ -14,9 +14,13 @@ Licença: SIL Open Font License 1.1, cópia original em [OFL-source-sans-3.md](O
 
 ## Subconjuntos web — #37
 
-Os três arquivos `bancaemdia-interface-*-latin.woff2` derivam dos originais acima.
-Atendem português, latim básico, pontuação, moedas e os símbolos da interface.
-Os três subconjuntos somam 60.872 bytes. As sub-rotinas CFF são expandidas
+Os arquivos `bancaemdia-interface-*-latin.woff2` e
+`bancaemdia-interface-*-latin-complemento.woff2` derivam dos originais acima. Cada
+peso é dividido por `unicode-range`: o principal atende português, latim básico,
+pontuação e as setas da interface e é pré-carregado (49.296 bytes nos três pesos);
+o complementar reúne moedas estrangeiras e símbolos/pontuação raros (17.236 bytes) e
+só é pedido pelo navegador quando a página exibe um desses caracteres. Kerning entre
+um caractere de cada parte não se aplica. As sub-rotinas CFF são expandidas
 (`desubroutinize`), sem alterar contornos, hints ou avanços. Os originais completos continuam no fallback para outros
 caracteres; nenhum alfabeto é removido da aplicação.
 

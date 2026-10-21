@@ -7,7 +7,12 @@ const indisponivel = () => new Error('Valor indisponível.');
 const moedasSuportadas = new Set(Intl.supportedValuesOf('currency'));
 const inteiroFormatado = new Intl.NumberFormat('pt-BR');
 const moedasFormatadas = new Map<string, Intl.NumberFormat>();
-const datasFormatadas = new Map<string, Intl.DateTimeFormat>();
+const moldesMoeda = new Map<string, MoldeMoeda | null>();
+const datasFormatadas = new Map<
+  string,
+  { formato: Intl.DateTimeFormat; zona: string }
+>();
+type MoldeMoeda = { antes: string; depois: string; decimal: string };
 const eixosFormatados = [1, 2].map(
   (maximumFractionDigits) =>
     new Intl.NumberFormat('pt-BR', {
@@ -33,6 +38,56 @@ function formatoMoeda(currency: string, casas?: number) {
     moedasFormatadas.set(key, formato);
   }
   return formato;
+}
+
+/**
+ * Locale configuration of one currency format: the literal text around the
+ * grouped integer and its decimal separator, read from Intl itself. It holds
+ * no value. Used only after sample integers reproduce formatToParts exactly;
+ * otherwise the formatToParts path stays in charge.
+ */
+function moldeMoeda(currency: string, casas: number) {
+  const key = `${currency}:${casas}`;
+  if (moldesMoeda.has(key)) return moldesMoeda.get(key)!;
+  const formato = formatoMoeda(currency, casas);
+  const partes = formato.formatToParts(0n);
+  const primeiro = partes.findIndex((p) => p.type === 'integer');
+  const ultimo =
+    partes.length -
+    1 -
+    [...partes]
+      .reverse()
+      .findIndex((p) => p.type === 'integer' || p.type === 'fraction');
+  const molde: MoldeMoeda = {
+    antes: partes
+      .slice(0, primeiro)
+      .map((p) => p.value)
+      .join(''),
+    depois: partes
+      .slice(ultimo + 1)
+      .map((p) => p.value)
+      .join(''),
+    decimal: partes.find((p) => p.type === 'decimal')?.value ?? '',
+  };
+  const fiel = [0n, 7n, 1234n, 1234567n, 12345678901234567890n].every(
+    (amostra) =>
+      montarMoeda(molde, amostra, '0'.repeat(casas)) ===
+      formato
+        .formatToParts(amostra)
+        .map((p) => p.value)
+        .join(''),
+  );
+  moldesMoeda.set(key, fiel ? molde : null);
+  return fiel ? molde : null;
+}
+
+function montarMoeda(molde: MoldeMoeda, inteiro: bigint, fracao: string) {
+  return (
+    molde.antes +
+    inteiroFormatado.format(inteiro) +
+    (fracao ? molde.decimal + fracao : '') +
+    molde.depois
+  );
 }
 
 /** Conversão textual de entrada BRL; não decide nenhum valor financeiro. */
@@ -88,18 +143,18 @@ export function moedaMenor(
   const inteiro = inteiroExato(valor);
   const absoluto = inteiro < 0n ? -inteiro : inteiro;
   const escala = 10n ** BigInt(digitos);
-  const fracao = (absoluto % escala).toString().padStart(digitos, '0');
-  const partes = formatoMoeda(currency, digitos).formatToParts(
-    absoluto / escala,
-  );
+  const fracao = digitos
+    ? (absoluto % escala).toString().padStart(digitos, '0')
+    : '';
   const prefixo = inteiro < 0n ? '−' : sinal && inteiro > 0n ? '+' : '';
-  return (
-    prefixo +
-    partes
-      .map((p) => (p.type === 'fraction' ? fracao : p.value))
-      .join('')
-      .replaceAll('\u00a0', ' ')
-  );
+  const molde = moldeMoeda(currency, digitos);
+  const texto = molde
+    ? montarMoeda(molde, absoluto / escala, fracao)
+    : formatoMoeda(currency, digitos)
+        .formatToParts(absoluto / escala)
+        .map((p) => (p.type === 'fraction' ? fracao : p.value))
+        .join('');
+  return prefixo + texto.replaceAll('\u00a0', ' ');
 }
 
 /** Centavos BRL do domínio; zero válido não é ausência. */
@@ -271,7 +326,7 @@ export function dataHora(instante: string | null, fuso: string): string {
   try {
     let formato = datasFormatadas.get(fuso);
     if (!formato) {
-      formato = new Intl.DateTimeFormat('pt-BR', {
+      const configurado = new Intl.DateTimeFormat('pt-BR', {
         timeZone: fuso,
         year: 'numeric',
         month: '2-digit',
@@ -280,12 +335,16 @@ export function dataHora(instante: string | null, fuso: string): string {
         minute: '2-digit',
         hourCycle: 'h23',
       });
+      formato = {
+        formato: configurado,
+        zona: configurado.resolvedOptions().timeZone,
+      };
       // Unknown server-provided zones cannot grow a process-wide cache forever.
       if (datasFormatadas.size === 16)
         datasFormatadas.delete(datasFormatadas.keys().next().value!);
       datasFormatadas.set(fuso, formato);
     }
-    return `${formato.format(new Date(instante))} (${formato.resolvedOptions().timeZone})`;
+    return `${formato.formato.format(new Date(instante))} (${formato.zona})`;
   } catch {
     throw new Error('Data indisponível.');
   }

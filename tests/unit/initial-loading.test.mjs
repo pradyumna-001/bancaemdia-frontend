@@ -34,8 +34,47 @@ it('subconjuntos locais têm origem pinada, checksum e fontes completas de fallb
     readFileSync(new URL('subsets.json', base), 'utf8'),
   );
   expect(manifest.internal_family).toBe('Bancaemdia Interface');
-  expect(manifest.fonts).toHaveLength(3);
+  expect(manifest.fonts).toHaveLength(6);
   expect(manifest.fonts.reduce((n, f) => n + f.bytes, 0)).toBeLessThan(110_000);
+  // Each weight is split by unicode-range: the declared faces are exactly the
+  // manifest's, together they cover the whole range, and only the part with
+  // Portuguese text is preloaded.
+  const css = readFileSync(
+    new URL('../../src/styles/base.css', import.meta.url),
+    'utf8',
+  ).replace(/\s+/g, ' ');
+  const html = readFileSync(
+    new URL('../../index.html', import.meta.url),
+    'utf8',
+  );
+  for (const font of manifest.fonts) {
+    expect(css).toContain(
+      `src: url('/fontes/${font.file}') format('woff2');`.replace(/\s+/g, ' '),
+    );
+    expect(css).toContain(
+      'unicode-range: ' + font.unicode_range.split(',').join(', ') + ';',
+    );
+    expect(html.includes(`/fontes/${font.file}"`)).toBe(
+      !font.file.includes('complemento'),
+    );
+  }
+  const points = (ranges) =>
+    ranges.split(',').flatMap((range) => {
+      const [first, last = first] = range.replace('U+', '').split('-');
+      const start = parseInt(first, 16);
+      return Array.from(
+        { length: parseInt(last, 16) - start + 1 },
+        (_, i) => start + i,
+      );
+    });
+  const full = points(manifest.unicode_range).sort((a, b) => a - b);
+  for (const style of ['regular', 'semibold', 'bold']) {
+    const parts = manifest.fonts
+      .filter((f) => f.file.includes(`-${style}-`))
+      .map((f) => points(f.unicode_range));
+    expect(parts).toHaveLength(2);
+    expect(parts.flat().sort((a, b) => a - b)).toEqual(full);
+  }
   const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
   for (const font of manifest.fonts) {
     const bytes = readFileSync(new URL(font.file, base));

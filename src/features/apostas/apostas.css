@@ -298,6 +298,25 @@
   grid-column: 4;
   border: 0;
 }
+/* Cards show the summary text; compact rows show the icon and keep the text
+   for assistive technology. */
+.aposta-detalhes > summary > svg {
+  display: none;
+}
+.apostas-itens--compactos .aposta-linha .aposta-detalhes > summary > svg {
+  display: inline;
+}
+.apostas-itens--compactos .aposta-resumo-texto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 .apostas-itens--compactos .aposta-linha .aposta-detalhes > summary {
   display: flex;
   align-items: center;

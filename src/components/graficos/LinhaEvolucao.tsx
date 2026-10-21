@@ -39,18 +39,23 @@ export function LinhaEvolucao({
     ...marcas.map((v) => moedaEixo(v).length * 7 + 12),
   );
   const direita = largura - 24;
-  const first = diaCalendario(pontos[0]!.periodo_inicio);
-  const last = diaCalendario(pontos.at(-1)!.periodo_inicio);
+  // Each point is converted once per render: label collisions compare pairs.
+  const dias = new Map(pontos.map((p) => [p, diaCalendario(p.periodo_inicio)]));
+  const first = dias.get(pontos[0]!)!;
+  const last = dias.get(pontos.at(-1)!)!;
   const x = (p: PontoEvolucao) =>
     first === last
       ? (esquerda + direita) / 2
       : esquerda +
-        ((diaCalendario(p.periodo_inicio) - first) / (last - first)) *
-          (direita - esquerda);
+        ((dias.get(p)! - first) / (last - first)) * (direita - esquerda);
+  const valores = new Map(
+    pontos.map((p) => [
+      p,
+      moeda(p[serie], serie === 'lucro_acumulado_centavos'),
+    ]),
+  );
   const texto = (p: PontoEvolucao) =>
-    dataCivil(p.periodo_inicio) +
-    ': ' +
-    moeda(p[serie], serie === 'lucro_acumulado_centavos');
+    dataCivil(p.periodo_inicio) + ': ' + valores.get(p)!;
   const segmentos: PontoEvolucao[][] = [[]];
   for (const p of pontos) {
     if (p[serie] === null) segmentos.push([]);
@@ -58,11 +63,14 @@ export function LinhaEvolucao({
   }
   // Apenas geometria de rótulos: suprime colisões, nunca registros da tabela.
   const anotados: PontoEvolucao[] = [];
-  const posicaoRotulo = (p: PontoEvolucao) => {
-    const meia = Math.max(42, moeda(p[serie], true).length * 4.5);
-    const centro = Math.min(largura - meia - 4, Math.max(meia + 4, x(p)));
-    return { meia, centro };
-  };
+  const rotulos = new Map(
+    pontos.map((p) => {
+      const meia = Math.max(42, moeda(p[serie], true).length * 4.5);
+      const centro = Math.min(largura - meia - 4, Math.max(meia + 4, x(p)));
+      return [p, { meia, centro }];
+    }),
+  );
+  const posicaoRotulo = (p: PontoEvolucao) => rotulos.get(p)!;
   const ultimo = [...pontos].reverse().find((p) => p[serie] !== null)!;
   const colide = (a: PontoEvolucao, b: PontoEvolucao) => {
     const ra = posicaoRotulo(a),
@@ -194,7 +202,7 @@ export function LinhaEvolucao({
               y={eixo.coordenada(p[serie]!) - 15}
               textAnchor="middle"
             >
-              {moeda(p[serie], serie === 'lucro_acumulado_centavos')}
+              {valores.get(p)}
             </text>
           </g>
         );

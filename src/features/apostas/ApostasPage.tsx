@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   type MouseEvent,
 } from 'react';
 import {
@@ -69,14 +70,13 @@ function ValorLinha({ value }: { value: string }) {
   return compacta && value === NAO_INFORMADO ? '—' : value;
 }
 
+// The list class shows the icon and hides the text only visually in compact
+// mode (apostas.css): switching modes does not rebuild every row's summary.
 function ResumoLinha() {
-  const compacta = useContext(ModoCompacto);
   return (
     <summary title="Informações da aposta">
-      <span className={compacta ? 'somente-leitor' : undefined}>
-        Informações da aposta
-      </span>
-      {compacta && <Icone nome="expandir" />}
+      <span className="aposta-resumo-texto">Informações da aposta</span>
+      <Icone nome="expandir" />
     </summary>
   );
 }
@@ -211,6 +211,33 @@ const LinhaAposta = memo(function LinhaAposta({ item }: { item: Aposta }) {
   );
 });
 
+function VisualizacaoApostas({
+  compacta,
+  escolher,
+}: {
+  compacta: boolean;
+  escolher: (mode: 'lista' | 'cartoes') => void;
+}) {
+  return (
+    <div
+      className="apostas-visualizacao"
+      role="group"
+      aria-label="Visualização de apostas"
+    >
+      {(['lista', 'cartoes'] as const).map((mode) => (
+        <button
+          key={mode}
+          type="button"
+          aria-pressed={mode === 'lista' ? compacta : !compacta}
+          onClick={() => escolher(mode)}
+        >
+          {mode === 'lista' ? 'Lista compacta' : 'Cartões'}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function ApostasPage({
   client,
   contrato = SITE_READ_CONTRACT,
@@ -241,9 +268,19 @@ export function ApostasPage({
     },
     [navigate],
   );
-  const compacta =
+  const compactaNaUrl =
     search.getAll('visualizacao').length !== 1 ||
     search.get('visualizacao') !== 'cartoes';
+  // The gesture's choice shows in the next frame, button and list together,
+  // while the navigation renders. The URL stays the only source of the mode:
+  // any URL change (including back/forward) discards the pending choice.
+  const [pedido, pedir] = useState<boolean | null>(null);
+  const [visto, ver] = useState(compactaNaUrl);
+  if (visto !== compactaNaUrl) {
+    ver(compactaNaUrl);
+    pedir(null);
+  }
+  const compacta = pedido ?? compactaNaUrl;
   const { visao, adapter } = useFiltros('apostas', contrato);
   const querySearch = new URLSearchParams(visao.busca);
   querySearch.delete('visualizacao');
@@ -479,31 +516,20 @@ export function ApostasPage({
       >
         <div className="apostas-lista-cabecalho">
           <h2>Lista de apostas</h2>
-          <div
-            className="apostas-visualizacao"
-            role="group"
-            aria-label="Visualização de apostas"
-          >
-            {(['lista', 'cartoes'] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                aria-pressed={mode === 'lista' ? compacta : !compacta}
-                onClick={() =>
-                  setSearch(
-                    (current) => {
-                      const next = new URLSearchParams(current);
-                      next.set('visualizacao', mode);
-                      return next;
-                    },
-                    { preventScrollReset: true },
-                  )
-                }
-              >
-                {mode === 'lista' ? 'Lista compacta' : 'Cartões'}
-              </button>
-            ))}
-          </div>
+          <VisualizacaoApostas
+            compacta={compacta}
+            escolher={(mode) => {
+              pedir(mode === 'lista');
+              setSearch(
+                (current) => {
+                  const next = new URLSearchParams(current);
+                  next.set('visualizacao', mode);
+                  return next;
+                },
+                { preventScrollReset: true },
+              );
+            }}
+          />
         </div>
         {!!adapter.bloqueios.length && (
           <div role="alert">

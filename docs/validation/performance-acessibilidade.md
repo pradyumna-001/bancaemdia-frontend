@@ -56,7 +56,7 @@ verificado. Os novos resultados precisam ser conferidos no SHA final completo.
 Lazy loading de páginas, subconjuntos locais de Source Sans 3, UTF-8 antes do tema
 e gzip estático preservam funcionalidades e contratos. O build local inicial da
 #37 mediu 115.380 bytes gzip. Esse valor precisa ser confirmado no commit final.
-Os subconjuntos somam 60.872 bytes após expandir as sub-rotinas CFF (antes 67.252), preservando originais, licença, contornos,
+Os subconjuntos pré-carregados somam 49.296 bytes (60.872 antes da divisão principal/complementar por `unicode-range`; 67.252 antes de expandir as sub-rotinas CFF), preservando originais, licença, contornos,
 avanços e recursos tabulares. Não houve biblioteca de gráficos ou cálculo financeiro
 adicionado ao cliente.
 

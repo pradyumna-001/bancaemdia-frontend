@@ -1,4 +1,4 @@
-import { useDeferredValue, useState } from 'react';
+import { memo, useDeferredValue, useMemo, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/ProvedorAuth';
@@ -32,6 +32,8 @@ import {
   validarComparacoes,
   juntarGrupos,
   seletoresCanonicos,
+  type Comparacoes,
+  type PainelLegado,
 } from './protocol';
 import './painel.css';
 
@@ -57,6 +59,61 @@ function Falha({
     />
   );
 }
+// One chart and its always-open period table per banca. Memoized: the other
+// sections' queries settle separately and must not render every chart again.
+const EvolucoesPainel = memo(function EvolucoesPainel({
+  evolucao,
+  periodo,
+}: {
+  evolucao: PainelLegado['evolucao'];
+  periodo: string;
+}) {
+  return (
+    <div className="painel-evolucoes">
+      {[...new Set(evolucao.map((p) => p.banca_id))].map((id) => (
+        <GraficoEvolucao
+          key={String(id)}
+          dados={evolucao.filter((p) => p.banca_id === id)}
+          titulo={
+            evolucao.find((p) => p.banca_id === id)?.banca_nome ??
+            'Sem banca atribuída'
+          }
+          periodo={periodo}
+        />
+      ))}
+    </div>
+  );
+});
+const ComparacoesPainel = memo(function ComparacoesPainel({
+  comparacoes,
+}: {
+  comparacoes: Comparacoes;
+}) {
+  return (
+    <div className="painel-comparacoes">
+      {(['por_casa', 'por_tipster', 'por_mercado'] as const).map((k, i) => (
+        <div key={k}>
+          <h3>{['Por casa', 'Por tipster', 'Por mercado'][i]}</h3>
+          {comparacoes[k].length ? (
+            <ul>
+              {comparacoes[k].map((g, index) => (
+                <li key={g.id ?? `sem-${index}`}>
+                  <span>{g.nome ?? 'Sem identificação'}</span>
+                  <strong className="numero">
+                    {moeda(g.metricas.lucro_centavos, true)}
+                  </strong>
+                  <small>{g.metricas.total_apostas} apostas</small>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Sem dados para comparar. Escolha outro recorte.</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+});
 function Conteudo({
   client,
   query,
@@ -229,15 +286,18 @@ function Conteudo({
   const evolucaoExibida = useDeferredValue(evolucao.data);
   const diaryWait = leitura.waiting;
   const groupWait = leitura.waiting;
-  let rows: ReturnType<typeof juntarGrupos> = [];
-  let groupError = grupos.error;
-  let consistent = true;
-  try {
-    rows = juntarGrupos(grupos.data?.pages ?? []);
-  } catch (e) {
-    groupError = e as Error;
-    consistent = false;
-  }
+  // Same pages, same merged rows: other queries settling do not rebuild them.
+  const paginas = grupos.data?.pages;
+  const juntados = useMemo(() => {
+    try {
+      return { rows: juntarGrupos(paginas ?? []) };
+    } catch (e) {
+      return { rows: [], error: e as Error };
+    }
+  }, [paginas]);
+  const rows = juntados.rows;
+  const groupError = juntados.error ?? grupos.error;
+  const consistent = !juntados.error;
   const next = (value: string) =>
     setSearch((current) => {
       const s = new URLSearchParams(current);
@@ -419,25 +479,12 @@ function Conteudo({
               longos. Consulta distinta do diário ao vivo. Última consolidação:{' '}
               {dataHora(evolucaoExibida.atualizado_em, 'America/Sao_Paulo')}.
             </p>
-            <div className="painel-evolucoes">
-              {[
-                ...new Set(evolucaoExibida.evolucao.map((p) => p.banca_id)),
-              ].map((id) => (
-                <GraficoEvolucao
-                  key={String(id)}
-                  dados={evolucaoExibida.evolucao.filter(
-                    (p) => p.banca_id === id,
-                  )}
-                  titulo={
-                    evolucaoExibida.evolucao.find((p) => p.banca_id === id)
-                      ?.banca_nome ?? 'Sem banca atribuída'
-                  }
-                  periodo={
-                    PERIODOS[(query.periodo ?? 'all') as keyof typeof PERIODOS]
-                  }
-                />
-              ))}
-            </div>
+            <EvolucoesPainel
+              evolucao={evolucaoExibida.evolucao}
+              periodo={
+                PERIODOS[(query.periodo ?? 'all') as keyof typeof PERIODOS]
+              }
+            />
             {!evolucaoExibida.evolucao.length && (
               <p>
                 Sem evolução consolidada. Escolha outro período ou envie
@@ -470,30 +517,7 @@ function Conteudo({
               {dataHora(comparacoes.data.snapshot_em, 'America/Sao_Paulo')} ·
               Dados de apostas ao vivo.
             </p>
-            <div className="painel-comparacoes">
-              {(['por_casa', 'por_tipster', 'por_mercado'] as const).map(
-                (k, i) => (
-                  <div key={k}>
-                    <h3>{['Por casa', 'Por tipster', 'Por mercado'][i]}</h3>
-                    {comparacoes.data![k].length ? (
-                      <ul>
-                        {comparacoes.data![k].map((g, index) => (
-                          <li key={g.id ?? `sem-${index}`}>
-                            <span>{g.nome ?? 'Sem identificação'}</span>
-                            <strong className="numero">
-                              {moeda(g.metricas.lucro_centavos, true)}
-                            </strong>
-                            <small>{g.metricas.total_apostas} apostas</small>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>Sem dados para comparar. Escolha outro recorte.</p>
-                    )}
-                  </div>
-                ),
-              )}
-            </div>
+            <ComparacoesPainel comparacoes={comparacoes.data} />
           </>
         )}
       </section>
