@@ -47,8 +47,8 @@ test('30 apostas cabem em linhas operacionais: ao menos quatro vezes mais na mes
   );
   const reads = app.requests.length;
   await page.getByRole('button', { name: 'Cartões', exact: true }).click();
-  await expect(page.getByRole('article').first()).not.toHaveClass(
-    /aposta-linha--compacta/,
+  await expect(page.locator('.apostas-itens')).not.toHaveClass(
+    /apostas-itens--compactos/,
   );
   const cards = await measure();
   expect(compact.complete).toBeGreaterThanOrEqual(cards.complete * 4);

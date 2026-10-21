@@ -199,20 +199,17 @@ const ConteudoLinhaAposta = memo(function ConteudoLinhaAposta({
   );
 });
 
-function LinhaAposta({ item, compacta }: { item: Aposta; compacta: boolean }) {
+const LinhaAposta = memo(function LinhaAposta({ item }: { item: Aposta }) {
   // Private presentation stays scoped to this mounted row, never a global cache.
   const view = useMemo(() => projetarAposta(item), [item]);
   return (
     <li id={'aposta-' + encodeURIComponent(item.chave)}>
-      <article
-        className={`aposta-linha${compacta ? ' aposta-linha--compacta' : ''}`}
-        aria-label={view.evento}
-      >
+      <article className="aposta-linha" aria-label={view.evento}>
         <ConteudoLinhaAposta item={item} view={view} />
       </article>
     </li>
   );
-}
+});
 
 export function ApostasPage({
   client,
@@ -613,11 +610,7 @@ export function ApostasPage({
                     className={`apostas-itens${compacta ? ' apostas-itens--compactos' : ''}`}
                   >
                     {rows.map((item) => (
-                      <LinhaAposta
-                        key={item.chave}
-                        item={item}
-                        compacta={compacta}
-                      />
+                      <LinhaAposta key={item.chave} item={item} />
                     ))}
                   </ul>
                 </ModoCompacto.Provider>

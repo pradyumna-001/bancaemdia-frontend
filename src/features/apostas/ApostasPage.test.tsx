@@ -208,16 +208,17 @@ it('alterna visualizações pela URL sem refetch nem perder páginas, filtros ou
     new URLSearchParams(app.router.state.location.search).getAll('x'),
   ).toEqual(['1', '2']);
   expect(list.getAllByRole('article')).toHaveLength(3);
+  // The mode lives on the list; rows keep the same element and content.
   expect(
-    list.getByRole('article', { name: 'Flamengo × Palmeiras' }),
-  ).not.toHaveClass('aposta-linha--compacta');
+    list.getByRole('article', { name: 'Flamengo × Palmeiras' }).closest('ul'),
+  ).not.toHaveClass('apostas-itens--compactos');
   expect(screen.getByText('R$ 923,45')).toBeVisible();
   await userEvent.click(
     controls.getByRole('button', { name: 'Lista compacta' }),
   );
   expect(
-    list.getByRole('article', { name: 'Flamengo × Palmeiras' }),
-  ).toHaveClass('aposta-linha--compacta');
+    list.getByRole('article', { name: 'Flamengo × Palmeiras' }).closest('ul'),
+  ).toHaveClass('apostas-itens--compactos');
   await act(() => app.router.navigate(-1));
   expect(controls.getByRole('button', { name: 'Cartões' })).toHaveAttribute(
     'aria-pressed',
