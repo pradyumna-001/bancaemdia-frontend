@@ -76,7 +76,10 @@ cujas páginas estão todas num grupo maior se une a ele quando suas dependênci
 são a entrada ou essa mesma família; páginas leves nunca ganham `rotas-comum`.
 O carregador da rota protegida inicia a importação da página em paralelo com a
 consulta de sessão; nada é renderizado nem consultado antes do guard, e a página
-renderiza sem nova suspensão quando o módulo já chegou. O CSS é um arquivo único, carregado antes da
+renderiza sem nova suspensão quando o módulo já chegou. Em Resultados, assim que o
+guard confirma a sessão, o carregador inicia a primeira página da fila com a mesma
+chave, leitura com escopo da sessão e validação da página; filtros bloqueados ou
+outro estado de sessão não enviam nada. O CSS é um arquivo único, carregado antes da
 pintura; nenhuma rota enfileira folhas de estilo próprias.
 
 O bootstrap autorizado por hash antecipa somente JS/CSS públicos da rota atual e

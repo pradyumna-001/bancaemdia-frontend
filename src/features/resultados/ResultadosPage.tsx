@@ -1,15 +1,25 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  infiniteQueryOptions,
+  useInfiniteQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getApiClient, type createApiClient } from '../../api/client';
 import { ApiError } from '../../api/error';
 import { SITE_READ_CONTRACT } from '../../api/site-read.generated';
 import { useAuth } from '../../auth/ProvedorAuth';
+import type { SessionService } from '../../auth/session';
 import { ErroApi, type ErrorField } from '../../components/ErroApi';
 import { Filtros, useFiltros } from '../../components/filtros/Filtros';
 import { EscolhaFiltro } from '../../components/filtros/EscolhaFiltro';
 import { dataHora, moeda, odd } from '../../lib/format';
-import { serializarConsulta } from '../../lib/params';
+import {
+  adaptarFiltros,
+  lerFiltros,
+  serializarConsulta,
+} from '../../lib/params';
 import { rotuloEstado } from '../../lib/termos';
 import { useRetryAfter } from '../../lib/useRetryAfter';
 import { useCatalogos } from '../apostas/catalogos';
@@ -57,6 +67,69 @@ const CAMPOS_RESULTADO = [
     label: 'Comissão',
   },
 ] as const satisfies readonly ErrorField[];
+type Api = ReturnType<typeof createApiClient>;
+type ConsultaFila = ReturnType<typeof adaptarFiltros>['query'];
+
+/** The queue read, shared by the page and the preload of its route. */
+function opcoesFila(
+  api: Api,
+  service: SessionService,
+  epoch: number,
+  query: ConsultaFila,
+) {
+  return infiniteQueryOptions({
+    queryKey: ['resultados-fila', epoch, serializarConsulta(query)],
+    initialPageParam: undefined as string | undefined,
+    retryOnMount: false,
+    refetchOnWindowFocus: false,
+    getNextPageParam: (page: Fila) => page.next_cursor ?? undefined,
+    queryFn: async ({ pageParam, signal }): Promise<Fila> =>
+      service.read(async () =>
+        validarFila(
+          (
+            await api.GET('/api/v1/resultados/fila', {
+              signal,
+              params: {
+                query: {
+                  ...query,
+                  ...(pageParam ? { cursor: pageParam } : {}),
+                },
+              },
+            })
+          ).data,
+        ),
+      ),
+  });
+}
+
+/**
+ * Starts the first queue page as soon as the route's session read confirms
+ * the user, instead of after the page renders. Same key, read and validation
+ * as the page; blocked filters and other session states send nothing.
+ */
+export function anteciparFila({
+  queryClient,
+  service,
+  api,
+  search,
+}: {
+  queryClient: QueryClient;
+  service: SessionService;
+  api: Api;
+  search: URLSearchParams;
+}) {
+  const state = service.getSnapshot();
+  if (state.phase !== 'authenticated') return;
+  const adapter = adaptarFiltros(
+    lerFiltros(search, 'resultados'),
+    'resultados',
+  );
+  if (adapter.bloqueios.length) return;
+  void queryClient.prefetchInfiniteQuery(
+    opcoesFila(api, service, state.privateEpoch, adapter.query),
+  );
+}
+
 export function ResultadosPage({
   client,
 }: {
@@ -126,29 +199,9 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
   const readWaiting = useRetryAfter(readError);
   const writeWaiting = useRetryAfter(writeBarrier);
   const fila = useInfiniteQuery({
-    queryKey: ['resultados-fila', epoch, signature],
+    ...opcoesFila(api, auth.service, epoch, adapter.query),
     enabled:
       auth.state.phase === 'authenticated' && adapter.bloqueios.length === 0,
-    initialPageParam: undefined as string | undefined,
-    retryOnMount: false,
-    refetchOnWindowFocus: false,
-    getNextPageParam: (page: Fila) => page.next_cursor ?? undefined,
-    queryFn: async ({ pageParam, signal }): Promise<Fila> =>
-      auth.service.read(async () =>
-        validarFila(
-          (
-            await api.GET('/api/v1/resultados/fila', {
-              signal,
-              params: {
-                query: {
-                  ...adapter.query,
-                  ...(pageParam ? { cursor: pageParam } : {}),
-                },
-              },
-            })
-          ).data,
-        ),
-      ),
   });
   const filaWaiting = useRetryAfter(fila.error);
   const concluidas = new Set(consumed);

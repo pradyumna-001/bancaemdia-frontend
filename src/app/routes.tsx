@@ -145,15 +145,20 @@ export function createAppRoutes(
   consultarSessao: ConsultarSessao = semSessao,
   consultarRevisao?: ConsultarRevisao,
   billingReturning = false,
+  antecipar?: (path: string, search: URLSearchParams) => void,
 ): RouteObject[] {
   const guard = exigirSessao(consultarSessao);
   let billingReturnPending = billingReturning;
   const protectedRoute = (path: string, element: ReactNode): RouteObject => ({
     path,
     caseSensitive: true,
-    loader: () => {
+    loader: async ({ request }: LoaderFunctionArgs) => {
       if (Object.hasOwn(PAGINAS, path)) PAGINAS[path]!.carregar();
-      return guard();
+      const autorizado = await guard();
+      // Only after the session is confirmed: the page's first read starts
+      // without waiting for the page to render.
+      if (autorizado) antecipar?.(path, new URL(request.url).searchParams);
+      return autorizado;
     },
     shouldRevalidate: ({
       currentUrl,

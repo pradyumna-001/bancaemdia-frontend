@@ -45,3 +45,31 @@ it('sem pré-carga mantém o fallback e falha de download fica com a fronteira',
   // The preload swallows the rejection; React.lazy still reports it on render.
   expect(() => Falha.carregar()).not.toThrow();
 });
+
+it('rota protegida só antecipa a leitura depois da sessão confirmada', async () => {
+  const { createAppRoutes } = await import('./routes');
+  for (const [sessao, chamadas] of [
+    [true, 1],
+    [false, 0],
+  ] as const) {
+    const antecipar = vi.fn();
+    const route = createAppRoutes(
+      () => sessao,
+      undefined,
+      false,
+      antecipar,
+    ).find((r) => r.path === '/resultados')!;
+    const loader = route.loader as (args: { request: Request }) => unknown;
+    expect(
+      await loader({
+        request: new Request('http://127.0.0.1/resultados?casa=7'),
+      }),
+    ).toBe(sessao);
+    expect(antecipar).toHaveBeenCalledTimes(chamadas);
+    if (chamadas)
+      expect(antecipar).toHaveBeenCalledWith(
+        '/resultados',
+        new URLSearchParams('casa=7'),
+      );
+  }
+});
