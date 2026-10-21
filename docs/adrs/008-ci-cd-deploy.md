@@ -71,6 +71,8 @@ As páginas são lazy por rota, verificadas no grafo do build e nas requisiçõe
 ensaio. gzip HTML/CSS/JS/SVG usa a configuração do servidor estático; não transforma
 respostas da API. A medição antiga da #8 permanece diagnóstica, com sua falha de
 rede identificada; não substitui o ensaio real e não aprova release.
+Módulos usados por três ou mais páginas pesadas formam um único chunk
+`rotas-comum`; páginas leves não o carregam (`scripts/route-chunks.ts`).
 
 Teclado, foco, duas aparências, reflow e equivalentes tabulares são ensaiados nos
 três browsers/dois viewports com a população grande. Event Timing mede gestos

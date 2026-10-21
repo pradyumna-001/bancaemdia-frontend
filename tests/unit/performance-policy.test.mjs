@@ -13,6 +13,7 @@ import {
   ROUTES,
   inspectPerformanceReport,
   parseMeasurementInput,
+  projectLcpElement,
   referenceThrottling,
 } from '../../scripts/performance-policy.mjs';
 
@@ -373,4 +374,47 @@ it('diagnóstico HTTP aceita apenas status e contagens numéricas, sem aprovar f
   expect(() => inspectPerformanceReport(r, { requirePass: false })).toThrow(
     'REPORT_HTTP_INVALID',
   );
+});
+
+it('elemento LCP publica somente tag e primeira classe do último passo', () => {
+  expect(
+    projectLcpElement(
+      'div#conteudo > main.pagina > section.apostas-resumo > p.legenda',
+    ),
+  ).toBe('p.legenda');
+  expect(projectLcpElement('section#analises-caixa > p.analises-nota.x')).toBe(
+    'p.analises-nota',
+  );
+  expect(projectLcpElement('main > h2#:r1:-titulo')).toBe('h2');
+  expect(projectLcpElement('div > p[data-x="privado"]')).toBe('p');
+  for (const invalid of [undefined, '', '> #id', 'P.Classe_Privada'])
+    expect(projectLcpElement(invalid)).toMatch(/^(desconhecido|p)$/);
+});
+it('diagnóstico LCP aceita apenas projeção e números, sem aprovar falhas', () => {
+  const r = report();
+  r.samples[0].lcpDiagnostic = {
+    element: 'p.legenda',
+    observedMs: 912,
+    requestsBefore: 21,
+    bytesBefore: 230000,
+  };
+  expect(inspectPerformanceReport(r).complete).toBe(true);
+  r.samples[0].lcpMs = 2600;
+  expect(() => inspectPerformanceReport(r)).toThrow('RELEASE_TARGETS');
+  for (const [key, value] of [
+    ['element', 'p.legenda Apostas pendentes'],
+    ['element', 'section#privado'],
+    ['observedMs', -1],
+    ['requestsBefore', 1.5],
+    ['url', 'http://127.0.0.1/api/v1/apostas'],
+  ]) {
+    const bad = report();
+    bad.samples[0].lcpDiagnostic = {
+      ...r.samples[0].lcpDiagnostic,
+      [key]: value,
+    };
+    expect(() => inspectPerformanceReport(bad, { requirePass: false })).toThrow(
+      /REPORT_(DIAGNOSTICS|FIELDS)_INVALID/,
+    );
+  }
 });

@@ -138,6 +138,7 @@ async function open({
         ),
       },
       { path: '/login', element: <p>Entrar</p> },
+      { path: '/aposta/:chave', element: <p>Detalhe</p> },
     ],
     { initialEntries: ['/' + search] },
   );
@@ -622,4 +623,32 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
   expect(
     app.reads.filter((req) => new URL(req.url).pathname.includes('/filtros/')),
   ).toHaveLength(catalogReads + 1);
+});
+
+it('detalhe abre no app com filtros e modo; modificadores ficam com o navegador', async () => {
+  const { router } = await open({
+    search: '?page_size=2&apagadas=todas&visualizacao=cartoes',
+  });
+  const link = (await screen.findAllByRole('article'))[0]!.querySelector(
+    'h3 a',
+  )!;
+  expect(link.getAttribute('href')).toMatch(
+    /^\/aposta\/[^?]+\?page_size=2&apagadas=todas&visualizacao=cartoes$/,
+  );
+  let kept: boolean | undefined;
+  // Observe the app's decision, then stop jsdom from emulating a new window.
+  const observe = (event: Event) => {
+    kept = !event.defaultPrevented;
+    event.preventDefault();
+  };
+  window.addEventListener('click', observe, { once: true });
+  fireEvent.click(link, { ctrlKey: true });
+  expect(kept).toBe(true);
+  expect(router.state.location.pathname).toBe('/');
+  const handled = fireEvent.click(link);
+  expect(handled).toBe(false);
+  expect(router.state.location.pathname).toMatch(/^\/aposta\//);
+  expect(router.state.location.search).toBe(
+    '?page_size=2&apagadas=todas&visualizacao=cartoes',
+  );
 });

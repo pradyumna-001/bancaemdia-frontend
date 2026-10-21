@@ -101,6 +101,20 @@ export function referenceThrottling(profile) {
   };
 }
 
+const LCP_ELEMENT = /^[a-z][a-z0-9]{0,15}(\.[a-z][a-z0-9-]{0,47})?$/;
+/**
+ * Build-owned diagnostic of the LCP element: tag and first class of the last
+ * selector step only. Ids, attributes, text and ancestors never leave the run.
+ */
+export function projectLcpElement(selector) {
+  if (typeof selector !== 'string') return 'desconhecido';
+  const step = selector.split('>').at(-1)?.trim() ?? '';
+  const tag = /^[a-zA-Z][a-zA-Z0-9]*/.exec(step)?.[0]?.toLowerCase() ?? '';
+  const classe = /\.([a-z][a-z0-9-]*)/.exec(step)?.[1] ?? '';
+  const element = classe ? `${tag}.${classe}` : tag;
+  return LCP_ELEMENT.test(element) ? element : 'desconhecido';
+}
+
 /** Strict allowlist for public artifacts, separately from numeric acceptance. */
 export function inspectPerformanceReport(
   report,
@@ -223,7 +237,7 @@ export function inspectPerformanceReport(
     object(
       sample,
       ['route', 'run', 'scores', 'lcpMs', 'cls', 'tbtMs', 'proofs'],
-      ['failedAudits', 'httpStatuses'],
+      ['failedAudits', 'httpStatuses', 'lcpDiagnostic'],
     );
     const route = ROUTES.find((r) => r.id === sample.route);
     demand(
@@ -281,6 +295,24 @@ export function inspectPerformanceReport(
         );
         seen.add(entry.status);
       }
+    }
+    if (sample.lcpDiagnostic !== undefined) {
+      object(sample.lcpDiagnostic, [
+        'element',
+        'observedMs',
+        'requestsBefore',
+        'bytesBefore',
+      ]);
+      const d = sample.lcpDiagnostic;
+      demand(
+        (d.element === 'desconhecido' || LCP_ELEMENT.test(d.element)) &&
+          finite(d.observedMs, 0, 120_000) &&
+          Number.isInteger(d.requestsBefore) &&
+          finite(d.requestsBefore, 0, 10_000) &&
+          Number.isInteger(d.bytesBefore) &&
+          finite(d.bytesBefore, 0, 1e9),
+        'REPORT_DIAGNOSTICS_INVALID',
+      );
     }
     object(sample.proofs, [
       'headingVerified',

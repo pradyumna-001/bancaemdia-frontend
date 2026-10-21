@@ -21,6 +21,7 @@ import {
   ROUTES,
   inspectPerformanceReport,
   parseMeasurementInput,
+  projectLcpElement,
   referenceThrottling,
 } from './performance-policy.mjs';
 
@@ -291,6 +292,16 @@ try {
             );
         if (!route.private && identityReads !== 0)
           throw new Error('PERFORMANCE_PUBLIC_IDENTITY');
+        // Numeric/build-owned projection only: no URL, text, id or DOM snippet.
+        const observedLcp =
+          lhr.audits.metrics?.details?.items?.[0]
+            ?.observedLargestContentfulPaint ?? 0;
+        const beforeLcp = (
+          lhr.audits['network-requests']?.details?.items ?? []
+        ).filter((item) => item.networkEndTime <= observedLcp);
+        const lcpNode = (
+          lhr.audits['lcp-breakdown-insight']?.details?.items ?? []
+        ).find((item) => item?.type === 'node');
         report.samples.push({
           route: route.id,
           run,
@@ -316,6 +327,17 @@ try {
                 audit.score < 1,
             )
             .map(([id, audit]) => ({ id, score: audit.score })),
+          lcpDiagnostic: {
+            element: projectLcpElement(lcpNode?.selector),
+            observedMs: Math.round(observedLcp),
+            requestsBefore: beforeLcp.length,
+            bytesBefore: Math.round(
+              beforeLcp.reduce(
+                (sum, item) => sum + (item.transferSize || 0),
+                0,
+              ),
+            ),
+          },
           proofs: {
             headingVerified,
             dataSettled: settled,

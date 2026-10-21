@@ -58,6 +58,12 @@ score abaixo da meta, escolher só a amostra rápida, remover caso ou substituir
 ausência por zero. TBT é diagnóstico e não substitui INP. JS inicial permanece
 <=200.000 bytes gzip; manifesto e tráfego devem preservar separação por rota.
 
+Cada fila de arquivos pequenos custa uma ida e volta no perfil mobile. O build
+(`scripts/route-chunks.ts`) agrupa em `rotas-comum` os módulos usados por pelo
+menos três páginas pesadas; páginas leves (código próprio abaixo de 30.000 bytes)
+nunca dependem desse grupo. Demais módulos compartilhados mantêm o agrupamento por
+conjunto exato de páginas, e páginas e entrada continuam separadas.
+
 O bootstrap autorizado por hash antecipa somente JS/CSS públicos da rota atual e
 suas dependências estáticas, a partir dos nomes emitidos pelo build. Não lê query,
 identidade ou dados e não executa páginas antes do guard. Caminhos fixos têm
@@ -122,6 +128,9 @@ O JSON permitido contém somente versões, perfil/ambiente, contagens, budget,
 métricas numéricas, IDs estáticos de auditoria e resultados booleanos por rota.
 Diagnóstico HTTP contém somente status e contagens numéricas, sem endpoint,
 cabeçalhos, mensagens ou corpo, e não transforma falha de prontidão em aprovação.
+Diagnóstico de LCP contém somente a tag e a primeira classe do último passo do
+seletor do elemento (vocabulário do próprio código, sem id, atributo ou texto), o
+LCP observado e a contagem/bytes das requisições concluídas antes dele.
 Gate de privacidade é independente do aceite numérico: um diagnóstico abaixo da
 meta pode ser publicado se tiver somente os campos permitidos, mas reprova o job.
 Campos adicionais, browser/perfil/pin incorretos, duplicação e ausência bloqueiam

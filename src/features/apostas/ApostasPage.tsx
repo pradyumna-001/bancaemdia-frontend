@@ -2,12 +2,19 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
   createContext,
   memo,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
+  type MouseEvent,
 } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom';
 import { novaApostaDestino } from '../../lib/novaApostaDestino';
 import { getApiClient, type createApiClient } from '../../api/client';
 import { recuperacaoErro } from '../../api/recovery';
@@ -34,6 +41,13 @@ import './apostas.css';
 
 const ModoCompacto = createContext(true);
 
+// One URL read and one stable handler for the whole list: switching modes
+// changes the query string without rebuilding a router link per bet.
+const BuscaAtual = createContext('');
+const AbrirDetalhe = createContext<
+  (event: MouseEvent<HTMLAnchorElement>) => void
+>(() => {});
+
 function LinkDetalheAposta({
   chave,
   evento,
@@ -41,11 +55,12 @@ function LinkDetalheAposta({
   chave: string;
   evento: string;
 }) {
-  const location = useLocation();
+  const search = useContext(BuscaAtual);
+  const abrir = useContext(AbrirDetalhe);
   return (
-    <Link to={'/aposta/' + encodeURIComponent(chave) + location.search}>
+    <a href={'/aposta/' + encodeURIComponent(chave) + search} onClick={abrir}>
       {evento}
-    </Link>
+    </a>
   );
 }
 
@@ -210,7 +225,25 @@ export function ApostasPage({
   const auth = useAuth();
   const access = useAcesso();
   const location = useLocation();
+  const navigate = useNavigate();
   const [search, setSearch] = useSearchParams();
+  const abrirDetalhe = useCallback(
+    (event: MouseEvent<HTMLAnchorElement>) => {
+      // Same in-app navigation as a router link; new tab/window keeps native.
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.shiftKey
+      )
+        return;
+      event.preventDefault();
+      navigate(event.currentTarget.getAttribute('href')!);
+    },
+    [navigate],
+  );
   const compacta =
     search.getAll('visualizacao').length !== 1 ||
     search.get('visualizacao') !== 'cartoes';
@@ -573,19 +606,23 @@ export function ApostasPage({
                 </div>
               </div>
             )}
-            <ModoCompacto.Provider value={compacta}>
-              <ul
-                className={`apostas-itens${compacta ? ' apostas-itens--compactos' : ''}`}
-              >
-                {rows.map((item) => (
-                  <LinhaAposta
-                    key={item.chave}
-                    item={item}
-                    compacta={compacta}
-                  />
-                ))}
-              </ul>
-            </ModoCompacto.Provider>
+            <BuscaAtual.Provider value={location.search}>
+              <AbrirDetalhe.Provider value={abrirDetalhe}>
+                <ModoCompacto.Provider value={compacta}>
+                  <ul
+                    className={`apostas-itens${compacta ? ' apostas-itens--compactos' : ''}`}
+                  >
+                    {rows.map((item) => (
+                      <LinhaAposta
+                        key={item.chave}
+                        item={item}
+                        compacta={compacta}
+                      />
+                    ))}
+                  </ul>
+                </ModoCompacto.Provider>
+              </AbrirDetalhe.Provider>
+            </BuscaAtual.Provider>
             <div className="apostas-paginacao">
               <button
                 type="button"
