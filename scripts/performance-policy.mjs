@@ -237,7 +237,7 @@ export function inspectPerformanceReport(
     object(
       sample,
       ['route', 'run', 'scores', 'lcpMs', 'cls', 'tbtMs', 'proofs'],
-      ['failedAudits', 'httpStatuses', 'lcpDiagnostic'],
+      ['failedAudits', 'httpStatuses', 'lcpDiagnostic', 'clsDiagnostic'],
     );
     const route = ROUTES.find((r) => r.id === sample.route);
     demand(
@@ -320,6 +320,21 @@ export function inspectPerformanceReport(
           ),
         'REPORT_DIAGNOSTICS_INVALID',
       );
+    }
+    if (sample.clsDiagnostic !== undefined) {
+      demand(
+        Array.isArray(sample.clsDiagnostic) && sample.clsDiagnostic.length <= 3,
+        'REPORT_DIAGNOSTICS_INVALID',
+      );
+      for (const shift of sample.clsDiagnostic) {
+        object(shift, ['element', 'score']);
+        demand(
+          (shift.element === 'desconhecido' ||
+            LCP_ELEMENT.test(shift.element)) &&
+            finite(shift.score, 0, 10),
+          'REPORT_DIAGNOSTICS_INVALID',
+        );
+      }
     }
     object(sample.proofs, [
       'headingVerified',

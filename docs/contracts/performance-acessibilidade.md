@@ -153,7 +153,8 @@ seletor do elemento (vocabulário do próprio código, sem id, atributo ou texto
 LCP observado, a contagem/bytes das requisições concluídas antes dele, quantas
 delas são de API/identidade e quando a última terminou, e a soma e a maior das
 tarefas do processo principal iniciadas antes do LCP observado; nenhum endereço é
-publicado.
+publicado. Diagnóstico de CLS lista no máximo os três maiores deslocamentos, com a
+mesma projeção de tag/classe e a pontuação de cada um.
 Gate de privacidade é independente do aceite numérico: um diagnóstico abaixo da
 meta pode ser publicado se tiver somente os campos permitidos, mas reprova o job.
 Campos adicionais, browser/perfil/pin incorretos, duplicação e ausência bloqueiam

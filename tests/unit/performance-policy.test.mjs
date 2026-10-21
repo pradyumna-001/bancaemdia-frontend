@@ -402,7 +402,23 @@ it('diagnóstico LCP aceita apenas projeção e números, sem aprovar falhas', (
     cpuBeforeMs: 310,
     longestTaskMs: 42,
   };
+  r.samples[0].clsDiagnostic = [
+    { element: 'main.pagina', score: 0.0621 },
+    { element: 'desconhecido', score: 0.03 },
+  ];
   expect(inspectPerformanceReport(r).complete).toBe(true);
+  for (const bad of [
+    [{ element: 'main#privado', score: 0.1 }],
+    [{ element: 'p', score: -1 }],
+    [{ element: 'p', score: 0.1, texto: 'Privado' }],
+    Array.from({ length: 4 }, () => ({ element: 'p', score: 0.01 })),
+  ]) {
+    const wrong = structuredClone(r);
+    wrong.samples[0].clsDiagnostic = bad;
+    expect(() =>
+      inspectPerformanceReport(wrong, { requirePass: false }),
+    ).toThrow(/REPORT_(DIAGNOSTICS|FIELDS|OBJECT)_INVALID|REPORT_/);
+  }
   r.samples[0].lcpMs = 2600;
   expect(() => inspectPerformanceReport(r)).toThrow('RELEASE_TARGETS');
   for (const [key, value] of [

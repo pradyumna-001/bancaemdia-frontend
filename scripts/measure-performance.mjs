@@ -338,6 +338,15 @@ try {
                 audit.score < 1,
             )
             .map(([id, audit]) => ({ id, score: audit.score })),
+          // Largest layout shifts: tag/first class and score only.
+          clsDiagnostic: (lhr.audits['layout-shifts']?.details?.items ?? [])
+            .filter((item) => typeof item.score === 'number')
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 3)
+            .map((item) => ({
+              element: projectLcpElement(item.node?.selector),
+              score: Math.round(item.score * 10_000) / 10_000,
+            })),
           lcpDiagnostic: {
             element: projectLcpElement(lcpNode?.selector),
             observedMs: Math.round(observedLcp),

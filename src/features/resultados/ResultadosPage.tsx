@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from 'react';
 import {
   infiniteQueryOptions,
   useInfiniteQuery,
@@ -204,9 +211,13 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
       auth.state.phase === 'authenticated' && adapter.bloqueios.length === 0,
   });
   const filaWaiting = useRetryAfter(fila.error);
-  const concluidas = new Set(consumed);
-  const items = unirFila(fila.data?.pages ?? [], concluidas);
+  const items = useMemo(
+    () => unirFila(fila.data?.pages ?? [], new Set(consumed)),
+    [fila.data?.pages, consumed],
+  );
   const atual = items[0];
+  // The current bet paints first; the upcoming list follows right after.
+  const proximas = useDeferredValue(items);
   const snapshot = fila.data?.pages.at(-1);
   const blocked =
     op.busy ||
@@ -835,7 +846,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
             Mais antigas primeiro, pela data do jogo ou criação.
           </p>
           <ol className="resultados-proximas">
-            {items.slice(1).map((item) => (
+            {proximas.slice(1).map((item) => (
               <li key={item.chave}>
                 <span>
                   <strong>{item.evento ?? 'Evento não informado'}</strong>
