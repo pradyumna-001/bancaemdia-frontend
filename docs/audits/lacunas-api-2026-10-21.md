@@ -83,6 +83,29 @@ A lacuna registrada em `docs/audits/revisao-2026-10-13.md` (branch `feat/28-revi
 | L4     | Extensões divergentes listadas acima                                                                                                                               | #9, #10, #52  | Aberta: [#213](https://github.com/pradyumna-001/bancaemdia-api/issues/213)                                 |
 | L5     | Odd armazenada em decimal; sem rota de preferência                                                                                                                 | #33           | Não abrir; registrar decisão                                                                               |
 
+## Entregas da API para L1–L4 (21/10/2026, tarde)
+
+Mesmo método da manhã: um documento por head, sem combinar schemas. Os heads das 13 candidatas anteriores não mudaram. As cinco PRs novas partem da main `b916f54` (sem atraso) e são independentes entre si.
+
+| PR API | Issue | Head completo                              | Ops | SHA-256 do OpenAPI                                                 | Checks        |
+| ------ | ----- | ------------------------------------------ | --- | ------------------------------------------------------------------ | ------------- |
+| #209   | #208  | `c0168ae1f9e07fd5e5a56ea8323c18052303b5cc` | 89  | `0bd251ca6580862882333415b7c6a76be5d1d9fe309f3ceb90c568058033a0be` | 27/27 sucesso |
+| #214   | #210  | `4054dd5d2b12370fc0c00031a2933c9c77841053` | 92  | `831a65cc5aa702b7bc8a68c12c8a65840116b2238363f0b508051b4343925401` | 27/27 sucesso |
+| #215   | #211  | `1632764884240128efadbefff84a991a99778cf7` | 94  | `94195f65bc664d84e6e6e4e48859bc861c919f700cc9e66c11f02d5d82463c7e` | 27/27 sucesso |
+| #216   | #212  | `af7ddeba60e2da07f3321d1eb36298ba7140887a` | 94  | `a3da717e09aac1cd1d729105b33f2ba3fbe3029b0c9b48f6cd3ee298d500f6ab` | 27/27 sucesso |
+| #217   | #213  | `c51bc3c7d7ca8b97f1c89c46f53b7370846873e8` | 89  | `2b2e2f7a7fdd0b934af3268f86c38adadd9d56dfeae1425794f8d5e673bb367a` | 27/27 sucesso |
+
+Conferência com o escopo de cada issue:
+
+- **#214 (unidade):** atende os seis itens. Leitura da vigente e do histórico com origem `padrao|usuario`; vigência no instante do servidor sem alterar apostas existentes; `Idempotency-Key` com recibo e GET de intenção; inteiro estrito até R$ 100.000,00; 422 por campo sem `msg`/`input`/`ctx`; relação com criação manual, coleta, Telegram e XLSX documentada.
+- **#215 (banca):** atende cadastro, renomear, arquivar e capital (null apaga e continua "não informado"). Item 4 decidido pelo backend: o modo conjunta/por grupo não entra como modo, porque os vínculos das contas já o expressam e trocar é revincular. PATCH `/caixa/contas/{id}/banca` passa a devolver 409 para banca arquivada. As consumidoras #31 e #33 não oferecem seletor de modo.
+- **#216 (apagar todas):** atende lote único transacional com prévia, frase e token assinado (10 min), recibo por intenção e restauração em lote uma única vez. O escopo limita-se às apostas.
+- **#217 (política):** schema `BancaemdiaPolicy` publicado; 89/89 operações da main com `x-bancaemdia-policy`; 402 só onde a política exige FULL_WRITE; checker de contrato e prova com conta READ_ONLY real. Três pontos ficam para a integração:
+  1. A política existe só na main. As candidatas #184–#216 continuam com extensões próprias ou nenhuma; #214, #215 e #216 não declaram política. Cada uma precisa entrar em `POLITICAS` ao reconciliar, como a própria #217 descreve.
+  2. A política permite retry automático (até 3) em escritas com identidade estável: DELETE e restaurar aposta, POST `/caixa`, trocas de titular, `/billing/subscribe` e `/coleta/batches`. Para o frontend isso é um teto, não uma instrução. A regra 21 continua: mutations não são repetidas automaticamente.
+  3. `scripts/api-contract.mjs` deve passar a gerar as políticas a partir de `x-bancaemdia-policy` quando o pin adotar uma versão integrada com a extensão. É mudança de cliente (#9/#10/#52), fora desta auditoria.
+- **#209 (gzip):** não altera o OpenAPI; consumidor #37.
+
 ## Textos de issue para a API
 
 Com confirmação do usuário em 21/10/2026, L1–L4 foram criadas na API como [#210](https://github.com/pradyumna-001/bancaemdia-api/issues/210), [#211](https://github.com/pradyumna-001/bancaemdia-api/issues/211), [#212](https://github.com/pradyumna-001/bancaemdia-api/issues/212) e [#213](https://github.com/pradyumna-001/bancaemdia-api/issues/213), acrescidas de um parágrafo de origem. Os textos abaixo são a fonte; o estado vigente está nas issues.
