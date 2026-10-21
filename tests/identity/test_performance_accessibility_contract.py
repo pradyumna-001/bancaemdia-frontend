@@ -241,7 +241,9 @@ async def interactions(page, browser_name, context):
     require(result["trusted"] >= 4, "TRUSTED_INTERACTIONS_REQUIRED")
     maximum = max(result["durations"], default=None)
     if supported:
-        require(maximum is None or maximum < 200, "INTERACTION_LATENCY_EXCEEDED")
+        require(
+            maximum is None or maximum < 200, f"INTERACTION_LATENCY_EXCEEDED:{maximum}"
+        )
     if browser_name == "chromium":
         await cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
         await cdp.send(

@@ -62,6 +62,13 @@ html {
   font-family: var(--fonte-interface);
   line-height: var(--linha-corpo);
 }
+@media (min-width: 48rem) {
+  html {
+    /* Desktop classic scrollbars: loading and loaded heights never move the
+       shell sideways. Narrow screens keep their full width. */
+    scrollbar-gutter: stable;
+  }
+}
 body {
   margin: 0;
   font-size: var(--fonte-corpo);

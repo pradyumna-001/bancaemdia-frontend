@@ -30,6 +30,8 @@ def main():
         options = subset.Options()
         options.name_IDs = ["*"]
         options.name_languages = ["*"]
+        # Inline CFF subroutines: identical outlines and hints, smaller WOFF2.
+        options.desubroutinize = True
         worker = subset.Subsetter(options)
         worker.populate(unicodes=subset.parse_unicodes(RANGES))
         worker.subset(font)

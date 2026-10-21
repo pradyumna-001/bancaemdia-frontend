@@ -5,20 +5,20 @@
     {
       "file": "bancaemdia-interface-regular-latin.woff2",
       "source_sha256": "63de0da0cc05298e2e9c6e5cef506d8454ca665f6e668a99d94f51174b9256ed",
-      "sha256": "9e28a633de71c184255fe4178cbece9334f20d3de1db3b9f21d9efc46fea0d3a",
-      "bytes": 22172
+      "sha256": "a4a290bf9039ddea391377f3b958bb2c173869e002e6630889d8e8a73e3bbbdd",
+      "bytes": 20204
     },
     {
       "file": "bancaemdia-interface-semibold-latin.woff2",
       "source_sha256": "c248b0a178c362916db7c853ed640db77f184d19a0ed9fa5591fa707d3089635",
-      "sha256": "34fde986e401036f86d029a1e373f34e2a6659d40afc51edc7a25fb103af2910",
-      "bytes": 22448
+      "sha256": "b839a8a06b2d8ad04686a3edbeddcfb8ad256b08a5b2420250c475709d14db47",
+      "bytes": 20336
     },
     {
       "file": "bancaemdia-interface-bold-latin.woff2",
       "source_sha256": "12954097ebbad6749ee1c81a143d555c263420115892211529fe6f51794b8439",
-      "sha256": "77f4d78b48f71b9ae11ca861d362661f853b1c07f6d2723c2c4673f2a675f9d0",
-      "bytes": 22632
+      "sha256": "bf8a34aedc3831f0a5f081e3c04dcdb9db28ba0a76ba305b43cd0535a87fe203",
+      "bytes": 20332
     }
   ]
 }

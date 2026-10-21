@@ -60,7 +60,7 @@ Cabeçalhos provisórios, login, erro de rota, falha de configuração e carrega
 
 A direção tipográfica continua Source Sans 3. Três subconjuntos WOFF2 locais
 cobrem latim, pontuação, moeda, setas e símbolos matemáticos usados pela interface
-(67.252 bytes no conjunto). Os três originais completos permanecem como fallback
+(60.872 bytes no conjunto, com sub-rotinas CFF expandidas sem alterar contornos ou hints). Os três originais completos permanecem como fallback
 para outros alfabetos. `font-display: swap` continua em todas as faces.
 
 A OFL reserva o nome “Source”; a derivação usa internamente **Bancaemdia Interface**,

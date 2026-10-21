@@ -109,6 +109,10 @@
   border-radius: var(--raio-painel);
   background: var(--superficie);
   padding: var(--espaco-24);
+  /* Off-screen rows keep DOM and accessibility tree; only rendering is skipped.
+     Rendered rows remember their real size; estimates follow the mode. */
+  content-visibility: auto;
+  contain-intrinsic-size: none auto 16rem;
 }
 .aposta-contexto {
   position: relative;
@@ -199,6 +203,7 @@
   border: 0;
   border-radius: 0;
   font-size: var(--fonte-pequena);
+  contain-intrinsic-size: none auto 2.75rem;
 }
 .apostas-colunas {
   display: grid;
@@ -324,6 +329,7 @@
   .aposta-linha {
     grid-template-columns: minmax(0, 1fr);
     padding: var(--espaco-16);
+    contain-intrinsic-size: none auto 22rem;
   }
   .aposta-situacao {
     flex-direction: row;
@@ -339,6 +345,7 @@
     grid-template-columns: minmax(0, 1fr) auto var(--alvo-toque);
     gap: 0 var(--espaco-8);
     padding: 0 var(--espaco-8);
+    contain-intrinsic-size: none auto 4rem;
   }
   .apostas-colunas {
     display: none;

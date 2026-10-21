@@ -1,5 +1,12 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import {
+  createContext,
+  memo,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { novaApostaDestino } from '../../lib/novaApostaDestino';
 import { getApiClient, type createApiClient } from '../../api/client';
@@ -25,129 +32,168 @@ import {
 } from './projecao';
 import './apostas.css';
 
-function LinhaAposta({ item, compacta }: { item: Aposta; compacta: boolean }) {
+const ModoCompacto = createContext(true);
+
+function LinkDetalheAposta({
+  chave,
+  evento,
+}: {
+  chave: string;
+  evento: string;
+}) {
   const location = useLocation();
-  const view = projetarAposta(item);
+  return (
+    <Link to={'/aposta/' + encodeURIComponent(chave) + location.search}>
+      {evento}
+    </Link>
+  );
+}
+
+function ValorLinha({ value }: { value: string }) {
+  const compacta = useContext(ModoCompacto);
+  return compacta && value === NAO_INFORMADO ? '—' : value;
+}
+
+function ResumoLinha() {
+  const compacta = useContext(ModoCompacto);
+  return (
+    <summary title="Informações da aposta">
+      <span className={compacta ? 'somente-leitor' : undefined}>
+        Informações da aposta
+      </span>
+      {compacta && <Icone nome="expandir" />}
+    </summary>
+  );
+}
+
+const ConteudoLinhaAposta = memo(function ConteudoLinhaAposta({
+  item,
+  view,
+}: {
+  item: Aposta;
+  view: ReturnType<typeof projetarAposta>;
+}) {
   const account = item.conta_contexto;
+  return (
+    <>
+      <div className="aposta-contexto">
+        <span className="legenda aposta-casa" title={view.casa}>
+          {view.casa}
+        </span>
+        <h3>
+          <LinkDetalheAposta chave={item.chave} evento={view.evento} />
+        </h3>
+        <p title={view.descricao}>{view.descricao}</p>
+        <p className="legenda">{view.mercado}</p>
+        <p className="legenda">Aposta: {view.data}</p>
+      </div>
+      <div className="aposta-situacao">
+        <span className="aposta-estado" data-estado={item.estado}>
+          {view.estado}
+        </span>
+        {item.apagada && (
+          <span className="aposta-aviso" title="Apagada — fora da apuração">
+            Apagada — fora da apuração
+          </span>
+        )}
+        {item.revisao_grave && (
+          <span className="aposta-aviso" title="Revisão necessária">
+            Revisão necessária
+          </span>
+        )}
+        {item.freebet && (
+          <span className="aposta-aviso" title="Freebet — valor de face">
+            Freebet — valor de face
+          </span>
+        )}
+        <span className="legenda">Origem: {view.origem}</span>
+      </div>
+      <dl className="aposta-valores">
+        <div>
+          <dt aria-label={item.freebet ? 'Valor de face' : 'Valor'}>
+            Valor
+            {item.freebet && (
+              <span className="aposta-face-label"> de face</span>
+            )}
+          </dt>
+          <dd className="numero" title={view.valor} aria-label={view.valor}>
+            <ValorLinha value={view.valor} />
+          </dd>
+        </div>
+        <div>
+          <dt>Odd</dt>
+          <dd className="numero" title={view.odd} aria-label={view.odd}>
+            <ValorLinha value={view.odd} />
+          </dd>
+        </div>
+        <div>
+          <dt>Lucro</dt>
+          <dd className="numero" title={view.lucro} aria-label={view.lucro}>
+            <ValorLinha value={view.lucro} />
+          </dd>
+        </div>
+      </dl>
+      <details className="aposta-detalhes">
+        <ResumoLinha />
+        <dl>
+          <div>
+            <dt>Conta atribuída</dt>
+            <dd>
+              {view.conta}
+              {account && !account.ativa ? ' (inativa)' : ''}
+            </dd>
+          </div>
+          {account && (
+            <div>
+              <dt>Identificador da conta</dt>
+              <dd className="numero">{account.id}</dd>
+            </div>
+          )}
+          <div>
+            <dt>Titular da conta</dt>
+            <dd>
+              {view.titular}
+              {account?.titular?.arquivado ? ' (arquivado)' : ''}
+            </dd>
+          </div>
+          <div>
+            <dt>Banca da aposta</dt>
+            <dd>{view.banca}</dd>
+          </div>
+          {item.banca_contexto && (
+            <div>
+              <dt>Identificador da banca</dt>
+              <dd className="numero">{item.banca_contexto.id}</dd>
+            </div>
+          )}
+          <div>
+            <dt>Data do jogo</dt>
+            <dd>{view.jogo}</dd>
+          </div>
+          <div>
+            <dt>Retorno</dt>
+            <dd className="numero">{view.retorno}</dd>
+          </div>
+        </dl>
+        <p className="legenda">
+          A conta e a banca são as referências registradas na aposta. Os nomes
+          exibidos são os atuais.
+        </p>
+      </details>
+    </>
+  );
+});
+
+function LinhaAposta({ item, compacta }: { item: Aposta; compacta: boolean }) {
+  // Private presentation stays scoped to this mounted row, never a global cache.
+  const view = useMemo(() => projetarAposta(item), [item]);
   return (
     <li id={'aposta-' + encodeURIComponent(item.chave)}>
       <article
         className={`aposta-linha${compacta ? ' aposta-linha--compacta' : ''}`}
         aria-label={view.evento}
       >
-        <div className="aposta-contexto">
-          <span className="legenda aposta-casa" title={view.casa}>
-            {view.casa}
-          </span>
-          <h3>
-            <Link
-              to={'/aposta/' + encodeURIComponent(item.chave) + location.search}
-            >
-              {view.evento}
-            </Link>
-          </h3>
-          <p title={view.descricao}>{view.descricao}</p>
-          <p className="legenda">{view.mercado}</p>
-          <p className="legenda">Aposta: {view.data}</p>
-        </div>
-        <div className="aposta-situacao">
-          <span className="aposta-estado" data-estado={item.estado}>
-            {view.estado}
-          </span>
-          {item.apagada && (
-            <span className="aposta-aviso" title="Apagada — fora da apuração">
-              Apagada — fora da apuração
-            </span>
-          )}
-          {item.revisao_grave && (
-            <span className="aposta-aviso" title="Revisão necessária">
-              Revisão necessária
-            </span>
-          )}
-          {item.freebet && (
-            <span className="aposta-aviso" title="Freebet — valor de face">
-              Freebet — valor de face
-            </span>
-          )}
-          <span className="legenda">Origem: {view.origem}</span>
-        </div>
-        <dl className="aposta-valores">
-          <div>
-            <dt aria-label={item.freebet ? 'Valor de face' : 'Valor'}>
-              Valor
-              {item.freebet && (
-                <span className="aposta-face-label"> de face</span>
-              )}
-            </dt>
-            <dd className="numero" title={view.valor} aria-label={view.valor}>
-              {compacta && view.valor === NAO_INFORMADO ? '—' : view.valor}
-            </dd>
-          </div>
-          <div>
-            <dt>Odd</dt>
-            <dd className="numero" title={view.odd} aria-label={view.odd}>
-              {compacta && view.odd === NAO_INFORMADO ? '—' : view.odd}
-            </dd>
-          </div>
-          <div>
-            <dt>Lucro</dt>
-            <dd className="numero" title={view.lucro} aria-label={view.lucro}>
-              {compacta && view.lucro === NAO_INFORMADO ? '—' : view.lucro}
-            </dd>
-          </div>
-        </dl>
-        <details className="aposta-detalhes">
-          <summary title="Informações da aposta">
-            <span className={compacta ? 'somente-leitor' : undefined}>
-              Informações da aposta
-            </span>
-            {compacta && <Icone nome="expandir" />}
-          </summary>
-          <dl>
-            <div>
-              <dt>Conta atribuída</dt>
-              <dd>
-                {view.conta}
-                {account && !account.ativa ? ' (inativa)' : ''}
-              </dd>
-            </div>
-            {account && (
-              <div>
-                <dt>Identificador da conta</dt>
-                <dd className="numero">{account.id}</dd>
-              </div>
-            )}
-            <div>
-              <dt>Titular da conta</dt>
-              <dd>
-                {view.titular}
-                {account?.titular?.arquivado ? ' (arquivado)' : ''}
-              </dd>
-            </div>
-            <div>
-              <dt>Banca da aposta</dt>
-              <dd>{view.banca}</dd>
-            </div>
-            {item.banca_contexto && (
-              <div>
-                <dt>Identificador da banca</dt>
-                <dd className="numero">{item.banca_contexto.id}</dd>
-              </div>
-            )}
-            <div>
-              <dt>Data do jogo</dt>
-              <dd>{view.jogo}</dd>
-            </div>
-            <div>
-              <dt>Retorno</dt>
-              <dd className="numero">{view.retorno}</dd>
-            </div>
-          </dl>
-          <p className="legenda">
-            A conta e a banca são as referências registradas na aposta. Os nomes
-            exibidos são os atuais.
-          </p>
-        </details>
+        <ConteudoLinhaAposta item={item} view={view} />
       </article>
     </li>
   );
@@ -527,13 +573,19 @@ export function ApostasPage({
                 </div>
               </div>
             )}
-            <ul
-              className={`apostas-itens${compacta ? ' apostas-itens--compactos' : ''}`}
-            >
-              {rows.map((item) => (
-                <LinhaAposta key={item.chave} item={item} compacta={compacta} />
-              ))}
-            </ul>
+            <ModoCompacto.Provider value={compacta}>
+              <ul
+                className={`apostas-itens${compacta ? ' apostas-itens--compactos' : ''}`}
+              >
+                {rows.map((item) => (
+                  <LinhaAposta
+                    key={item.chave}
+                    item={item}
+                    compacta={compacta}
+                  />
+                ))}
+              </ul>
+            </ModoCompacto.Provider>
             <div className="apostas-paginacao">
               <button
                 type="button"

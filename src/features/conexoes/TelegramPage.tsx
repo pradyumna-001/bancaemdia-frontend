@@ -459,35 +459,41 @@ export function TelegramPage({
         <ErroApi error={error} intent="gravacao" destination={destination} />
       )}
       {notice && <p role="status">{notice}</p>}
-      <details className="telegram-painel">
-        <summary>Como funciona o envio de uma foto</summary>
-        <ol>
-          <li>
-            Quando o bot for divulgado, conecte sua conta usando o comando
-            temporário em conversa privada.
-          </li>
-          <li>
-            Envie uma foto de um bilhete. O bot prepara um rascunho para você
-            conferir.
-          </li>
-          <li>
-            Corrija o que for necessário e confirme no Telegram. A aposta só é
-            registrada após a confirmação.
-          </li>
-        </ol>
-        <p>
-          Esta tela não mostra mensagens privadas nem rascunhos do bot. Para
-          importar um histórico exportado do Telegram, use Enviar.
-        </p>
-      </details>
-      <div className="acoes">
-        <Link to={`/enviar${location.search}`}>
-          Importar histórico em Enviar
-        </Link>
-        <Link to={`/configuracoes${location.search}`}>
-          Voltar para Configurações
-        </Link>
-      </div>
+      {/* Static guidance follows the first consultation, so the arriving
+          connection state never moves it into view. */}
+      {!query.isPending && (
+        <>
+          <details className="telegram-painel">
+            <summary>Como funciona o envio de uma foto</summary>
+            <ol>
+              <li>
+                Quando o bot for divulgado, conecte sua conta usando o comando
+                temporário em conversa privada.
+              </li>
+              <li>
+                Envie uma foto de um bilhete. O bot prepara um rascunho para
+                você conferir.
+              </li>
+              <li>
+                Corrija o que for necessário e confirme no Telegram. A aposta só
+                é registrada após a confirmação.
+              </li>
+            </ol>
+            <p>
+              Esta tela não mostra mensagens privadas nem rascunhos do bot. Para
+              importar um histórico exportado do Telegram, use Enviar.
+            </p>
+          </details>
+          <div className="acoes">
+            <Link to={`/enviar${location.search}`}>
+              Importar histórico em Enviar
+            </Link>
+            <Link to={`/configuracoes${location.search}`}>
+              Voltar para Configurações
+            </Link>
+          </div>
+        </>
+      )}
     </main>
   );
 }
