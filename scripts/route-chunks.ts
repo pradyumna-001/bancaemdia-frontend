@@ -14,6 +14,8 @@ export type GetModuleInfo = (id: string) => ModuleInfoLike | null;
 export const LIGHT_PAGE_BYTES = 30_000;
 /** A module joins the shared private chunk when this many heavy pages use it. */
 export const SHARED_MIN_PAGES = 3;
+/** Shared source modules smaller than this ride in the entry: no extra request. */
+export const TINY_SHARED_BYTES = 2_000;
 
 const normalize = (id: string) => id.replaceAll('\\', '/');
 
@@ -21,9 +23,10 @@ const normalize = (id: string) => id.replaceAll('\\', '/');
  * Route chunk grouping for the public build. Heavy pages otherwise download
  * 10-20 tiny shared chunks, and every queued request costs a round trip on a
  * mobile connection. Modules used by at least three heavy pages form one shared
- * chunk; light pages never depend on it. Other shared modules keep Rollup's
- * default grouping by the exact set of pages, named explicitly so the shared
- * chunk cannot absorb them. Page modules and the entry graph are untouched.
+ * chunk; light pages never depend on it. Tiny shared modules join the entry.
+ * Other shared modules keep Rollup's default grouping by the exact set of
+ * pages, named explicitly so the shared chunk cannot absorb them. Page modules
+ * and the entry graph are untouched.
  */
 export function createRouteChunks() {
   const reachable = new Map<string, boolean>();
@@ -93,6 +96,13 @@ export function createRouteChunks() {
     const heavy = [...pages].every((page) => !isLight(getModuleInfo, page));
     if (pages.size >= SHARED_MIN_PAGES && heavy) return 'rotas-comum';
     if (pages.size < 2 || !normalize(id).includes('/src/')) return undefined;
+    // A few hundred bytes are cheaper in the entry than one queued request.
+    // Only leaves join it, so the entry never gains a new static dependency.
+    if (
+      (info.code?.length ?? Infinity) < TINY_SHARED_BYTES &&
+      info.importedIds.every((dependency) => inEntry(getModuleInfo, dependency))
+    )
+      return 'index';
     const names = [...pages]
       .map((page) =>
         normalize(page)

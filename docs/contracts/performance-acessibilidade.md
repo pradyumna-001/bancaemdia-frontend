@@ -62,7 +62,10 @@ Cada fila de arquivos pequenos custa uma ida e volta no perfil mobile. O build
 (`scripts/route-chunks.ts`) agrupa em `rotas-comum` os módulos usados por pelo
 menos três páginas pesadas; páginas leves (código próprio abaixo de 30.000 bytes)
 nunca dependem desse grupo. Demais módulos compartilhados mantêm o agrupamento por
-conjunto exato de páginas, e páginas e entrada continuam separadas.
+conjunto exato de páginas, e páginas e entrada continuam separadas. Módulos
+compartilhados pequenos (menos de 2.000 bytes) e sem dependências próprias fora
+da entrada acompanham a entrada. O CSS é um arquivo único, carregado antes da
+pintura; nenhuma rota enfileira folhas de estilo próprias.
 
 O bootstrap autorizado por hash antecipa somente JS/CSS públicos da rota atual e
 suas dependências estáticas, a partir dos nomes emitidos pelo build. Não lê query,

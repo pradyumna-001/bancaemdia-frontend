@@ -112,10 +112,10 @@
   /* Estimate used only while a long-list row below is skipped. */
   contain-intrinsic-size: none auto 16rem;
 }
-/* Long lists skip rendering of off-screen rows after the first twelve; DOM and
-   accessibility tree stay complete. Short lists and the first screen render
-   normally. Rendered rows remember their real size. */
-.apostas-itens > li:nth-child(n + 13) > .aposta-linha {
+/* Lists longer than three rows skip rendering of off-screen rows; DOM and
+   accessibility tree stay complete. Short lists render normally. Rendered rows
+   remember their real size. */
+.apostas-itens > li:nth-child(n + 4) > .aposta-linha {
   content-visibility: auto;
 }
 .aposta-contexto {

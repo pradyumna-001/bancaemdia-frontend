@@ -2,10 +2,12 @@
 import { expect, it } from 'vitest';
 import {
   LIGHT_PAGE_BYTES,
+  TINY_SHARED_BYTES,
   createRouteChunks,
 } from '../../scripts/route-chunks.ts';
 
 const big = 'x'.repeat(LIGHT_PAGE_BYTES);
+const medium = 'x'.repeat(TINY_SHARED_BYTES);
 /** id -> { imports, dynamic, code, entry } */
 function graph(spec) {
   const importers = new Map();
@@ -41,10 +43,14 @@ const spec = {
   },
   [src('B.tsx')]: { imports: [src('x.ts'), src('z.ts')], code: big },
   [src('C.tsx')]: { imports: [src('x.ts'), src('z.ts')], code: big },
-  [src('Leve.tsx')]: { imports: [src('y.ts')] },
-  [src('x.ts')]: {},
-  [src('y.ts')]: {},
-  [src('z.ts')]: {},
+  [src('Leve.tsx')]: {
+    imports: [src('y.ts'), src('folha.ts'), src('pequeno.ts')],
+  },
+  [src('x.ts')]: { code: medium },
+  [src('y.ts')]: { code: medium },
+  [src('z.ts')]: { code: medium, imports: [src('folha.ts')] },
+  [src('folha.ts')]: { code: 'export const a = 1;' },
+  [src('pequeno.ts')]: { code: 'export const b = 2;', imports: [src('z.ts')] },
   [src('so-a.ts')]: {},
 };
 spec[src('A.tsx')].imports.push(src('so-a.ts'));
@@ -61,6 +67,10 @@ it('módulos de três páginas pesadas formam um chunk compartilhado', () => {
   // Pages, page-exclusive modules and the entry graph keep their places.
   expect(name(src('A.tsx'))).toBeUndefined();
   expect(name(src('so-a.ts'))).toBeUndefined();
+  // Tiny shared leaves ride in the entry; a tiny module with its own
+  // dependency would add a static entry import, so it keeps its group.
+  expect(name(src('folha.ts'))).toBe('index');
+  expect(name(src('pequeno.ts'))).toBeUndefined();
   expect(name(src('app.ts'))).toBe('index');
   expect(name(src('main.tsx'))).toBe('index');
 });

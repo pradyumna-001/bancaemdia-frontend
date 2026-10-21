@@ -8,6 +8,8 @@ export default defineConfig({
   plugins: [react(), temaInicial(), faviconMarca()],
   build: {
     manifest: true,
+    // One stylesheet: route CSS would otherwise queue 2-4 extra requests.
+    cssCodeSplit: false,
     rollupOptions: { output: { manualChunks: createRouteChunks() } },
   },
   test: {
