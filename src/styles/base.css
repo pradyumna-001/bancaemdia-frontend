@@ -110,6 +110,11 @@ body {
   margin: 0;
   font-size: var(--fonte-corpo);
 }
+/* Starting screens' top margin stays inside the root: the body does not move
+   when the shell replaces them (no layout shift on every first load). */
+#root {
+  display: flow-root;
+}
 button,
 input,
 textarea {
