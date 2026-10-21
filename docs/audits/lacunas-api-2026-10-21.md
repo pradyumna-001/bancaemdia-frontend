@@ -73,19 +73,19 @@ Extensões de política divergentes:
 
 A lacuna registrada em `docs/audits/revisao-2026-10-13.md` (branch `feat/28-revisao`, PR #94): MESMA não aceitava escolha de tipster e POST `/consolidacoes` exigia IDs internos não publicados. Foi suprida pela issue API #200 / [PR #201](https://github.com/pradyumna-001/bancaemdia-api/pull/201): `/revisao-operacional/*` publica a projeção segura, ações por família, `TipsterChoice`/`AccountChoice`/`HolderChoice` e precondição opaca (`x-bancaemdia-review.precondition=opaque_evidence_cas`). Nenhum texto de issue novo é necessário. A #28 continua dependente do merge da #201; não promover o schema candidato.
 
-## Capacidades sem issue na API
+## Capacidades sem issue na API em 21/10/2026
 
-| Lacuna | Evidência na API                                                                                                                                                   | Consumidor    | Recomendação                                 |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- | -------------------------------------------- |
-| L1     | Tabela `unidades` (`valor_centavos`, `vigente_de`, `vigente_ate`), `UnidadeRepo.get_vigente/create`; nenhuma rota; padrão `VALOR_UNIDADE_PADRAO_CENTAVOS = 10_000` | #33, #29      | Abrir                                        |
-| L2     | Tabela `bancas` (`nome`, `saldo_inicial_centavos`); leitura em `/caixa/saldo`; escrita só do vínculo da conta                                                      | #31, #33, #20 | Abrir                                        |
-| L3     | DELETE/restaurar por aposta; DELETE `/usuario/me` encerra a conta                                                                                                  | #33           | Abrir somente se o titular mantiver o escopo |
-| L4     | Extensões divergentes listadas acima                                                                                                                               | #9, #10, #52  | Abrir antes da integração das candidatas     |
-| L5     | Odd armazenada em decimal; sem rota de preferência                                                                                                                 | #33           | Não abrir; registrar decisão                 |
+| Lacuna | Evidência na API                                                                                                                                                   | Consumidor    | Recomendação                                                                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- | ---------------------------------------------------------------------------------------------------------- |
+| L1     | Tabela `unidades` (`valor_centavos`, `vigente_de`, `vigente_ate`), `UnidadeRepo.get_vigente/create`; nenhuma rota; padrão `VALOR_UNIDADE_PADRAO_CENTAVOS = 10_000` | #33, #29      | Aberta: [#210](https://github.com/pradyumna-001/bancaemdia-api/issues/210)                                 |
+| L2     | Tabela `bancas` (`nome`, `saldo_inicial_centavos`); leitura em `/caixa/saldo`; escrita só do vínculo da conta                                                      | #31, #33, #20 | Aberta: [#211](https://github.com/pradyumna-001/bancaemdia-api/issues/211)                                 |
+| L3     | DELETE/restaurar por aposta; DELETE `/usuario/me` encerra a conta                                                                                                  | #33           | Aberta: [#212](https://github.com/pradyumna-001/bancaemdia-api/issues/212), escopo confirmado pelo titular |
+| L4     | Extensões divergentes listadas acima                                                                                                                               | #9, #10, #52  | Aberta: [#213](https://github.com/pradyumna-001/bancaemdia-api/issues/213)                                 |
+| L5     | Odd armazenada em decimal; sem rota de preferência                                                                                                                 | #33           | Não abrir; registrar decisão                                                                               |
 
 ## Textos de issue para a API
 
-Prontos para `gh issue create -R pradyumna-001/bancaemdia-api`. Não criados: abrir issue no repositório da API é ação externa e depende de confirmação do usuário.
+Com confirmação do usuário em 21/10/2026, L1–L4 foram criadas na API como [#210](https://github.com/pradyumna-001/bancaemdia-api/issues/210), [#211](https://github.com/pradyumna-001/bancaemdia-api/issues/211), [#212](https://github.com/pradyumna-001/bancaemdia-api/issues/212) e [#213](https://github.com/pradyumna-001/bancaemdia-api/issues/213), acrescidas de um parágrafo de origem. Os textos abaixo são a fonte; o estado vigente está nas issues.
 
 ### L1 — Unidade temporal
 
@@ -127,7 +127,7 @@ Prontos para `gh issue create -R pradyumna-001/bancaemdia-api`. Não criados: ab
 
 **Título:** Apagar todas as apostas em lote, reversível, sem encerrar a conta (#33 frontend)
 
-**Decisão necessária antes de abrir.** O backlog #33 removeu "Apagar tudo" das Configurações até existir contrato e deixou um eventual reset para a #50. Confirmar com o titular se a função continua no escopo de lançamento.
+**Decisão do titular em 21/10/2026:** a função continua no escopo. O backlog #33 removeu "Apagar tudo" das Configurações até existir contrato e deixou o reset para a #50.
 
 **Problema confirmado.** A API tem DELETE e POST `/restaurar` por aposta. DELETE `/usuario/me` encerra a conta (#58), o que é diferente. O monólito tinha POST `/configuracoes/apagar-tudo` (pedido do dono em 18/08/2026), com confirmação digitada, que registrava um cancelamento por aposta num log append-only, mantinha a opção de ver e restaurar e não apagava nada fisicamente. Fazer N DELETEs no navegador não é atômico nem recuperável.
 
