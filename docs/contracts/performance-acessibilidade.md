@@ -90,8 +90,10 @@ consulta identidade nem fornece sessão, CSRF ou acesso. Hints de assets também
 omitem Referer; parâmetros de protocolo não são transmitidos por essas dicas.
 
 Os headers de compressão são os do nginx estático e são verificados também no
-container. O proxy do ensaio conserva bytes e políticas da API; compressão de
-HTML/CSS/JS/SVG não inclui credenciais ou respostas JSON privadas.
+container. O servidor estático comprime somente HTML/CSS/JS/SVG. Como o proxy
+reverso de produção, o proxy do ensaio repassa o Accept-Encoding do navegador e
+os bytes e headers de codificação da API sem descomprimir nem recomprimir; quais
+respostas JSON a API comprime é decisão do backend (issue #106).
 
 A prontidão é capturada no fim da navegação medida, antes de a auditoria de cache
 sair e voltar à página. O coletor herda integralmente o teste oficial de BFCache;

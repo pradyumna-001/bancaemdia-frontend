@@ -70,45 +70,68 @@ def serve_public_build():
             path = urlsplit(self.path).path
             if path.startswith(("/auth/", "/api/")):
                 body = self.rfile.read(int(self.headers.get("content-length", "0")))
+                # Like the production reverse proxy: forward the browser's
+                # Accept-Encoding and relay the API's encoded bytes untouched.
                 headers = {
                     k: v
                     for k, v in self.headers.items()
-                    if k.lower() not in {"host", "connection", "accept-encoding"}
+                    if k.lower() not in {"host", "connection"}
                 }
+                headers.setdefault("Accept-Encoding", "identity")
                 collection_tls = getattr(self.server, "collection_tls", None)
                 collection = (
                     collection_tls if path.startswith("/api/v1/coleta/") else None
                 )
-                with httpx.Client(
-                    timeout=15,
-                    follow_redirects=False,
-                    verify=collection[1] if collection else True,
-                ) as client:
-                    result = client.request(
+                with (
+                    httpx.Client(
+                        timeout=15,
+                        follow_redirects=False,
+                        verify=collection[1] if collection else True,
+                    ) as client,
+                    client.stream(
                         self.command,
                         (collection[0] if collection else backend.API) + self.path,
                         headers=headers,
                         content=body,
-                    )
+                    ) as result,
+                ):
+                    raw = b"".join(result.iter_raw())
+                encoding = result.headers.get("content-encoding", "identity").lower()
+                assert encoding in {"identity", "gzip"}, "Unexpected API encoding"
                 after_response = getattr(self.server, "after_api_response", None)
-                if after_response and after_response(self.command, path, result):
-                    # Lose only the returned bytes, after the real API committed.
-                    # Keep the browser's original multipart body untouched.
-                    self.close_connection = True
-                    self.connection.shutdown(socket.SHUT_RDWR)
-                    return
+                if after_response:
+                    # Inspection sees decoded JSON; the browser still gets raw bytes.
+                    view = httpx.Response(
+                        result.status_code,
+                        headers=[
+                            (k, v)
+                            for k, v in result.headers.multi_items()
+                            if k.lower()
+                            not in {
+                                "content-encoding",
+                                "content-length",
+                                "transfer-encoding",
+                            }
+                        ],
+                        content=gzip.decompress(raw) if encoding == "gzip" else raw,
+                    )
+                    if after_response(self.command, path, view):
+                        # Lose only the returned bytes, after the real API committed.
+                        # Keep the browser's original multipart body untouched.
+                        self.close_connection = True
+                        self.connection.shutdown(socket.SHUT_RDWR)
+                        return
                 self.send_response(result.status_code)
                 for key, value in result.headers.multi_items():
                     if key.lower() not in {
                         "transfer-encoding",
                         "content-length",
                         "connection",
-                        "content-encoding",
                     }:
                         self.send_header(key, value)
-                self.send_header("Content-Length", str(len(result.content)))
+                self.send_header("Content-Length", str(len(raw)))
                 self.end_headers()
-                self.wfile.write(result.content)
+                self.wfile.write(raw)
                 return
             if self.command != "GET":
                 self.send_error(405)
@@ -132,8 +155,8 @@ def serve_public_build():
                 )
                 if target.suffix == ".js":
                     content_type = "application/javascript"
-            # Match the production static server. Never compress protocol/API
-            # responses here, nor replace real response bytes for measurement.
+            # Match the production static server. Protocol/API responses are relayed
+            # above exactly as the API encoded them; this proxy never compresses them.
             compressed = (
                 path != "/config.json"
                 and len(content) >= 1024
