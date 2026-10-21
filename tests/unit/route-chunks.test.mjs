@@ -83,3 +83,34 @@ it('nome do grupo depende só do conjunto de páginas, não da ordem', () => {
   );
   expect(first('/repo/ausente.ts', { getModuleInfo })).toBeUndefined();
 });
+it('grupo contido em outro se une a ele; módulo só de pesadas entra no comum', () => {
+  const familia = {
+    [src('main.tsx')]: {
+      entry: true,
+      dynamic: [src('P.tsx'), src('Q.tsx'), src('R.tsx'), src('L.tsx')],
+    },
+    [src('P.tsx')]: {
+      imports: [src('c.ts'), src('g1.ts'), src('g2.ts'), src('proto.ts')],
+      code: big,
+    },
+    [src('Q.tsx')]: { imports: [src('c.ts'), src('g2.ts')], code: big },
+    [src('R.tsx')]: { imports: [src('c.ts'), src('proto.ts')], code: big },
+    [src('L.tsx')]: { imports: [src('g1.ts'), src('g2.ts')] },
+    // c.ts: three heavy pages. g2: {L, P, Q}; g1: {L, P} ⊂ g2's pages.
+    [src('c.ts')]: { code: medium },
+    [src('g2.ts')]: { code: medium },
+    [src('g1.ts')]: { code: medium, imports: [src('g2.ts')] },
+    // Only heavy pages, and its dependency is already in the shared chunk.
+    [src('proto.ts')]: { code: medium, imports: [src('c.ts')] },
+  };
+  const chunks = createRouteChunks();
+  const getModuleInfo = graph(familia);
+  const getModuleIds = () => Object.keys(familia);
+  const name = (id) => chunks(id, { getModuleInfo, getModuleIds });
+  expect(name(src('c.ts'))).toBe('rotas-comum');
+  expect(name(src('proto.ts'))).toBe('rotas-comum');
+  expect(name(src('g1.ts'))).toBe(name(src('g2.ts')));
+  expect(name(src('g2.ts'))).toMatch(/^compartilhado-[a-f0-9]{8}$/);
+  // The light page keeps its family group and never gains the shared chunk.
+  expect(name(src('g1.ts'))).not.toBe('rotas-comum');
+});
