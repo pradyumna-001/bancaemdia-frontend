@@ -79,7 +79,9 @@ consulta de sessão; nada é renderizado nem consultado antes do guard, e a pág
 renderiza sem nova suspensão quando o módulo já chegou. Em Resultados, assim que o
 guard confirma a sessão, o carregador inicia a primeira página da fila com a mesma
 chave, leitura com escopo da sessão e validação da página; filtros bloqueados ou
-outro estado de sessão não enviam nada. O CSS é um arquivo único, carregado antes da
+outro estado de sessão não enviam nada. A fila é pedida em páginas de 25 (decisão do
+titular em 24/10/2026): com 50, a primeira resposta precisava de uma ida e volta a
+mais no perfil móvel; as demais páginas continuam sob demanda. O CSS é um arquivo único, carregado antes da
 pintura; nenhuma rota enfileira folhas de estilo próprias.
 
 O bootstrap autorizado por hash antecipa somente JS/CSS públicos da rota atual e

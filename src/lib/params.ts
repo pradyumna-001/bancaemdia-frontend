@@ -262,7 +262,9 @@ export function adaptarFiltros(
     query.page = visao.page;
     query.page_size = visao.page_size;
   }
-  if (recurso === 'resultados') query.page_size = 50;
+  // Decision of 24/10/2026 (#37): 25 per page keeps the first queue response
+  // within one round trip; later pages load on request.
+  if (recurso === 'resultados') query.page_size = 25;
   return {
     endpoint,
     query,

@@ -332,3 +332,24 @@ Enviar, Metas, Revisão e Troca passou de 2,54–2,61 s para 2,36–2,44 s.
   para os hints, não aplicada.
 - Pré-carregar só o peso regular: troca visível de fonte nos títulos (CLS).
 - Remoção de hints CFF: não aplicada, por decisão do titular.
+
+### Continuação 3 (21–24/10/2026)
+
+- Painel: grupos compartilhados contidos num grupo maior se unem a ele, e
+  módulos usados só por páginas pesadas entram em `rotas-comum`. O Painel passou
+  de três chunks extras para um; desde então passa (2,44–2,45 s no CI).
+- Páginas protegidas: o carregador inicia a importação junto com a consulta de
+  sessão, e a página renderiza sem nova suspensão quando o módulo já chegou.
+  Catálogos desligados não criam observadores de consulta.
+- Resultados: a fila começa assim que o guard confirma a sessão, sem esperar o
+  render da página; validação sem repetir o esquema por item; lista "A seguir"
+  depois da aposta atual. A causa restante era o tamanho da primeira página (50
+  apostas, ~6 KB): acima de ~4,3 KB a resposta pedia uma ida e volta a mais no
+  perfil móvel. **Decisão do titular em 24/10/2026: páginas de 25.** Contrato da
+  #27 e jornada real (53 itens em três páginas) atualizados.
+- CLS: a margem das telas iniciais atravessava `#root`/`body`, e o corpo subia
+  24 px em toda primeira carga (~0,028). Com `#root` em `flow-root`, a maioria das
+  rotas caiu para 0,004 no CI.
+- Diagnósticos seguros adicionados ao relatório: requisições de API e CPU antes
+  do LCP, e os três maiores deslocamentos (tag/classe e pontuação).
+- Latência de interação no CI: 104 ms (desktop) e 64 ms (mobile).
