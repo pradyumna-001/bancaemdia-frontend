@@ -44,6 +44,8 @@ seguinte ao gesto, enquanto a navegação renderiza; a URL continua a única fon
 modo, e qualquer mudança dela, inclusive voltar/avançar, descarta a escolha
 pendente. Seções do Painel que não mudaram não renderizam de novo quando
 outra consulta termina, e os formatadores reutilizam só configuração de Intl.
+Seletores de data montam o calendário apenas com o diálogo aberto; gatilho, valor
+e comportamento de teclado/foco continuam os mesmos.
 
 Evoluções por banca usam `content-visibility: auto`, com tamanho
 intrínseco provisório somente no eixo vertical fora da viewport, sem impor
