@@ -40,6 +40,9 @@ export function EscolhaFiltro({
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const [texto, setTexto] = useState('');
+  // The dialog's contents exist only while it is open: a filter panel has
+  // many pickers, and every render would otherwise build all their options.
+  const [aberto, setAberto] = useState(false);
   const Busca = dentroDeFormulario ? 'div' : 'form';
   function choose(next?: string) {
     onChange(next);
@@ -59,6 +62,7 @@ export function EscolhaFiltro({
         onClick={(event) => {
           event.currentTarget.focus({ preventScroll: true });
           setTexto(busca?.consulta ?? '');
+          setAberto(true);
           onOpen?.();
           dialog.current!.showModal();
         }}
@@ -75,6 +79,7 @@ export function EscolhaFiltro({
         className="filtro-dialog"
         aria-labelledby={id + '-titulo'}
         onClose={() => {
+          setAberto(false);
           const active = document.activeElement;
           if (
             !active ||
@@ -84,58 +89,68 @@ export function EscolhaFiltro({
             trigger.current?.focus();
         }}
       >
-        <h2 id={id + '-titulo'}>{label}</h2>
-        {busca && (
-          <Busca
-            onKeyDown={(event) => {
-              if (dentroDeFormulario && event.key === 'Enter') {
-                event.preventDefault();
-                busca.buscar(texto);
-              }
-            }}
-            onSubmit={(event) => {
-              event.preventDefault();
-              busca.buscar(texto);
-            }}
-          >
-            <label htmlFor={id + '-busca'}>Buscar {label.toLowerCase()}</label>
-            <input
-              id={id + '-busca'}
-              type="text"
-              maxLength={160}
-              value={texto}
-              onChange={(event) => setTexto(event.target.value)}
-            />
-            <button
-              type={dentroDeFormulario ? 'button' : 'submit'}
-              disabled={busca.atualizando}
-              onClick={
-                dentroDeFormulario ? () => busca.buscar(texto) : undefined
-              }
-            >
-              Buscar
+        {aberto && (
+          <>
+            <h2 id={id + '-titulo'}>{label}</h2>
+            {busca && (
+              <Busca
+                onKeyDown={(event) => {
+                  if (dentroDeFormulario && event.key === 'Enter') {
+                    event.preventDefault();
+                    busca.buscar(texto);
+                  }
+                }}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  busca.buscar(texto);
+                }}
+              >
+                <label htmlFor={id + '-busca'}>
+                  Buscar {label.toLowerCase()}
+                </label>
+                <input
+                  id={id + '-busca'}
+                  type="text"
+                  maxLength={160}
+                  value={texto}
+                  onChange={(event) => setTexto(event.target.value)}
+                />
+                <button
+                  type={dentroDeFormulario ? 'button' : 'submit'}
+                  disabled={busca.atualizando}
+                  onClick={
+                    dentroDeFormulario ? () => busca.buscar(texto) : undefined
+                  }
+                >
+                  Buscar
+                </button>
+              </Busca>
+            )}
+            <div className="filtro-opcoes">
+              <button
+                type="button"
+                aria-pressed={!value}
+                onClick={() => choose()}
+              >
+                {resetLabel}
+              </button>
+              {options.map((option) => (
+                <button
+                  type="button"
+                  key={option.value}
+                  aria-pressed={option.value === value}
+                  onClick={() => choose(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {children}
+            <button type="button" onClick={() => dialog.current!.close()}>
+              Fechar opções
             </button>
-          </Busca>
+          </>
         )}
-        <div className="filtro-opcoes">
-          <button type="button" aria-pressed={!value} onClick={() => choose()}>
-            {resetLabel}
-          </button>
-          {options.map((option) => (
-            <button
-              type="button"
-              key={option.value}
-              aria-pressed={option.value === value}
-              onClick={() => choose(option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        {children}
-        <button type="button" onClick={() => dialog.current!.close()}>
-          Fechar opções
-        </button>
       </dialog>
     </div>
   );

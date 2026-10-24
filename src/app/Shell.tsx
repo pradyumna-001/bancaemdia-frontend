@@ -204,26 +204,31 @@ export function Shell({
         onCancel={() => setMenu(false)}
         onClose={() => setMenu(false)}
       >
-        <div className="menu-titulo">
-          <h2 id="titulo-opcoes">Mais opções</h2>
-          <button
-            type="button"
-            aria-label="Fechar opções"
-            onClick={() => setMenu(false)}
-          >
-            <Icone nome="fechar" />
-          </button>
-        </div>
-        <nav aria-label="Outras seções">
-          <div className="menu-secoes">{secundarias.map(link)}</div>
-          <Link
-            to={{ pathname: '/tutorial', search: location.search }}
-            onClick={() => setMenu(false)}
-          >
-            Tutorial
-          </Link>
-        </nav>
-        <PreferenciaTema />
+        {/* Mounted only while open: every private page renders the shell. */}
+        {menu && (
+          <>
+            <div className="menu-titulo">
+              <h2 id="titulo-opcoes">Mais opções</h2>
+              <button
+                type="button"
+                aria-label="Fechar opções"
+                onClick={() => setMenu(false)}
+              >
+                <Icone nome="fechar" />
+              </button>
+            </div>
+            <nav aria-label="Outras seções">
+              <div className="menu-secoes">{secundarias.map(link)}</div>
+              <Link
+                to={{ pathname: '/tutorial', search: location.search }}
+                onClick={() => setMenu(false)}
+              >
+                Tutorial
+              </Link>
+            </nav>
+            <PreferenciaTema />
+          </>
+        )}
       </dialog>
     </div>
   );
