@@ -353,3 +353,8 @@ Enviar, Metas, Revisão e Troca passou de 2,54–2,61 s para 2,36–2,44 s.
 - Diagnósticos seguros adicionados ao relatório: requisições de API e CPU antes
   do LCP, e os três maiores deslocamentos (tag/classe e pontuação).
 - Latência de interação no CI: 104 ms (desktop) e 64 ms (mobile).
+- Calendário dos filtros de data, conteúdo dos seletores de opções e menu "Mais
+  opções" do shell montados só com o diálogo aberto (menos trabalho no render que
+  antecede a primeira pintura).
+- O job "E2E central real" (Chromium) levava 27–29 min com limite de 30 e foi
+  cancelado por tempo; o limite passou a 45 min, sem alterar testes ou critérios.
