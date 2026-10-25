@@ -141,6 +141,9 @@ test('lista legível, duas aparências, teclado e criação/edição/arquivo pre
   ).toBeVisible();
   expect(new URL(page.url()).searchParams.get('casa')).toBe('7');
   expect(new URL(page.url()).searchParams.get('meta_status')).toBe('arquivada');
+  // The same picker reopens after a choice (its dialog content is rebuilt).
+  await choose(page, 'Mostrar metas', 'Todas as metas');
+  expect(new URL(page.url()).searchParams.has('meta_status')).toBe(false);
   expect(requests).toEqual(['POST', 'PATCH', 'DELETE']);
   expect(await page.locator('select,input[type=date]').count()).toBe(0);
 });

@@ -27,3 +27,27 @@ it.each(['escolha', 'data'])(
     expect(screen.getByRole('button', { name: /^Filtro / })).toHaveFocus();
   },
 );
+
+it.each(['escolha', 'data'])(
+  'fechamento atrasado não esvazia %s já reaberto',
+  (kind) => {
+    HTMLDialogElement.prototype.showModal ??= function () {
+      this.setAttribute('open', '');
+    };
+    const { container } = render(
+      kind === 'escolha' ? (
+        <EscolhaFiltro label="Filtro" options={[]} onChange={vi.fn()} />
+      ) : (
+        <DataFiltro label="Filtro" onChange={vi.fn()} />
+      ),
+    );
+    const dialog = container.querySelector('dialog')!;
+    fireEvent.click(screen.getByRole('button', { name: /^Filtro / }));
+    expect(dialog).toHaveAttribute('open');
+    fireEvent(dialog, new Event('close'));
+    expect(screen.getByRole('heading', { name: 'Filtro' })).toBeInTheDocument();
+    dialog.removeAttribute('open');
+    fireEvent(dialog, new Event('close'));
+    expect(screen.queryByRole('heading', { name: 'Filtro' })).toBeNull();
+  },
+);

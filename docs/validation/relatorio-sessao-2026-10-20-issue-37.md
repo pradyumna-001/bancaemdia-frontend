@@ -358,3 +358,9 @@ Enviar, Metas, Revisão e Troca passou de 2,54–2,61 s para 2,36–2,44 s.
   antecede a primeira pintura).
 - O job "E2E central real" (Chromium) levava 27–29 min com limite de 30 e foi
   cancelado por tempo; o limite passou a 45 min, sem alterar testes ou critérios.
+- Regressão intermitente na jornada real de Metas (Chromium, push de a15cbd0;
+  passou em a85156e): o seletor reaberto ficou vazio e sem nome porque o `close`
+  atrasado da escolha anterior chegou depois da reabertura. Seletores de opções,
+  de data e o menu do shell só desmontam o conteúdo quando o diálogo está de fato
+  fechado; teste unitário e passo de reabertura na jornada de fixture cobrem o
+  caso.

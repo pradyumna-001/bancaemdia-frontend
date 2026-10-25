@@ -101,7 +101,9 @@ export function DataFiltro({
         ref={dialog}
         aria-labelledby={id + '-titulo'}
         onClose={() => {
-          setAberto(false);
+          // A late close event from the previous cycle must not empty a
+          // dialog that has already been reopened.
+          if (!dialog.current?.open) setAberto(false);
           const active = document.activeElement;
           if (
             !active ||

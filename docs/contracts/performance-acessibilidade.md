@@ -46,7 +46,8 @@ pendente. Seções do Painel que não mudaram não renderizam de novo quando
 outra consulta termina, e os formatadores reutilizam só configuração de Intl.
 Seletores de data e de opções, e o menu "Mais opções" do shell, montam seu
 conteúdo apenas com o diálogo aberto; gatilho, valor e comportamento de
-teclado/foco continuam os mesmos.
+teclado/foco continuam os mesmos. Um evento `close` atrasado do ciclo anterior
+não desmonta o conteúdo de um diálogo já reaberto.
 
 Evoluções por banca usam `content-visibility: auto`, com tamanho
 intrínseco provisório somente no eixo vertical fora da viewport, sem impor

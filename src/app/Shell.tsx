@@ -202,7 +202,9 @@ export function Shell({
         ref={dialog}
         aria-labelledby="titulo-opcoes"
         onCancel={() => setMenu(false)}
-        onClose={() => setMenu(false)}
+        onClose={() => {
+          if (!dialog.current?.open) setMenu(false);
+        }}
       >
         {/* Mounted only while open: every private page renders the shell. */}
         {menu && (
