@@ -16,10 +16,11 @@ Licença: SIL Open Font License 1.1, cópia original em [OFL-source-sans-3.md](O
 
 Os arquivos `bancaemdia-interface-*-latin.woff2` e
 `bancaemdia-interface-*-latin-complemento.woff2` derivam dos originais acima. Cada
-peso é dividido por `unicode-range`: o principal atende português, latim básico,
-pontuação e as setas da interface e é pré-carregado (49.296 bytes nos três pesos);
-o complementar reúne moedas estrangeiras e símbolos/pontuação raros (17.236 bytes) e
-só é pedido pelo navegador quando a página exibe um desses caracteres. Kerning entre
+peso é dividido por `unicode-range`: o principal atende latim básico, as letras e
+sinais do português (nas duas caixas), pontuação e as setas da interface e é
+pré-carregado (38.592 bytes nos três pesos); o complementar reúne as demais letras
+do Latin-1 (nomes nos dados), moedas estrangeiras e símbolos/pontuação raros (32.000
+bytes) e só é pedido pelo navegador quando a página exibe um desses caracteres. Kerning entre
 um caractere de cada parte não se aplica. As sub-rotinas CFF são expandidas
 (`desubroutinize`), sem alterar contornos, hints ou avanços. Os originais completos continuam no fallback para outros
 caracteres; nenhum alfabeto é removido da aplicação.

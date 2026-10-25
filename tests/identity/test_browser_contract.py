@@ -139,6 +139,7 @@ def serve_public_build():
             if path == "/config.json":
                 content = json.dumps({"VITE_API_URL": backend.FRONT}).encode()
                 content_type = "application/json"
+                precompressed = None
             else:
                 target = (DIST / path.lstrip("/")).resolve()
                 if not target.is_relative_to(DIST.resolve()):
@@ -155,6 +156,7 @@ def serve_public_build():
                 )
                 if target.suffix == ".js":
                     content_type = "application/javascript"
+                precompressed = target.with_name(target.name + ".gz")
             # Match the production static server. Protocol/API responses are relayed
             # above exactly as the API encoded them; this proxy never compresses them.
             compressed = (
@@ -165,7 +167,12 @@ def serve_public_build():
                 and "gzip" in self.headers.get("Accept-Encoding", "").lower()
             )
             if compressed:
-                content = gzip.compress(content, compresslevel=6, mtime=0)
+                # nginx gzip_static: the build's own .gz file when it exists.
+                content = (
+                    precompressed.read_bytes()
+                    if precompressed is not None and precompressed.is_file()
+                    else gzip.compress(content, compresslevel=6, mtime=0)
+                )
             self.send_response(200)
             if compressed:
                 self.send_header("Content-Encoding", "gzip")

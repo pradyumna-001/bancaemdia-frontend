@@ -3,9 +3,10 @@ import { defineConfig } from 'vitest/config';
 import { temaInicial } from './scripts/tema-vite';
 import { faviconMarca } from './scripts/favicon-vite';
 import { createRouteChunks } from './scripts/route-chunks';
+import { precompressaoGzip } from './scripts/precompress-vite';
 
 export default defineConfig({
-  plugins: [react(), temaInicial(), faviconMarca()],
+  plugins: [react(), temaInicial(), faviconMarca(), precompressaoGzip()],
   build: {
     manifest: true,
     // One stylesheet: route CSS would otherwise queue 2-4 extra requests.

@@ -111,7 +111,11 @@ consulta identidade nem fornece sessão, CSRF ou acesso. Hints de assets também
 omitem Referer; parâmetros de protocolo não são transmitidos por essas dicas.
 
 Os headers de compressão são os do nginx estático e são verificados também no
-container. O servidor estático comprime somente HTML/CSS/JS/SVG. Como o proxy
+container. O servidor estático comprime somente HTML/CSS/JS/SVG: o build grava
+`<arquivo>.gz` (gzip padrão gerado com Zopfli, a partir de 1.024 bytes) e o nginx os
+entrega com `gzip_static`; o servidor do ensaio entrega os mesmos arquivos, e o
+container confere que a resposta comprimida é o próprio `.gz` do build. O budget JS
+continua medido em gzip nível 9, sem descontar essa diferença. Como o proxy
 reverso de produção, o proxy do ensaio repassa o Accept-Encoding do navegador e
 os bytes e headers de codificação da API sem descomprimir nem recomprimir; quais
 respostas JSON a API comprime é decisão do backend (issue #106).
@@ -199,8 +203,9 @@ sem skips; não se afirma certificação de leitor de tela.
 Source Sans 3 conserva seus contornos, métricas, pesos e recursos numéricos. A
 versão web otimizada usa nome interno distinto em respeito à OFL; os originais
 completos permanecem no fallback. Cada peso é dividido por `unicode-range` em uma
-parte principal pré-carregada (texto em português, pontuação e setas da interface) e
-uma complementar pedida apenas quando a página exibe um caractere raro; juntas cobrem
+parte principal pré-carregada (latim básico, letras e sinais do português nas duas
+caixas, pontuação e setas da interface) e uma complementar pedida apenas quando a
+página exibe outro caractere (demais letras do Latin-1, moedas e símbolos); juntas cobrem
 exatamente a faixa anterior, com contornos, hints e avanços idênticos aos originais.
 Origem, licença, versões da ferramenta e hashes
 estão em `public/fontes/README.md` e `subsets.json`. A declaração UTF-8 precede o

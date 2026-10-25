@@ -14,10 +14,18 @@ from fontTools.ttLib import TTFont
 
 ROOT = Path(__file__).resolve().parents[1] / "public/fontes"
 RANGES = "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20A0-20CF,U+2122,U+2190-2199,U+2212,U+2215,U+221A,U+221E,U+2264-2265,U+FEFF,U+FFFD"
-# Preloaded part: Portuguese text, interface punctuation, spaces and the arrows
-# the interface writes. The rest of RANGES is a second file that the browser
-# requests only when a page shows one of those characters (unicode-range).
-CORE = "U+0000-00FF,U+2000-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+2028-202F,U+205F-206F,U+20AC,U+2190,U+2192,U+2212,U+FEFF"
+# Preloaded part: ASCII, the Latin-1 letters and signs of Portuguese (both
+# cases, since CSS may capitalize), interface punctuation, spaces and the arrows
+# the interface writes. The rest of RANGES, including the other Latin-1 letters
+# that names in the data may use, is a second file that the browser requests
+# only when a page shows one of those characters (unicode-range).
+CORE = (
+    "U+0000-00A0,U+00AA,U+00AD,U+00B0,U+00B7,U+00BA,U+00C0-00C3,U+00C7,"
+    "U+00C9-00CA,U+00CD,U+00D3-00D5,U+00D7,U+00DA,U+00DC,U+00E0-00E3,U+00E7,"
+    "U+00E9-00EA,U+00ED,U+00F3-00F5,U+00FA,U+00FC,U+2000-2014,U+2018-201A,"
+    "U+201C-201E,U+2022,U+2026,U+2028-202F,U+205F-206F,U+20AC,U+2190,U+2192,"
+    "U+2212,U+FEFF"
+)
 
 
 def css_ranges(points):

@@ -59,10 +59,10 @@ Cabeçalhos provisórios, login, erro de rota, falha de configuração e carrega
 ## Entrega web das fontes — #37, 20/10/2026
 
 A direção tipográfica continua Source Sans 3. Cada peso tem dois subconjuntos WOFF2
-locais separados por `unicode-range`: o principal (português, pontuação e setas da
-interface; 49.296 bytes nos três pesos) é pré-carregado; o complementar (moedas
-estrangeiras, símbolos e pontuação raros; 17.236 bytes nos três) só é pedido quando
-a página exibe um desses caracteres. As sub-rotinas CFF são expandidas sem alterar
+locais separados por `unicode-range`: o principal (latim básico, letras e sinais do português, pontuação e setas da
+interface; 38.592 bytes nos três pesos) é pré-carregado; o complementar (demais
+letras do Latin-1, moedas estrangeiras, símbolos e pontuação raros; 32.000 bytes nos
+três) só é pedido quando a página exibe um desses caracteres. As sub-rotinas CFF são expandidas sem alterar
 contornos ou hints. Os três originais completos permanecem como fallback para outros
 alfabetos. `font-display: swap` continua em todas as faces.
 

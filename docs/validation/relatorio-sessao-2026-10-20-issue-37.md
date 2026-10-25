@@ -364,3 +364,24 @@ Enviar, Metas, Revisão e Troca passou de 2,54–2,61 s para 2,36–2,44 s.
   de data e o menu do shell só desmontam o conteúdo quando o diálogo está de fato
   fechado; teste unitário e passo de reabertura na jornada de fixture cobrem o
   caso.
+
+### Continuação 4 (24–25/10/2026)
+
+- `d1ce9d3`: 60 de 63 checks verdes. Falhas: WebKit com erro interno do navegador
+  em `page.goto` (Testes), logout sem resposta em 30 s no Firefox (E2E produto,
+  mesmo ponto já visto em 21/10 no `da0329c`; o PR do mesmo SHA passou) e uma
+  amostra mobile de Resultados com LCP 2.516 ms (as outras duas: 2.426 e 2.432).
+  Várias rotas estavam entre 2,44 e 2,46 s; não basta repetir o job.
+- Laboratório (Lantern, dados sintéticos): o LCP segue o total de bytes antes da
+  primeira leitura de API. Duas mudanças reais de bytes:
+  - Fontes: a parte pré-carregada deixa de levar todo o Latin-1 e fica com as
+    letras e sinais do português (nas duas caixas), `·`, `×`, `ª`, `º` e `°`; as
+    demais letras vão para a parte complementar sob demanda. 38.592 bytes nos três
+    pesos (antes 49.296); contornos, hints, avanços e faixa total iguais.
+  - Compressão: o build grava `.gz` com Zopfli (gzip padrão) e o nginx os entrega
+    com `gzip_static`; caminho crítico de Resultados 164.007 → 158.149 bytes. O
+    servidor do ensaio entrega os mesmos arquivos; o container confere bytes. O
+    budget JS continua medido em gzip nível 9. Nova dependência de build
+    `@gfx/zopfli` 1.0.15 (Apache-2.0), fixada; o lockfile não muda outras versões.
+- Laboratório, seis amostras por build em Resultados: 2.404–2.487 ms antes,
+  2.157–2.288 depois; Apostas e Painel também caíram um degrau (≈150–230 ms).

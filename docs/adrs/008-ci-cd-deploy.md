@@ -68,8 +68,9 @@ cabeçalhos, screenshots e JUnit autenticado não são publicados por este workf
 O gate de privacidade é independente do aceite numérico.
 
 As páginas são lazy por rota, verificadas no grafo do build e nas requisições do
-ensaio. gzip HTML/CSS/JS/SVG usa a configuração do servidor estático; não transforma
-respostas da API. A medição antiga da #8 permanece diagnóstica, com sua falha de
+ensaio. gzip HTML/CSS/JS/SVG usa a configuração do servidor estático (arquivos `.gz`
+do build via `gzip_static`, gerados com Zopfli; nível 6 sob demanda para o resto);
+não transforma respostas da API. A medição antiga da #8 permanece diagnóstica, com sua falha de
 rede identificada; não substitui o ensaio real e não aprova release.
 Módulos usados por três ou mais páginas pesadas formam um único chunk
 `rotas-comum`; páginas leves não o carregam (`scripts/route-chunks.ts`). Módulos
