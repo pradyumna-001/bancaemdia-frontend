@@ -14,7 +14,7 @@ function invalidFields(body: unknown): readonly InvalidField[] {
   if (!Array.isArray(detail)) {
     const field = record(body)?.campo;
     return typeof detail === 'string' &&
-      (detail.startsWith('review_') || detail.startsWith('manual_')) &&
+      detail.startsWith('review_') &&
       typeof field === 'string' &&
       /^[A-Za-z_][A-Za-z0-9_]{0,79}$/.test(field)
       ? Object.freeze([Object.freeze({ scope: 'body' as const, field })])
@@ -65,20 +65,6 @@ const httpMessages: Record<number, string> = {
 
 // Codes are protocol identifiers, never provider messages or arbitrary response text.
 const knownCodes = new Set([
-  'swap_preview_stale',
-  'swap_preview_expired',
-  'swap_intention_conflict',
-  'swap_intention_unknown',
-  'swap_invalid',
-  'swap_invalid_request',
-  'swap_temporarily_unavailable',
-  'manual_validation_invalid',
-  'manual_account_invalid',
-  'manual_creation_busy',
-  'manual_intention_conflict',
-  'manual_intention_not_found',
-  'manual_receipt_expired',
-  'manual_creation_unavailable',
   'result_busy',
   'review_busy',
   'review_evidence_changed',

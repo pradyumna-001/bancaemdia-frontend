@@ -29,16 +29,8 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--espaco-24);
 }
-.apostas-instante {
-  display: inline-block;
-  min-inline-size: 26ch;
-}
-.apostas-lista--carregando {
-  min-block-size: 100svh;
-}
 .apostas-indicadores dd {
   margin: 0;
-  min-block-size: 2lh;
   font-size: var(--fonte-secao);
   font-weight: var(--peso-destaque);
   overflow-wrap: anywhere;
@@ -48,18 +40,11 @@
 .aposta-detalhes dt {
   color: var(--tinta-secundaria);
 }
-.apostas-indicadores .numero-extenso {
-  font-size: var(--fonte-pequena);
-}
 .apostas-itens {
   list-style: none;
   padding: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
   gap: var(--espaco-16);
-}
-.apostas-itens > li {
-  min-width: 0;
 }
 .apostas-lista-cabecalho {
   display: flex;
@@ -101,7 +86,6 @@
   border-top: 1px solid var(--borda);
 }
 .aposta-linha {
-  min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(9rem, 1fr) minmax(0, 1.4fr);
   gap: var(--espaco-16);
@@ -109,14 +93,6 @@
   border-radius: var(--raio-painel);
   background: var(--superficie);
   padding: var(--espaco-24);
-  /* Estimate used only while a long-list row below is skipped. */
-  contain-intrinsic-size: none auto 16rem;
-}
-/* Lists longer than three rows skip rendering of off-screen rows; DOM and
-   accessibility tree stay complete. Short lists render normally. Rendered rows
-   remember their real size. */
-.apostas-itens > li:nth-child(n + 4) > .aposta-linha {
-  content-visibility: auto;
 }
 .aposta-contexto {
   position: relative;
@@ -197,7 +173,7 @@
   flex-wrap: wrap;
   margin-block: var(--espaco-24);
 }
-.apostas-itens--compactos .aposta-linha {
+.aposta-linha--compacta {
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.4fr) var(
       --alvo-toque
     );
@@ -207,7 +183,6 @@
   border: 0;
   border-radius: 0;
   font-size: var(--fonte-pequena);
-  contain-intrinsic-size: none auto 2.75rem;
 }
 .apostas-colunas {
   display: grid;
@@ -222,13 +197,13 @@
 .apostas-itens--compactos {
   margin-top: 0;
 }
-.apostas-itens--compactos .aposta-linha .aposta-contexto {
+.aposta-linha--compacta .aposta-contexto {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   column-gap: var(--espaco-8);
   line-height: 1.25;
 }
-.apostas-itens--compactos .aposta-linha .aposta-casa {
+.aposta-linha--compacta .aposta-casa {
   grid-row: 2;
   max-width: 5rem;
   overflow: hidden;
@@ -236,7 +211,7 @@
   text-overflow: ellipsis;
   font-weight: var(--peso-normal);
 }
-.apostas-itens--compactos .aposta-linha .aposta-contexto h3 {
+.aposta-linha--compacta .aposta-contexto h3 {
   grid-column: 1 / -1;
   font-size: var(--fonte-pequena);
   margin: 0;
@@ -244,48 +219,44 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.apostas-itens--compactos .aposta-linha .aposta-contexto > p:not(.legenda) {
+.aposta-linha--compacta .aposta-contexto > p:not(.legenda) {
   grid-row: 2;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   margin: 0;
 }
-.apostas-itens--compactos
-  .aposta-linha:not(:has(.aposta-detalhes[open]))
+.aposta-linha--compacta:not(:has(.aposta-detalhes[open]))
   .aposta-contexto
   > p.legenda,
-.apostas-itens--compactos
-  .aposta-linha:not(:has(.aposta-detalhes[open]))
+.aposta-linha--compacta:not(:has(.aposta-detalhes[open]))
   .aposta-situacao
   > .legenda {
   display: none;
 }
-.apostas-itens--compactos .aposta-linha .aposta-situacao {
+.aposta-linha--compacta .aposta-situacao {
   min-width: 0;
   flex-direction: row;
   flex-wrap: wrap;
   gap: var(--espaco-4);
   line-height: 1.25;
 }
-.apostas-itens--compactos .aposta-linha .aposta-aviso {
+.aposta-linha--compacta .aposta-aviso {
   max-width: 6rem;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.apostas-itens--compactos .aposta-linha .aposta-estado {
+.aposta-linha--compacta .aposta-estado {
   padding: 0 var(--espaco-8);
 }
-.apostas-itens--compactos .aposta-linha .aposta-valores {
+.aposta-linha--compacta .aposta-valores {
   gap: var(--espaco-8);
 }
-.apostas-itens--compactos
-  .aposta-linha:not(:has(.aposta-detalhes[open]))
-  .aposta-face-label {
+.aposta-linha--compacta:not(:has(.aposta-detalhes[open])) .aposta-face-label {
   display: none;
 }
-.apostas-itens--compactos .aposta-linha .aposta-valores dt {
+.aposta-linha--compacta .aposta-valores dt {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -294,30 +265,11 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.apostas-itens--compactos .aposta-linha .aposta-detalhes {
+.aposta-linha--compacta .aposta-detalhes {
   grid-column: 4;
   border: 0;
 }
-/* Cards show the summary text; compact rows show the icon and keep the text
-   for assistive technology. */
-.aposta-detalhes > summary > svg {
-  display: none;
-}
-.apostas-itens--compactos .aposta-linha .aposta-detalhes > summary > svg {
-  display: inline;
-}
-.apostas-itens--compactos .aposta-resumo-texto {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-.apostas-itens--compactos .aposta-linha .aposta-detalhes > summary {
+.aposta-linha--compacta .aposta-detalhes > summary {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -327,34 +279,22 @@
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
-.apostas-itens--compactos .aposta-linha .aposta-detalhes[open] > summary svg {
+.aposta-linha--compacta .aposta-detalhes[open] > summary svg {
   transform: rotate(90deg);
 }
-.apostas-itens--compactos .aposta-linha .aposta-detalhes[open] {
+.aposta-linha--compacta .aposta-detalhes[open] {
   grid-column: 1 / -1;
   border-top: 1px solid var(--borda);
 }
-.apostas-itens--compactos
-  .aposta-linha:has(.aposta-detalhes[open])
-  .aposta-contexto
-  h3,
-.apostas-itens--compactos
-  .aposta-linha:has(.aposta-detalhes[open])
-  .aposta-contexto
-  > p {
+.aposta-linha--compacta:has(.aposta-detalhes[open]) .aposta-contexto h3,
+.aposta-linha--compacta:has(.aposta-detalhes[open]) .aposta-contexto > p {
   white-space: normal;
 }
-.apostas-itens--compactos
-  .aposta-linha:has(.aposta-detalhes[open])
-  .aposta-contexto {
+.aposta-linha--compacta:has(.aposta-detalhes[open]) .aposta-contexto {
   display: block;
 }
-.apostas-itens--compactos
-  .aposta-linha:has(.aposta-detalhes[open])
-  .aposta-aviso,
-.apostas-itens--compactos
-  .aposta-linha:has(.aposta-detalhes[open])
-  .aposta-casa {
+.aposta-linha--compacta:has(.aposta-detalhes[open]) .aposta-aviso,
+.aposta-linha--compacta:has(.aposta-detalhes[open]) .aposta-casa {
   max-width: none;
   white-space: normal;
 }
@@ -368,7 +308,6 @@
   .aposta-linha {
     grid-template-columns: minmax(0, 1fr);
     padding: var(--espaco-16);
-    contain-intrinsic-size: none auto 22rem;
   }
   .aposta-situacao {
     flex-direction: row;
@@ -380,46 +319,45 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--espaco-16);
   }
-  .apostas-itens--compactos .aposta-linha {
+  .aposta-linha--compacta {
     grid-template-columns: minmax(0, 1fr) auto var(--alvo-toque);
     gap: 0 var(--espaco-8);
     padding: 0 var(--espaco-8);
-    contain-intrinsic-size: none auto 4rem;
   }
   .apostas-colunas {
     display: none;
   }
-  .apostas-itens--compactos .aposta-linha .aposta-situacao {
+  .aposta-linha--compacta .aposta-situacao {
     grid-column: 2;
     grid-row: 1;
     justify-content: start;
   }
-  .apostas-itens--compactos .aposta-linha .aposta-situacao:has(.aposta-aviso) {
+  .aposta-linha--compacta .aposta-situacao:has(.aposta-aviso) {
     grid-column: 1 / 3;
     grid-row: 3;
     padding-block: var(--espaco-4);
   }
-  .apostas-itens--compactos .aposta-linha .aposta-valores {
+  .aposta-linha--compacta .aposta-valores {
     grid-column: 1 / -1;
     grid-row: 2;
   }
-  .apostas-itens--compactos .aposta-linha .aposta-valores > div {
+  .aposta-linha--compacta .aposta-valores > div {
     display: flex;
     gap: var(--espaco-4);
     flex-wrap: wrap;
   }
-  .apostas-itens--compactos .aposta-linha .aposta-valores dt {
+  .aposta-linha--compacta .aposta-valores dt {
     position: static;
     width: auto;
     height: auto;
     clip-path: none;
     white-space: normal;
   }
-  .apostas-itens--compactos .aposta-linha .aposta-detalhes {
+  .aposta-linha--compacta .aposta-detalhes {
     grid-column: 3;
     grid-row: 1;
   }
-  .apostas-itens--compactos .aposta-linha .aposta-detalhes[open] {
+  .aposta-linha--compacta .aposta-detalhes[open] {
     grid-column: 1 / -1;
     grid-row: auto;
   }

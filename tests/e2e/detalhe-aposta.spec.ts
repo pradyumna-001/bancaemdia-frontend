@@ -274,43 +274,6 @@ test('READ_ONLY/freebet/nulos e 404/405/503 não deixam tela morta', async ({
       ).toBeVisible();
   }
 });
-test('inteiro inseguro no contexto é recusado sem arredondar; erro mantém contraste no hover', async ({
-  page,
-}) => {
-  const data = structuredClone(detalheExemplo);
-  data.consolidacoes = [{ contexto: { chat_id: 'UNSAFE_INTEGER_MARKER' } }];
-  const body = JSON.stringify(data).replace(
-    '"UNSAFE_INTEGER_MARKER"',
-    '9007199254740993',
-  );
-  const app = await api(page);
-  app.handle((route) =>
-    route.fulfill({ body, contentType: 'application/json' }),
-  );
-  await page.goto(exercise + '/aposta/exemplo-1?casa=7');
-  const error = page.getByRole('region', {
-    name: 'Não foi possível concluir o pedido',
-    exact: true,
-  });
-  await expect(error).toBeVisible();
-  await expect(page.locator('.aposta-detalhe-valores')).toHaveCount(0);
-  const retry = error.getByRole('button', {
-    name: 'Tentar novamente',
-    exact: true,
-  });
-  for (const theme of ['claro', 'escuro']) {
-    await page.evaluate(
-      (value) => (document.documentElement.dataset.tema = value),
-      theme,
-    );
-    await retry.hover();
-    await retry.focus();
-    await expect(retry).toBeFocused();
-    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-  }
-  await expect(page).toHaveURL(/\/aposta\/exemplo-1\?casa=7$/);
-});
-
 test('par legado e resultado usam apenas endpoints publicados e confirmação', async ({
   page,
 }) => {

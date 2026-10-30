@@ -38,10 +38,6 @@ export function ConfiguracoesPage({
           <h2 id="conta-titulo">Sua conta</h2>
           <ul className="configuracoes-links">
             <li>
-              <Link to={'/inicio' + location.search}>Primeiro uso</Link>
-              <p>Retome os passos para organizar e trazer suas apostas.</p>
-            </li>
-            <li>
               <Link to={'/configuracoes/conexoes' + location.search}>
                 Conexões
               </Link>

@@ -94,23 +94,11 @@
 .painel-export {
   margin-top: var(--espaco-16);
 }
-.painel-export > a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--alvo-toque);
-  margin-inline-start: var(--espaco-16);
-}
 .painel-colunas {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
   align-items: start;
   gap: var(--espaco-24);
-}
-/* Off-screen banca evolutions keep DOM, tables and accessibility tree; only
-   their rendering waits until they approach the viewport. */
-.painel-evolucoes > .grafico {
-  content-visibility: auto;
-  contain-intrinsic-block-size: auto 40rem;
 }
 .painel-secao {
   min-width: 0;
@@ -273,15 +261,13 @@
     order: -1;
   }
   .painel-dias > li {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-    gap: var(--espaco-8);
+    grid-template-columns: 5.5rem minmax(0, 1fr) minmax(6.3rem, 1.6fr);
+    gap: var(--espaco-4);
   }
-  .painel-dias > li > .painel-barra {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
+  .painel-dias strong,
+  .painel-dias time,
   .painel-dias small {
-    font-size: var(--fonte-pequena);
+    font-size: 0.8125rem;
   }
   .painel-grupos summary {
     grid-template-columns: minmax(0, 1fr) minmax(6.3rem, 1fr);

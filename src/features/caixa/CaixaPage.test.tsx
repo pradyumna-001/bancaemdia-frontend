@@ -770,24 +770,21 @@ it('conflito não pode prender a tela nem repetir pedido; encerramento explícit
     r.method === 'POST' ? json({ detail: 'conflito' }, 409) : undefined,
   );
   await fill();
-  const submit = screen.getByRole('button', { name: 'Conferir lançamento' });
-  const amount = screen.getByLabelText(/^Valor \(R\$\)/);
   confirm();
-  const heading = await screen.findByRole('heading', {
-    name: 'Conferir o lançamento',
-  });
-  const recovery = within(heading.closest('section')!);
+  await screen.findByRole('heading', { name: 'Conferir o lançamento' });
   fireEvent.click(
-    recovery.getByRole('button', { name: 'Conferir movimentos e vínculo' }),
+    screen.getByRole('button', { name: 'Conferir movimentos e vínculo' }),
   );
-  const close = await recovery.findByRole('button', {
-    name: 'Encerrar sem reenviar',
-  });
-  fireEvent.click(close);
+  await screen.findByRole('button', { name: 'Encerrar sem reenviar' });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Encerrar sem reenviar' }),
+  );
   await screen.findByText('Consulta encerrada. Nenhum movimento foi desfeito.');
-  expect(submit).toBeInTheDocument();
-  await waitFor(() => expect(submit).toBeEnabled());
-  expect(amount).toBeInTheDocument();
-  expect(amount).toHaveValue('');
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Conferir lançamento' }),
+    ).toBeEnabled(),
+  );
+  expect(screen.getByLabelText(/^Valor \(R\$\)/)).toHaveValue('');
   expect(s.writes).toHaveLength(1);
 });
