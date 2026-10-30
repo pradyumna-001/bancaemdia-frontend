@@ -1,39 +1,23 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { diaCivil, diaValido, deslocarDia } from '../../lib/datasFiltro';
-import './filtros.css';
-const formatoDia = new Intl.DateTimeFormat('pt-BR', {
-  timeZone: 'UTC',
-  dateStyle: 'long',
-});
-const formatoMes = new Intl.DateTimeFormat('pt-BR', {
-  timeZone: 'UTC',
-  month: 'long',
-  year: 'numeric',
-});
 const dateLabel = (day: string) =>
-  formatoDia.format(new Date(day + 'T12:00:00Z'));
+  new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'UTC',
+    dateStyle: 'long',
+  }).format(new Date(day + 'T12:00:00Z'));
 export function DataFiltro({
   label,
   value,
   onChange,
-  help = 'Datas no fuso de São Paulo. O dia final inteiro é incluído.',
-  emptyLabel = 'Sem limite',
-  clearLabel = 'Remover limite',
 }: {
   label: string;
   value?: string;
   onChange: (value?: string) => void;
-  help?: string;
-  emptyLabel?: string;
-  clearLabel?: string;
 }) {
   const id = useId();
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const [day, setDay] = useState(() => diaCivil(new Date()));
-  // The calendar exists only while its dialog is open: pages with several
-  // date filters do not build 42 labelled days per filter on every render.
-  const [aberto, setAberto] = useState(false);
   const month = day.slice(0, 7);
   const first = month + '-01';
   const weekday = new Date(first + 'T12:00:00Z').getUTCDay();
@@ -87,96 +71,82 @@ export function DataFiltro({
         ref={trigger}
         aria-labelledby={id + '-label ' + id + '-valor'}
         aria-haspopup="dialog"
-        onClick={(event) => {
-          event.currentTarget.focus({ preventScroll: true });
-          setAberto(true);
+        onClick={() => {
           dialog.current!.showModal();
           focusDay(value ?? diaCivil(new Date()));
         }}
       >
-        <span id={id + '-valor'}>{value ? dateLabel(value) : emptyLabel}</span>
+        <span id={id + '-valor'}>
+          {value ? dateLabel(value) : 'Sem limite'}
+        </span>
       </button>
       <dialog
         className="filtro-dialog"
         ref={dialog}
         aria-labelledby={id + '-titulo'}
-        onClose={() => {
-          // A late close event from the previous cycle must not empty a
-          // dialog that has already been reopened.
-          if (!dialog.current?.open) setAberto(false);
-          const active = document.activeElement;
-          if (
-            !active ||
-            active === document.body ||
-            dialog.current?.contains(active)
-          )
-            trigger.current?.focus();
-        }}
+        onClose={() => trigger.current!.focus()}
       >
-        {aberto && (
-          <>
-            <h2 id={id + '-titulo'}>{label}</h2>
-            <p>{help}</p>
-            <div className="filtro-mes">
-              <button type="button" onClick={() => moveMonth(-1)}>
-                Mês anterior
-              </button>
-              <span aria-live="polite">
-                {formatoMes.format(new Date(day + 'T12:00:00Z'))}
-              </span>
-              <button type="button" onClick={() => moveMonth(1)}>
-                Próximo mês
-              </button>
-            </div>
-            <div
-              className="filtro-calendario"
-              role="group"
-              aria-label="Dias do mês"
+        <h2 id={id + '-titulo'}>{label}</h2>
+        <p>Datas no fuso de São Paulo. O dia final inteiro é incluído.</p>
+        <div className="filtro-mes">
+          <button type="button" onClick={() => moveMonth(-1)}>
+            Mês anterior
+          </button>
+          <span aria-live="polite">
+            {new Intl.DateTimeFormat('pt-BR', {
+              timeZone: 'UTC',
+              month: 'long',
+              year: 'numeric',
+            }).format(new Date(day + 'T12:00:00Z'))}
+          </span>
+          <button type="button" onClick={() => moveMonth(1)}>
+            Próximo mês
+          </button>
+        </div>
+        <div
+          className="filtro-calendario"
+          role="group"
+          aria-label="Dias do mês"
+        >
+          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((name) => (
+            <span key={name} aria-hidden="true">
+              {name}
+            </span>
+          ))}
+          {days.map((date) => (
+            <button
+              type="button"
+              key={date}
+              data-dia={date}
+              disabled={!diaValido(date)}
+              tabIndex={date === day ? 0 : -1}
+              aria-label={'Selecionar ' + dateLabel(date)}
+              aria-pressed={value === date}
+              className={date.slice(0, 7) === month ? '' : 'dia-vizinho'}
+              onKeyDown={(event) => keyboard(event, date)}
+              onClick={() => choose(date)}
             >
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((name) => (
-                <span key={name} aria-hidden="true">
-                  {name}
-                </span>
-              ))}
-              {days.map((date) => (
-                <button
-                  type="button"
-                  key={date}
-                  data-dia={date}
-                  disabled={!diaValido(date)}
-                  tabIndex={date === day ? 0 : -1}
-                  aria-label={'Selecionar ' + dateLabel(date)}
-                  aria-pressed={value === date}
-                  className={date.slice(0, 7) === month ? '' : 'dia-vizinho'}
-                  onKeyDown={(event) => keyboard(event, date)}
-                  onClick={() => choose(date)}
-                >
-                  {Number(date.slice(-2))}
-                </button>
-              ))}
-            </div>
-            <div className="filtro-atalhos">
-              <button
-                type="button"
-                onClick={() => choose(diaCivil(new Date()))}
-              >
-                Hoje
-              </button>
-              <button
-                type="button"
-                onClick={() => choose(deslocarDia(diaCivil(new Date()), -1))}
-              >
-                Ontem
-              </button>
-              <button type="button" onClick={() => choose()}>
-                {clearLabel}
-              </button>
-              <button type="button" onClick={() => dialog.current!.close()}>
-                Fechar calendário
-              </button>
-            </div>
-          </>
-        )}
+              {Number(date.slice(-2))}
+            </button>
+          ))}
+        </div>
+        <div className="filtro-atalhos">
+          <button type="button" onClick={() => choose(diaCivil(new Date()))}>
+            Hoje
+          </button>
+          <button
+            type="button"
+            onClick={() => choose(deslocarDia(diaCivil(new Date()), -1))}
+          >
+            Ontem
+          </button>
+          <button type="button" onClick={() => choose()}>
+            Remover limite
+          </button>
+          <button type="button" onClick={() => dialog.current!.close()}>
+            Fechar calendário
+          </button>
+        </div>
       </dialog>
     </div>
   );

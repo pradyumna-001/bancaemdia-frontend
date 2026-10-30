@@ -1,4 +1,4 @@
-import { memo, useDeferredValue, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/ProvedorAuth';
@@ -15,7 +15,6 @@ import {
   serializarConsulta,
   alterarFiltro,
   DIMENSOES,
-  PERIODOS,
   type Filtro,
 } from '../../lib/params';
 import { useCatalogos } from '../apostas/catalogos';
@@ -32,8 +31,6 @@ import {
   validarComparacoes,
   juntarGrupos,
   seletoresCanonicos,
-  type Comparacoes,
-  type PainelLegado,
 } from './protocol';
 import './painel.css';
 
@@ -59,61 +56,6 @@ function Falha({
     />
   );
 }
-// One chart and its always-open period table per banca. Memoized: the other
-// sections' queries settle separately and must not render every chart again.
-const EvolucoesPainel = memo(function EvolucoesPainel({
-  evolucao,
-  periodo,
-}: {
-  evolucao: PainelLegado['evolucao'];
-  periodo: string;
-}) {
-  return (
-    <div className="painel-evolucoes">
-      {[...new Set(evolucao.map((p) => p.banca_id))].map((id) => (
-        <GraficoEvolucao
-          key={String(id)}
-          dados={evolucao.filter((p) => p.banca_id === id)}
-          titulo={
-            evolucao.find((p) => p.banca_id === id)?.banca_nome ??
-            'Sem banca atribuída'
-          }
-          periodo={periodo}
-        />
-      ))}
-    </div>
-  );
-});
-const ComparacoesPainel = memo(function ComparacoesPainel({
-  comparacoes,
-}: {
-  comparacoes: Comparacoes;
-}) {
-  return (
-    <div className="painel-comparacoes">
-      {(['por_casa', 'por_tipster', 'por_mercado'] as const).map((k, i) => (
-        <div key={k}>
-          <h3>{['Por casa', 'Por tipster', 'Por mercado'][i]}</h3>
-          {comparacoes[k].length ? (
-            <ul>
-              {comparacoes[k].map((g, index) => (
-                <li key={g.id ?? `sem-${index}`}>
-                  <span>{g.nome ?? 'Sem identificação'}</span>
-                  <strong className="numero">
-                    {moeda(g.metricas.lucro_centavos, true)}
-                  </strong>
-                  <small>{g.metricas.total_apostas} apostas</small>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>Sem dados para comparar. Escolha outro recorte.</p>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-});
 function Conteudo({
   client,
   query,
@@ -281,35 +223,23 @@ function Conteudo({
         ),
       ),
   });
-  // One chart and its always-open period table per banca: render the large
-  // series in interruptible work instead of one long task on arrival.
-  const evolucaoExibida = useDeferredValue(evolucao.data);
   const diaryWait = leitura.waiting;
   const groupWait = leitura.waiting;
-  // Same pages, same merged rows: other queries settling do not rebuild them.
-  const paginas = grupos.data?.pages;
-  const juntados = useMemo(() => {
-    try {
-      return { rows: juntarGrupos(paginas ?? []) };
-    } catch (e) {
-      return { rows: [], error: e as Error };
-    }
-  }, [paginas]);
-  const rows = juntados.rows;
-  const groupError = juntados.error ?? grupos.error;
-  const consistent = !juntados.error;
+  let rows: ReturnType<typeof juntarGrupos> = [];
+  let groupError = grupos.error;
+  let consistent = true;
+  try {
+    rows = juntarGrupos(grupos.data?.pages ?? []);
+  } catch (e) {
+    groupError = e as Error;
+    consistent = false;
+  }
   const next = (value: string) =>
     setSearch((current) => {
       const s = new URLSearchParams(current);
       s.set('diario_inicio', value);
       return s;
     });
-  if (diario.isPending)
-    return (
-      <p role="status" className="consulta-carregando">
-        Consultando os dias…
-      </p>
-    );
   return (
     <>
       {raw && !start && (
@@ -358,6 +288,7 @@ function Conteudo({
               </button>
             ))}
           </div>
+          {diario.isPending && <p role="status">Consultando os dias…</p>}
           {diario.error && (
             <Falha
               contexto="Lucro por dia"
@@ -391,7 +322,7 @@ function Conteudo({
             Abra um grupo para conferir os tipsters. O total permanece visível.
           </p>
           {grupos.isPending && (
-            <p role="status" className="consulta-carregando">
+            <p role="status">
               {selection
                 ? 'Consultando os grupos…'
                 : 'Aguardando o recorte do diário…'}
@@ -472,20 +403,29 @@ function Conteudo({
             tentar={() => void evolucao.refetch()}
           />
         )}
-        {evolucaoExibida && legacyAllowed && (
+        {evolucao.data && legacyAllowed && (
           <>
             <p className="painel-nota">
               Evolução materializada · pode usar semanas ou meses nos períodos
               longos. Consulta distinta do diário ao vivo. Última consolidação:{' '}
-              {dataHora(evolucaoExibida.atualizado_em, 'America/Sao_Paulo')}.
+              {dataHora(evolucao.data.atualizado_em, 'America/Sao_Paulo')}.
             </p>
-            <EvolucoesPainel
-              evolucao={evolucaoExibida.evolucao}
-              periodo={
-                PERIODOS[(query.periodo ?? 'all') as keyof typeof PERIODOS]
-              }
-            />
-            {!evolucaoExibida.evolucao.length && (
+            {[...new Set(evolucao.data.evolucao.map((p) => p.banca_id))].map(
+              (id) => (
+                <GraficoEvolucao
+                  key={String(id)}
+                  dados={evolucao.data!.evolucao.filter(
+                    (p) => p.banca_id === id,
+                  )}
+                  titulo={
+                    evolucao.data!.evolucao.find((p) => p.banca_id === id)
+                      ?.banca_nome ?? 'Sem banca atribuída'
+                  }
+                  periodo={String(query.periodo ?? 'Todo o histórico')}
+                />
+              ),
+            )}
+            {!evolucao.data.evolucao.length && (
               <p>
                 Sem evolução consolidada. Escolha outro período ou envie
                 apostas.
@@ -517,7 +457,30 @@ function Conteudo({
               {dataHora(comparacoes.data.snapshot_em, 'America/Sao_Paulo')} ·
               Dados de apostas ao vivo.
             </p>
-            <ComparacoesPainel comparacoes={comparacoes.data} />
+            <div className="painel-comparacoes">
+              {(['por_casa', 'por_tipster', 'por_mercado'] as const).map(
+                (k, i) => (
+                  <div key={k}>
+                    <h3>{['Por casa', 'Por tipster', 'Por mercado'][i]}</h3>
+                    {comparacoes.data![k].length ? (
+                      <ul>
+                        {comparacoes.data![k].map((g, index) => (
+                          <li key={g.id ?? `sem-${index}`}>
+                            <span>{g.nome ?? 'Sem identificação'}</span>
+                            <strong className="numero">
+                              {moeda(g.metricas.lucro_centavos, true)}
+                            </strong>
+                            <small>{g.metricas.total_apostas} apostas</small>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>Sem dados para comparar. Escolha outro recorte.</p>
+                    )}
+                  </div>
+                ),
+              )}
+            </div>
           </>
         )}
       </section>
@@ -527,7 +490,6 @@ function Conteudo({
 }
 export function PainelPage({ client }: { client?: Client }) {
   const api = client ?? getApiClient();
-  const location = useLocation();
   const auth = useAuth();
   const [search, setSearch] = useSearchParams();
   const [cycle, setCycle] = useState(0);
@@ -539,12 +501,6 @@ export function PainelPage({ client }: { client?: Client }) {
       <header>
         <h1>Painel</h1>
         <p>Resultado do período, lucro diário e grupos de origem.</p>
-        <Link to={'/painel/analises' + location.search}>
-          Análises por esporte e outros recortes
-        </Link>
-        <Link to={'/painel/metas' + location.search}>
-          Metas opcionais e fuso
-        </Link>
         <button
           disabled={leitura.waiting}
           onClick={() => setCycle((n) => n + 1)}
@@ -557,13 +513,13 @@ export function PainelPage({ client }: { client?: Client }) {
           <button
             key={k}
             onClick={() => setSearch(alterarFiltro(search, k as Filtro))}
+            aria-label={`Remover filtro ${DIMENSOES[k as keyof typeof DIMENSOES] ?? k}`}
           >
-            <span className="somente-leitor">Remover filtro </span>
             <span>
               {DIMENSOES[k as keyof typeof DIMENSOES] ?? k}:{' '}
               {catalogos[k as keyof typeof catalogos]?.selecionada?.label ?? v}
             </span>{' '}
-            <span aria-hidden="true">×</span>
+            ×
           </button>
         ))}
       </div>

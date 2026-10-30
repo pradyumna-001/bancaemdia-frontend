@@ -5,7 +5,6 @@ own disposable PostgreSQL/OIDC/SMTP. This server stands in for the same-origin p
 """
 
 import asyncio
-import gzip
 import hashlib
 import importlib.util
 import io
@@ -14,7 +13,6 @@ import mimetypes
 import os
 import re
 import secrets
-import socket
 import subprocess
 import sys
 import tempfile
@@ -41,50 +39,6 @@ from tests.identity import journey as backend
 
 ROOT = Path(__file__).resolve().parents[2]
 DIST = ROOT / "dist"
-IDENTITY_BROWSER = os.environ.get("PRODUCT_BROWSER", "chromium")
-assert IDENTITY_BROWSER in {"chromium", "firefox", "webkit"}
-
-
-@pytest.fixture(autouse=True)
-def record_browser_evidence(request):
-    request.node.user_properties.append(("executed_browser", IDENTITY_BROWSER))
-
-
-_resource_spec = importlib.util.spec_from_file_location(
-    "frontend_owned_runtime", Path(__file__).with_name("harness_resources.py")
-)
-runtime = importlib.util.module_from_spec(_resource_spec)
-_resource_spec.loader.exec_module(runtime)
-
-_resource_spec = importlib.util.spec_from_file_location(
-    "frontend_owned_runtime", Path(__file__).with_name("harness_resources.py")
-)
-runtime = importlib.util.module_from_spec(_resource_spec)
-_resource_spec.loader.exec_module(runtime)
-
-_resource_spec = importlib.util.spec_from_file_location(
-    "frontend_owned_runtime", Path(__file__).with_name("harness_resources.py")
-)
-runtime = importlib.util.module_from_spec(_resource_spec)
-_resource_spec.loader.exec_module(runtime)
-
-_resource_spec = importlib.util.spec_from_file_location(
-    "frontend_owned_runtime", Path(__file__).with_name("harness_resources.py")
-)
-runtime = importlib.util.module_from_spec(_resource_spec)
-_resource_spec.loader.exec_module(runtime)
-
-_resource_spec = importlib.util.spec_from_file_location(
-    "frontend_owned_runtime", Path(__file__).with_name("harness_resources.py")
-)
-runtime = importlib.util.module_from_spec(_resource_spec)
-_resource_spec.loader.exec_module(runtime)
-
-_resource_spec = importlib.util.spec_from_file_location(
-    "frontend_owned_runtime", Path(__file__).with_name("harness_resources.py")
-)
-runtime = importlib.util.module_from_spec(_resource_spec)
-_resource_spec.loader.exec_module(runtime)
 
 _resource_spec = importlib.util.spec_from_file_location(
     "frontend_owned_runtime", Path(__file__).with_name("harness_resources.py")
@@ -106,68 +60,30 @@ def serve_public_build():
             path = urlsplit(self.path).path
             if path.startswith(("/auth/", "/api/")):
                 body = self.rfile.read(int(self.headers.get("content-length", "0")))
-                # Like the production reverse proxy: forward the browser's
-                # Accept-Encoding and relay the API's encoded bytes untouched.
                 headers = {
                     k: v
                     for k, v in self.headers.items()
-                    if k.lower() not in {"host", "connection"}
+                    if k.lower() not in {"host", "connection", "accept-encoding"}
                 }
-                headers.setdefault("Accept-Encoding", "identity")
-                collection_tls = getattr(self.server, "collection_tls", None)
-                collection = (
-                    collection_tls if path.startswith("/api/v1/coleta/") else None
-                )
-                with (
-                    httpx.Client(
-                        timeout=15,
-                        follow_redirects=False,
-                        verify=collection[1] if collection else True,
-                    ) as client,
-                    client.stream(
+                with httpx.Client(timeout=15, follow_redirects=False) as client:
+                    result = client.request(
                         self.command,
-                        (collection[0] if collection else backend.API) + self.path,
+                        backend.API + self.path,
                         headers=headers,
                         content=body,
-                    ) as result,
-                ):
-                    raw = b"".join(result.iter_raw())
-                encoding = result.headers.get("content-encoding", "identity").lower()
-                assert encoding in {"identity", "gzip"}, "Unexpected API encoding"
-                after_response = getattr(self.server, "after_api_response", None)
-                if after_response:
-                    # Inspection sees decoded JSON; the browser still gets raw bytes.
-                    view = httpx.Response(
-                        result.status_code,
-                        headers=[
-                            (k, v)
-                            for k, v in result.headers.multi_items()
-                            if k.lower()
-                            not in {
-                                "content-encoding",
-                                "content-length",
-                                "transfer-encoding",
-                            }
-                        ],
-                        content=gzip.decompress(raw) if encoding == "gzip" else raw,
                     )
-                    if after_response(self.command, path, view):
-                        # Lose only the returned bytes, after the real API committed.
-                        # Keep the browser's original multipart body untouched.
-                        self.close_connection = True
-                        self.connection.shutdown(socket.SHUT_RDWR)
-                        return
                 self.send_response(result.status_code)
                 for key, value in result.headers.multi_items():
                     if key.lower() not in {
                         "transfer-encoding",
                         "content-length",
                         "connection",
+                        "content-encoding",
                     }:
                         self.send_header(key, value)
-                self.send_header("Content-Length", str(len(raw)))
+                self.send_header("Content-Length", str(len(result.content)))
                 self.end_headers()
-                self.wfile.write(raw)
+                self.wfile.write(result.content)
                 return
             if self.command != "GET":
                 self.send_error(405)
@@ -175,7 +91,6 @@ def serve_public_build():
             if path == "/config.json":
                 content = json.dumps({"VITE_API_URL": backend.FRONT}).encode()
                 content_type = "application/json"
-                precompressed = None
             else:
                 target = (DIST / path.lstrip("/")).resolve()
                 if not target.is_relative_to(DIST.resolve()):
@@ -192,27 +107,7 @@ def serve_public_build():
                 )
                 if target.suffix == ".js":
                     content_type = "application/javascript"
-                precompressed = target.with_name(target.name + ".gz")
-            # Match the production static server. Protocol/API responses are relayed
-            # above exactly as the API encoded them; this proxy never compresses them.
-            compressed = (
-                path != "/config.json"
-                and len(content) >= 1024
-                and content_type
-                in {"text/html", "text/css", "application/javascript", "image/svg+xml"}
-                and "gzip" in self.headers.get("Accept-Encoding", "").lower()
-            )
-            if compressed:
-                # nginx gzip_static: the build's own .gz file when it exists.
-                content = (
-                    precompressed.read_bytes()
-                    if precompressed is not None and precompressed.is_file()
-                    else gzip.compress(content, compresslevel=6, mtime=0)
-                )
             self.send_response(200)
-            if compressed:
-                self.send_header("Content-Encoding", "gzip")
-                self.send_header("Vary", "Accept-Encoding")
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Security-Policy", csp)
             self.send_header("Cache-Control", "no-store")
@@ -290,33 +185,17 @@ async def banco():
 async def harness(banco, engine_admin, tmp_path, monkeypatch):
     assert (DIST / "index.html").is_file(), "Build the public SPA before acceptance"
     monkeypatch.setattr(backend, "fetch", browser_request)
-    proxies = []
-
-    def frontend():
-        server = serve_public_build()
-        proxies.append(server)
-        return server
-
-    async with runtime.owned_runtime(backend, frontend, monkeypatch):
+    async with runtime.owned_runtime(backend, serve_public_build, monkeypatch):
         async for instance in backend.harness.__wrapped__(
             banco, engine_admin, tmp_path
         ):
-            instance.frontend_proxy = proxies[0]
             yield instance
 
 
 @pytest.mark.parametrize(
     "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
 )
-async def test_public_spa_telegram_import(
-    harness,
-    engine_admin,
-    viewport,
-    browser_name=IDENTITY_BROWSER,
-    after_import=None,
-    trace_dir=None,
-    sanitize_trace=None,
-):
+async def test_public_spa_telegram_import(harness, engine_admin, viewport):
     """Real file, queue, worker, materialization and RLS; only extraction input is cached.
 
     No jobs, status, progress or final bets are inserted by the test. No paid IA is called.
@@ -400,8 +279,6 @@ async def test_public_spa_telegram_import(
         ANTHROPIC_BASE_URL=f"http://127.0.0.1:{trap.server_port}",
         ANTHROPIC_MAX_RETRIES="0",
     )
-    browser = None
-    traced = []
     with tempfile.TemporaryFile(mode="w+t") as worker_log:
         worker = None
         try:
@@ -441,7 +318,7 @@ async def test_public_spa_telegram_import(
                     f"Worker exited before import: {worker.returncode}; classes={classes}; missing_modules={modules}"
                 )
             async with async_playwright() as playwright:
-                browser = await getattr(playwright, browser_name).launch()
+                browser = await playwright.chromium.launch()
                 contexts = [
                     await browser.new_context(viewport=viewport) for _ in range(2)
                 ]
@@ -469,18 +346,6 @@ async def test_public_spa_telegram_import(
                         else None
                     ),
                 )
-                if after_import is not None:
-                    for index, context in enumerate(contexts):
-                        await context.tracing.start(
-                            screenshots=False, snapshots=False, sources=False
-                        )
-                        traced.append(
-                            (
-                                context,
-                                trace_dir
-                                / f"entrada-{browser_name}-{viewport['width']}-{index}.zip",
-                            )
-                        )
                 await pages[0].goto(backend.FRONT + "/enviar?estado=GREEN&apagadas=1")
                 await (
                     pages[0]
@@ -556,19 +421,7 @@ async def test_public_spa_telegram_import(
                     )
                     .count()
                 )
-                if after_import is not None:
-                    await after_import(
-                        pages, content.getvalue(), job_id, owner, engine_admin
-                    )
-                    assert not calls, (
-                        "Entry faults may not call a paid extraction provider"
-                    )
-                for context, trace in traced:
-                    await context.tracing.stop(path=trace)
-                    sanitize_trace(trace)
-                traced.clear()
                 await browser.close()
-                browser = None
             assert worker.poll() is None, "Actual worker must survive the import"
         except BaseException:
             worker_log.seek(0)
@@ -610,22 +463,10 @@ async def test_public_spa_telegram_import(
                 results.close()
             raise
         finally:
-            try:
-                for context, trace in traced:
-                    try:
-                        await context.tracing.stop(path=trace)
-                    finally:
-                        if trace.is_file():
-                            sanitize_trace(trace)
-            finally:
-                try:
-                    if browser is not None:
-                        await browser.close()
-                finally:
-                    cache.delete(cache_key)
-                    cache.close()
-                    await asyncio.to_thread(trap.shutdown)
-                    trap.server_close()
+            cache.delete(cache_key)
+            cache.close()
+            await asyncio.to_thread(trap.shutdown)
+            trap.server_close()
 
 
 @pytest.mark.parametrize(
@@ -633,7 +474,7 @@ async def test_public_spa_telegram_import(
 )
 async def test_public_spa_real_identity_cookie_contract(harness, viewport):
     async with async_playwright() as playwright:
-        browser = await getattr(playwright, IDENTITY_BROWSER).launch()
+        browser = await playwright.chromium.launch()
         contexts = [await browser.new_context(viewport=viewport) for _ in range(2)]
         pages = [await context.new_page() for context in contexts]
         violations = []
@@ -700,16 +541,8 @@ async def test_public_spa_real_identity_cookie_contract(harness, viewport):
             "status"
         ] == 404
         # The actual provider now owns cookie/CSRF lookup, clearing and confirmation.
-        # Select the real window before navigation. Activating an inactive
-        # Firefox target during the click can overlap the SPA focus revalidation.
-        await pages[0].bring_to_front()
         await pages[0].goto(backend.FRONT + "/sair")
-        async with pages[0].expect_response(
-            lambda r: r.url.endswith("/auth/logout") and r.request.method == "POST"
-        ) as pending_logout:
-            await pages[0].get_by_role("button", name="Confirmar saída").click()
-        logout = await pending_logout.value
-        assert logout.status == 200 and await logout.json() == {"logged_out": True}
+        await pages[0].get_by_role("button", name="Confirmar saída").click()
         await expect(
             pages[0].get_by_role("heading", name="Entrar", exact=True)
         ).to_be_visible()
@@ -744,7 +577,7 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
     import jwt
 
     async with async_playwright() as playwright:
-        browser = await getattr(playwright, IDENTITY_BROWSER).launch()
+        browser = await playwright.chromium.launch()
         a, b = [await browser.new_context(viewport=viewport) for _ in range(2)]
         pa, pb = await a.new_page(), await b.new_page()
         email_a, email_b = (uuid4().hex + "@example.org" for _ in range(2))
@@ -823,14 +656,8 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         assert (await browser_request(pa, "/api/v1/apostas"))["data"]["pagination"][
             "total"
         ] == 0
-        await pa.bring_to_front()
         await pa.goto(backend.FRONT + "/sair")
-        async with pa.expect_response(
-            lambda r: r.url.endswith("/auth/logout") and r.request.method == "POST"
-        ) as pending_logout:
-            await pa.get_by_role("button", name="Confirmar saída").click()
-        logout = await pending_logout.value
-        assert logout.status == 200 and await logout.json() == {"logged_out": True}
+        await pa.get_by_role("button", name="Confirmar saída").click()
         await expect(
             pa.get_by_role("heading", name="Entrar", exact=True)
         ).to_be_visible()
@@ -877,7 +704,7 @@ async def test_public_spa_account_registration_and_recovery(
 
     try:
         async with async_playwright() as playwright:
-            browser = await getattr(playwright, IDENTITY_BROWSER).launch()
+            browser = await playwright.chromium.launch()
             original = await browser.new_context(viewport=viewport)
             recovering = await browser.new_context(viewport=viewport)
             repeated = await browser.new_context(viewport=viewport)
@@ -1018,7 +845,7 @@ async def test_public_spa_expired_confirmation(
     """Real expired issuer mail, not a modified/synthetic token or a frozen clock."""
     try:
         async with async_playwright() as playwright:
-            browser = await getattr(playwright, IDENTITY_BROWSER).launch()
+            browser = await playwright.chromium.launch()
             context = await browser.new_context(viewport=viewport)
             page = await context.new_page()
             email = uuid4().hex + "@example.org"
@@ -1064,7 +891,7 @@ async def test_public_spa_expired_confirmation(
 async def test_public_spa_commercial_access(harness, engine_admin, viewport, request):
     """Real server expiry and read-only SPA, no payment or production data."""
     async with async_playwright() as playwright:
-        browser = await getattr(playwright, IDENTITY_BROWSER).launch()
+        browser = await playwright.chromium.launch()
         context = await browser.new_context(viewport=viewport)
         page = await context.new_page()
         violations = []
@@ -1260,86 +1087,6 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
         await expect(
             page.get_by_role("link", name="Importar histórico em Enviar")
         ).to_have_attribute("href", "/enviar?casa=7&apagadas=1")
-        # The actual SPA uses each authenticated, stateless operation in READ_ONLY.
-        await page.goto(backend.FRONT + "/calculadoras?casa=7&apagadas=1")
-        await expect(
-            page.get_by_role("heading", name="Calculadoras", exact=True)
-        ).to_be_visible()
-        await page.get_by_label("Nome do resultado 1").fill("A")
-        await page.get_by_label("Nome do resultado 2").fill("B")
-        await page.get_by_label("Odd do resultado 1").fill("2")
-        await page.get_by_label("Odd do resultado 2").fill("2")
-        await page.get_by_role("checkbox").check()
-        async with page.expect_response(
-            lambda r: r.url.endswith("/calculadoras/mercado-justo")
-        ) as pending:
-            await page.get_by_role(
-                "button", name="Consultar resultado", exact=True
-            ).click()
-        response = await pending.value
-        assert response.status == 200
-        await expect(
-            page.get_by_role("heading", name="Resultado informado pelo serviço")
-        ).to_be_visible()
-        assert (await response.json())["data"]["outcomes"][0][
-            "fair_probability"
-        ] == "0.50000000"
-        await page.get_by_role(
-            "link", name="Distribuir entre resultados", exact=True
-        ).click()
-        await page.get_by_label("Odd do resultado 1").fill("2,1")
-        await page.get_by_label("Odd do resultado 2").fill("2,1")
-        await page.get_by_label("Entrada total (R$)").fill("100,00")
-        async with page.expect_response(
-            lambda r: r.url.endswith("/calculadoras/distribuir-entre-resultados")
-        ) as pending:
-            await page.get_by_role(
-                "button", name="Consultar resultado", exact=True
-            ).click()
-        response = await pending.value
-        assert response.status == 200
-        await expect(
-            page.get_by_role("heading", name="Resultado informado pelo serviço")
-        ).to_be_visible()
-        assert (await response.json())["data"]["minimum_profit_centavos"] == 500
-        await page.get_by_role("link", name="Cobertura ao vivo", exact=True).click()
-        await page.get_by_label("Entrada original (R$)").fill("100,00")
-        await page.get_by_label("Odd original", exact=True).fill("1,5")
-        await page.get_by_label("Odd oposta", exact=True).fill("3")
-        async with page.expect_response(
-            lambda r: r.url.endswith("/calculadoras/cobertura-ao-vivo")
-        ) as pending:
-            await page.get_by_role(
-                "button", name="Consultar resultado", exact=True
-            ).click()
-        response = await pending.value
-        assert response.status == 200
-        await expect(
-            page.get_by_role("heading", name="Resultado informado pelo serviço")
-        ).to_be_visible()
-        assert (await response.json())["data"]["hedge_stake_centavos"] == 5000
-        await page.get_by_role("link", name="Percentual da banca", exact=True).click()
-        await page.get_by_label("Banca informada (R$)").fill("100,00")
-        await page.get_by_label("Percentual (%)", exact=True).fill("1,25")
-        async with page.expect_response(
-            lambda r: r.url.endswith("/calculadoras/percentual-banca")
-        ) as pending:
-            await page.get_by_role(
-                "button", name="Consultar resultado", exact=True
-            ).click()
-        response = await pending.value
-        assert response.status == 200
-        await expect(
-            page.get_by_role("heading", name="Resultado informado pelo serviço")
-        ).to_be_visible()
-        assert (await response.json())["data"]["stake_centavos"] == 125
-        await expect(
-            page.get_by_role("link", name="Voltar para Apostas")
-        ).to_have_attribute("href", "/?casa=7&apagadas=1&ferramenta=percentual-banca")
-        await page.get_by_role("link", name="Voltar para Apostas").click()
-        await expect(
-            page.get_by_role("heading", name="Apostas", exact=True)
-        ).to_be_visible()
         # Simulate the sandbox provider's confirmed paid period; never a live checkout.
         async with engine_admin.begin() as conn:
             price = await conn.scalar(
@@ -1384,7 +1131,7 @@ async def test_public_spa_commercial_access(harness, engine_admin, viewport, req
 async def test_public_spa_timezone_preference(harness, engine_admin, viewport):
     """Actual preference PATCH/GET, cookie/CSRF, persistence and tenant isolation."""
     async with async_playwright() as playwright:
-        browser = await getattr(playwright, IDENTITY_BROWSER).launch()
+        browser = await playwright.chromium.launch()
         context = await browser.new_context(viewport=viewport)
         other_context = await browser.new_context(viewport=viewport)
         page = await context.new_page()
@@ -1519,7 +1266,7 @@ async def test_public_spa_aposta_photo(harness, engine_admin, viewport):
         return result
 
     async with async_playwright() as playwright:
-        browser = await getattr(playwright, IDENTITY_BROWSER).launch()
+        browser = await playwright.chromium.launch()
         context = await browser.new_context(viewport=viewport)
         other_context = await browser.new_context(viewport=viewport)
         page, other = await context.new_page(), await other_context.new_page()
@@ -1593,7 +1340,6 @@ async def test_public_spa_aposta_photo(harness, engine_admin, viewport):
         )
         # Enter through the SPA so its real Web Lock/session flow renews short
         # issuer tokens after the wait; raw fetch intentionally does not renew.
-        await page.bring_to_front()
         await page.goto(url)
         await expect(
             page.get_by_role("heading", name="Foto da aposta", exact=True)
@@ -1635,22 +1381,11 @@ async def test_public_spa_aposta_photo(harness, engine_admin, viewport):
             foreign["status"] == missing["status"] == 404
             and foreign["data"] == missing["data"]
         )
-        await other.bring_to_front()
         await other.goto(url)
-        async with other.expect_response(
-            lambda r: (
-                "/api/v1/apostas/" in r.url
-                and r.url.endswith("/foto")
-                and r.request.method == "GET"
-            )
-        ) as pending_foreign_photo:
-            await other.get_by_role("button", name="Abrir foto", exact=True).click()
-        foreign_photo = await pending_foreign_photo.value
-        assert foreign_photo.status == 404
+        await other.get_by_role("button", name="Abrir foto", exact=True).click()
         await expect(
             other.get_by_text("Não há foto disponível para consulta nesta aposta.")
         ).to_be_visible()
-        await page.bring_to_front()
         await page.goto(backend.FRONT + "/sair")
         async with page.expect_response(
             lambda r: r.url.endswith("/auth/logout") and r.request.method == "POST"

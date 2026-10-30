@@ -1,0 +1,31 @@
+{
+  "commit_id": "3554d57ce831ede76c3aa49feb4fe45f37e8fcfd",
+  "event": "REQUEST_CHANGES",
+  "body": "## PR #84 Review - feat: detalhe da aposta, correções e histórico (#19)\n\n### Resumo\n\nImplementa a página de detalhe da aposta com: projeção completa, formulário de correção (campos editáveis, validação client-side), registro de resultado (radio + cashout opcional), fluxo de revisão (evidências, decisão mesma/distinta), histórico de eventos, consolidação Casa x Telegram. Usa validarDetalhe, validarMudanca, valoresIniciais, pedidoCorrecao, pedidoResultado do protocol.ts. 1 commit, ~2k linhas. Base main @ b5fb27d. Herda #81, #203.\n\n### Pontos fortes\n- Arquitetura de intenção explícita: Intento union type (apagar, restaurar, corrigir, resultado, mesma, distinta) mapeado para operações HTTP via OPERACOES. run(intent) centraliza execução, validação, retry, invalidação de cache.\n- Validação rigorosa: validarDetalhe valida resposta GET; validarMudanca valida resposta de mutação contra contrato; respostaPublicada + objeto garantem shape.\n- Otimistic concurrency: acting.current, reading.current, alive.current, scope.isCurrent() previnem race conditions; auth.service.capture() garante atomicidade de leitura/escrita.\n- Correção diff-only: valoresIniciais snapshot no abrir; pedidoCorrecao(draft, initial) envia apenas campos alterados; freebet checkbox preserva valor de face.\n- Resultado com cashout: Radio group ESTADOS_APOSTA; cashout condicional só para CASHOUT; pedidoResultado valida formato.\n- Revisão com evidências: Evidencia carrega MidiaRevisao, link para aposta parceira (target=_blank rel=noopener), botões mesma/distinta disparam run({ tipo: mesmas|distinta }).\n- Histórico preservado: eventoApresentacao projeta eventos; consolidações mostra relações Casa×Telegram (active/rejected/unlinked).\n- Acessibilidade: dialog com aria-labelledby, role=status, role=alert, tabIndex, foco programático (confirmation.current?.focus(), editButton.current?.focus()).\n- Recuperação de resposta perdida: consult() refaz GET após mutação; needsRead flag + botão Consultar estado atual; outcomeUnknown marca ações incertas.\n\n### Alterações solicitadas\n\n1. DetalheApostaPage.tsx - initial.current mutado sem useRef wrapper: initial.current = valoresIniciais(detail.data!) muta .current de useRef. Embora useRef permita mutação, o padrão é initial.current = ... direto. OK mas inconsistente com acting, alive, reading que usam useRef. Padronizar.\n2. protocol.ts - pedidoCorrecao valida datas com Date.parse: Date.parse aceita formatos variados (ISO, RFC, etc). Exigir formato BR explícito dd/mm/aaaa hh:mm±hh:mm via regex ou Intl.DateTimeFormat.\n3. DetalheApostaPage.tsx - confirm state para 6 ações: confirm guarda Intento union. Se usuário abre dialog e muda confirm antes de fechar, onClose limpa mas run já disparou. Usar confirmIntent separado de confirmOpen boolean.\n4. MidiaRevisao.tsx - não revisado (arquivo separado): Verificar se MidiaRevisao trata erros de carregamento de mídia, expiração de URL assinada, acessibilidade (alt, role=img).\n5. Middleware ASGI conversion: Verificar regressão em validarDetalhe, validarMudanca, respostaPublicada.\n\nVerdict: Aprovar após os 5 itens acima. Arquitetura exemplar, validação estrita, UX completa, concorrência tratada.",
+  "comments": [
+    {
+      "path": "src/features/apostas/detalhe/DetalheApostaPage.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## initial.current mutado sem padrão useRef consistente\n\ninitial.current = valoresIniciais(detail.data!) muta .current de useRef. Embora useRef permita, acting.current, alive.current, reading.current usam useRef. Padronizar: todos useRef ou todos useState com setter."
+    },
+    {
+      "path": "src/features/apostas/detalhe/protocol.ts",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## pedidoCorrecao valida datas com Date.parse (formato livre)\n\nDate.parse aceita ISO, RFC, etc. Exigir formato BR explícito dd/mm/aaaa hh:mm±hh:mm via regex ou Intl.DateTimeFormat. Exemplo regex: /^d{2}/d{2}/d{4} d{2}:d{2}[+-]d{2}:d{2}$/."
+    },
+    {
+      "path": "src/features/apostas/detalhe/DetalheApostaPage.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## confirm state para 6 ações distintas\n\nconfirm guarda Intento union (apagar|restaurar|corrigir|resultado|mesma|distinta). Se usuário abre dialog e muda confirm antes de fechar, onClose limpa mas run já disparou. Separar confirmIntent (Intento) de confirmOpen (boolean)."
+    },
+    {
+      "path": "src/features/apostas/detalhe/MidiaRevisao.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## MidiaRevisao não revisado - verificar tratamento de erros\n\nVerificar: erro de carregamento de mídia (onError), expiração de URL assinada, acessibilidade (alt descritivo, role=img), loading state, fallback se mídia indisponível."
+    }
+  ]
+}

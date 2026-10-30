@@ -1,0 +1,37 @@
+{
+  "commit_id": "1ddadf3e189a383d5f4673669e711cb987cc7853",
+  "event": "REQUEST_CHANGES",
+  "body": "## PR #101 Review - feat: troca temporal com confirmação e recuperação (#53)\n\n### Resumo\n\nEstende AssinaturaPage.tsx (de #77) com fluxo de troca de plano (upgrade/downgrade) com confirmação explícita, recuperação de resposta perdida aprimorada, e novos workflows GitHub Actions para contratos (analises, coleta, core, entry, troca). Adiciona idempotency keys por operação, returnDestination durável via sessionStorage, uncertainActions tracking. 1 commit, ~100 arquivos (+33 .gitignore, +31 .prettierignore, +41 AGENTS.md). Base main @ b5fb27d. Herda #77, #207.\n\n### Pontos fortes\n- **Troca de plano explícita**: selected price radio group; checkout usa price_id escolhido; portal/cancel independentes.\n- **Idempotência por operação**: createIdempotencyKey() por checkout/portal/cancel; intentRef.current guarda body+key; replay mesmo UUID = 200 recibo original; body divergente = 409.\n- **Retorno durável**: rememberBillingReturn/clearBillingReturn em sessionStorage persiste URL de retorno pós-checkout/portal; recuperação após resposta perdida.\n- **Uncertain actions tracking**: uncertainActions Set rastreia ações com outcomeUnknown; UI avisa \"resultado precisa de conferência\"; ação pausada até consult().\n- **Retorno automático com backoff**: wasReturning/returningNow state; check() com backoff exponencial (1s, 2s, 4s) até 3 tentativas; onReturnHandled callback.\n- **Contratos novos**: 5 workflows GitHub Actions (analises-contract, coleta-contract, core-contract, entry-contract, troca-contract) validam contratos OpenAPI por domínio.\n- **Acessibilidade mantida**: aria-labelledby, role=status, tabIndex, foco programático (title.current?.focus(), confirmation.current?.focus(), cancelButton.current?.focus()).\n\n### Alterações solicitadas\n\n1. **AssinaturaPage.tsx - returning prop ambígua (herdado de #77)**: Aceita boolean | () => boolean. Se função, executa no mount. Separar em returning?, onReturnDetected?().\n2. **AssinaturaPage.tsx - wasReturning vs returningNow nomenclatura confusa**: wasReturning (inicial), returningNow (atual). Renomear wasReturningInitially, isReturning.\n3. **AssinaturaPage.tsx - intent.current mutável sem useRef wrapper**: intent.current mutado diretamente. Usar useRef explícito: const intentRef = useRef<{ body: Subscribe; key: string } | null>(null).\n4. **AssinaturaPage.tsx - go callback não tipado**: go = (url) => location.assign(url) sem tipo. Tipar: go?: (url: string) => void.\n5. **Novos workflows - jobs duplicados**: 5 workflows novos (analises, coleta, core, entry, troca) têm structure idêntica. Consolidar em workflow reutilizável com matrix strategy.\n\nVerdict: Aprovar após os 5 itens acima. Troca temporal robusta, idempotência correta, recuperação automática, contratos validados.",
+  "comments": [
+    {
+      "path": "src/features/assinatura/AssinaturaPage.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## returning prop ambígua: boolean | () => boolean (herdado de #77)\n\nreturning aceita boolean | () => boolean. Se função, executa no mount (typeof returning === function ? returning() : returning). Pode causar confusão se returning() retorna true após já ter processado. Separar em props distintas:\nreturning?: boolean;\nonReturnDetected?: () => boolean;"
+    },
+    {
+      "path": "src/features/assinatura/AssinaturaPage.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## wasReturning vs returningNow - nomenclatura confusa\n\nwasReturning (inicial) e returningNow (atual) - confusão semântica. Renomear para:\n- wasReturningInitially (inicial)\n- isReturning (atual)\n\nE inverter lógica: isReturning começa como wasReturningInitially e vira false após processar."
+    },
+    {
+      "path": "src/features/assinatura/AssinaturaPage.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## intent.current mutável sem useRef wrapper\n\nintent.current mutado diretamente (intent.current ??= {...}). Embora intent seja useRef, a mutação direta de .current dentro de callback pode causar race conditions. Usar useRef explícito:\nconst intentRef = useRef<{ body: Subscribe; key: string } | null>(null);\n// depois\nintentRef.current = { body: ..., key: ... };"
+    },
+    {
+      "path": "src/features/assinatura/AssinaturaPage.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## go callback não tipado\n\ngo = (url) => location.assign(url) - parâmetro go não tipado. Tipar explicitamente:\ngo?: (url: string) => void;"
+    },
+    {
+      "path": ".github/workflows/troca-contract.yml",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## 5 workflows novos com estrutura idêntica - consolidar\n\nanalises-contract.yml, coleta-contract.yml, core-contract.yml, entry-contract.yml, troca-contract.yml têm structure idêntica (checkout, validate, test). Consolidar em workflow reutilizável com matrix strategy:\njobs:\n  contract:\n    strategy:\n      matrix:\n        contract: [analises, coleta, core, entry, troca]\n    steps:\n      - uses: ./scripts/validate-contract.sh\n        with:\n          contract: ${{ matrix.contract }}"
+    }
+  ]
+}

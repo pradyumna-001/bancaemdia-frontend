@@ -1,0 +1,31 @@
+{
+  "commit_id": "e2ffc7b0d1b3ac3b27354e8c19ad129d1260a80e",
+  "event": "REQUEST_CHANGES",
+  "body": "## PR #88 Review - feat: foto da aposta (coleta automática via extensão) (#21)\n\n### Resumo\n\nImplementa FotoAposta.tsx componente reutilizável para exibir foto original vinculada à aposta (GET /api/v1/apostas/{chave}/foto). Carregamento sob demanda (lazy), validação de blob (tipo MIME, tamanho ≤20MB), retry com backoff exponencial, zoom em <dialog>, limpeza de objectURL, tratamento de 404 (ausente), 422 (inválido), erro genérico. Integrado em DetalheApostaPage via MidiaRevisao. 1 commit, ~300 linhas. Base main @ b5fb27d. Herda #84, #203.\n\n### Pontos fortes\n- **Carregamento sob demanda**: botão Abrir foto dispara load(); lazy loading da imagem; loading=lazy.\n- **Validação rigorosa de blob**: verifica instanceof Blob, size > 0, ≤20MB, MIME type ∈ {jpeg, png, gif, webp}; setInvalid(true) se falhar.\n- **Retry com backoff**: retryConsulta(attempt, failure) + atrasoConsulta; loop for(;; attempt++) com AbortSignal; para em 404/422; respeita Retry-After.\n- **Zoom acessível**: <dialog> com aria-label, botão fechar, focus management (trigger → dialog button → trigger on close).\n- **Limpeza de recursos**: release() revoga objectURL + aborta controller; cleanup no unmount e no service.registerCleanup.\n- **Estados explícitos**: url, busy, error, absent (404), invalid (422/MIME), zoom; UI mostra mensagem apropriada para cada estado.\n- **Acessibilidade**: alt descritivo, role=status para loading, role=alert para error, aria-busy no container, tabIndex implícito via button.\n- **Private context**: epoch capturado no load(); samePrivateContext() verifica alive + abort + scope.isCurrent().\n\n### Alterações solicitadas\n\n1. **FotoAposta.tsx - load() loop for(;; attempt++) sem limite máximo de tentativas**: retryConsulta decide parar mas loop é infinito. Adicionar limite (ex: max 5 tentativas) ou maxAttempts config.\n2. **FotoAposta.tsx - objectURL revogado em release() mas não em broken()**: broken() chama release() → OK. Mas se componente desmontar com zoom aberto, dialog.close() não chama release(). Adicionar cleanup no useEffect de zoom.\n3. **FotoAposta.tsx - alt text fixo**: alt=Foto original vinculada a esta aposta. Para acessibilidade, incluir contexto (evento, casa) se disponível via props.\n4. **FotoAposta.tsx - MIME type validation hardcoded**: [image/jpeg, image/png, image/gif, image/webp]. Mover para constante exportável ou config.\n5. **Middleware ASGI conversion**: Verificar regressão no GET /api/v1/apostas/{chave}/foto e validação de blob.\n\nVerdict: Aprovar após os 5 itens acima. Componente robusto, validação rigorosa, UX acessível, limpeza correta.",
+  "comments": [
+    {
+      "path": "src/components/FotoAposta.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## load() loop for(;; attempt++) sem limite máximo de tentativas\n\nretryConsulta decide parar mas loop é infinito. Adicionar limite:\nconst MAX_ATTEMPTS = 5;\nfor (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {\n  // ...\n  if (!retryConsulta(attempt, failure)) return;\n}\nif (attempt >= MAX_ATTEMPTS) { setError(new ApiError(max_retries)); return; }"
+    },
+    {
+      "path": "src/components/FotoAposta.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## objectURL não revogado se desmontar com zoom aberto\n\nuseEffect de zoom: return () => { modal?.close(); if (opener?.isConnected) opener.focus(); };\nNão chama release() se componente desmontar com zoom. Adicionar:\nreturn () => { modal?.close(); release(); if (opener?.isConnected) opener.focus(); };"
+    },
+    {
+      "path": "src/components/FotoAposta.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## alt text fixo - melhorar com contexto\n\nalt=Foto original vinculada a esta aposta. Para acessibilidade, aceitar props contexto (evento, casa):\nalt={`Foto da aposta ${evento} (${casa})`}"
+    },
+    {
+      "path": "src/components/FotoAposta.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## MIME types hardcoded - mover para constante\n\nconst ALLOWED_MIME = [image/jpeg, image/png, image/gif, image/webp] as const;\nExportar para reuso em validação de upload futuro."
+    }
+  ]
+}

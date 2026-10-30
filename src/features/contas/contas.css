@@ -1,16 +1,6 @@
 .contas-pagina {
   overflow-wrap: anywhere;
 }
-.contas-atalhos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--espaco-16);
-}
-.contas-atalhos a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--alvo-toque);
-}
 .contas-datas {
   border: 0;
   padding: 0;

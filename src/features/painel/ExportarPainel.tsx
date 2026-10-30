@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/ProvedorAuth';
 import type { createApiClient } from '../../api/client';
 import { ApiError } from '../../api/error';
@@ -23,8 +23,6 @@ export function ExportarPainel({
   const [error, setError] = useState<unknown>();
   const [done, setDone] = useState(false);
   const waiting = leitura.waiting;
-  const ajuda = new URLSearchParams(location.search);
-  ajuda.set('guia', 'excel');
   useEffect(() => {
     const clear = () => {
       resource.current.controller?.abort();
@@ -84,7 +82,6 @@ export function ExportarPainel({
       <button disabled={busy || waiting} onClick={() => void exportar()}>
         {busy ? 'Preparando Excel…' : 'Exportar Painel em Excel'}
       </button>
-      <Link to={`/tutorial?${ajuda}#passo-a-passo`}>Ajuda para exportar</Link>
       {done && (
         <p role="status">
           Excel pronto para baixar. Inclui todos os dias e tipsters deste
