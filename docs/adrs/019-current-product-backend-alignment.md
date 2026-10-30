@@ -1,5 +1,13 @@
 # ADR 019: Produto vigente, contratos e ordem de implementação
 
+Atualização #36 (18/10/2026): ensaiar a composição frontend #103/#78/#87/#77
+contra main, sem PR empilhada ou merge administrativo. Corrigir omissões de
+consumidores na árvore conjunta e usar uma API real completa 37b1302, 129 operações,
+com #191 acrescida às 128 anteriores intactas. Preservar todos os inventários e
+adicionar identidade nos três browsers, calculadoras READ_ONLY e duplicidade
+Casa × Telegram. [Contrato](../contracts/e2e-produto.md). Pin permanece sandbox;
+integração, leitores/host e distribuição externa têm aceites próprios antes de release.
+
 ## Status
 
 Accepted — direção autorizada pelo titular em 29/09/2026; implementação/revisão no PR da #48. Aceitação da direção não declara futuras capacidades entregues ou API em produção.
@@ -115,3 +123,11 @@ A #36 depende das capacidades pendentes #53/#56/#57/#59, além da distribuição
 ## Troca temporal #53 — retomada após entrega em 17/10/2026
 
 Backend #206/PR #207 corrigiu a evidência e publicou GET da mesma intenção; candidato 132ee915 tem 26 checks verdes. A árvore real 5f5f062 descende do pin completo, tem 128 operações e preserva todas as fontes, sem união de schemas. Atualizar tipos e todos os ensaios para esse mesmo pin, mantendo disponibilidade sandbox e publicação bloqueada. A SPA oferece matriz elegível, instante/fuso e estado explícitos, prévia e confirmação separadas e consulta de recibo em READ_ONLY; nenhum POST é repetido automaticamente. IDs afetados são indicação para revisão, sem migração ou dinheiro alterado. UUID/corpo/recibos somente em memória; a regra de sessão e o contrato da API excluem URL/storage da intenção. Consulta após recarga exige código guardado por gesto anterior, sem reconstruir corpo. PR contra main, dependente da frontend #100/#99 e backend #207/fontes; acrescentar seis jornadas reais e 34 aceites API sem skips ou remoção dos inventários/gates anteriores. [Contrato](../contracts/troca-conta.md). Revisão/merge pelo administrador.
+
+## Metas e fuso #57 — 17/10/2026
+
+Consumir as metas integradas em b916f54, preservadas no pin completo 5f5f062 e em todos os ensaios. Não há lacuna de endpoint a inventar: progresso, valor atual e alvo atingido são exclusivos da API; os decimais legados de configuração são formatados exatamente. A seção é opcional, sem metas padrão, e explicita sua população global/intervalo próprio, distinta dos filtros de Painel preservados no endereço. Lista inclui arquivadas, status é visualização na URL, DELETE confirma e arquiva. O POST legado não tem intenção/recibo; resposta perdida não autoriza replay nem reconciliação por lista/título. GET atual após PATCH/DELETE incertos antecede nova edição sem prova de autoria/rollback. FusoPreferencia é o mesmo recurso de Configurações, sem preferência local ou reescrita histórica. Seis jornadas reais adicionais nos três browsers/dois viewports e todos os inventários anteriores; publicação continua bloqueada. PR contra main com dependências #101/#100/#80 e antecedentes. [Contrato](../contracts/metas.md).
+
+## Primeiro uso #59 — 18/10/2026
+
+Guia privado opcional /inicio, com acesso real, uma próxima ação destacada e explicação de titular/conta sob demanda. Presença por totais globais do proprietário inclui apagadas, arquivados e inativas; não é snapshot conjunto, recibo ou prova de atribuição. Sessão e assinatura são separadas; trial_confirmed e can(operation) prevalecem. Links preservam filtros; formulários existentes revalidam escrita. Sem tour, percentual inventado ou conclusão local. Bot/extensão aguardam lançamento. Medição de laboratório usa tarefas/resultados/durações de vocabulário fixo e gate que recusa campos livres; nenhum coletor de produto é presumido. Pin 5f5f062 e bloqueio de produção mantidos. Seis jornadas reais adicionais, preservando inventários anteriores. PR contra main com dependências #102/#101/#100 e operacionais. Ver [contrato](../contracts/primeiro-uso.md).

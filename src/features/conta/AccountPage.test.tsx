@@ -14,6 +14,10 @@ import { parseConfig } from '../../lib/config';
 import { paginaExemplo } from '../../../tests/fixtures/apostas';
 import { billingStatus } from '../../../tests/fixtures/acesso';
 
+// Preserve the former eager test compilation before continuity assertions;
+// actual cold route loading belongs to the public-build measurement.
+await import('../apostas/ApostasPage');
+
 const disposers: Array<() => void> = [];
 it('confirmação de conta encerrada vem só da memória da sessão, nunca de query ou history state', async () => {
   const { service, router } = open('/login?accountClosed=true', true);
@@ -152,7 +156,11 @@ it('conta confirmada permite continuar; sair permanece uma ação explícita can
       },
     ),
   );
-  const { router, transport } = open('/login?destino=%2Fpainel', true);
+  const { router, transport, service } = open('/login?destino=%2Fpainel', true);
+  // Confirming identity is an explicit action; public intents do not fetch it.
+  await act(async () => {
+    await service.resume();
+  });
   await screen.findByRole('link', { name: 'Continuar na conta' });
   await act(() => router.navigate('/sair'));
   expect(await screen.findByRole('heading', { name: 'Sair' })).toBeVisible();
@@ -172,6 +180,105 @@ it('sem provedor real não oferece autenticação artificial', async () => {
     await screen.findByRole('button', { name: 'Entrar com minha conta' }),
   ).toBeDisabled();
 });
+it('entrada pública não abre novo fluxo nem destino privado enquanto a saída está pendente', async () => {
+  const { service, transport, router, navigate } = open('/login', true);
+  await act(async () => {
+    await service.resume();
+  });
+  let finish!: () => void;
+  transport.logout.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  let ending!: Promise<boolean>;
+  act(() => {
+    ending = service.logout();
+  });
+  await waitFor(() => expect(transport.logout).toHaveBeenCalledTimes(1));
+  await act(() => router.navigate('/login'));
+  expect(
+    screen.getByRole('button', { name: 'Entrar com minha conta' }),
+  ).toBeDisabled();
+  expect(
+    screen.queryByRole('link', { name: /Continuar na conta|Voltar ao site/ }),
+  ).not.toBeInTheDocument();
+  service.login('/painel');
+  expect(navigate).not.toHaveBeenCalled();
+  await act(async () => {
+    finish();
+    await ending;
+  });
+  expect(
+    screen.getByRole('button', { name: 'Entrar com minha conta' }),
+  ).toBeEnabled();
+});
+it('entrada pública bloqueia o gesto enquanto uma consulta real está em andamento', async () => {
+  const { service, transport, context } = open('/login', true);
+  await screen.findByRole('button', { name: 'Entrar com minha conta' });
+  let finish!: (value: typeof context) => void;
+  transport.read.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  let checking!: Promise<boolean>;
+  act(() => {
+    checking = service.resume();
+  });
+  expect(
+    screen.getByRole('button', { name: 'Entrar com minha conta' }),
+  ).toBeDisabled();
+  expect(
+    screen.queryByRole('link', { name: 'Voltar ao site' }),
+  ).not.toBeInTheDocument();
+  await act(async () => {
+    finish(context);
+    await checking;
+  });
+  expect(
+    screen.getByRole('button', { name: 'Entrar com minha conta' }),
+  ).toBeEnabled();
+});
+it('entrada pública encaminha o intent sem identidade e o destino privado continua protegido', async () => {
+  const { transport, router } = open('/login?destino=%2Fpainel');
+  expect(
+    await screen.findByRole('button', { name: 'Entrar com minha conta' }),
+  ).toBeEnabled();
+  expect(transport.read).not.toHaveBeenCalled();
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar ao site' }));
+  await waitFor(() => expect(transport.read).toHaveBeenCalled());
+  await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
+  expect(
+    screen.queryByRole('heading', { name: /^Painel$/ }),
+  ).not.toBeInTheDocument();
+});
+it('trocar de jornada durante a conferência descarta a navegação anterior', async () => {
+  const { transport, router, navigate, context } = open('/login', true);
+  const button = await screen.findByRole('button', {
+    name: 'Entrar com minha conta',
+  });
+  let finish!: (value: typeof context) => void;
+  transport.read.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await userEvent.click(button);
+  await waitFor(() => expect(transport.read).toHaveBeenCalledTimes(1));
+  await act(() => router.navigate('/criar-conta'));
+  await screen.findByRole('heading', { name: 'Criar conta' });
+  await act(async () => {
+    finish(context);
+  });
+  expect(navigate).not.toHaveBeenCalled();
+  expect(
+    screen.getByRole('button', { name: 'Continuar para criar conta' }),
+  ).toBeEnabled();
+});
 it('429/503 não iniciam fluxo nem repetem automaticamente; retry é explícito', async () => {
   const { service, transport, navigate } = open('/esqueci-senha');
   await waitFor(() =>
@@ -185,10 +292,15 @@ it('429/503 não iniciam fluxo nem repetem automaticamente; retry é explícito'
       headers: new Headers({ 'Retry-After': '1' }),
     }),
   );
-  await act(async () => {
-    await service.resume();
-  });
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Continuar para recuperar senha' }),
+  );
   expect(screen.getByRole('alert')).toHaveTextContent(/Muitas tentativas/i);
+  service.login('/painel');
+  expect(navigate).not.toHaveBeenCalled();
+  expect(
+    screen.queryByRole('link', { name: 'Voltar ao site' }),
+  ).not.toBeInTheDocument();
   expect(
     screen.getByRole('button', { name: 'Tentar novamente' }),
   ).toBeDisabled();
@@ -208,7 +320,9 @@ it('429/503 não iniciam fluxo nem repetem automaticamente; retry é explícito'
   await userEvent.click(
     screen.getByRole('button', { name: 'Tentar novamente' }),
   );
-  expect(screen.getByRole('alert')).toHaveTextContent(/indisponível/i);
+  await waitFor(() =>
+    expect(screen.getByRole('alert')).toHaveTextContent(/indisponível/i),
+  );
   expect(navigate).not.toHaveBeenCalled();
 });
 it('link expirado/repetido e recuperação interrompida têm orientação e recomeço genéricos', async () => {

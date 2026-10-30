@@ -1,0 +1,459 @@
+{
+  "backendCommit": "b916f54331f14cf47a3800324bd61d8638043c06",
+  "cases": [
+    {
+      "name": "fair",
+      "tool": "mercado-justo",
+      "body": {
+        "outcomes": [
+          {
+            "name": "Casa vence",
+            "odd": "2"
+          },
+          {
+            "name": "Visitante vence",
+            "odd": "2"
+          }
+        ]
+      },
+      "response": {
+        "data": {
+          "outcomes": [
+            {
+              "name": "Casa vence",
+              "odd": "2",
+              "implied_probability": "0.50000000",
+              "fair_probability": "0.50000000",
+              "fair_odd": "2.00000000"
+            },
+            {
+              "name": "Visitante vence",
+              "odd": "2",
+              "implied_probability": "0.50000000",
+              "fair_probability": "0.50000000",
+              "fair_odd": "2.00000000"
+            }
+          ],
+          "inverse_odds_sum": "1.00000000",
+          "overround": "0.00000000"
+        },
+        "method": "proportional_normalization_largest_remainder",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [
+          "All mutually exclusive outcomes must be supplied; completeness cannot be verified from odds.",
+          "Margin removal is not a prediction of true probabilities."
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "fair-tie",
+      "tool": "mercado-justo",
+      "body": {
+        "outcomes": [
+          {
+            "name": "A",
+            "odd": "3"
+          },
+          {
+            "name": "B",
+            "odd": "3"
+          },
+          {
+            "name": "C",
+            "odd": "3"
+          }
+        ]
+      },
+      "response": {
+        "data": {
+          "outcomes": [
+            {
+              "name": "A",
+              "odd": "3",
+              "implied_probability": "0.33333333",
+              "fair_probability": "0.33333334",
+              "fair_odd": "3.00000000"
+            },
+            {
+              "name": "B",
+              "odd": "3",
+              "implied_probability": "0.33333333",
+              "fair_probability": "0.33333333",
+              "fair_odd": "3.00000000"
+            },
+            {
+              "name": "C",
+              "odd": "3",
+              "implied_probability": "0.33333333",
+              "fair_probability": "0.33333333",
+              "fair_odd": "3.00000000"
+            }
+          ],
+          "inverse_odds_sum": "1.00000000",
+          "overround": "-0.00000000"
+        },
+        "method": "proportional_normalization_largest_remainder",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [
+          "All mutually exclusive outcomes must be supplied; completeness cannot be verified from odds.",
+          "Margin removal is not a prediction of true probabilities."
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "distribution",
+      "tool": "distribuir-entre-resultados",
+      "body": {
+        "outcomes": [
+          {
+            "name": "Casa vence",
+            "odd": "2.1"
+          },
+          {
+            "name": "Visitante vence",
+            "odd": "2.1"
+          }
+        ],
+        "total_stake_centavos": 10000
+      },
+      "response": {
+        "data": {
+          "scenarios": [
+            {
+              "name": "Casa vence",
+              "odd": "2.1",
+              "stake_centavos": 5000,
+              "return_centavos": 10500,
+              "profit_centavos": 500
+            },
+            {
+              "name": "Visitante vence",
+              "odd": "2.1",
+              "stake_centavos": 5000,
+              "return_centavos": 10500,
+              "profit_centavos": 500
+            }
+          ],
+          "total_stake_centavos": 10000,
+          "inverse_odds_sum": "0.95238095",
+          "minimum_profit_centavos": 500,
+          "minimum_roi_percentage": "5.000000",
+          "theoretical_arbitrage": true,
+          "guaranteed_profit": true
+        },
+        "method": "inverse_odds_equal_gross_largest_remainder",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [
+          "All mutually exclusive outcomes must be supplied; completeness cannot be verified from odds.",
+          "Guaranteed profit assumes every quoted price is executable and one outcome wins."
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "loss",
+      "tool": "distribuir-entre-resultados",
+      "body": {
+        "outcomes": [
+          {
+            "name": "Casa vence",
+            "odd": "1.9"
+          },
+          {
+            "name": "Visitante vence",
+            "odd": "1.9"
+          }
+        ],
+        "total_stake_centavos": 10000
+      },
+      "response": {
+        "data": {
+          "scenarios": [
+            {
+              "name": "Casa vence",
+              "odd": "1.9",
+              "stake_centavos": 5000,
+              "return_centavos": 9500,
+              "profit_centavos": -500
+            },
+            {
+              "name": "Visitante vence",
+              "odd": "1.9",
+              "stake_centavos": 5000,
+              "return_centavos": 9500,
+              "profit_centavos": -500
+            }
+          ],
+          "total_stake_centavos": 10000,
+          "inverse_odds_sum": "1.05263158",
+          "minimum_profit_centavos": -500,
+          "minimum_roi_percentage": "-5.000000",
+          "theoretical_arbitrage": false,
+          "guaranteed_profit": false
+        },
+        "method": "inverse_odds_equal_gross_largest_remainder",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [
+          "All mutually exclusive outcomes must be supplied; completeness cannot be verified from odds.",
+          "Guaranteed profit assumes every quoted price is executable and one outcome wins."
+        ],
+        "warnings": ["At least one rounded scenario is not profitable."]
+      }
+    },
+    {
+      "name": "rounding",
+      "tool": "distribuir-entre-resultados",
+      "body": {
+        "outcomes": [
+          {
+            "name": "Casa vence",
+            "odd": "2.1"
+          },
+          {
+            "name": "Visitante vence",
+            "odd": "2.1"
+          }
+        ],
+        "total_stake_centavos": 1
+      },
+      "response": {
+        "data": {
+          "scenarios": [
+            {
+              "name": "Casa vence",
+              "odd": "2.1",
+              "stake_centavos": 1,
+              "return_centavos": 2,
+              "profit_centavos": 1
+            },
+            {
+              "name": "Visitante vence",
+              "odd": "2.1",
+              "stake_centavos": 0,
+              "return_centavos": 0,
+              "profit_centavos": -1
+            }
+          ],
+          "total_stake_centavos": 1,
+          "inverse_odds_sum": "0.95238095",
+          "minimum_profit_centavos": -1,
+          "minimum_roi_percentage": "-100.000000",
+          "theoretical_arbitrage": true,
+          "guaranteed_profit": false
+        },
+        "method": "inverse_odds_equal_gross_largest_remainder",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [
+          "All mutually exclusive outcomes must be supplied; completeness cannot be verified from odds.",
+          "Guaranteed profit assumes every quoted price is executable and one outcome wins."
+        ],
+        "warnings": [
+          "At least one rounded scenario is not profitable.",
+          "Theoretical arbitrage disappears after cent rounding."
+        ]
+      }
+    },
+    {
+      "name": "hedge",
+      "tool": "cobertura-ao-vivo",
+      "body": {
+        "original_stake_centavos": 10000,
+        "original_odd": "1.5",
+        "opposing_odd": "3",
+        "commission_percentage": "0",
+        "stake_type": "cash",
+        "market_type": "two_way"
+      },
+      "response": {
+        "data": {
+          "objective": "equalize_profit",
+          "original_odd": "1.5",
+          "opposing_odd": "3",
+          "commission_percentage": "0",
+          "original_stake_centavos": 10000,
+          "ideal_hedge_stake_centavos": "5000.000000",
+          "hedge_stake_centavos": 5000,
+          "rounding_difference_centavos": "0.000000",
+          "original_wins": {
+            "return_centavos": 15000,
+            "profit_centavos": 0
+          },
+          "hedge_wins": {
+            "return_centavos": 15000,
+            "profit_centavos": 0
+          },
+          "both_outcomes_protected": true
+        },
+        "method": "equal_net_profit",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [
+          "Exactly two mutually exclusive cash-stake outcomes; no freebet, partial cashout or Asian push.",
+          "Commission applies only to the winning leg's odds profit, before cent rounding.",
+          "Profit subtracts both stakes; quoted prices must be executable."
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "commission",
+      "tool": "cobertura-ao-vivo",
+      "body": {
+        "original_stake_centavos": 10000,
+        "original_odd": "1.5",
+        "opposing_odd": "2",
+        "commission_percentage": "10",
+        "stake_type": "cash",
+        "market_type": "two_way"
+      },
+      "response": {
+        "data": {
+          "objective": "equalize_profit",
+          "original_odd": "1.5",
+          "opposing_odd": "2",
+          "commission_percentage": "10",
+          "original_stake_centavos": 10000,
+          "ideal_hedge_stake_centavos": "7631.578947",
+          "hedge_stake_centavos": 7632,
+          "rounding_difference_centavos": "0.421053",
+          "original_wins": {
+            "return_centavos": 14500,
+            "profit_centavos": -3132
+          },
+          "hedge_wins": {
+            "return_centavos": 14501,
+            "profit_centavos": -3131
+          },
+          "both_outcomes_protected": false
+        },
+        "method": "equal_net_profit",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [
+          "Exactly two mutually exclusive cash-stake outcomes; no freebet, partial cashout or Asian push.",
+          "Commission applies only to the winning leg's odds profit, before cent rounding.",
+          "Profit subtracts both stakes; quoted prices must be executable."
+        ],
+        "warnings": ["At least one realized scenario has a residual loss."]
+      }
+    },
+    {
+      "name": "zero-hedge",
+      "tool": "cobertura-ao-vivo",
+      "body": {
+        "original_stake_centavos": 1,
+        "original_odd": "1.01",
+        "opposing_odd": "1000000",
+        "commission_percentage": "0",
+        "stake_type": "cash",
+        "market_type": "two_way"
+      },
+      "response": {
+        "data": {
+          "objective": "equalize_profit",
+          "original_odd": "1.01",
+          "opposing_odd": "1000000",
+          "commission_percentage": "0",
+          "original_stake_centavos": 1,
+          "ideal_hedge_stake_centavos": "0.000001",
+          "hedge_stake_centavos": 0,
+          "rounding_difference_centavos": "-0.000001",
+          "original_wins": {
+            "return_centavos": 1,
+            "profit_centavos": 0
+          },
+          "hedge_wins": {
+            "return_centavos": 0,
+            "profit_centavos": -1
+          },
+          "both_outcomes_protected": false
+        },
+        "method": "equal_net_profit",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [
+          "Exactly two mutually exclusive cash-stake outcomes; no freebet, partial cashout or Asian push.",
+          "Commission applies only to the winning leg's odds profit, before cent rounding.",
+          "Profit subtracts both stakes; quoted prices must be executable."
+        ],
+        "warnings": [
+          "At least one realized scenario has a residual loss.",
+          "The ideal hedge rounds to zero cents."
+        ]
+      }
+    },
+    {
+      "name": "bankroll",
+      "tool": "percentual-banca",
+      "body": {
+        "bankroll_centavos": 10000,
+        "percentage": "1.25"
+      },
+      "response": {
+        "data": {
+          "mode": "direct",
+          "banca_centavos": 10000,
+          "percentage": "1.25",
+          "ideal_stake_centavos": "125.000000",
+          "stake_centavos": 125
+        },
+        "method": "bankroll_times_percentage",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [],
+        "warnings": []
+      }
+    },
+    {
+      "name": "inverse",
+      "tool": "percentual-banca",
+      "body": {
+        "bankroll_centavos": 101,
+        "stake_centavos": 1
+      },
+      "response": {
+        "data": {
+          "mode": "inverse",
+          "banca_centavos": 101,
+          "stake_centavos": 1,
+          "percentage": "0.990099",
+          "exact_percentage": "0.990099"
+        },
+        "method": "stake_divided_by_bankroll",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [],
+        "warnings": []
+      }
+    },
+    {
+      "name": "zero",
+      "tool": "percentual-banca",
+      "body": {
+        "bankroll_centavos": 1,
+        "percentage": "0"
+      },
+      "response": {
+        "data": {
+          "mode": "direct",
+          "banca_centavos": 1,
+          "percentage": "0",
+          "ideal_stake_centavos": "0.000000",
+          "stake_centavos": 0
+        },
+        "method": "bankroll_times_percentage",
+        "precision": "fraction:8; percent:6; money:cent; intermediate:48",
+        "rounding": "ROUND_HALF_UP; allocation:largest_remainder_input_order",
+        "assumptions": [],
+        "warnings": []
+      }
+    }
+  ]
+}

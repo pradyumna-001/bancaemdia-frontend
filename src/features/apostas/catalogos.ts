@@ -87,8 +87,10 @@ export function useCatalogos(
     ativo && !!contrato[endpoint] && auth?.state.phase === 'authenticated';
   const dimensions = keys.filter((key) => dimensoes.includes(key));
   const current = dimensions.map((key) => searches[key] ?? { q: '', page: 1 });
+  // Disabled catalogs return no options at all: they need no query observers
+  // (one per dimension and mode), which every render would otherwise rebuild.
   const queries = useQueries({
-    queries: dimensions.flatMap((key, index) =>
+    queries: (enabled ? dimensions : []).flatMap((key, index) =>
       [false, true].map((selected) => {
         const search = current[index]!;
         const id = selected ? visao.valores[key] : undefined;
@@ -104,7 +106,9 @@ export function useCatalogos(
             selected,
             query,
           ],
-          enabled: enabled && (!selected || !!id),
+          enabled:
+            enabled &&
+            (selected ? !!id : !!visao.valores[key] || !!searches[key]),
           retryOnMount: false,
           queryFn: async ({ signal }: { signal: AbortSignal }) => {
             // Keep the original safe-read recovery after the shared deadline.
@@ -157,6 +161,10 @@ export function useCatalogos(
       return [
         key,
         {
+          abrir: () =>
+            setSearches((old) =>
+              old[key] ? old : { ...old, [key]: { q: '', page: 1 } },
+            ),
           fase: query.isError ? 'erro' : query.data ? 'pronto' : 'carregando',
           options: query.data?.options ?? [],
           consulta: search.q,

@@ -4796,6 +4796,528 @@ export const SITE_READ_CONTRACT = {
       incluir_apagadas: { anyOf: [{ type: 'boolean' }, { type: 'null' }] },
     },
   },
+  '/api/v1/painel/hipotetica': {
+    query: {
+      fresh: { type: 'boolean' },
+      periodo: {
+        anyOf: [
+          { type: 'string', enum: ['7d', '30d', '90d', '1y', 'all'] },
+          { type: 'null' },
+        ],
+      },
+      desde: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      casa_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'string', pattern: '^[1-9][0-9]{0,18}$', maxLength: 19 },
+          { type: 'null' },
+        ],
+      },
+      tipster_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'string', pattern: '^[1-9][0-9]{0,18}$', maxLength: 19 },
+          { type: 'null' },
+        ],
+      },
+      mercado_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'string', pattern: '^[1-9][0-9]{0,18}$', maxLength: 19 },
+          { type: 'null' },
+        ],
+      },
+      competicao_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'string', pattern: '^[1-9][0-9]{0,18}$', maxLength: 19 },
+          { type: 'null' },
+        ],
+      },
+      titular_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'string', pattern: '^[1-9][0-9]{0,18}$', maxLength: 19 },
+          { type: 'null' },
+        ],
+      },
+      conta_casa_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'string', pattern: '^[1-9][0-9]{0,18}$', maxLength: 19 },
+          { type: 'null' },
+        ],
+      },
+      grupo_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'string', pattern: '^[1-9][0-9]{0,18}$', maxLength: 19 },
+          { type: 'null' },
+        ],
+      },
+      banca_id: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: 9223372036854776000 },
+          { type: 'string', pattern: '^[1-9][0-9]{0,18}$', maxLength: 19 },
+          { type: 'null' },
+        ],
+      },
+      estado: { anyOf: [{ type: 'string', maxLength: 64 }, { type: 'null' }] },
+      origem: { anyOf: [{ type: 'string', maxLength: 128 }, { type: 'null' }] },
+      revisao_grave: { anyOf: [{ type: 'boolean' }, { type: 'null' }] },
+      visibilidade: {
+        anyOf: [
+          { type: 'string', enum: ['ativas', 'apagadas', 'todas'] },
+          { type: 'null' },
+        ],
+      },
+      incluir_apagadas: { anyOf: [{ type: 'boolean' }, { type: 'null' }] },
+    },
+    response: {
+      type: 'object',
+      required: [
+        'estado',
+        'real',
+        'hipotetico',
+        'diferencas',
+        'apostas_consideradas',
+        'vinculos_confirmados',
+        'stakes_diferentes',
+        'apostas_alteradas',
+        'apostas_indisponiveis',
+        'limitacoes',
+        'filtros',
+        'snapshot_em',
+        'respondido_em',
+      ],
+      properties: {
+        apostas_alteradas: { type: 'integer', minimum: 0, maximum: 10000 },
+        apostas_consideradas: { type: 'integer', minimum: 0, maximum: 10000 },
+        apostas_indisponiveis: { type: 'integer', minimum: 0, maximum: 10000 },
+        arredondamento: {
+          type: 'string',
+          const: 'ROUND_HALF_EVEN_por_etapa_de_liquidacao',
+        },
+        criterio_temporal: { type: 'string', const: 'data_aposta' },
+        diferencas: {
+          type: 'object',
+          required: [
+            'giro_centavos',
+            'base_roi_centavos',
+            'retorno_centavos',
+            'lucro_centavos',
+            'exposicao_pendente_centavos',
+          ],
+          properties: {
+            base_roi_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            exposicao_pendente_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            giro_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            lucro_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            retorno_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+          },
+        },
+        escopo_financeiro: {
+          type: 'string',
+          const: 'liquidadas_sem_revisao_sem_dica_consolidada',
+        },
+        estado: {
+          type: 'string',
+          enum: [
+            'sem_apostas',
+            'sem_vinculos_elegiveis',
+            'sem_stakes_diferentes',
+            'comparado',
+            'parcial',
+            'indisponivel',
+          ],
+        },
+        filtros: {
+          type: 'object',
+          required: ['visibilidade', 'incluir_apagadas'],
+          properties: {
+            ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            banca_id: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^[1-9][0-9]{0,18}$',
+                  maxLength: 19,
+                },
+                { type: 'null' },
+              ],
+            },
+            casa_id: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^[1-9][0-9]{0,18}$',
+                  maxLength: 19,
+                },
+                { type: 'null' },
+              ],
+            },
+            competicao_id: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^[1-9][0-9]{0,18}$',
+                  maxLength: 19,
+                },
+                { type: 'null' },
+              ],
+            },
+            conta_casa_id: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^[1-9][0-9]{0,18}$',
+                  maxLength: 19,
+                },
+                { type: 'null' },
+              ],
+            },
+            desde: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            estado: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            grupo_id: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^[1-9][0-9]{0,18}$',
+                  maxLength: 19,
+                },
+                { type: 'null' },
+              ],
+            },
+            incluir_apagadas: { type: 'boolean' },
+            mercado_id: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^[1-9][0-9]{0,18}$',
+                  maxLength: 19,
+                },
+                { type: 'null' },
+              ],
+            },
+            origem: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            periodo: {
+              anyOf: [
+                { type: 'string', enum: ['7d', '30d', '90d', '1y', 'all'] },
+                { type: 'null' },
+              ],
+            },
+            revisao_grave: { anyOf: [{ type: 'boolean' }, { type: 'null' }] },
+            tipster_id: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^[1-9][0-9]{0,18}$',
+                  maxLength: 19,
+                },
+                { type: 'null' },
+              ],
+            },
+            titular_id: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^[1-9][0-9]{0,18}$',
+                  maxLength: 19,
+                },
+                { type: 'null' },
+              ],
+            },
+            visibilidade: {
+              type: 'string',
+              enum: ['ativas', 'apagadas', 'todas'],
+            },
+          },
+        },
+        fonte_dados: { type: 'string', const: 'apostas_ao_vivo' },
+        fuso_horario: { type: 'string', const: 'America/Sao_Paulo' },
+        hipotetico: {
+          type: 'object',
+          required: [
+            'total_apostas',
+            'liquidadas',
+            'pendentes',
+            'em_revisao',
+            'fora_do_financeiro',
+            'anuladas',
+            'resultados_desconhecidos',
+            'freebets',
+            'giro_centavos',
+            'base_roi_centavos',
+            'retorno_centavos',
+            'lucro_centavos',
+            'exposicao_pendente_centavos',
+            'face_pendente_centavos',
+            'roi',
+            'win_rate',
+          ],
+          properties: {
+            anuladas: { type: 'integer', minimum: 0, maximum: 10000 },
+            base_roi_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            em_revisao: { type: 'integer', minimum: 0, maximum: 10000 },
+            exposicao_pendente_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            face_pendente_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            fora_do_financeiro: { type: 'integer', minimum: 0, maximum: 10000 },
+            freebets: { type: 'integer', minimum: 0, maximum: 10000 },
+            giro_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            liquidadas: { type: 'integer', minimum: 0, maximum: 10000 },
+            lucro_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            pendentes: { type: 'integer', minimum: 0, maximum: 10000 },
+            resultados_desconhecidos: {
+              type: 'integer',
+              minimum: 0,
+              maximum: 10000,
+            },
+            retorno_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            roi: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            total_apostas: { type: 'integer', minimum: 0, maximum: 10000 },
+            win_rate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          },
+        },
+        limitacoes: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['motivo', 'quantidade'],
+            properties: {
+              motivo: {
+                type: 'string',
+                enum: [
+                  'vinculo_ambiguo',
+                  'dica_indisponivel',
+                  'dica_em_revisao',
+                  'stake_indicada_invalida',
+                  'stake_real_zero',
+                  'odd_real_invalida',
+                  'cashout_nao_escalavel',
+                  'historico_financeiro_ausente',
+                  'taxa_bonus_ou_retorno_fixo',
+                  'retorno_real_desconhecido',
+                  'retorno_fora_da_regra_padrao',
+                  'fora_do_financeiro',
+                  'pendente',
+                  'resultado_real_desconhecido',
+                ],
+              },
+              quantidade: { type: 'integer', minimum: 0, maximum: 10000 },
+            },
+          },
+        },
+        moeda: { type: 'string', const: 'BRL' },
+        precisao_decimal: { type: 'integer', const: 80 },
+        real: {
+          type: 'object',
+          required: [
+            'total_apostas',
+            'liquidadas',
+            'pendentes',
+            'em_revisao',
+            'fora_do_financeiro',
+            'anuladas',
+            'resultados_desconhecidos',
+            'freebets',
+            'giro_centavos',
+            'base_roi_centavos',
+            'retorno_centavos',
+            'lucro_centavos',
+            'exposicao_pendente_centavos',
+            'face_pendente_centavos',
+            'roi',
+            'win_rate',
+          ],
+          properties: {
+            anuladas: { type: 'integer', minimum: 0, maximum: 10000 },
+            base_roi_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            em_revisao: { type: 'integer', minimum: 0, maximum: 10000 },
+            exposicao_pendente_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            face_pendente_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            fora_do_financeiro: { type: 'integer', minimum: 0, maximum: 10000 },
+            freebets: { type: 'integer', minimum: 0, maximum: 10000 },
+            giro_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            liquidadas: { type: 'integer', minimum: 0, maximum: 10000 },
+            lucro_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            pendentes: { type: 'integer', minimum: 0, maximum: 10000 },
+            resultados_desconhecidos: {
+              type: 'integer',
+              minimum: 0,
+              maximum: 10000,
+            },
+            retorno_centavos: {
+              anyOf: [
+                {
+                  type: 'string',
+                  pattern: '^-?(0|[1-9][0-9]*)$',
+                  maxLength: 50,
+                },
+                { type: 'null' },
+              ],
+            },
+            roi: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            total_apostas: { type: 'integer', minimum: 0, maximum: 10000 },
+            win_rate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          },
+        },
+        regra: {
+          type: 'string',
+          const: 'stake_dica_confirmada_odd_resultado_reais_v1',
+        },
+        respondido_em: { type: 'string' },
+        snapshot_em: { type: 'string' },
+        stakes_diferentes: { type: 'integer', minimum: 0, maximum: 10000 },
+        unidade: { type: 'string', const: 'centavos' },
+        vinculos_confirmados: { type: 'integer', minimum: 0, maximum: 10000 },
+      },
+    },
+  },
   '/api/v1/painel': {
     query: {
       periodo: { type: 'string', enum: ['7d', '30d', '90d', '1y', 'all'] },
@@ -5388,6 +5910,91 @@ export const SITE_READ_CONTRACT = {
       },
     },
   },
+  '/api/v1/painel/metas': {
+    query: {},
+    response: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: [
+          'id',
+          'titulo',
+          'metrica',
+          'inicio',
+          'fim',
+          'alvo',
+          'linha_base',
+          'status',
+          'valor_atual',
+          'progresso',
+          'alvo_atingido',
+        ],
+        properties: {
+          alvo: { type: 'string' },
+          alvo_atingido: { type: 'boolean' },
+          fim: { type: 'string' },
+          id: { type: 'integer' },
+          inicio: { type: 'string' },
+          linha_base: { type: 'string' },
+          metrica: {
+            type: 'string',
+            enum: [
+              'lucro_centavos',
+              'giro_centavos',
+              'roi',
+              'win_rate',
+              'total_apostas',
+            ],
+          },
+          progresso: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          status: { type: 'string', enum: ['ativa', 'concluida', 'arquivada'] },
+          titulo: { type: 'string' },
+          valor_atual: { type: 'string' },
+        },
+      },
+    },
+  },
+  '/api/v1/painel/metas/{meta_id}': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'id',
+        'titulo',
+        'metrica',
+        'inicio',
+        'fim',
+        'alvo',
+        'linha_base',
+        'status',
+        'valor_atual',
+        'progresso',
+        'alvo_atingido',
+      ],
+      properties: {
+        alvo: { type: 'string' },
+        alvo_atingido: { type: 'boolean' },
+        fim: { type: 'string' },
+        id: { type: 'integer' },
+        inicio: { type: 'string' },
+        linha_base: { type: 'string' },
+        metrica: {
+          type: 'string',
+          enum: [
+            'lucro_centavos',
+            'giro_centavos',
+            'roi',
+            'win_rate',
+            'total_apostas',
+          ],
+        },
+        progresso: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        status: { type: 'string', enum: ['ativa', 'concluida', 'arquivada'] },
+        titulo: { type: 'string' },
+        valor_atual: { type: 'string' },
+      },
+    },
+  },
   '/api/v1/filtros/{dimensao}': {
     query: {
       id: { anyOf: [{ type: 'string', maxLength: 128 }, { type: 'null' }] },
@@ -5435,6 +6042,129 @@ export const SITE_READ_CONTRACT = {
             total: { type: 'integer', minimum: 0 },
           },
         },
+      },
+    },
+  },
+  'POST /api/v1/painel/metas': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'id',
+        'titulo',
+        'metrica',
+        'inicio',
+        'fim',
+        'alvo',
+        'linha_base',
+        'status',
+        'valor_atual',
+        'progresso',
+        'alvo_atingido',
+      ],
+      properties: {
+        alvo: { type: 'string' },
+        alvo_atingido: { type: 'boolean' },
+        fim: { type: 'string' },
+        id: { type: 'integer' },
+        inicio: { type: 'string' },
+        linha_base: { type: 'string' },
+        metrica: {
+          type: 'string',
+          enum: [
+            'lucro_centavos',
+            'giro_centavos',
+            'roi',
+            'win_rate',
+            'total_apostas',
+          ],
+        },
+        progresso: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        status: { type: 'string', enum: ['ativa', 'concluida', 'arquivada'] },
+        titulo: { type: 'string' },
+        valor_atual: { type: 'string' },
+      },
+    },
+  },
+  'PATCH /api/v1/painel/metas/{meta_id}': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'id',
+        'titulo',
+        'metrica',
+        'inicio',
+        'fim',
+        'alvo',
+        'linha_base',
+        'status',
+        'valor_atual',
+        'progresso',
+        'alvo_atingido',
+      ],
+      properties: {
+        alvo: { type: 'string' },
+        alvo_atingido: { type: 'boolean' },
+        fim: { type: 'string' },
+        id: { type: 'integer' },
+        inicio: { type: 'string' },
+        linha_base: { type: 'string' },
+        metrica: {
+          type: 'string',
+          enum: [
+            'lucro_centavos',
+            'giro_centavos',
+            'roi',
+            'win_rate',
+            'total_apostas',
+          ],
+        },
+        progresso: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        status: { type: 'string', enum: ['ativa', 'concluida', 'arquivada'] },
+        titulo: { type: 'string' },
+        valor_atual: { type: 'string' },
+      },
+    },
+  },
+  'DELETE /api/v1/painel/metas/{meta_id}': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'id',
+        'titulo',
+        'metrica',
+        'inicio',
+        'fim',
+        'alvo',
+        'linha_base',
+        'status',
+        'valor_atual',
+        'progresso',
+        'alvo_atingido',
+      ],
+      properties: {
+        alvo: { type: 'string' },
+        alvo_atingido: { type: 'boolean' },
+        fim: { type: 'string' },
+        id: { type: 'integer' },
+        inicio: { type: 'string' },
+        linha_base: { type: 'string' },
+        metrica: {
+          type: 'string',
+          enum: [
+            'lucro_centavos',
+            'giro_centavos',
+            'roi',
+            'win_rate',
+            'total_apostas',
+          ],
+        },
+        progresso: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        status: { type: 'string', enum: ['ativa', 'concluida', 'arquivada'] },
+        titulo: { type: 'string' },
+        valor_atual: { type: 'string' },
       },
     },
   },

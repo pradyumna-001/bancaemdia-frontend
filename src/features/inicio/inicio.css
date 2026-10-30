@@ -1,0 +1,136 @@
+.inicio-pagina {
+  max-width: 68rem;
+}
+.inicio-abertura {
+  max-width: 55ch;
+  margin-block-end: var(--espaco-32);
+}
+.inicio-pagina h2 {
+  margin-block: 0 var(--espaco-12);
+}
+.inicio-pagina h3 {
+  margin-block: 0 var(--espaco-8);
+}
+.inicio-pagina > section,
+.inicio-contas,
+.inicio-retomar {
+  margin-block: var(--espaco-24);
+}
+.inicio-situacao {
+  padding-block-end: var(--espaco-16);
+  border-block-end: 1px solid var(--borda);
+}
+.inicio-estado {
+  font-weight: var(--peso-forte);
+}
+.inicio-proximo {
+  padding: var(--espaco-24);
+  background: var(--superficie-secundaria);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+.inicio-proximo .legenda {
+  margin-block-start: 0;
+}
+.inicio-principal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-12) var(--espaco-16);
+  background: var(--acao);
+  color: var(--sobre-acao);
+  border-radius: var(--raio-controle);
+  font-weight: var(--peso-destaque);
+  text-decoration: none;
+}
+.inicio-principal:hover {
+  background: var(--acao-hover);
+  color: var(--sobre-acao);
+}
+.inicio-pagina .inicio-proximo > button {
+  display: flex;
+  margin-block-start: var(--espaco-16);
+}
+.inicio-pagina button,
+.inicio-canais a,
+.inicio-retomar a,
+.inicio-abertura > a,
+.inicio-situacao a,
+.inicio-contas > a {
+  min-height: var(--alvo-toque);
+  display: inline-flex;
+  align-items: center;
+  padding-block: var(--espaco-8);
+}
+.inicio-pagina button {
+  padding-inline: var(--espaco-16);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--tinta);
+}
+.inicio-contas summary {
+  cursor: pointer;
+  padding-block: var(--espaco-12);
+  font-weight: var(--peso-destaque);
+}
+.inicio-contas dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-24);
+}
+.inicio-contas dt {
+  font-weight: var(--peso-forte);
+}
+.inicio-contas dd {
+  margin: var(--espaco-8) 0;
+}
+.inicio-canais {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+.inicio-canais li {
+  display: flex;
+  flex-direction: column;
+  padding: var(--espaco-24);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+.inicio-canais p {
+  margin-block: 0 var(--espaco-12);
+}
+.inicio-canais a {
+  margin-block-start: auto;
+}
+.inicio-retomar {
+  border-block-start: 1px solid var(--borda);
+  padding-block-start: var(--espaco-24);
+}
+.inicio-retomar a {
+  margin-inline-end: var(--espaco-24);
+}
+@media (max-width: 640px) {
+  .inicio-pagina {
+    padding: var(--espaco-16);
+  }
+  .inicio-proximo,
+  .inicio-canais li {
+    padding: var(--espaco-16);
+  }
+  .inicio-canais,
+  .inicio-contas dl {
+    grid-template-columns: 1fr;
+  }
+  .inicio-principal,
+  .inicio-proximo > button {
+    width: 100%;
+  }
+  .inicio-proximo > button {
+    display: flex;
+    justify-content: center;
+  }
+}
