@@ -225,46 +225,6 @@ it('separa os três canais e cria fonte antes do PUT preservando filtros', async
     true,
   );
 });
-it('cadastro inicial aguarda a lista de fontes e um clique registra uma única fonte', async () => {
-  let hold = true;
-  let finish: (() => void) | undefined;
-  const server = simulated(async (request) => {
-    const url = new URL(request.url);
-    if (
-      hold &&
-      request.method === 'GET' &&
-      url.pathname === '/api/v1/planilhas/fontes'
-    )
-      return new Promise<Response>((resolve) => {
-        finish = () => {
-          hold = false;
-          const response = server.fixture.handle(
-            'GET',
-            url.pathname,
-            url.searchParams,
-          );
-          resolve(json(response.data, response.status));
-        };
-      });
-    return undefined;
-  });
-  server.fixture.sources.clear();
-  await setup(server.fetch);
-  await waitFor(() => expect(finish).toBeDefined());
-  const name = screen.getByLabelText('Nome da nova fonte');
-  fireEvent.change(name, { target: { value: 'Fonte após consulta' } });
-  const register = screen.getByRole('button', { name: 'Registrar nova fonte' });
-  expect(register).toBeDisabled();
-  fireEvent.submit(name.closest('form')!);
-  expect(server.writes).toHaveLength(0);
-  expect(screen.getByTestId('url')).not.toHaveTextContent('fonte=');
-  await act(async () => finish!());
-  await waitFor(() => expect(register).toBeEnabled());
-  fireEvent.click(register);
-  await screen.findByLabelText('Arquivo XLSX');
-  expect(server.writes).toHaveLength(1);
-  expect(server.writes[0]!.method).toBe('PUT');
-});
 it('cadastro mantém ações bloqueadas até terminar a atualização das fontes', async () => {
   let hold = false;
   let finish: (() => void) | undefined;

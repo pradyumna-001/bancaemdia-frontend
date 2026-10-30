@@ -1,13 +1,5 @@
 # ADR 019: Produto vigente, contratos e ordem de implementação
 
-Atualização #36 (18/10/2026): ensaiar a composição frontend #103/#78/#87/#77
-contra main, sem PR empilhada ou merge administrativo. Corrigir omissões de
-consumidores na árvore conjunta e usar uma API real completa 37b1302, 129 operações,
-com #191 acrescida às 128 anteriores intactas. Preservar todos os inventários e
-adicionar identidade nos três browsers, calculadoras READ_ONLY e duplicidade
-Casa × Telegram. [Contrato](../contracts/e2e-produto.md). Pin permanece sandbox;
-integração, leitores/host e distribuição externa têm aceites próprios antes de release.
-
 ## Status
 
 Accepted — direção autorizada pelo titular em 29/09/2026; implementação/revisão no PR da #48. Aceitação da direção não declara futuras capacidades entregues ou API em produção.
@@ -103,31 +95,3 @@ Backend #202/PR #203 resolve a lacuna auditada. Consumidor preserva frontend #95
 ## E2E de entrada #30 — 15/10/2026
 
 Preservar o pin ec46748 e a frontend #96, com PR contra main e dependências declaradas. A cobertura liga Print recebido à Revisão e à aposta atribuída, confirma planilha após perda de resposta, e prova export com 429 real e POST confirmado cuja resposta não chega à SPA. Não alterar relógios/limites nem tratar listagem como reconciliação do export legado sem UUID. Os inventários existentes permanecem; seis casos de export em matriz isolada de 15 minutos ampliam as 54 jornadas para 60. Nenhuma tela nova, decisão financeira local ou aprovação de gasto. Traces usam projeção permitida de metadados, sem argumentos/resultados/rede; falha de sanitização impede publicação do ZIP bruto e um gate verifica os artefatos antes de upload. [Matriz e diagnóstico](../contracts/entrada.md).
-
-## Ajuda #35 — parcela adiantada em 16/10/2026
-
-Enquanto #34 aguarda leitura web de sessão, adiantar Tutorial/Extensão públicos e ajuda contextual do Excel, sobre frontend #97, contra main. Reutilizar download e contratos de entrada existentes, sem dados privados na ajuda ou promessa de coleta disponível. A extensão não tem release em ff62454: informar Esperando lançamento, sem binário/checksum inventados ou instalação do protótipo. A #35 permanece aberta pela distribuição verificável e reconciliação com #34. A prova real existente amplia-se para baixar/abrir Excel pela SPA, sem alterar pin, inventário, gates ou timeouts. [Contrato](../contracts/ajuda.md).
-
-## Coleta #34 e complemento da #35 — 16/10/2026
-
-Backend #204/PR #205 entrega a projeção web. Consumir uma única árvore real 86c82c9 (127 operações, hash f486d9af983fcea52a087ec78aefedbfd3e65bdf30bf237a8f5b124a473d1595), preservando ec46748 e todas as fontes anteriores. Gestão em READ_ONLY com controles próprios por instalação, segredos transitórios e nenhuma simulação de presença, fronteira ou materialização. Acrescentar seis jornadas reais/26 aceites API sem remover gates anteriores; o novo workflow separado não altera os timeouts dos existentes. Contra main, dependente da frontend #98 e backend #205/fontes do pin. A ajuda da #35 passa a orientar a Coleta implementada; resta release pública verificável da extensão (#16/PR #25), que a API não publica. [Coleta](../contracts/coleta.md), [Ajuda](../contracts/ajuda.md). Sem merge, deploy ou promoção de sandbox.
-
-## Análises #56 — 17/10/2026
-
-Adiantar a #56 enquanto o backend prepara a correção de confirmação da troca de conta #53. Análises e evolução ampliada já integradas em b916f54 (#158); preservar o sandbox único 86c82c9 e seus consumidores. O titular escolheu a proposta A após comparar barras/tabela expansível e tabela compacta nos dois viewports. Resumo/partições usam uma resposta; caixa tem população e frescor explicitamente separados, com linhas interrompidas em null e valores recebidos. Não adicionar filtros ou acumular dinheiro no cliente. Futura PR contra main com frontend #99/fontes do pin declaradas, seis jornadas reais adicionais sem skips, inventários/gates anteriores preservados. [Contrato de Análises](../contracts/analises.md).
-
-## Troca temporal #53 — auditoria de 17/10/2026
-
-A #36 depende das capacidades pendentes #53/#56/#57/#59, além da distribuição verificável na #35. Iniciar pela #53, que completa Contas e titulares. O motor de troca e a idempotência já estão integrados em b916f54, mas a aplicação não compara a evidência de impactos com a prévia apresentada; o hash cobre somente o pedido. Corrigir essa confirmação no servidor antes de concluir a tela, preservando replay de aplicação confirmada, atribuição temporal e explícita, e o pin sandbox único 86c82c9 até a entrega de uma árvore reconciliada. [Auditoria estática e limites](../audits/troca-conta-2026-10-17.md). Solicitação emergencial preparada; não há PR frontend pronta, merge ou publicação.
-
-## Troca temporal #53 — retomada após entrega em 17/10/2026
-
-Backend #206/PR #207 corrigiu a evidência e publicou GET da mesma intenção; candidato 132ee915 tem 26 checks verdes. A árvore real 5f5f062 descende do pin completo, tem 128 operações e preserva todas as fontes, sem união de schemas. Atualizar tipos e todos os ensaios para esse mesmo pin, mantendo disponibilidade sandbox e publicação bloqueada. A SPA oferece matriz elegível, instante/fuso e estado explícitos, prévia e confirmação separadas e consulta de recibo em READ_ONLY; nenhum POST é repetido automaticamente. IDs afetados são indicação para revisão, sem migração ou dinheiro alterado. UUID/corpo/recibos somente em memória; a regra de sessão e o contrato da API excluem URL/storage da intenção. Consulta após recarga exige código guardado por gesto anterior, sem reconstruir corpo. PR contra main, dependente da frontend #100/#99 e backend #207/fontes; acrescentar seis jornadas reais e 34 aceites API sem skips ou remoção dos inventários/gates anteriores. [Contrato](../contracts/troca-conta.md). Revisão/merge pelo administrador.
-
-## Metas e fuso #57 — 17/10/2026
-
-Consumir as metas integradas em b916f54, preservadas no pin completo 5f5f062 e em todos os ensaios. Não há lacuna de endpoint a inventar: progresso, valor atual e alvo atingido são exclusivos da API; os decimais legados de configuração são formatados exatamente. A seção é opcional, sem metas padrão, e explicita sua população global/intervalo próprio, distinta dos filtros de Painel preservados no endereço. Lista inclui arquivadas, status é visualização na URL, DELETE confirma e arquiva. O POST legado não tem intenção/recibo; resposta perdida não autoriza replay nem reconciliação por lista/título. GET atual após PATCH/DELETE incertos antecede nova edição sem prova de autoria/rollback. FusoPreferencia é o mesmo recurso de Configurações, sem preferência local ou reescrita histórica. Seis jornadas reais adicionais nos três browsers/dois viewports e todos os inventários anteriores; publicação continua bloqueada. PR contra main com dependências #101/#100/#80 e antecedentes. [Contrato](../contracts/metas.md).
-
-## Primeiro uso #59 — 18/10/2026
-
-Guia privado opcional /inicio, com acesso real, uma próxima ação destacada e explicação de titular/conta sob demanda. Presença por totais globais do proprietário inclui apagadas, arquivados e inativas; não é snapshot conjunto, recibo ou prova de atribuição. Sessão e assinatura são separadas; trial_confirmed e can(operation) prevalecem. Links preservam filtros; formulários existentes revalidam escrita. Sem tour, percentual inventado ou conclusão local. Bot/extensão aguardam lançamento. Medição de laboratório usa tarefas/resultados/durações de vocabulário fixo e gate que recusa campos livres; nenhum coletor de produto é presumido. Pin 5f5f062 e bloqueio de produção mantidos. Seis jornadas reais adicionais, preservando inventários anteriores. PR contra main com dependências #102/#101/#100 e operacionais. Ver [contrato](../contracts/primeiro-uso.md).

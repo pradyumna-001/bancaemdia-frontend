@@ -6,50 +6,21 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import * as api from '../api/client';
 import { parseConfig } from '../lib/config';
 import { unlinkedTelegram } from '../../tests/fixtures/telegram';
-import { billingStatus } from '../../tests/fixtures/acesso';
-import { routeSession } from '../../tests/fixtures/route-session';
-import { ProvedorAuth } from '../auth/ProvedorAuth';
 import { App } from './App';
 import { RouteError } from './RouteError';
 import { createAppQueryClient } from './queryClient';
 import { createAppRoutes } from './routes';
 
-// Compile actual page modules before the unit cases, as eager routes previously
-// did. Guards/rendering keep their original assertion deadlines. Cold downloads
-// and parsing are measured against the public build by the performance proof.
-await Promise.all(
-  Object.values(import.meta.glob('../features/**/*Page.tsx')).map((load) =>
-    load(),
-  ),
-);
-
 const disposers: Array<() => void> = [];
 beforeEach(() => {
-  // jsdom does not implement native dialog methods. Real-browser coverage keeps
-  // exercising their focus, Escape and modal behavior independently.
-  HTMLDialogElement.prototype.showModal ??= function () {
-    this.setAttribute('open', '');
-  };
-  HTMLDialogElement.prototype.close ??= function () {
-    if (!this.hasAttribute('open')) return;
-    this.removeAttribute('open');
-    this.dispatchEvent(new Event('close'));
-  };
   vi.spyOn(api, 'getApiClient').mockReturnValue(
     api.createApiClient(
       parseConfig({ VITE_API_URL: 'http://127.0.0.1:8000' }),
       {
-        fetcher: async (request) =>
-          new Response(
-            JSON.stringify(
-              new URL(request.url).pathname === '/api/v1/billing/status'
-                ? billingStatus
-                : unlinkedTelegram,
-            ),
-            {
-              headers: { 'Content-Type': 'application/json' },
-            },
-          ),
+        fetcher: async () =>
+          new Response(JSON.stringify(unlinkedTelegram), {
+            headers: { 'Content-Type': 'application/json' },
+          }),
       },
     ),
   );
@@ -59,7 +30,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-async function open(
+function open(
   path: string,
   session = true,
   routes = createAppRoutes(() => session),
@@ -73,32 +44,11 @@ async function open(
     { initialEntries: [path] },
   );
   const queryClient = createAppQueryClient();
-  const identity = session ? await routeSession(queryClient) : undefined;
-  let unmount = () => {};
   disposers.push(() => {
-    unmount();
     router.dispose();
-    identity?.dispose();
     queryClient.clear();
   });
-  // Flush the real asynchronous router/lazy mount before page assertions.
-  // The case and assertion deadlines stay unchanged.
-  await act(async () => {
-    const app = (
-      <App
-        router={router}
-        queryClient={queryClient}
-        access={identity?.access}
-      />
-    );
-    unmount = render(
-      identity ? (
-        <ProvedorAuth service={identity.service}>{app}</ProvedorAuth>
-      ) : (
-        app
-      ),
-    ).unmount;
-  });
+  render(<App router={router} queryClient={queryClient} />);
   return { router, queryClient };
 }
 
@@ -118,10 +68,8 @@ it.each([
   ['/contas/42', 'Contas do titular'],
   ['/assinatura', 'Assinatura'],
   ['/calculadoras', 'Calculadoras'],
-  ['/e-se', 'E se eu seguisse a stake do tipster?'],
   ['/painel/analises', 'Análises'],
   ['/painel/metas', 'Metas'],
-  ['/inicio', 'Primeiro uso'],
   ['/sistema', 'Sistema'],
   ['/tutorial', 'Tutorial'],
   ['/extensao', 'Extensão'],
@@ -133,10 +81,9 @@ it.each([
   ['/senha', 'Alterar senha'],
   ['/sair', 'Sair'],
 ])('renderiza %s com sessão disponível', async (path, title) => {
-  await open(path);
+  open(path);
   await waitFor(() => {
     expect(screen.getByRole('heading', { name: title })).toBeVisible();
-    expect(document.querySelector('.rota-carregando')).not.toBeInTheDocument();
     expect(
       screen.queryByText(/^Abrindo (privacidade|revisão|formulário)…$/),
     ).not.toBeInTheDocument();
@@ -146,7 +93,7 @@ it.each([
 it('protege o destino inteiro sem permitir sessão via URL ou storage', async () => {
   localStorage.setItem('session', 'true');
   const original = '/aposta/abc?apagadas=1&casa=teste&session=true#foto';
-  const { router } = await open(original, false);
+  const { router } = open(original, false);
   expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeVisible();
   expect(router.state.location.pathname).toBe('/login');
   expect(new URLSearchParams(router.state.location.search).get('destino')).toBe(
@@ -157,7 +104,7 @@ it('protege o destino inteiro sem permitir sessão via URL ou storage', async ()
 });
 
 it('mantém query e fragmento ao abrir uma rota protegida com sessão', async () => {
-  const { router } = await open('/?apagadas=1&estado=GREEN#lista');
+  const { router } = open('/?apagadas=1&estado=GREEN#lista');
   await screen.findByRole('heading', { name: 'Apostas' });
   expect(router.state.location.search).toBe('?apagadas=1&estado=GREEN');
   expect(router.state.location.hash).toBe('#lista');
@@ -165,11 +112,7 @@ it('mantém query e fragmento ao abrir uma rota protegida com sessão', async ()
 
 it('seletores da lista mantêm o guard atual; abrir outra área revalida a sessão', async () => {
   const consult = vi.fn(async () => true);
-  const { router } = await open(
-    '/?page_size=2',
-    true,
-    createAppRoutes(consult),
-  );
+  const { router } = open('/?page_size=2', true, createAppRoutes(consult));
   await screen.findByRole('heading', { name: 'Apostas' });
   expect(consult).toHaveBeenCalledTimes(1);
   await act(() => router.navigate('/?page_size=2&estado=PENDENTE'));
@@ -186,7 +129,7 @@ it.each([
   '/login?destino=%2F%2Ffora.example',
   '/login?destino=%2Flogin',
 ])('sanitiza o destino recebido no login: %s', async (path) => {
-  const { router } = await open(path, false);
+  const { router } = open(path, false);
   await screen.findByRole('heading', { name: 'Entrar' });
   expect(Object.values(router.state.loaderData)).toContainEqual({
     destino: '/',
@@ -195,7 +138,7 @@ it.each([
 
 it('mostra 404 sem sessão e permite sair da página por navegação interna', async () => {
   const user = userEvent.setup();
-  await open('/nao-existe?apagadas=1', false);
+  open('/nao-existe?apagadas=1', false);
   expect(
     await screen.findByRole('heading', { name: 'Não achei esta página' }),
   ).toBeVisible();
@@ -225,7 +168,7 @@ it.each(['loader', 'componente'])(
         return null;
       },
     };
-    await open('/falha?apagadas=1', true, [route]);
+    open('/falha?apagadas=1', true, [route]);
     expect(
       await screen.findByRole('heading', {
         name: 'Não foi possível abrir esta página',
@@ -246,7 +189,7 @@ it.each([404, 405, 500])(
   'sanitiza corpo cru de erro de rota HTTP %s',
   async (status) => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    await open('/falha', true, [
+    open('/falha', true, [
       {
         path: '/falha',
         loader: () => {
@@ -275,7 +218,7 @@ it('mantém o mesmo QueryClient ao trocar de rota', async () => {
     clients.push(useQueryClient());
     return <h1>Pronto</h1>;
   }
-  const { router, queryClient } = await open('/a', true, [
+  const { router, queryClient } = open('/a', true, [
     { path: '/a', element: <Probe /> },
     { path: '/b', element: <Probe /> },
   ]);

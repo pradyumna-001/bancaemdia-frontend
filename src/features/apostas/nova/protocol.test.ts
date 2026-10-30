@@ -8,7 +8,7 @@ import {
 } from './protocol';
 import { manualId, reciboManual } from '../../../../tests/fixtures/manual';
 import { centavosExatosDaEntrada } from '../../../lib/format';
-import { novaApostaDestino } from '../../../lib/novaApostaDestino';
+import { novaApostaDestino } from '../../../lib/params';
 
 it('preserves face, exact commission, body text, temporal input and explicit account', () => {
   const body = pedido(

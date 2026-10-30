@@ -1,4 +1,3 @@
-import { memo } from 'react';
 import { Icone } from '../../components/Icone';
 import {
   BarraExata,
@@ -14,8 +13,7 @@ import {
   type Hierarquia,
 } from './protocol';
 import { ValorPainel } from './MetricasPainel';
-// Rows are memoized by the page; settling other Painel queries skips them.
-export const GruposPainel = memo(function GruposPainel({
+export function GruposPainel({
   grupos,
   pagina,
 }: {
@@ -83,4 +81,4 @@ export const GruposPainel = memo(function GruposPainel({
       </p>
     </>
   );
-});
+}

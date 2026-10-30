@@ -427,7 +427,6 @@ it('catálogos e seletores carregam somente ao abrir os filtros', async () => {
   details.open = true;
   fireEvent(details, new Event('toggle', { bubbles: true }));
   await screen.findByRole('region', { name: 'Filtros da visão' });
-  fireEvent.click(screen.getByRole('button', { name: /^Casa / }));
   await waitFor(() =>
     expect(state.calls.some((r) => r.url.includes('/filtros/'))).toBe(true),
   );

@@ -11,7 +11,7 @@ import { useAuth } from '../../auth/ProvedorAuth';
 import { useAcesso } from '../acesso/ProvedorAcesso';
 import { ErroApi } from '../../components/ErroApi';
 import { decimal } from '../../lib/format';
-import { novaApostaDestino } from '../../lib/novaApostaDestino';
+import { novaApostaDestino } from '../../lib/params';
 import { useRetryAfter } from '../../lib/useRetryAfter';
 import { jobIdValido } from './job';
 import { useJob } from './useJob';
@@ -31,8 +31,6 @@ function CanaisEnviar() {
   const params = new URLSearchParams(location.search);
   const prints = params.get('entrada') === 'prints';
   const planilha = params.get('entrada') === 'planilha';
-  const ajuda = new URLSearchParams(params);
-  ajuda.set('guia', planilha ? 'planilha' : prints ? 'prints' : 'telegram');
   const link = (channel: string) => {
     const next = new URLSearchParams(params);
     if (channel !== 'telegram') next.set('entrada', channel);
@@ -58,7 +56,6 @@ function CanaisEnviar() {
         Prints
       </Link>
       <Link to={novaApostaDestino(location.search)}>Nova aposta</Link>
-      <Link to={`/tutorial?${ajuda}#passo-a-passo`}>Ajuda para enviar</Link>
     </nav>
   );
 }
@@ -552,8 +549,8 @@ function ExportPage() {
           confira a conexão com o Telegram
         </Link>
         . Você também pode escolher Prints acima para enviar imagens pelo site.
-        Para importar uma planilha, escolha Planilha acima e confira a prévia
-        antes de confirmar.
+        A importação de planilha terá suas próprias instruções quando estiver
+        disponível.
       </p>
     </main>
   );

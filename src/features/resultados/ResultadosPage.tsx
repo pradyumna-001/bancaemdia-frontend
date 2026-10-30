@@ -1,37 +1,19 @@
-import {
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent,
-} from 'react';
-import {
-  infiniteQueryOptions,
-  useInfiniteQuery,
-  useQueryClient,
-  type QueryClient,
-} from '@tanstack/react-query';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getApiClient, type createApiClient } from '../../api/client';
 import { ApiError } from '../../api/error';
 import { SITE_READ_CONTRACT } from '../../api/site-read.generated';
 import { useAuth } from '../../auth/ProvedorAuth';
-import type { SessionService } from '../../auth/session';
 import { ErroApi, type ErrorField } from '../../components/ErroApi';
 import { Filtros, useFiltros } from '../../components/filtros/Filtros';
 import { EscolhaFiltro } from '../../components/filtros/EscolhaFiltro';
 import { dataHora, moeda, odd } from '../../lib/format';
-import {
-  adaptarFiltros,
-  lerFiltros,
-  serializarConsulta,
-} from '../../lib/params';
+import { serializarConsulta } from '../../lib/params';
 import { rotuloEstado } from '../../lib/termos';
 import { useRetryAfter } from '../../lib/useRetryAfter';
 import { useCatalogos } from '../apostas/catalogos';
 import { useOperacao } from '../importar/useOperacao';
-import { useAcesso } from '../acesso/ProvedorAcesso';
 import {
   contextoConta,
   DESFAZER,
@@ -74,69 +56,6 @@ const CAMPOS_RESULTADO = [
     label: 'Comissão',
   },
 ] as const satisfies readonly ErrorField[];
-type Api = ReturnType<typeof createApiClient>;
-type ConsultaFila = ReturnType<typeof adaptarFiltros>['query'];
-
-/** The queue read, shared by the page and the preload of its route. */
-function opcoesFila(
-  api: Api,
-  service: SessionService,
-  epoch: number,
-  query: ConsultaFila,
-) {
-  return infiniteQueryOptions({
-    queryKey: ['resultados-fila', epoch, serializarConsulta(query)],
-    initialPageParam: undefined as string | undefined,
-    retryOnMount: false,
-    refetchOnWindowFocus: false,
-    getNextPageParam: (page: Fila) => page.next_cursor ?? undefined,
-    queryFn: async ({ pageParam, signal }): Promise<Fila> =>
-      service.read(async () =>
-        validarFila(
-          (
-            await api.GET('/api/v1/resultados/fila', {
-              signal,
-              params: {
-                query: {
-                  ...query,
-                  ...(pageParam ? { cursor: pageParam } : {}),
-                },
-              },
-            })
-          ).data,
-        ),
-      ),
-  });
-}
-
-/**
- * Starts the first queue page as soon as the route's session read confirms
- * the user, instead of after the page renders. Same key, read and validation
- * as the page; blocked filters and other session states send nothing.
- */
-export function anteciparFila({
-  queryClient,
-  service,
-  api,
-  search,
-}: {
-  queryClient: QueryClient;
-  service: SessionService;
-  api: Api;
-  search: URLSearchParams;
-}) {
-  const state = service.getSnapshot();
-  if (state.phase !== 'authenticated') return;
-  const adapter = adaptarFiltros(
-    lerFiltros(search, 'resultados'),
-    'resultados',
-  );
-  if (adapter.bloqueios.length) return;
-  void queryClient.prefetchInfiniteQuery(
-    opcoesFila(api, service, state.privateEpoch, adapter.query),
-  );
-}
-
 export function ResultadosPage({
   client,
 }: {
@@ -174,7 +93,6 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
     filtersOpen,
   );
   const op = useOperacao();
-  const access = useAcesso();
   const { cancel } = op;
   const [recibos, setRecibos] = useState<Recibo[]>([]);
   const [consumed, setConsumed] = useState<string[]>([]);
@@ -206,18 +124,34 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
   const readWaiting = useRetryAfter(readError);
   const writeWaiting = useRetryAfter(writeBarrier);
   const fila = useInfiniteQuery({
-    ...opcoesFila(api, auth.service, epoch, adapter.query),
+    queryKey: ['resultados-fila', epoch, signature],
     enabled:
       auth.state.phase === 'authenticated' && adapter.bloqueios.length === 0,
+    initialPageParam: undefined as string | undefined,
+    retryOnMount: false,
+    refetchOnWindowFocus: false,
+    getNextPageParam: (page: Fila) => page.next_cursor ?? undefined,
+    queryFn: async ({ pageParam, signal }): Promise<Fila> =>
+      auth.service.read(async () =>
+        validarFila(
+          (
+            await api.GET('/api/v1/resultados/fila', {
+              signal,
+              params: {
+                query: {
+                  ...adapter.query,
+                  ...(pageParam ? { cursor: pageParam } : {}),
+                },
+              },
+            })
+          ).data,
+        ),
+      ),
   });
   const filaWaiting = useRetryAfter(fila.error);
-  const items = useMemo(
-    () => unirFila(fila.data?.pages ?? [], new Set(consumed)),
-    [fila.data?.pages, consumed],
-  );
+  const concluidas = new Set(consumed);
+  const items = unirFila(fila.data?.pages ?? [], concluidas);
   const atual = items[0];
-  // The current bet paints first; the upcoming list follows right after.
-  const proximas = useDeferredValue(items);
   const snapshot = fila.data?.pages.at(-1);
   const blocked =
     op.busy ||
@@ -544,7 +478,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
           conferir.
         </p>
       )}
-      {!op.can(REGISTRAR) && access?.phase !== 'checking' && (
+      {!op.can(REGISTRAR) && (
         <section className="resultados-nota">
           <h2>Resultados em consulta</h2>
           <p>
@@ -672,9 +606,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
         />
       )}
       {fila.isPending && !adapter.bloqueios.length && (
-        <p role="status" className="consulta-carregando">
-          Consultando apostas pendentes…
-        </p>
+        <p role="status">Consultando apostas pendentes…</p>
       )}
       {atual && (
         <section
@@ -846,7 +778,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
             Mais antigas primeiro, pela data do jogo ou criação.
           </p>
           <ol className="resultados-proximas">
-            {proximas.slice(1).map((item) => (
+            {items.slice(1).map((item) => (
               <li key={item.chave}>
                 <span>
                   <strong>{item.evento ?? 'Evento não informado'}</strong>
