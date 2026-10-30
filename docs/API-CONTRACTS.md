@@ -34,6 +34,8 @@ Atualização 21/10/2026, ADR019 / #50. Esta matriz substitui a leitura de 02/10
 
 **Correção de escopo de 06/10/2026:** conforme decisão do titular no ADR019, gasto de processamento é controlado pelo backend. O site não exibe estimativa/aviso de custo nem pede aprovação de gasto. #15/#24 deixam de depender da #50 por esse motivo; prints e prévia XLSX mantêm suas lacunas próprias. Esta correção não altera a versão pinada do OpenAPI.
 
+**Correção de escopo de 06/10/2026:** conforme decisão do titular no ADR019, gasto de processamento é controlado pelo backend. O site não exibe estimativa/aviso de custo nem pede aprovação de gasto. #15/#24 deixam de depender da #50 por esse motivo; prints e prévia XLSX mantêm suas lacunas próprias. Esta correção não altera a versão pinada do OpenAPI.
+
 ## Estados
 
 - **Main:** contrato presente na main integrada acima. Não prova deploy.
