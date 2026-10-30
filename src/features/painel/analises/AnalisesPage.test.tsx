@@ -163,7 +163,9 @@ it('uses defaults for invalid params, changes/removes explicit filters and prese
   const h = await open('/painel/analises?casa=7&apagadas=1&periodo=invalid');
   await ready();
   expect(screen.getByText(/Parâmetros inválidos/)).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: 'Remover filtro Casa' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: /^Remover filtro Casa:/ }),
+  );
   await waitFor(() =>
     expect(h.router.state.location.search).not.toContain('casa='),
   );

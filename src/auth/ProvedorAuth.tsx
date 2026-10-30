@@ -43,8 +43,8 @@ export function ProvedorAuth({
       leftWindow = false;
       resume();
     };
-    // The protected loader and login page bootstrap on demand. Public help pages
-    // must not launch identity requests that can outlive a document navigation.
+    // Protected loaders bootstrap on demand. Public pages do not read identity
+    // until an explicit account entry or protected destination is requested.
     window.addEventListener('blur', leaveWindow);
     window.addEventListener('focus', returnToWindow);
     document.addEventListener('visibilitychange', resume);

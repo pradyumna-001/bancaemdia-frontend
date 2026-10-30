@@ -76,7 +76,18 @@ initializeConfig().then(
         return result.data;
       });
     const router = createBrowserRouter(
-      createAppRoutes(auth.resume, consultarRevisao, billingReturning),
+      createAppRoutes(
+        auth.resume,
+        consultarRevisao,
+        billingReturning,
+        (path, search) => {
+          if (path !== '/resultados') return;
+          void import('./features/resultados/ResultadosPage').then(
+            ({ anteciparFila }) =>
+              anteciparFila({ queryClient, service: auth, api, search }),
+          );
+        },
+      ),
     );
     application.render(
       <StrictMode>

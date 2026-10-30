@@ -732,7 +732,6 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
           }}
         />
       )}
-      {saldo.isPending && <p role="status">Consultando saldo das contas…</p>}
       {matrices.some((q) => q.error) && (
         <section className="caixa-nota">
           <p>
@@ -778,6 +777,11 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
             Saldo das contas. O capital inicial das bancas é informado
             separadamente.
           </p>
+          {saldo.isPending && (
+            <p role="status" className="consulta-carregando">
+              Consultando saldo das contas…
+            </p>
+          )}
           {saldo.data && (
             <>
               <div className="caixa-resumo">

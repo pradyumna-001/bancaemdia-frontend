@@ -346,7 +346,9 @@ function Conteudo({ client }: { client: ReturnType<typeof createApiClient> }) {
           {metas.notice}
         </p>
       )}
-      <FusoPreferencia client={client} />
+      {/* The time-zone card follows the first goals response, so the arriving
+          list never pushes it down while it is already visible. */}
+      {!metas.query.isPending && <FusoPreferencia client={client} />}
       <dialog
         ref={dialog}
         aria-labelledby="meta-confirmar"

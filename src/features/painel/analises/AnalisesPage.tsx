@@ -1,3 +1,4 @@
+import { useDeferredValue } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { getApiClient, type createApiClient } from '../../../api/client';
@@ -136,6 +137,9 @@ function Conteudo({ client }: { client: Client }) {
         ),
       ),
   });
+  // Cash evolution sits below the live analyses: render its per-banca series
+  // in interruptible work so its arrival never becomes one long task.
+  const caixa = useDeferredValue(cash.data);
   const analysisWaiting = useRetryAfter(analysis.error);
   const cashWaiting = useRetryAfter(cash.error);
   const blocked =
@@ -205,6 +209,7 @@ function Conteudo({ client }: { client: Client }) {
               <EscolhaFiltro
                 key={key}
                 label={DIMENSOES[key]}
+                onOpen={c?.abrir}
                 value={visao.valores[key]}
                 selectedLabel={c?.selecionada?.label}
                 options={c?.options ?? []}
@@ -245,8 +250,8 @@ function Conteudo({ client }: { client: Client }) {
             key={key}
             disabled={blocked}
             onClick={() => change(key as Filtro)}
-            aria-label={'Remover filtro ' + (FILTRO_LABELS[key] ?? key)}
           >
+            <span className="somente-leitor">Remover filtro </span>
             {FILTRO_LABELS[key] ?? key}:{' '}
             {catalogos[key as keyof typeof catalogos]?.selecionada?.label ??
               (key === 'periodo'
@@ -254,7 +259,7 @@ function Conteudo({ client }: { client: Client }) {
                 : key === 'apagadas'
                   ? VISIBILIDADE[value]
                   : value)}{' '}
-            ×
+            <span aria-hidden="true">×</span>
           </button>
         ))}
       </div>
@@ -280,7 +285,11 @@ function Conteudo({ client }: { client: Client }) {
           : 'Todas as casas'}
         . Tipster e mercado presentes no endereço também são aplicados.
       </p>
-      {analysis.isPending && <p role="status">Consultando análises…</p>}
+      {analysis.isPending && (
+        <p role="status" className="consulta-carregando">
+          Consultando análises…
+        </p>
+      )}
       {!!analysis.error &&
         fail(analysis.error, () => void analysis.refetch(), 'Análises ao vivo')}
       {data && (
@@ -411,19 +420,18 @@ function Conteudo({ client }: { client: Client }) {
         {cash.isPending && <p role="status">Consultando evolução de caixa…</p>}
         {!!cash.error &&
           fail(cash.error, () => void cash.refetch(), 'Evolução de caixa')}
-        {cash.data && (
+        {caixa && (
           <>
             <p className="analises-nota">
               Dados consolidados em{' '}
-              {dataHora(cash.data.atualizado_em, 'America/Sao_Paulo')} ·
-              consulta em{' '}
-              {dataHora(cash.data.respondido_em, 'America/Sao_Paulo')}.{' '}
+              {dataHora(caixa.atualizado_em, 'America/Sao_Paulo')} · consulta em{' '}
+              {dataHora(caixa.respondido_em, 'America/Sao_Paulo')}.{' '}
               {cash.isError
                 ? 'A atualização falhou; os dados anteriores continuam visíveis.'
                 : ''}
             </p>
             <EvolucaoCaixa
-              pontos={cash.data.evolucao}
+              pontos={caixa.evolucao}
               serie={
                 params.getAll('caixa_serie').length === 1 &&
                 Object.hasOwn(SERIES_CAIXA, params.get('caixa_serie')!)

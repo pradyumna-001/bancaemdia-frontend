@@ -48,7 +48,7 @@ const stats = (total = 0) => ({
   idade_maxima_segundos: 0,
 });
 
-test('ajuda pública não consulta identidade; páginas de conta conferem o acesso necessário', async ({
+test('ajuda e intents públicos não consultam identidade; destino privado confere o acesso', async ({
   page,
   context,
 }) => {
@@ -79,12 +79,20 @@ test('ajuda pública não consulta identidade; páginas de conta conferem o aces
   await expect(
     page.getByRole('button', { name: 'Entrar com minha conta' }),
   ).toBeEnabled();
-  expect(reads).toBe(1);
+  expect(reads).toBe(0);
   for (const path of ['/criar-conta', '/redefinir-senha']) {
     await page.goto(path);
     await expect(page.locator('.conta-acoes button')).toBeEnabled();
   }
-  expect(reads).toBe(3);
+  expect(reads).toBe(0);
+  await page.getByRole('link', { name: 'Voltar ao site' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Entrar', exact: true }),
+  ).toBeVisible();
+  expect(reads).toBe(1);
+  await expect(
+    page.getByRole('heading', { name: 'Apostas', exact: true }),
+  ).toHaveCount(0);
 });
 
 test('sem sessão, URL/storage não liberam rota e login hospedado recebe destino sem hash', async ({

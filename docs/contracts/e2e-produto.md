@@ -8,7 +8,7 @@ conjunta. Assinatura já estava presente; seus testes de interface também são
 recuperados da #51/PR #77. São dependências declaradas contra main, sem merge
 administrativo. A reconciliação usa carregamento lazy para manter o budget inicial.
 
-API real única: `136f36094119edb09bea1343743c1c50ef460d93`, descendente do pin completo
+API real única: `37b130282c0d4a240f152b72fc76933074f38e4e`, descendente do pin completo
 `5f5f06276114d35e062db45bc54c61c4cb6fc3ec`. Acrescenta o código da Hipotética de
 backend #191/`552c4ffe3924df3eac2caa50ea4f5df4c553b816`. As 128 operações e todos os
 schemas anteriores são idênticos; a operação nova produz 129 no total. O documento
