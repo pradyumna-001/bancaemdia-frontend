@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Logo } from '../../components/Logo';
 import { PreferenciaTema } from '../../components/PreferenciaTema';
-import { novaApostaDestino } from '../../lib/params';
+import { novaApostaDestino } from '../../lib/novaApostaDestino';
 import './ajuda.css';
 
 const assuntos = {
@@ -12,6 +12,7 @@ const assuntos = {
   manual: ['Nova aposta', 'Registrar uma aposta por vez'],
   bot: ['Bot do Telegram', 'Enviar uma foto na conversa privada'],
   excel: ['Excel do Painel', 'Baixar seus resultados'],
+  coleta: ['Conectar a extensão', 'Gerenciar seus dispositivos'],
 } as const;
 type Assunto = keyof typeof assuntos;
 
@@ -115,6 +116,11 @@ export function AjudaPage({ extensao = false }: { extensao?: boolean }) {
               </p>
               <p>
                 Enquanto isso, escolha uma das formas de envio pelo site abaixo.
+              </p>
+              <p>
+                A preparação do acesso de cada dispositivo está disponível em{' '}
+                <Link to={destino('/coleta')}>Coleta</Link>. Gerar um código não
+                instala a extensão.
               </p>
             </section>
             <div className="ajuda-extensao-grade">
@@ -357,6 +363,55 @@ export function AjudaPage({ extensao = false }: { extensao?: boolean }) {
                   <p>
                     Para enviar uma imagem agora pelo site, escolha{' '}
                     <Link to={guia('prints')}>Prints</Link>.
+                  </p>
+                </>
+              )}
+              {assunto === 'coleta' && (
+                <>
+                  <p>
+                    Cada instalação da extensão tem seu próprio acesso. O
+                    download ainda está esperando lançamento; não instale
+                    arquivos de origem desconhecida.
+                  </p>
+                  <ol>
+                    <li>
+                      Na tela Coleta, escolha Gerar código de conexão. O código
+                      é temporário, de uso único, e sua validade aparece junto
+                      dele.
+                    </li>
+                    <li>
+                      Quando a versão oficial estiver disponível, cole o código
+                      somente na extensão do dispositivo que deseja conectar.
+                      Repita com outro código para cada dispositivo.
+                    </li>
+                    <li>
+                      Use Consultar dispositivos para conferir o pareamento. A
+                      sessão aberta e o último uso registrado não indicam
+                      conexão online.
+                    </li>
+                  </ol>
+                  <p>
+                    Trocar credencial invalida a antiga imediatamente e mostra a
+                    nova uma única vez. Revogar acesso impede novos envios desse
+                    dispositivo; os demais continuam independentes. Ambas as
+                    ações pedem confirmação.
+                  </p>
+                  <p>
+                    Se uma resposta se perder, consulte o estado atual antes de
+                    decidir. A lista não recupera o segredo nem comprova aquela
+                    tentativa. Um novo pareamento pela extensão permite
+                    reconectar o dispositivo.
+                  </p>
+                  <p>
+                    A fronteira Coletar desde vem da sessão de coleta e não
+                    aumenta ao reconectar ou retomar. Um envio aceito ainda pode
+                    precisar de processamento ou Revisão antes de aparecer em
+                    Apostas.
+                  </p>
+                  <p>
+                    <Link className="ajuda-acao" to={destino('/coleta')}>
+                      Gerenciar dispositivos em Coleta
+                    </Link>
                   </p>
                 </>
               )}

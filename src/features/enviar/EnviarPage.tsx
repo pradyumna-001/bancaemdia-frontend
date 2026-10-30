@@ -11,7 +11,7 @@ import { useAuth } from '../../auth/ProvedorAuth';
 import { useAcesso } from '../acesso/ProvedorAcesso';
 import { ErroApi } from '../../components/ErroApi';
 import { decimal } from '../../lib/format';
-import { novaApostaDestino } from '../../lib/params';
+import { novaApostaDestino } from '../../lib/novaApostaDestino';
 import { useRetryAfter } from '../../lib/useRetryAfter';
 import { jobIdValido } from './job';
 import { useJob } from './useJob';

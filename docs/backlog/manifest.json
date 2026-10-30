@@ -159,7 +159,7 @@
     "number": 34,
     "title": "[ADR-019] Coleta — pareamento e instalações da extensão",
     "file": "034.md",
-    "dependencies": "#9, #10, #11; #52; #50; pradyumna-001/bancaemdia-api#107–108"
+    "dependencies": "#9, #10, #11; #52; #50; frontend PR #98 e antecedentes; pradyumna-001/bancaemdia-api#205 e fontes do pin (#184/#187/#189/#193/#195/#197/#199/#201/#203)"
   },
   {
     "number": 35,
@@ -171,7 +171,7 @@
     "number": 36,
     "title": "[ADR-019] E2E completo — produto integrado e permissões",
     "file": "036.md",
-    "dependencies": "#23, #30, #31, #32, #33, #34, #35; #51; #53; #54; #55; #56; #57; #58; #59"
+    "dependencies": "#23, #30, #31, #32, #33, #34, #35; #51; #53; #54; #55; #56; #57; #58; #59; frontend PR #103/#78/#87/#77 e antecedentes; backend #191 e fontes do pin único 136f360; ensaio sandbox, integração/revalidação antes de publicação"
   },
   {
     "number": 37,
@@ -219,7 +219,7 @@
     "number": 53,
     "title": "[ADR-019] Contas — troca temporal de titular com prévia",
     "file": "053.md",
-    "dependencies": "#32; #52; pradyumna-001/bancaemdia-api#94–96"
+    "dependencies": "#32/PR #86; #52/PR #76; frontend PR #100/#99 e antecedentes; backend #94–96 integradas em b916f54; #206/PR #207 candidata 132ee915; sandbox unico 5f5f062 preserva as fontes anteriores, publicacao bloqueada"
   },
   {
     "number": 54,
@@ -237,13 +237,13 @@
     "number": 56,
     "title": "[ADR-019] Painel — análises avançadas e evolução de caixa",
     "file": "056.md",
-    "dependencies": "#20, #16, #17; #32; #52; pradyumna-001/bancaemdia-api#105"
+    "dependencies": "#20/#85, #16/#69, #17/#74; #32/#86; #52/#76; frontend PR #99 e antecedentes; backend #105/#158 integrada em b916f54; fontes do pin sandbox 86c82c9; independente da #53"
   },
   {
     "number": 57,
     "title": "[ADR-019] Painel — metas de desempenho e fuso horário",
     "file": "057.md",
-    "dependencies": "#20, #16; #52; pradyumna-001/bancaemdia-api#105"
+    "dependencies": "#20/#85, #16/#69; #52/#76; frontend #101/#100/#80 e antecedentes; backend #105/#158 integrado b916f54; pin completo 5f5f062, publicacao de sandbox bloqueada"
   },
   {
     "number": 58,
@@ -255,6 +255,6 @@
     "number": 59,
     "title": "[ADR-019] Primeiro uso — acesso, contas e canais de entrada",
     "file": "059.md",
-    "dependencies": "#12, #32, #24, #34; #51; #54; #52"
+    "dependencies": "#12/#83; #32/#86; #24/#75; #34/#99; #51; #54; #52/#76; #29/#96; #25/#90; #26/#91; #35/#98; frontend #102/#101/#100 e antecedentes; backend pin completo 5f5f062, sandbox com publicacao bloqueada"
   }
 ]

@@ -45,6 +45,13 @@ it('mantém a ajuda pública sem consultas de identidade ou dados privados', asy
 });
 
 it.each([
+  [
+    'coleta',
+    'Conectar a extensão',
+    'Gerenciar dispositivos em Coleta',
+    '/coleta',
+    null,
+  ],
   ['prints', 'Prints', 'Enviar Prints', '/enviar', 'prints'],
   ['planilha', 'Planilha', 'Importar planilha', '/enviar', 'planilha'],
   ['manual', 'Nova aposta', 'Abrir Nova aposta', '/aposta/nova', null],

@@ -15,7 +15,7 @@ jobs:
   quality:
     name: Testes (${{ github.event_name }})
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,6 +56,14 @@ jobs:
           done
           curl --fail --silent -D /tmp/route.headers http://127.0.0.1:8080/aposta/abc -o /tmp/deep.html
           cmp /tmp/index.html /tmp/deep.html
+          # gzip_static: the compressed response is the build's own .gz file.
+          curl --fail --silent -H 'Accept-Encoding: gzip' http://127.0.0.1:8080/aposta/abc -o /tmp/deep.html.gz
+          docker exec "$container" cat /usr/share/nginx/html/index.html.gz | cmp - /tmp/deep.html.gz
+          entry=$(grep -o 'assets/index-[A-Za-z0-9_-]*\.js' /tmp/index.html | head -1)
+          curl --fail --silent -H 'Accept-Encoding: gzip' "http://127.0.0.1:8080/$entry" -o /tmp/entry.js.gz
+          docker exec "$container" cat "/usr/share/nginx/html/$entry.gz" | cmp - /tmp/entry.js.gz
+          curl --fail --silent "http://127.0.0.1:8080/$entry" -o /tmp/entry.js
+          docker exec "$container" cat "/usr/share/nginx/html/$entry" | cmp - /tmp/entry.js
           grep -i "Content-Security-Policy: default-src 'self'" /tmp/route.headers
           node tests/verify-nginx.mjs
       - uses: actions/upload-artifact@v4

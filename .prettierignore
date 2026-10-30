@@ -36,3 +36,10 @@ dist-caixa-fixture/
 dist-revisao-fixture/
 dist-privacidade-fixture/
 dist-manual-fixture/
+
+dist-coleta-fixture/
+dist-analises-fixture/
+dist-analises-proposta/
+dist-troca-fixture/
+dist-metas-fixture/
+dist-inicio-fixture/

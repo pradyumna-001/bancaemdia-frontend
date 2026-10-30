@@ -1,0 +1,130 @@
+.metas-pagina {
+  max-width: 72rem;
+  overflow-wrap: anywhere;
+}
+.metas-pagina > header {
+  max-width: var(--largura-leitura);
+}
+.metas-pagina > section {
+  margin-block: var(--espaco-24);
+}
+.metas-escopo,
+.metas-vazio,
+.meta-editor,
+.metas-incerto {
+  padding: var(--espaco-24);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+}
+.metas-cabecalho,
+.metas-controles,
+.metas-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-12);
+}
+.metas-cabecalho {
+  justify-content: space-between;
+}
+.metas-controles {
+  align-items: flex-end;
+}
+.metas-cabecalho h2,
+.metas-cabecalho h3 {
+  margin-block: var(--espaco-8);
+}
+.metas-lista {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--espaco-16);
+}
+.metas-lista article {
+  padding: var(--espaco-24);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+}
+.meta-valores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+.meta-valores dt {
+  color: var(--tinta-secundaria);
+}
+.meta-valores dd {
+  margin: var(--espaco-4) 0 0;
+  font-weight: var(--peso-destaque);
+}
+.meta-editor {
+  max-width: 48rem;
+}
+.meta-form fieldset {
+  display: grid;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  gap: var(--espaco-16);
+}
+.meta-form legend {
+  margin-bottom: var(--espaco-16);
+}
+.meta-form label {
+  display: grid;
+  gap: var(--espaco-8);
+}
+.meta-form input {
+  min-width: 0;
+  width: 100%;
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-12);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--tinta);
+}
+.meta-form-dupla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+.metas-pagina button {
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-16);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  color: var(--tinta);
+  background: var(--superficie);
+}
+.metas-pagina .meta-primaria {
+  color: var(--sobre-acao);
+  background: var(--acao);
+  border-color: var(--acao);
+}
+.metas-pagina button:disabled {
+  opacity: 0.65;
+}
+.metas-pagina dialog {
+  width: min(36rem, calc(100% - var(--espaco-32)));
+  padding: var(--espaco-24);
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+  color: var(--tinta);
+}
+.metas-pagina dialog::backdrop {
+  background: var(--sombra-modal);
+}
+@media (max-width: 40rem) {
+  .meta-valores,
+  .meta-form-dupla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .metas-controles > *,
+  .metas-acoes > button {
+    width: 100%;
+  }
+}

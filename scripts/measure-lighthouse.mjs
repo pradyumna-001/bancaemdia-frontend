@@ -100,7 +100,7 @@ try {
   }
   const baseline = {
     scope:
-      'Public login placeholder; no real session/API or protected screens. One cold lab run per device; not P75 or INP.',
+      'Diagnostic public login intent with no identity request. API is unavailable in this baseline; no protected screens. One cold lab run per device; not release acceptance, P75 or INP. Strict real-API measurements run separately in performance-contract.yml.',
     targets: { categoryScore: 95, lcpMs: 2500, cls: 0.1, inpMsField: 200 },
     enforcement: 'Measurement required; numeric release gates in issue #37.',
     summaries,

@@ -49,6 +49,90 @@
 .grafico-ponto {
   fill: var(--acao);
 }
+.grafico-valor {
+  fill: var(--tinta);
+  font-size: 14px;
+  font-weight: var(--peso-destaque);
+}
+.serie-referencias {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-16);
+  margin: var(--espaco-16) 0;
+}
+.serie-referencias dt {
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-pequena);
+}
+.serie-referencias small {
+  display: block;
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-pequena);
+  font-weight: var(--peso-normal);
+  margin-top: var(--espaco-4);
+}
+.serie-referencias dd {
+  margin: var(--espaco-4) 0 0;
+  font-size: 1.35rem;
+  font-weight: var(--peso-destaque);
+  overflow-wrap: anywhere;
+}
+.serie-leitura {
+  min-height: 2.5rem;
+  padding-block: var(--espaco-8);
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-pequena);
+}
+.serie-valores {
+  max-height: 22rem;
+  overflow: auto;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+.serie-valores table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fonte-pequena);
+}
+.serie-valores caption {
+  text-align: left;
+  padding: var(--espaco-12);
+  color: var(--tinta-secundaria);
+}
+.serie-valores th,
+.serie-valores td {
+  padding: var(--espaco-8) var(--espaco-12);
+  text-align: right;
+  border-bottom: 1px solid var(--borda);
+}
+.serie-valores th:first-child {
+  text-align: left;
+}
+.serie-valores tbody th {
+  font-weight: var(--peso-normal);
+  white-space: nowrap;
+}
+.serie-valores td {
+  white-space: nowrap;
+}
+.serie-valores thead th {
+  position: sticky;
+  top: 0;
+  background: var(--superficie-secundaria);
+}
+@media (max-width: 700px) {
+  .serie-referencias {
+    grid-template-columns: 1fr 1fr;
+  }
+  .serie-referencias > div:last-child {
+    grid-column: 1 / -1;
+  }
+  .serie-valores th,
+  .serie-valores td {
+    padding: var(--espaco-8);
+  }
+}
 .grafico-alvo {
   fill: var(--transparente);
   stroke: var(--transparente);

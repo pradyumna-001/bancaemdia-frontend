@@ -38,3 +38,7 @@ make test:e2e
 Fase 1 escolhida no ADR008: nginx estático/Compose atrás do Caddy da arquitetura Lightsail do backend, sem provisionamento ou CD neste trabalho. API/emissor/domínio/capacidade serão integrados em #14.
 
 Proteção de main não pôde ser configurada: `admin=false`, `maintain=false`; consulta de proteção 404, rulesets vazios. Payload e procedimento para administrador em `config/branch-protection.json` e `docs/runbooks/branch-protection.md`. Impedimento externo registrado conforme aceite da #8; não afirmar enforcement ativo. O PR continua sujeito a todos os checks e revisão.
+
+## Ampliação #37
+
+A referência acima conserva a evidência histórica da #8. O catálogo completo, API real pinada, três amostras frias por rota/perfil e gates numéricos obrigatórios são executados separadamente por `performance-contract.yml`. Resultados autenticados publicam somente JSON permitido, sem DOM, URL privada ou Lighthouse bruto. Ver [contrato](contracts/performance-acessibilidade.md) e [reprodução e limites](validation/performance-acessibilidade.md). O orçamento inicial de 200.000 bytes gzip permanece.

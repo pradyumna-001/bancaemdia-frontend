@@ -176,6 +176,34 @@ it('saída é uma confirmação explícita e somente resposta válida permite re
   expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeVisible();
   expect(transport.logout).toHaveBeenCalledOnce();
 });
+it('primeira ativação após bootstrap preserva o primeiro clique de saída', async () => {
+  const { transport } = open('/sair');
+  const button = await screen.findByRole('button', { name: 'Confirmar saída' });
+  const reads = transport.read.mock.calls.length;
+  act(() => window.dispatchEvent(new Event('focus')));
+  expect(transport.read).toHaveBeenCalledTimes(reads);
+  expect(button).toBeVisible();
+  await userEvent.click(button);
+  expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeVisible();
+  expect(transport.logout).toHaveBeenCalledOnce();
+  expect(transport.read).toHaveBeenCalledTimes(reads + 1);
+});
+it('retorno depois de blur revalida a sessão uma vez antes da saída', async () => {
+  const { transport } = open('/sair');
+  await screen.findByRole('button', { name: 'Confirmar saída' });
+  const reads = transport.read.mock.calls.length;
+  await act(async () => {
+    window.dispatchEvent(new Event('blur'));
+    window.dispatchEvent(new Event('focus'));
+  });
+  expect(transport.read).toHaveBeenCalledTimes(reads + 1);
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Confirmar saída' }),
+  );
+  expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeVisible();
+  expect(transport.logout).toHaveBeenCalledOnce();
+  expect(transport.read).toHaveBeenCalledTimes(reads + 2);
+});
 it('503 tem saída acessível e foco/visibilidade não disparam laço de renovação', async () => {
   const { service, transport } = open();
   await screen.findByRole('textbox');

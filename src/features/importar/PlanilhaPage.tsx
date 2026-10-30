@@ -558,6 +558,7 @@ export function PlanilhaPage() {
               Use a mesma fonte nas próximas importações. O nome serve para você
               reconhecê-la.
             </p>
+            {sources.isFetching && <p role="status">Consultando fontes…</p>}
             {sources.data && (
               <>
                 <EscolhaFiltro
@@ -625,7 +626,7 @@ export function PlanilhaPage() {
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
-                  if (name.trim())
+                  if (name.trim() && !sources.isFetching)
                     void perform({
                       kind: 'source',
                       id: route.source ?? crypto.randomUUID(),
@@ -649,7 +650,10 @@ export function PlanilhaPage() {
                 </p>
                 <button
                   disabled={
-                    blocked || !name.trim() || !write.can(`PUT ${SOURCE}`)
+                    blocked ||
+                    sources.isFetching ||
+                    !name.trim() ||
+                    !write.can(`PUT ${SOURCE}`)
                   }
                 >
                   Registrar nova fonte

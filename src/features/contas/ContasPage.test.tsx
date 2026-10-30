@@ -512,7 +512,7 @@ it('house selection and financial filter pills remove only the chosen dimension'
   const { router, requests } = await open('/contas?tipster=8');
   await ready();
   fireEvent.click(screen.getByRole('button', { name: 'Casa Sem filtro' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Betano' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Betano' }));
   await screen.findByText('Rafael · cadastrar conta');
   expect(router.state.location.search).toContain('casa=7');
   fireEvent.click(screen.getByRole('button', { name: /Remover Casa:/ }));
@@ -675,7 +675,7 @@ it.each(['/contas', '/contas/2'])(
       name: path === '/contas' ? 'Casa' : 'Casa da nova conta',
     });
     expect(
-      within(dialog).getByText(
+      await within(dialog).findByText(
         'Nenhuma casa nesta busca. Tente outro nome ou busque sem texto.',
       ),
     ).toBeVisible();
@@ -703,7 +703,9 @@ it('an exact catalog ID unsupported by the write contract is explained without r
   fireEvent.click(
     screen.getByRole('button', { name: 'Casa da nova conta Sem filtro' }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Casa com ID exato' }));
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Casa com ID exato' }),
+  );
   await screen.findByText(/O cadastro de conta ainda não está disponível/);
   expect(
     screen.getByRole('button', { name: 'Cadastrar conta' }),

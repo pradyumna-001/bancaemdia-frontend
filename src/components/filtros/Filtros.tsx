@@ -15,6 +15,7 @@ import { EscolhaFiltro, type OpcaoFiltro } from './EscolhaFiltro';
 import { DataFiltro } from './DataFiltro';
 import './filtros.css';
 export type CatalogoFiltro = Readonly<{
+  abrir?: () => void;
   fase: 'pronto' | 'carregando' | 'erro';
   options: readonly OpcaoFiltro[];
   tentar?: () => void;
@@ -119,6 +120,7 @@ export function Filtros({
             <div key={key}>
               <EscolhaFiltro
                 label={label}
+                onOpen={catalogo?.abrir}
                 value={visao.valores[key]}
                 options={catalogo?.fase === 'pronto' ? catalogo.options : []}
                 disabled={!catalogo}
@@ -254,11 +256,8 @@ export function Filtros({
           {(Object.entries(visao.valores) as [Filtro, string][]).map(
             ([key, value]) => (
               <li key={key}>
-                <button
-                  type="button"
-                  aria-label={'Remover filtro ' + pillLabels[key]}
-                  onClick={() => alterar(key)}
-                >
+                <button type="button" onClick={() => alterar(key)}>
+                  <span className="somente-leitor">Remover filtro </span>
                   {pillLabels[key]}: {name(key, value)}
                   {adapter.preservados.includes(key)
                     ? ' — preservado, não aplicado nesta área'
