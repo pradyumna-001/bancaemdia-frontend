@@ -20,6 +20,13 @@ Revisado pela #49/#11/#12, última revisão em 02/10/2026, conforme ADR019. Cont
 
 ## Consequences
 
+O primeiro foco de um documento recém-carregado usa a consulta inicial do guard;
+não dispara outra conferência que esconda o controle no primeiro clique. O retorno
+à janela só revalida após um `blur` observado nesse documento. A revalidação por
+visibilidade, os eventos entre abas e as consultas dentro do Web Lock permanecem.
+Um retorno real `blur` → `focus` continua cancelando respostas privadas antigas e
+não repete mutations. As provas distinguem primeira ativação de retorno à janela.
+
 A #12 substitui os placeholders de conta por páginas que encaminham os intents login/signup/recover, com ações explícitas e retorno validado. Credenciais, confirmação, labels/validação de campos e reenvios ficam no emissor hospedado. Criar conta não ativa assinatura; não há formulário/endpoints locais de senha nem convite inventado. Parâmetros transitórios de protocolo saem da URL antes da renderização e dos destinos antes de navegação/persistência do fragmento. Recuperação interrompida não anuncia revogação; somente conclusão de intent=recover o faz. Detalhes e limites de documentos externos em `docs/contracts/conta.md`.
 
 Mocks testam apresentação, não completam identidade ou API ausente. #11 liga o guard ao ProvedorAuth real e ao contador de Revisão da API. Troca de usuário/logout cancela requests/polling/refresh/retries, limpa QueryClient (queries e mutations), desmonta formulários privados e executa limpezas registradas de arquivos/URLs de mídia e exports. Cada request captura um contexto de sessão e sua versão; respostas anteriores são descartadas mesmo se o aborto chegar tarde ou durante parsing. Cache privado não é persistido nem compartilhado entre usuários. Sem sessão válida da API, o build público permanece anônimo. Nenhum cálculo financeiro do domínio migra para o cliente para cobrir lacuna.

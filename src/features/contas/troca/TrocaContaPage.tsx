@@ -205,6 +205,7 @@ function Conteudo({ client }: { client: ReturnType<typeof createApiClient> }) {
         <h2 id="troca-casa">1. Escolha a casa</h2>
         <EscolhaFiltro
           label="Casa da troca"
+          onOpen={houses?.abrir}
           value={filters.valores.casa}
           options={houses?.options ?? []}
           selectedLabel={houses?.selecionada?.label}
