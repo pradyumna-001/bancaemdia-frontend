@@ -40,6 +40,13 @@ async def open_review(page, rid):
     await expect(page.get_by_text("Conferindo evidência atual…")).to_have_count(0)
 
 
+async def aguardar_acesso_para_escrita(page):
+    # Aguarda o shell terminar de conferir acesso antes de permitir escrita.
+    # Se ainda estiver em "checking", useOperacao() bloqueia a mutação silenciosamente.
+    consulta = page.locator(".shell-consulta")
+    await expect(consulta).not_to_contain_text("Conferindo acesso", timeout=10000)
+
+
 @pytest.mark.parametrize("browser_name", ["chromium", "firefox", "webkit"])
 @pytest.mark.parametrize(
     "viewport", [{"width": 390, "height": 844}, {"width": 1440, "height": 900}]
@@ -140,6 +147,7 @@ async def test_public_spa_revisao_typed_decisions_recovery(
                 page.get_by_role("button", name="Ampliar foto", exact=True)
             ).to_be_focused()
             await page.get_by_label("Odd", exact=True).fill("2,5")
+            await aguardar_acesso_para_escrita(page)
             disconnect_next = True
             await page.get_by_role("button", name="Salvar correção", exact=True).click()
             await expect(
@@ -161,6 +169,7 @@ async def test_public_spa_revisao_typed_decisions_recovery(
                 await page.get_by_text("Conferir foto original", exact=True).count()
                 == 0
             )
+            await aguardar_acesso_para_escrita(page)
             await page.get_by_role("button", name="Confirmar conta", exact=True).click()
             await expect(
                 page.get_by_text(
@@ -174,6 +183,7 @@ async def test_public_spa_revisao_typed_decisions_recovery(
                 "Conta para esta aposta ",
                 re.compile("^" + re.escape(candidate["apelido"] + " · ")),
             )
+            await aguardar_acesso_para_escrita(page)
             await page.get_by_role("button", name="Confirmar conta", exact=True).click()
             await expect(
                 page.get_by_text(
@@ -199,6 +209,7 @@ async def test_public_spa_revisao_typed_decisions_recovery(
             await page.get_by_role(
                 "button", name="São a mesma aposta", exact=True
             ).click()
+            await aguardar_acesso_para_escrita(page)
             await page.get_by_role(
                 "button", name="Confirmar decisão", exact=True
             ).click()
@@ -214,6 +225,7 @@ async def test_public_spa_revisao_typed_decisions_recovery(
                 page.get_by_label("Valor em unidades", exact=True)
             ).to_have_value("")
             await page.get_by_label("Valor em unidades", exact=True).fill("1")
+            await aguardar_acesso_para_escrita(page)
             await page.get_by_role("button", name="Salvar correção", exact=True).click()
             await expect(
                 page.get_by_text(
@@ -222,6 +234,7 @@ async def test_public_spa_revisao_typed_decisions_recovery(
                 )
             ).to_be_visible()
             await open_review(page, discard_id)
+            await aguardar_acesso_para_escrita(page)
             await page.get_by_role(
                 "button", name="Descartar revisão", exact=True
             ).click()
