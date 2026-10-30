@@ -68,6 +68,12 @@ _resource_spec = importlib.util.spec_from_file_location(
 runtime = importlib.util.module_from_spec(_resource_spec)
 _resource_spec.loader.exec_module(runtime)
 
+_resource_spec = importlib.util.spec_from_file_location(
+    "frontend_owned_runtime", Path(__file__).with_name("harness_resources.py")
+)
+runtime = importlib.util.module_from_spec(_resource_spec)
+_resource_spec.loader.exec_module(runtime)
+
 
 def serve_public_build():
     security = (ROOT / "dist-security/default.conf").read_text()
