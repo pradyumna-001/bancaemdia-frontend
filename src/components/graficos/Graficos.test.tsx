@@ -75,7 +75,9 @@ it('mostra o acumulado final recebido, sem somar os pontos', () => {
     />,
   );
   expect(screen.getByText('Acumulado até 02/01/2026')).toBeVisible();
-  expect(screen.getByText('+R$ 5,00', { selector: 'strong' })).toBeVisible();
+  expect(
+    screen.getByText('+R$ 5,00', { selector: '.grafico-total' }),
+  ).toBeVisible();
 });
 
 it('usa resumo informado pela API e não soma grupos nem inventa total ausente', () => {

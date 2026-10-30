@@ -27,6 +27,16 @@
 .erro-api .acoes:empty {
   display: none;
 }
+.erro-api .acoes button {
+  border-color: var(--acao);
+  background: var(--acao);
+  color: var(--sobre-acao);
+}
+.erro-api .acoes button:hover:not(:disabled) {
+  border-color: var(--acao-hover);
+  background: var(--acao-hover);
+  color: var(--sobre-acao);
+}
 .erro-api .acoes button:disabled {
   background: var(--superficie-secundaria);
   color: var(--tinta-secundaria);

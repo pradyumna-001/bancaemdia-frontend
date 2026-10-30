@@ -131,6 +131,7 @@ it('keeps Retry-After through shared catalogs, refuses unsafe retries and handle
   unavailable.unmount();
   unavailable.queries.clear();
   const unknown = setup('', () => new Error('untrusted diagnostic'));
+  await act(() => unknown.result.current.casa!.abrir!());
   await waitFor(() =>
     expect(unknown.result.current.casa?.erro).toContain(
       'Não foi possível carregar as opções',
@@ -139,6 +140,19 @@ it('keeps Retry-After through shared catalogs, refuses unsafe retries and handle
   expect(unknown.result.current.casa?.erro).not.toContain('untrusted');
   unknown.unmount();
   unknown.queries.clear();
+});
+it('carrega somente o catálogo aberto e preserva opções nas reaberturas', async () => {
+  const h = setup();
+  expect(h.requests).toEqual([]);
+  await act(() => h.result.current.casa!.abrir!());
+  await waitFor(() => expect(h.result.current.casa?.fase).toBe('pronto'));
+  expect(h.requests.map((url) => url.pathname)).toEqual([
+    '/api/v1/filtros/casas',
+  ]);
+  await act(() => h.result.current.casa!.abrir!());
+  expect(h.requests).toHaveLength(1);
+  h.unmount();
+  h.queries.clear();
 });
 it('does not load unsupported or unauthenticated catalogs', () => {
   state.authenticated = false;

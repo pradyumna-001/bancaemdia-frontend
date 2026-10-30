@@ -155,6 +155,13 @@ test('conta respeita 429/Retry-After e retoma por tentativa explícita', async (
     });
   });
   await page.goto('/esqueci-senha');
+  await expect(
+    page.getByRole('button', { name: 'Continuar para recuperar senha' }),
+  ).toBeEnabled();
+  expect(reads).toBe(0);
+  await page
+    .getByRole('button', { name: 'Continuar para recuperar senha' })
+    .click();
   const retry = page.getByRole('button', { name: 'Tentar novamente' });
   await expect(retry).toBeDisabled();
   await expect(

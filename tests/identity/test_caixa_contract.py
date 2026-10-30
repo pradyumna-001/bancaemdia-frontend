@@ -286,7 +286,7 @@ async def test_public_spa_caixa_atomic_money_recovery(
             # Keep the original document alive while a second tab acquires the
             # session Web Lock. Logout must clear the original private page too.
             logout_page = await context.new_page()
-            await logout_page.goto(backend.FRONT + "/sair?destino=%2Fbanca")
+            await core.open_read_only_logout(logout_page, "/sair?destino=%2Fbanca")
             await expect(
                 logout_page.get_by_role("button", name="Confirmar saída", exact=True)
             ).to_be_enabled()

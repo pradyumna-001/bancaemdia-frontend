@@ -257,6 +257,7 @@ it('prazo longo impede nova consulta manual, foco e concessão de escrita', asyn
   ).toBeDisabled();
   const calls = s.fetcher.mock.calls.length;
   await act(async () => {
+    window.dispatchEvent(new Event('blur'));
     window.dispatchEvent(new Event('focus'));
   });
   expect(s.fetcher).toHaveBeenCalledTimes(calls);

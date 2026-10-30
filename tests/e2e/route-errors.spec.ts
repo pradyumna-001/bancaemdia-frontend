@@ -201,6 +201,10 @@ test('tentativa explícita faz só GET, bloqueia clique duplicado e mantém hist
   await expect(
     page.getByRole('heading', { name: 'Análises', exact: true }),
   ).toBeVisible();
+  await expect(page.locator('#analises-esportes')).toBeVisible();
+  await expect(
+    page.locator('#analises-caixa .analises-banca').first(),
+  ).toBeVisible();
   await expect(page.locator('#conteudo')).toBeFocused();
   expect(methods).toEqual(['GET', 'GET']);
   expect(new URL(page.url()).searchParams.get('casa')).toBe('Bet 365');

@@ -37,7 +37,9 @@ async def fill(page, event, *, freebet=False, account=None):
     await page.get_by_label("Odd", exact=True).fill("2,35")
     await page.get_by_label("Valor em unidades", exact=True).fill("1")
     if freebet:
-        await page.get_by_label("Esta aposta é uma freebet").check()
+        freebet_option = page.get_by_label("Esta aposta é uma freebet")
+        await freebet_option.click()
+        await expect(freebet_option).to_be_checked()
     await page.get_by_text("Evento e outros detalhes (opcional)", exact=True).click()
     await page.get_by_label("Evento", exact=True).fill(event)
     if account:
@@ -250,7 +252,7 @@ async def test_public_spa_manual_creation_recovery(
             # The real rate limiter publishes Retry-After even on this 422.
             # Respect it; do not bypass the deadline or the 30-second identity.
             await asyncio.sleep(max(0, retry_deadline - time.monotonic()) + 0.2)
-            # Exercise the SPA's normal focus/resume path, including Web Lock and
+            # Exercise a real return (blur/focus), including Web Lock and
             # HttpOnly refresh, without leaving the memory-only form or injecting auth.
             async with page.expect_response(
                 lambda response: (
@@ -258,7 +260,10 @@ async def test_public_spa_manual_creation_recovery(
                     and response.status == 200
                 )
             ):
-                await page.evaluate("window.dispatchEvent(new Event('focus'))")
+                await page.evaluate(
+                    "window.dispatchEvent(new Event('blur'));"
+                    "window.dispatchEvent(new Event('focus'))"
+                )
             try:
                 await expect(page.get_by_label("Evento", exact=True)).to_be_enabled()
             except AssertionError as error:
@@ -310,10 +315,17 @@ async def test_public_spa_manual_creation_recovery(
                 )
 
             await asyncio.sleep(max(0, expiry - time.time() + 1))
-            await core.fresh_session(page)
-            assert (await core.request(page, "/api/v1/billing/status"))["data"][
-                "access"
-            ] == "READ_ONLY"
+            # Observe the SPA's authenticated read, including its session renewal,
+            # rather than issuing a second raw fetch outside the client policy.
+            async with page.expect_response(
+                lambda response: (
+                    response.url.endswith("/api/v1/billing/status")
+                    and response.request.method == "GET"
+                    and response.status == 200
+                )
+            ) as status_response:
+                await core.fresh_session(page)
+            assert (await (await status_response.value).json())["access"] == "READ_ONLY"
             await page.goto(address + "&manual_intencao=" + first_id)
             await page.get_by_role(
                 "button", name="Consultar registro", exact=True

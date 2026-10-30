@@ -221,7 +221,9 @@ it('navigates all daily intervals through shareable dates, preserves filters and
       ),
     ).toBe(true),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Remover filtro Casa' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: /^Remover filtro Casa:/ }),
+  );
   await waitFor(() =>
     expect(h.router.state.location.search).not.toContain('casa='),
   );

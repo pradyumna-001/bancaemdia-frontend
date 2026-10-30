@@ -1083,6 +1083,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/painel/hipotetica': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Comparação histórica seguindo a stake do tipster
+     * @description Somente leitura, inclusive READ_ONLY. População completa (máximo 10000) com os filtros canônicos; dicas confirmadas resolvidas separadamente e nunca contadas duas vezes. Usa stake da dica, odd e resultado reais, centavos em strings e HALF_EVEN. Cashout, taxas, bônus, retorno fixo e evidência insuficiente impedem comparação completa. Null não é zero. Sem parâmetros livres de stake nem paginação. Contrato: docs/contracts/hipotetica.md.
+     */
+    get: operations['consultar_hipotetica_api_v1_painel_hipotetica_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/painel/metas': {
     parameters: {
       query?: never;
@@ -1818,9 +1838,29 @@ export interface paths {
     put?: never;
     /**
      * Trocar conta da casa
-     * @description Aplica uma prévia feita com a mesma chave; fecha a origem e abre o destino no instante escolhido.
+     * @description Exige prévia com mesma chave/corpo e evidência idêntica; 409 swap_preview_stale ou 410 swap_preview_expired exigem nova chave/prévia/confirmação. Fecha/abre vigências atomicamente, preservando apostas. Replay aplicado retorna o recibo original; sem retry automático.
      */
     post: operations['aplicar_troca_api_v1_titulares_trocas_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/titulares/trocas/intencao': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Recuperar intenção de troca
+     * @description Leitura do proprietário no primário por Idempotency-Key, inclusive READ_ONLY. APPLIED devolve recibo original. PREVIEW/EXPIRED/404 não provam rollback. Retenção até exclusão da conta; sem reenvio automático.
+     */
+    get: operations['obter_intencao_troca_api_v1_titulares_trocas_intencao_get'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1838,7 +1878,7 @@ export interface paths {
     put?: never;
     /**
      * Prévia de troca de conta
-     * @description Mostra as apostas cuja atribuição difere após a troca, sem alterar as contas.
+     * @description Persiste evidência por usuário/chave para confirmação em até 24h. Repetir devolve a prévia original. IDs são itens para revisão; a troca não migra apostas. Renovar exige nova chave e confirmação. FULL_WRITE/CSRF.
      */
     post: operations['preview_troca_api_v1_titulares_trocas_preview_post'];
     delete?: never;
@@ -2992,6 +3032,30 @@ export interface components {
       minimum_client_version: string;
       trust_roots: components['schemas']['TrustRoots'];
     };
+    /** CenarioHipotetica */
+    CenarioHipotetica: {
+      anuladas: components['schemas']['ContagemHipotetica'];
+      base_roi_centavos: components['schemas']['CentavosHipotetica'] | null;
+      em_revisao: components['schemas']['ContagemHipotetica'];
+      exposicao_pendente_centavos:
+        components['schemas']['CentavosHipotetica'] | null;
+      face_pendente_centavos:
+        components['schemas']['CentavosHipotetica'] | null;
+      fora_do_financeiro: components['schemas']['ContagemHipotetica'];
+      freebets: components['schemas']['ContagemHipotetica'];
+      giro_centavos: components['schemas']['CentavosHipotetica'] | null;
+      liquidadas: components['schemas']['ContagemHipotetica'];
+      lucro_centavos: components['schemas']['CentavosHipotetica'] | null;
+      pendentes: components['schemas']['ContagemHipotetica'];
+      resultados_desconhecidos: components['schemas']['ContagemHipotetica'];
+      retorno_centavos: components['schemas']['CentavosHipotetica'] | null;
+      /** Roi */
+      roi: string | null;
+      total_apostas: components['schemas']['ContagemHipotetica'];
+      /** Win Rate */
+      win_rate: string | null;
+    };
+    CentavosHipotetica: string;
     /** CollectionBatch */
     CollectionBatch: {
       /**
@@ -3213,6 +3277,7 @@ export interface components {
       /** Titular Nome */
       titular_nome: string | null;
     };
+    ContagemHipotetica: number;
     /**
      * Correcao
      * @description Campos de domínio que podem ser corrigidos; campos desconhecidos são recusados.
@@ -3402,6 +3467,15 @@ export interface components {
       subtotal_intervalo: components['schemas']['MetricasDetalhadas'];
       total_periodo: components['schemas']['MetricasDetalhadas'];
     };
+    /** DiferencasHipotetica */
+    DiferencasHipotetica: {
+      base_roi_centavos: components['schemas']['CentavosHipotetica'] | null;
+      exposicao_pendente_centavos:
+        components['schemas']['CentavosHipotetica'] | null;
+      giro_centavos: components['schemas']['CentavosHipotetica'] | null;
+      lucro_centavos: components['schemas']['CentavosHipotetica'] | null;
+      retorno_centavos: components['schemas']['CentavosHipotetica'] | null;
+    };
     /** ErroSaida */
     ErroSaida: {
       /** Detail */
@@ -3542,6 +3616,31 @@ export interface components {
        * @enum {string}
        */
       type: 'text' | 'date-time' | 'decimal' | 'boolean' | 'account-id';
+    };
+    /** FiltrosHipotetica */
+    FiltrosHipotetica: {
+      /** Ate */
+      ate?: string | null;
+      banca_id?: components['schemas']['IdentificadorHipotetica'] | null;
+      casa_id?: components['schemas']['IdentificadorHipotetica'] | null;
+      competicao_id?: components['schemas']['IdentificadorHipotetica'] | null;
+      conta_casa_id?: components['schemas']['IdentificadorHipotetica'] | null;
+      /** Desde */
+      desde?: string | null;
+      /** Estado */
+      estado?: string | null;
+      grupo_id?: components['schemas']['IdentificadorHipotetica'] | null;
+      /** Incluir Apagadas */
+      incluir_apagadas: boolean;
+      mercado_id?: components['schemas']['IdentificadorHipotetica'] | null;
+      /** Origem */
+      origem?: string | null;
+      periodo?: components['schemas']['PeriodoPainel'] | null;
+      /** Revisao Grave */
+      revisao_grave?: boolean | null;
+      tipster_id?: components['schemas']['IdentificadorHipotetica'] | null;
+      titular_id?: components['schemas']['IdentificadorHipotetica'] | null;
+      visibilidade: components['schemas']['VisibilidadeApostas'];
     };
     /** FinanceiroSaida */
     FinanceiroSaida: {
@@ -3786,6 +3885,95 @@ export interface components {
        */
       unidade_paginacao: 'grupo_tipster';
     };
+    /** HipoteticaSaida */
+    HipoteticaSaida: {
+      apostas_alteradas: components['schemas']['ContagemHipotetica'];
+      apostas_consideradas: components['schemas']['ContagemHipotetica'];
+      apostas_indisponiveis: components['schemas']['ContagemHipotetica'];
+      /**
+       * Arredondamento
+       * @default ROUND_HALF_EVEN_por_etapa_de_liquidacao
+       * @constant
+       */
+      arredondamento: 'ROUND_HALF_EVEN_por_etapa_de_liquidacao';
+      /**
+       * Criterio Temporal
+       * @default data_aposta
+       * @constant
+       */
+      criterio_temporal: 'data_aposta';
+      diferencas: components['schemas']['DiferencasHipotetica'];
+      /**
+       * Escopo Financeiro
+       * @default liquidadas_sem_revisao_sem_dica_consolidada
+       * @constant
+       */
+      escopo_financeiro: 'liquidadas_sem_revisao_sem_dica_consolidada';
+      /**
+       * Estado
+       * @enum {string}
+       */
+      estado:
+        | 'sem_apostas'
+        | 'sem_vinculos_elegiveis'
+        | 'sem_stakes_diferentes'
+        | 'comparado'
+        | 'parcial'
+        | 'indisponivel';
+      filtros: components['schemas']['FiltrosHipotetica'];
+      /**
+       * Fonte Dados
+       * @default apostas_ao_vivo
+       * @constant
+       */
+      fonte_dados: 'apostas_ao_vivo';
+      /**
+       * Fuso Horario
+       * @default America/Sao_Paulo
+       * @constant
+       */
+      fuso_horario: 'America/Sao_Paulo';
+      hipotetico: components['schemas']['CenarioHipotetica'];
+      /** Limitacoes */
+      limitacoes: components['schemas']['LimitacaoHipotetica'][];
+      /**
+       * Moeda
+       * @default BRL
+       * @constant
+       */
+      moeda: 'BRL';
+      /**
+       * Precisao Decimal
+       * @default 80
+       * @constant
+       */
+      precisao_decimal: 80;
+      real: components['schemas']['CenarioHipotetica'];
+      /**
+       * Regra
+       * @default stake_dica_confirmada_odd_resultado_reais_v1
+       * @constant
+       */
+      regra: 'stake_dica_confirmada_odd_resultado_reais_v1';
+      /**
+       * Respondido Em
+       * Format: date-time
+       */
+      respondido_em: string;
+      /**
+       * Snapshot Em
+       * Format: date-time
+       */
+      snapshot_em: string;
+      stakes_diferentes: components['schemas']['ContagemHipotetica'];
+      /**
+       * Unidade
+       * @default centavos
+       * @constant
+       */
+      unidade: 'centavos';
+      vinculos_confirmados: components['schemas']['ContagemHipotetica'];
+    };
     /** HolderChoice */
     HolderChoice: {
       /** Arquivado */
@@ -3800,6 +3988,7 @@ export interface components {
       /** Url */
       url: string;
     };
+    IdentificadorHipotetica: string;
     /** InstallationResponse */
     InstallationResponse: {
       /**
@@ -3954,6 +4143,11 @@ export interface components {
        * @constant
        */
       revoked_hosts_allowed: false;
+    };
+    /** LimitacaoHipotetica */
+    LimitacaoHipotetica: {
+      motivo: components['schemas']['Motivo'];
+      quantidade: components['schemas']['ContagemHipotetica'];
     };
     /** LinkCodeResponse */
     LinkCodeResponse: {
@@ -4484,6 +4678,22 @@ export interface components {
       /** Win Rate Basis Points */
       win_rate_basis_points: number;
     };
+    /** @enum {string} */
+    Motivo:
+      | 'vinculo_ambiguo'
+      | 'dica_indisponivel'
+      | 'dica_em_revisao'
+      | 'stake_indicada_invalida'
+      | 'stake_real_zero'
+      | 'odd_real_invalida'
+      | 'cashout_nao_escalavel'
+      | 'historico_financeiro_ausente'
+      | 'taxa_bonus_ou_retorno_fixo'
+      | 'retorno_real_desconhecido'
+      | 'retorno_fora_da_regra_padrao'
+      | 'fora_do_financeiro'
+      | 'pendente'
+      | 'resultado_real_desconhecido';
     /** MovimentoCriadoSaida */
     MovimentoCriadoSaida: {
       /** Movimentos */
@@ -5952,6 +6162,21 @@ export interface components {
        * @enum {string}
        */
       estado_origem: 'DISPONIVEL' | 'LIMITADA' | 'ENCERRADA';
+    };
+    /** TrocaIntencaoSaida */
+    TrocaIntencaoSaida: {
+      /**
+       * Estado
+       * @enum {string}
+       */
+      estado: 'PREVIEW' | 'EXPIRED' | 'APPLIED';
+      previa: components['schemas']['TrocaContaSaida'];
+      /**
+       * Previa Expira Em
+       * Format: date-time
+       */
+      previa_expira_em: string;
+      recibo: components['schemas']['TrocaContaSaida'] | null;
     };
     /** TrustRoot */
     TrustRoot: {
@@ -12370,6 +12595,119 @@ export interface operations {
       };
     };
   };
+  consultar_hipotetica_api_v1_painel_hipotetica_get: {
+    parameters: {
+      query?: {
+        /** @description Lê no primário quando verdadeiro, sem forçar refresh das materialized views. */
+        fresh?: boolean;
+        /** @description Janela civil no fuso America/Sao_Paulo, aplicada a data_aposta. Lista/visão filtrada: omissão inclui todo o histórico, não combinar com desde/ate. Painel materializado legado: padrão 30d. */
+        periodo?: components['schemas']['PeriodoPainel'] | null;
+        /** @description data_aposta: limite inicial inclusivo, ISO 8601 com offset; legado sem offset significa UTC. Não combinar com periodo na lista/visão filtrada. */
+        desde?: string | null;
+        /** @description data_aposta: limite final exclusivo, ISO 8601 com offset; legado sem offset significa UTC. Não combinar com periodo na lista/visão filtrada. */
+        ate?: string | null;
+        /** @description Identificador canônico da casa usada como filtro. */
+        casa_id?: number | string | null;
+        /** @description Identificador canônico do tipster usado como filtro. */
+        tipster_id?: number | string | null;
+        /** @description Identificador canônico do mercado usado como filtro. */
+        mercado_id?: number | string | null;
+        /** @description Identificador canônico da competição usada como filtro. */
+        competicao_id?: number | string | null;
+        /** @description Identificador do titular pertencente ao usuário. */
+        titular_id?: number | string | null;
+        /** @description Identificador da conta da casa usada como filtro. */
+        conta_casa_id?: number | string | null;
+        /** @description ID BIGINT do grupo privado, vínculo explícito por aposta. Ausente ou de outro usuário produz seleção vazia. */
+        grupo_id?: number | string | null;
+        /** @description ID BIGINT da banca gravada na aposta; não usa a banca atual da conta. Ausente ou de outro usuário produz seleção vazia. */
+        banca_id?: number | string | null;
+        /** @description Estado de liquidação da aposta usado como filtro. */
+        estado?: string | null;
+        /** @description Canal de origem da aposta usado como filtro. */
+        origem?: string | null;
+        /** @description Filtra apostas pela marca de revisão grave. */
+        revisao_grave?: boolean | null;
+        /** @description ativas/apagadas/todas; padrão ativas. Legado incluir_apagadas=true significa todas; combinação conflitante retorna 422. */
+        visibilidade?: components['schemas']['VisibilidadeApostas'] | null;
+        /** @description Compatibilidade: false=ativas, true=todas. Omitir ao pedir visibilidade=apagadas; combinações conflitantes retornam 422. */
+        incluir_apagadas?: boolean | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HipoteticaSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Identificador de filtro inexistente ou não autorizado; mensagem idêntica. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   listar_metas_api_v1_painel_metas_get: {
     parameters: {
       query?: never;
@@ -17367,6 +17705,24 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
+      /** @description swap_preview_stale / swap_intention_conflict / swap_invalid: renew with a new key and explicit confirmation. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description swap_preview_expired: preview is older than 24 hours; never proves rollback. */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
       /** @description The request body exceeds this endpoint's streaming limit. */
       413: {
         headers: {
@@ -17375,6 +17731,96 @@ export interface operations {
         content: {
           /** @example Content Too Large */
           'text/plain': string;
+        };
+      };
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  obter_intencao_troca_api_v1_titulares_trocas_intencao_get: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrocaIntencaoSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description swap_intention_unknown: no visible record; outcome is not established. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
       /** @description The request does not satisfy the published contract or a domain rule. */
@@ -17464,6 +17910,24 @@ export interface operations {
       };
       /** @description Cookie mutation requires exact Origin and current CSRF proof. */
       403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description swap_preview_stale / swap_intention_conflict / swap_invalid: renew with a new key and explicit confirmation. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description swap_preview_expired: preview is older than 24 hours; never proves rollback. */
+      410: {
         headers: {
           [name: string]: unknown;
         };
