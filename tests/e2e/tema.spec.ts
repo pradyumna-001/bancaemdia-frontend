@@ -70,9 +70,37 @@ test('tema acompanha sistema, persiste escolha e funciona por teclado nos dois t
   expect(
     await page.evaluate(() =>
       [400, 600, 700].every((weight) =>
-        document.fonts.check(weight + ' 16px "Source Sans 3"'),
+        document.fonts.check(weight + ' 16px "Bancaemdia Interface"'),
       ),
     ),
+  ).toBe(true);
+  // The renamed Latin subset handles the interface. Explicitly exercise the
+  // original complete OFL family for a glyph outside that subset as well.
+  expect(
+    await page.evaluate(async () => {
+      const loaded = await document.fonts.load('400 16px "Source Sans 3"', 'Ж');
+      return (
+        loaded.length > 0 &&
+        document.fonts.check('400 16px "Source Sans 3"', 'Ж')
+      );
+    }),
+  ).toBe(true);
+  // A rare character uses the complementary part of the same weight, which is
+  // requested only on demand.
+  expect(
+    await page.evaluate(async () => {
+      const loaded = await document.fonts.load(
+        '600 16px "Bancaemdia Interface"',
+        '≥',
+      );
+      return (
+        loaded.length > 0 &&
+        document.fonts.check('600 16px "Bancaemdia Interface"', '≥')
+      );
+    }),
+  ).toBe(true);
+  expect(
+    fonts.some((url) => url.endsWith('-semibold-latin-complemento.woff2')),
   ).toBe(true);
   expect(fonts.length).toBeGreaterThan(0);
   expect(

@@ -2,10 +2,17 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 import { temaInicial } from './scripts/tema-vite';
 import { faviconMarca } from './scripts/favicon-vite';
+import { createRouteChunks } from './scripts/route-chunks';
+import { precompressaoGzip } from './scripts/precompress-vite';
 
 export default defineConfig({
-  plugins: [react(), temaInicial(), faviconMarca()],
-  build: { manifest: true },
+  plugins: [react(), temaInicial(), faviconMarca(), precompressaoGzip()],
+  build: {
+    manifest: true,
+    // One stylesheet: route CSS would otherwise queue 2-4 extra requests.
+    cssCodeSplit: false,
+    rollupOptions: { output: { manualChunks: createRouteChunks() } },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],

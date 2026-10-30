@@ -1,5 +1,12 @@
 # ADR 007: Testes de tarefas, contratos e release
 
+Revalidação #36 em 18/10/2026: a árvore conjunta inclui Calculadoras/Hipotética,
+pin único real 37b1302 (129 operações) e suplemento de 66 jornadas por evento.
+As 106 execuções anteriores e todos os gates são preservados. Identidade completa
+agora é provada também em Firefox/WebKit; Casa × Telegram usa ambas as ordens.
+[Contrato e limites](../contracts/e2e-produto.md), [matriz por capacidade](../validation/produto.md).
+Ensaio controlado não promove sandbox, certifica leitor real ou libera lançamento.
+
 ## Status
 
 Revisado pelo ADR019 em 29/09/2026. Preserva a CI existente e amplia o escopo do produto.
@@ -16,7 +23,7 @@ Vitest/Testing Library para regras de apresentação e componentes; fixtures/MSW
 4. Filtros/pílulas/URL/reload, página e somente apagadas; resumo da mesma população.
 5. Detalhe/correção, apagar/restaurar, freebet com face preservada e concorrência.
 6. Resultados: 20 simples em 20 toques; duplo toque seguro, desfazer sem sobrescrever alteração recente.
-7. Upload Telegram, consentimento conforme contrato, progresso/parcial/limite; prints e XLSX prévia/confirmar sem duplicidade.
+7. Upload Telegram → progresso → resultado, parcial/limite/zero apostas, sem estimativa/aviso de custo de processamento nem aprovação de gasto (ADR019, decisão de 06/10/2026); prints e XLSX prévia/confirmar sem duplicidade.
 8. Revisão por motivo: leitura com/sem foto, conta, par e zerar fila mantendo saída.
 9. Caixa: depósito/retry, transferência atômica, saldo desconhecido, extrato e conta alheia.
 10. Bot: código/vínculo/expiração/revogação; extensão: instalações independentes e credenciais temporárias. Matching/v2 só quando contratos integrados.
@@ -35,3 +42,7 @@ Vitest/Testing Library para regras de apresentação e componentes; fixtures/MSW
 - Dependência backend ausente permanece bloqueio, não um cenário skipped que aprova release. Adiamento exige decisão explícita do escopo.
 - #49 acrescenta CI de contrato com uma versão completa pinada do backend PR #168, Keycloak/SMTP/PostgreSQL/Chromium reais e dist/CSP públicos da SPA nos dois viewports. Gates exigem zero skips; não promove schema de PR aos tipos públicos. Valida transporte e contrato, mantendo sessão/telas da #11/#12 e homologação do emissor produtivo como entregas distintas. Ver [prova e limites](../identity-validation.md).
 - #9 estende os mesmos gates por arquivo (quatro métricas >=80%) a `src/api/`, excluindo testes e `.d.ts`. MSW verifica transporte sobre paths/shapes da versão integrada, incluindo cancelamento, deadlines, bytes/multipart e chave estável. Testar HTTP402 não declara billing integrado; fixtures não comprovam sessão ou contratos ausentes. Hash do OpenAPI e políticas geradas têm gates próprios sem relaxar a CI existente.
+
+## Ensaio central #23 autorizado em 11/10/2026
+
+O titular autorizou tratar as entregas candidatas como um conjunto para implementar a #23 antes do merge. O código real é reconciliado em uma única árvore imutável; seu OpenAPI é gerado pelo aplicativo. Nenhum schema composto. A CI central separada executa dois fluxos em três navegadores e dois viewports (12 casos), mais os gates reais de filtros, projeção, Painel e foto. A CI de identidade conserva 16 casos SPA e 9 backend, sem skips. Fonte candidata não é prova de integração à main nem deploy; o gate continua bloqueando publicação e o pin/jornada serão reconciliados após o administrador integrar. Ver [contrato de E2E central](../contracts/e2e-central.md).

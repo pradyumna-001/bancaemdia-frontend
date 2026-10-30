@@ -6,7 +6,11 @@ Accepted — implementação na issue #8, em 29/09/2026. Deploy real depende de 
 
 ## CI permanente
 
-Push e pull request executam o SHA exato da branch, inclusive mudanças documentais. Preservam lint, tipos, testes, build, schema pinado sem drift, 120 E2E em três browsers/dois viewports, pre-commit, Docker/nginx/CSP e GitGuardian. Nenhum sucesso anterior ou mock substitui integração real. O único job de qualidade mantém os nomes `Testes (push)` e `Testes (pull_request)`; sharding fica para quando duração medida justificar a complexidade.
+Push e pull request executam o SHA exato da branch, inclusive mudanças documentais. Preservam lint, tipos, testes, build, schema pinado sem drift, a suíte E2E completa em três browsers/dois viewports, pre-commit, Docker/nginx/CSP e GitGuardian. Nenhum sucesso anterior ou mock substitui integração real. O único job de qualidade mantém os nomes `Testes (push)` e `Testes (pull_request)`; sharding fica para quando duração medida justificar a complexidade.
+
+Na #31, a suíte cresceu para 612 E2E. Em 14/10/2026, duas execuções do mesmo SHA concluíram os 1.168 testes unitários e os 612 E2E, mas atingiram os 20 minutos durante as etapas finais de pre-commit/Docker/nginx. O tempo máximo do job passa a 25 minutos para incluir instalação, suíte completa, build da imagem e verificações de rotas/CSP. Os limites individuais dos testes e os gates de cobertura, bundle, Lighthouse, segurança e execução sem skips continuam os mesmos.
+
+Na #56, em 17/10/2026, o inventário chegou a 1.328 unitários e 720 E2E. No SHA 3565b81, ambos os eventos concluíram esses testes, mas a execução da PR atingiu o limite operacional de 25 minutos durante a verificação final de nginx/WebKit (anotação do GitHub: `The job has exceeded the maximum execution time of 25m0s`). A regressão de cadastro de fonte amplia o inventário a 1.329 unitários e 726 E2E. O job reserva agora 30 minutos para instalação e todas as etapas, preservando os limites individuais dos testes, os dois eventos, os três browsers/dois viewports, os gates de cobertura/bundle/Lighthouse/segurança e zero skips. O prazo do job não é uma meta de desempenho do produto.
 
 A #8 acrescenta:
 
@@ -41,3 +45,80 @@ Não há CD automático neste PR. Homologação depende de #14; produção, de #
 Consulta de 29/09/2026: repositório público, conta autenticada com push/triage, **admin=false e maintain=false**. Leitura de proteção de main devolveu 404 e lista de rulesets vazia; com essa permissão não é possível afirmar nem modificar a configuração completa de proteção. Não tentar contornar esse limite com tokens ou remover checks.
 
 A configuração proposta e o procedimento administrativo estão em [branch-protection.md](../runbooks/branch-protection.md). Aplicação depende de administrador e é impedimento externo registrado, permitido pelo aceite da #8. Enquanto isso, workflow e regra de entrega continuam exigindo todos os checks verdes, mas não substituem enforcement de merge no GitHub.
+
+## Revisão #28 — 15/10/2026
+
+Backend #200/PR #201 entrega o protocolo pendente. Sandbox único 547a4d0cfce5308dfe71221a77ad6fd5eb6e47cd incorpora #201 ao b37a3f8 e preserva todas as operações anteriores. OpenAPI de 125 operações, hash 09cf9fbb4b46a8dfc20fc4f4a3c97c3b88000612308cfb4e1e8fd4565901854a; sem união de schemas ou publicação. Seis jornadas reais de Revisão e 56 aceites PostgreSQL são acrescentados às provas anteriores. Job central reserva 25 minutos para o inventário ampliado, sem mudar limites de teste/pedido, cobertura, budget JS ou regra de zero skips. [Contrato](../contracts/revisao.md).
+
+## Medição autenticada e dados grandes — #37, 20/10/2026
+
+`performance-contract.yml` acrescenta dois perfis de medição e três browsers de
+acessibilidade. O catálogo inclui todas as 32 rotas reais. Cada rota tem três
+navegações frias em cada perfil: 192 amostras, sem selecionar a melhor. Cada uma
+exige scores >=95 nas três categorias, LCP<2.500 ms e CLS<0,1. Inventário ausente,
+redirect, erro, fallback ou dados ainda carregando reprovam. O gate JS inicial de
+200.000 bytes gzip e todos os inventários anteriores continuam ativos.
+
+Build público e sessão HttpOnly reais usam a API única 37b1302, PostgreSQL e
+emissor descartáveis. Mais de 5.000 apostas, 40 tipsters/mercados e 90 dias exercitam
+as áreas autenticadas. Cookie circula somente em memória/stdin; nunca em argumentos,
+ambiente, arquivo ou relatório. JSON público permite somente versões, contagens,
+IDs do catálogo, métricas e provas booleanas. DOM, URLs privadas, Lighthouse bruto,
+cabeçalhos, screenshots e JUnit autenticado não são publicados por este workflow.
+O gate de privacidade é independente do aceite numérico.
+
+As páginas são lazy por rota, verificadas no grafo do build e nas requisições do
+ensaio. gzip HTML/CSS/JS/SVG usa a configuração do servidor estático (arquivos `.gz`
+do build via `gzip_static`, gerados com Zopfli; nível 6 sob demanda para o resto);
+não transforma respostas da API. A medição antiga da #8 permanece diagnóstica, com sua falha de
+rede identificada; não substitui o ensaio real e não aprova release.
+Módulos usados por três ou mais páginas pesadas formam um único chunk
+`rotas-comum`; páginas leves não o carregam (`scripts/route-chunks.ts`). Módulos
+pequenos sem dependências externas à entrada seguem com ela, e o CSS é um arquivo
+único.
+
+Teclado, foco, duas aparências, reflow e equivalentes tabulares são ensaiados nos
+três browsers/dois viewports com a população grande. Event Timing mede gestos
+confiáveis separadamente de TBT; valores abaixo da resolução são censurados. Nem
+laboratório nem árvore acessível comprovam P75 de campo, uso com participantes ou
+certificação assistiva. Registrar ferramentas, ampliação efetiva e limitações em
+[validacão](../validation/performance-acessibilidade.md).
+
+A reserva de execução considera o novo inventário completo, sem mudar prazos do
+aplicativo, limites de pedidos ou metas de aceite. O pin continua em sandbox, com
+publicação bloqueada; a revisão administrativa e #38/#39 mantêm aceites próprios.
+
+O mesmo bootstrap autorizado por hash recebe do build um catálogo de assets
+públicos. Antecipar a rota atual e suas dependências estáticas reduz a espera
+entre entrada e import dinâmico; nenhuma consulta ou credencial participa da
+seleção. O tráfego deve continuar sem carregar outras páginas. O gate gzip mede
+também a pior rota antecipada, além da base comum, com teste de excesso real.
+Isso segue o manifesto e os preloads descritos na
+[integração do Vite](https://vite.dev/guide/backend-integration) e no
+[modulepreload](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/modulepreload).
+
+Estilos antecipados só são aplicados depois de recebidos, após os estilos de
+entrada e sem disputar uma solicitação já assumida pelo carregador normal. Os
+pickers carregam seu próprio CSS, e links públicos usam utilitários puros sem
+trazer descritores da API. As provas incluem abertura direta, sem navegação prévia.
+
+O mesmo bootstrap pode iniciar a leitura pública de `config.json` em paralelo ao
+JS. Não envia cookie ou Referer e mantém o prazo de cinco segundos até receber o
+corpo; o carregador central consome uma vez e valida todos os campos normalmente.
+Configuração pública não comprova identidade ou acesso. Hints também omitem
+Referer para não propagar parâmetros de protocolo antes do bootstrap da SPA.
+
+As regressões liberam respostas iniciais e billing separadamente para conferir
+posição/CLS das áreas afetadas. Intl compartilha configurações, sem manter valores
+privados em cache. Diagnóstico HTTP publica apenas status/contagem numéricos,
+com gate negativo para mensagens, endpoints ou campos extras.
+
+Catálogos sem seleção aguardam a abertura do seletor; identidades selecionadas
+continuam consultadas na entrada. A rolagem de evoluções extensas permite
+adiar layout fora da viewport, mantendo os registros no DOM e na árvore
+acessível. Tamanho intrínseco provisório se aplica somente ao eixo vertical:
+mobile continua sem overflow horizontal nos três navegadores. Apostas mantém a
+altura natural de cada linha, inclusive ao alternar entre cartões e lista.
+As amostras frias
+renovam a sessão real na preparação, sem alterar validade, limites ou relógio;
+essa preparação não substitui a navegação medida nem as provas de expiração.
