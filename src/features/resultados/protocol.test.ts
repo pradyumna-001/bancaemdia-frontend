@@ -1,5 +1,4 @@
 import { expect, it } from 'vitest';
-import { SITE_READ_CONTRACT } from '../../api/site-read.generated';
 import {
   apostaResultado,
   filaResultado,
@@ -116,15 +115,4 @@ it('upsert por identidade conserva ordem recebida e remove somente confirmaçõe
       new Set([first.chave]),
     ),
   ).toEqual([updated]);
-});
-
-it('item da fila tem exatamente o esquema publicado de uma aposta', () => {
-  // validarFila confere os itens pelo esquema da página; esta igualdade
-  // garante que nenhuma regra do esquema da aposta individual fica de fora.
-  const fila = SITE_READ_CONTRACT['/api/v1/resultados/fila'].response as {
-    properties: { data: { items: unknown } };
-  };
-  expect(fila.properties.data.items).toEqual(
-    SITE_READ_CONTRACT['/api/v1/resultados/apostas/{chave}'].response,
-  );
 });

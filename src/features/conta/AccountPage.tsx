@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/ProvedorAuth';
 import { destinoInterno } from '../../auth/destinoInterno';
@@ -61,15 +61,9 @@ export function AccountPage({ path }: { path: JourneyPath | '/sair' }) {
   );
   const link = (target: string) =>
     `${target}?${new URLSearchParams({ destino: destination })}`;
-  const entry = useRef(0);
-  useEffect(
-    () => () => {
-      entry.current++;
-    },
-    [path, destination, service],
-  );
-  // Public pages render before identity is read. An explicit entry gesture checks
-  // session/service availability; a private destination uses its own real guard.
+  useEffect(() => {
+    if (!internal && phase === 'checking') void service?.resume();
+  }, [service, phase, internal]);
   const blocked =
     !auth ||
     phase === 'checking' ||
@@ -161,16 +155,7 @@ export function AccountPage({ path }: { path: JourneyPath | '/sair' }) {
               <button
                 type="button"
                 disabled={blocked}
-                onClick={() => {
-                  if (!service) return;
-                  const mine = ++entry.current;
-                  // Keep session/service errors styled before leaving the SPA.
-                  // A refused check never queues a hosted intent for retry.
-                  void service.resume().then(() => {
-                    if (mine === entry.current)
-                      service.login(destination, journey!.intent);
-                  });
-                }}
+                onClick={() => service?.login(destination, journey!.intent)}
               >
                 {journey!.action}
               </button>
@@ -191,17 +176,9 @@ export function AccountPage({ path }: { path: JourneyPath | '/sair' }) {
               {path === '/confirmar-email' && (
                 <Link to={link('/criar-conta')}>Recomeçar cadastro</Link>
               )}
-              {!internal &&
-                !auth?.state.error &&
-                !auth?.state.logoutUnconfirmed &&
-                phase !== 'checking' &&
-                phase !== 'ending' && (
-                  <Link to={destination}>
-                    {auth?.state.phase === 'authenticated'
-                      ? 'Continuar na conta'
-                      : 'Voltar ao site'}
-                  </Link>
-                )}
+              {auth?.state.phase === 'authenticated' && !internal && (
+                <Link to={destination}>Continuar na conta</Link>
+              )}
             </nav>
             <details key={path} className="conta-ajuda">
               <summary>Não conseguiu continuar?</summary>

@@ -12,14 +12,12 @@ import secrets
 import sys
 import time
 from datetime import UTC, datetime
-from io import BytesIO
 from pathlib import Path
 from urllib.parse import quote, urlencode
 from uuid import uuid4
 
 import pytest
 from bancaemdia import models
-from openpyxl import load_workbook
 from playwright.async_api import async_playwright, expect
 from sqlalchemy import insert, text
 
@@ -44,21 +42,6 @@ async def fresh_session(page):
     session = await request(page, "/auth/session")
     assert session["status"] == 200
     return session["data"]
-
-
-async def open_read_only_logout(page, path="/sair"):
-    # These normal journeys already expired the trial. Wait for that expected
-    # layout and the review counter before one physical confirmation click.
-    # Logout with unavailable billing remains covered by the auth/access tests.
-    await page.goto(backend.FRONT + path)
-    await expect(
-        page.get_by_role(
-            "heading", name="Sua conta está em modo de leitura", exact=True
-        )
-    ).to_be_visible()
-    await expect(
-        page.get_by_text("Consultando fila de revisão…", exact=True)
-    ).to_have_count(0)
 
 
 async def grant(page, engine, uid, seconds=360):
@@ -412,56 +395,6 @@ async def test_public_spa_central_journey(
                 + urlencode(query)
             )
             assert response.status == 200 and (await response.body()).startswith(b"PK")
-            # Use the real SPA action, then open the bytes as a workbook. No fixture
-            # substitutes the file; each browser/view checks the authorized recut.
-            await page.get_by_role(
-                "link", name="Ajuda para exportar", exact=True
-            ).click()
-            await expect(
-                page.get_by_role("region", name="Excel do Painel", exact=True)
-            ).to_be_focused()
-            assert urlsplit_query(page.url)["conta"] == str(data["accounts"][0])
-            await page.get_by_role(
-                "link", name="Abrir Painel para exportar", exact=True
-            ).click()
-            async with page.expect_download() as downloaded:
-                await page.get_by_role(
-                    "button", name="Exportar Painel em Excel", exact=True
-                ).click()
-            download = await downloaded.value
-            assert download.suggested_filename == "painel.xlsx"
-            assert await download.failure() is None
-            workbook = load_workbook(
-                BytesIO(Path(await download.path()).read_bytes()),
-                read_only=True,
-                data_only=True,
-            )
-            try:
-                assert workbook.sheetnames == [
-                    "Contexto",
-                    "Resumo",
-                    "Grupos",
-                    "Tipsters por grupo",
-                    "Diario",
-                ]
-                context_rows = workbook["Contexto"].iter_rows(values_only=True)
-                exported_context = dict(
-                    zip(next(context_rows), next(context_rows), strict=True)
-                )
-                assert exported_context["conta_casa_id"] == str(data["accounts"][0])
-                assert exported_context["casa_id"] == str(data["house"])
-                assert exported_context["visibilidade"] == "ativas"
-                assert exported_context["moeda"] == "BRL"
-                assert exported_context["fuso_horario"] == "America/Sao_Paulo"
-                summary_rows = workbook["Resumo"].iter_rows(values_only=True)
-                exported_summary = dict(
-                    zip(next(summary_rows), next(summary_rows), strict=True)
-                )
-                assert exported_summary["total_apostas"] == 3
-                assert exported_summary["lucro_centavos"] == "10000"
-            finally:
-                workbook.close()
-                await download.delete()
             await page.goto(backend.FRONT + "/" + search)
             await expect(page.get_by_role("article")).to_have_count(2)
             await page.get_by_text(

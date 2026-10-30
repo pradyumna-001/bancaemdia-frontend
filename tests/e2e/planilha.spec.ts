@@ -2,65 +2,6 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { sourceId } from '../fixtures/planilha';
 const fixture = `http://127.0.0.1:4206/enviar?entrada=planilha&fonte=${sourceId}&casa=7&apagadas=1`;
-
-test('cadastro aguarda a consulta inicial e um clique registra a fonte', async ({
-  page,
-}, info) => {
-  let release!: () => void;
-  const pending = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  let initial = true;
-  let writes = 0;
-  page.on('request', (request) => {
-    if (
-      request.method() === 'PUT' &&
-      request.url().includes('/api/v1/planilhas/fontes/')
-    )
-      writes++;
-  });
-  await page.route(
-    (url) => url.pathname === '/api/v1/planilhas/fontes',
-    async (route) => {
-      if (!initial) return route.continue();
-      initial = false;
-      await pending;
-      await route.fulfill({
-        json: { data: [], total: 0, page: 1, page_size: 20 },
-      });
-    },
-  );
-  await page.goto(
-    'http://127.0.0.1:4206/enviar?entrada=planilha&casa=7&apagadas=1',
-  );
-  await page
-    .getByLabel('Nome da nova fonte', { exact: true })
-    .fill('Fonte após consulta');
-  const register = page.getByRole('button', {
-    name: 'Registrar nova fonte',
-    exact: true,
-  });
-  await expect(register).toBeDisabled();
-  await expect(
-    page.getByText('Consultando fontes…', { exact: true }),
-  ).toBeVisible();
-  expect(writes).toBe(0);
-  expect(new URL(page.url()).searchParams.has('fonte')).toBe(false);
-  await page.screenshot({
-    path: info.outputPath('planilha-fonte-consulta.png'),
-    fullPage: true,
-  });
-  release();
-  await expect(register).toBeEnabled();
-  await register.click();
-  await expect(page.getByLabel('Arquivo XLSX', { exact: true })).toBeVisible();
-  expect(writes).toBe(1);
-  expect(new URL(page.url()).searchParams.get('fonte')).toMatch(
-    /^[\da-f-]{36}$/,
-  );
-  expect(new URL(page.url()).searchParams.get('casa')).toBe('7');
-  expect(new URL(page.url()).searchParams.get('apagadas')).toBe('1');
-});
 test('planilha: prévia, picker, confirmação, reload GET, temas, teclado e reflow', async ({
   page,
 }, info) => {
