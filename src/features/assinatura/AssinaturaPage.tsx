@@ -447,11 +447,15 @@ export function AssinaturaPage({
           ficou pausada; nenhum pedido será repetido automaticamente.
         </p>
       )}
-      <nav aria-label="Continuar no aplicativo">
-        <Link to={{ pathname: '/', search: route.search }}>
-          Voltar para Apostas
-        </Link>
-      </nav>
+      {/* Trailing navigation appears once the initial status settles, so the
+          arriving situation never pushes it; the shell keeps Apostas reachable. */}
+      {(status || !(access?.checking || access?.phase === 'checking')) && (
+        <nav aria-label="Continuar no aplicativo">
+          <Link to={{ pathname: '/', search: route.search }}>
+            Voltar para Apostas
+          </Link>
+        </nav>
+      )}
     </main>
   );
 }

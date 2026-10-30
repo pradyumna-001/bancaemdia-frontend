@@ -309,7 +309,12 @@ it('normaliza falha de rede sem mensagem original', async () => {
 it('aborto anterior impede envio; aborto durante POST indica resultado desconhecido', async () => {
   const aborted = new AbortController();
   aborted.abort();
-  const fetcher = vi.fn(() => new Promise<Response>(() => {}));
+  const active = new AbortController();
+  const fetcher = vi.fn(() => {
+    // Cancel only after the transport has received the mutation.
+    queueMicrotask(() => active.abort());
+    return new Promise<Response>(() => {});
+  });
   const client = createApiClient(config, { fetcher });
   await expect(
     client.GET('/health', { signal: aborted.signal }),
@@ -321,7 +326,6 @@ it('aborto anterior impede envio; aborto durante POST indica resultado desconhec
       signal: aborted.signal,
     }),
   ).rejects.toMatchObject({ kind: 'cancelled', outcomeUnknown: false });
-  const active = new AbortController();
   const request = client.POST('/api/v1/apostas', {
     body: { casa: 'betano', odd: 2, stake_unidades: 1, freebet: false },
     signal: active.signal,
@@ -330,9 +334,8 @@ it('aborto anterior impede envio; aborto durante POST indica resultado desconhec
     kind: 'cancelled',
     outcomeUnknown: true,
   });
-  await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
-  active.abort();
   await assertion;
+  expect(fetcher).toHaveBeenCalledTimes(1);
 });
 
 it.each([
