@@ -34,6 +34,17 @@ export function objeto(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+// Contract patterns are a fixed, build-owned set: compile each one once.
+const padroes = new Map<string, RegExp>();
+function padrao(source: string) {
+  let compiled = padroes.get(source);
+  if (!compiled) {
+    compiled = new RegExp(source);
+    padroes.set(source, compiled);
+  }
+  return compiled;
+}
+
 export function corresponde(value: unknown, rule: Regra): boolean {
   if (rule.json) return jsonValue(value);
   if (rule.anyOf) return rule.anyOf.some((part) => corresponde(value, part));
@@ -79,7 +90,7 @@ export function corresponde(value: unknown, rule: Regra): boolean {
       typeof value === 'string' &&
       (rule.minLength === undefined || value.length >= rule.minLength) &&
       (rule.maxLength === undefined || value.length <= rule.maxLength) &&
-      (!rule.pattern || new RegExp(rule.pattern).test(value))
+      (!rule.pattern || padrao(rule.pattern).test(value))
     );
   if (rule.type === 'boolean') return typeof value === 'boolean';
   return false;

@@ -252,7 +252,7 @@ async def test_public_spa_manual_creation_recovery(
             # The real rate limiter publishes Retry-After even on this 422.
             # Respect it; do not bypass the deadline or the 30-second identity.
             await asyncio.sleep(max(0, retry_deadline - time.monotonic()) + 0.2)
-            # Exercise the SPA's normal focus/resume path, including Web Lock and
+            # Exercise a real return (blur/focus), including Web Lock and
             # HttpOnly refresh, without leaving the memory-only form or injecting auth.
             async with page.expect_response(
                 lambda response: (
@@ -260,7 +260,10 @@ async def test_public_spa_manual_creation_recovery(
                     and response.status == 200
                 )
             ):
-                await page.evaluate("window.dispatchEvent(new Event('focus'))")
+                await page.evaluate(
+                    "window.dispatchEvent(new Event('blur'));"
+                    "window.dispatchEvent(new Event('focus'))"
+                )
             try:
                 await expect(page.get_by_label("Evento", exact=True)).to_be_enabled()
             except AssertionError as error:

@@ -4,7 +4,7 @@ import { getApiClient, type createApiClient } from '../../api/client';
 import { useAuth } from '../../auth/ProvedorAuth';
 import { ErroApi } from '../../components/ErroApi';
 import { dataHora } from '../../lib/format';
-import { novaApostaDestino } from '../../lib/params';
+import { novaApostaDestino } from '../../lib/novaApostaDestino';
 import { useAcesso } from '../acesso/ProvedorAcesso';
 import { STATUS_LABELS } from '../assinatura/protocol';
 import { useLeituraPainel } from '../painel/useLeituraPainel';

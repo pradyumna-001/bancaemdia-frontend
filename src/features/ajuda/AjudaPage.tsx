@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Logo } from '../../components/Logo';
 import { PreferenciaTema } from '../../components/PreferenciaTema';
-import { novaApostaDestino } from '../../lib/params';
+import { novaApostaDestino } from '../../lib/novaApostaDestino';
 import './ajuda.css';
 
 const assuntos = {

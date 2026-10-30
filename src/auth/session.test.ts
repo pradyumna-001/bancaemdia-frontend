@@ -15,6 +15,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 it('mensagens entre abas não transportam segredos e encerramento pendente suspende pedidos', async () => {
+  const navigate = vi.fn();
   let listener: (event: MessageEvent) => void = () => {};
   const channel = {
     postMessage: vi.fn(),
@@ -39,6 +40,7 @@ it('mensagens entre abas não transportam segredos e encerramento pendente suspe
     queryClient: new QueryClient(),
     transport,
     channel,
+    navigate,
     exclusive: async (_signal, work) => work(),
   });
   services.push(service);
@@ -51,9 +53,13 @@ it('mensagens entre abas não transportam segredos e encerramento pendente suspe
   listener(new MessageEvent('message', { data: 'ending' }));
   expect(scope.isCurrent()).toBe(false);
   expect(service.getSnapshot().phase).toBe('ending');
+  service.login('/painel');
+  expect(navigate).not.toHaveBeenCalled();
   expect(await service.resume()).toBe(false);
   listener(new MessageEvent('message', { data: 'logout_failed' }));
   expect(service.getSnapshot().logoutUnconfirmed).toBe(true);
+  service.login('/painel');
+  expect(navigate).not.toHaveBeenCalled();
   transport.read.mockRejectedValue(new ApiError('http', { status: 401 }));
   await service.logout();
   listener(new MessageEvent('message', { data: 'ended' }));
@@ -64,6 +70,8 @@ it('mensagens entre abas não transportam segredos e encerramento pendente suspe
     ),
   ).toBe(true);
   service.dispose();
+  service.login('/painel');
+  expect(navigate).not.toHaveBeenCalled();
   expect(channel.close).toHaveBeenCalledOnce();
   expect(channel.removeEventListener).toHaveBeenCalledOnce();
 });
@@ -83,7 +91,7 @@ it('resposta de consulta anterior ao novo login não restaura o usuário antigo'
   expect(service.getSnapshot().phase).toBe('anonymous');
 });
 it('recuperação negada e erros comerciais não repetem leitura, e logout sem trava não revoga', async () => {
-  const { service, transport } = setup();
+  const { service, transport, navigate } = setup();
   await service.resume();
   const read = vi.fn().mockRejectedValue(new ApiError('http', { status: 402 }));
   await expect(service.read(read)).rejects.toMatchObject({ status: 402 });
@@ -96,6 +104,8 @@ it('recuperação negada e erros comerciais não repetem leitura, e logout sem t
     );
   await expect(service.read(expired)).rejects.toMatchObject({ status: 401 });
   expect(expired).toHaveBeenCalledOnce();
+  service.login('/painel');
+  expect(navigate).not.toHaveBeenCalled();
   const unsupported = setup(context(), false);
   await unsupported.service.resume();
   expect(await unsupported.service.logout()).toBe(false);
@@ -291,10 +301,15 @@ it('Retry-After impede novas consultas antes do prazo', async () => {
       headers: new Headers({ 'Retry-After': '60' }),
     }),
   );
+  // Propagation through transport/locks must not restart the published deadline.
+  await vi.advanceTimersByTimeAsync(100);
   await service.resume();
   await service.resume();
   expect(transport.read).toHaveBeenCalledOnce();
-  await vi.advanceTimersByTimeAsync(60_000);
+  await vi.advanceTimersByTimeAsync(59_899);
+  await service.resume();
+  expect(transport.read).toHaveBeenCalledOnce();
+  await vi.advanceTimersByTimeAsync(1);
   await service.resume();
   expect(transport.read).toHaveBeenCalledTimes(2);
 });
@@ -397,8 +412,30 @@ it('não encerra cookie de outra identidade que mudou enquanto esperava a trava'
   expect(await service.logout()).toBe(false);
   expect(transport.logout).not.toHaveBeenCalled();
 });
+it('entrada não disputa cookie com uma renovação pendente, nem fica enfileirada', async () => {
+  const family = crypto.randomUUID();
+  const { service, transport, navigate } = setup(context(1, family, 1, true));
+  let finish!: (value: ReturnType<typeof context>) => void;
+  transport.renew.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const pending = service.resume();
+  await vi.waitFor(() => expect(transport.renew).toHaveBeenCalledTimes(1));
+  service.login('/painel');
+  expect(navigate).not.toHaveBeenCalled();
+  finish(context(1, family, 2));
+  expect(await pending).toBe(true);
+  expect(navigate).not.toHaveBeenCalled();
+  service.login('/painel');
+  expect(navigate).toHaveBeenCalledTimes(1);
+});
 it('login valida destino e não envia fragmento nem credenciais ao emissor', () => {
   const { service, navigate } = setup();
+  expect(service.getSnapshot().phase).toBe('idle');
+  expect(() => service.capture()).toThrow();
   service.login('/painel?apagadas=1#serie', 'recover');
   const url = new URL(navigate.mock.calls[0]![0]);
   expect(url.pathname).toBe('/auth/start');

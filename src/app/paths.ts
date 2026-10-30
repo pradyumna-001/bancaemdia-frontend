@@ -2,6 +2,7 @@ import { ABAS } from './nav';
 
 export const ROTAS_PROTEGIDAS = [
   ...ABAS,
+  { path: '/e-se', title: 'E se?' },
   { path: '/aposta/nova', title: 'Nova aposta' },
   { path: '/aposta/:chave', title: 'Aposta' },
   { path: '/aposta/:chave/foto', title: 'Foto da aposta' },

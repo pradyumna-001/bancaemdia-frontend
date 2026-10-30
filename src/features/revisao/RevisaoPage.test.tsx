@@ -7,6 +7,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
@@ -267,14 +268,14 @@ it('print sem stake exige humano e motivo desconhecido tem encaminhamento', asyn
     'Revisão resolvida. A fila foi consultada novamente desde o início.',
   );
   expect(s.writes).toHaveLength(1);
-  await waitFor(() =>
-    expect(
-      screen.getByRole('button', { name: /Precisa de suporte Pendência/ }),
-    ).toBeEnabled(),
-  );
-  fireEvent.click(
-    screen.getByRole('button', { name: /Precisa de suporte Pendência/ }),
-  );
+  const support = screen.getByRole('button', {
+    name: /Precisa de suporte Pendência/,
+  });
+  await waitFor(() => {
+    expect(support).toBeInTheDocument();
+    expect(support).toBeEnabled();
+  });
+  fireEvent.click(support);
   await screen.findByRole('heading', { name: 'Precisa de suporte' });
   expect(
     screen.queryByRole('button', { name: 'Salvar correção' }),
@@ -308,21 +309,24 @@ it('rede sem commit: consulta mesma intenção antes de replay explícito', asyn
   });
   await editor();
   fireEvent.click(screen.getByRole('button', { name: 'Salvar correção' }));
-  await waitFor(() =>
-    expect(
-      screen.getByRole('button', { name: 'Consultar decisão' }),
-    ).toBeEnabled(),
-  );
+  const lookup = await screen.findByRole('button', {
+    name: 'Consultar decisão',
+  });
+  const recovery = within(lookup.closest('section')!);
+  await waitFor(() => {
+    expect(lookup).toBeInTheDocument();
+    expect(lookup).toBeEnabled();
+  });
   expect(s.writes).toHaveLength(1);
   expect(
-    screen.queryByRole('button', {
+    recovery.queryByRole('button', {
       name: 'Reler pendência antes de nova decisão',
     }),
   ).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Consultar decisão' }));
+  fireEvent.click(lookup);
   await screen.findByText('Não encontramos o que você procurou.');
   fireEvent.click(
-    screen.getByRole('button', { name: 'Reenviar a mesma decisão' }),
+    recovery.getByRole('button', { name: 'Reenviar a mesma decisão' }),
   );
   await screen.findByText(
     'Revisão resolvida. A fila foi consultada novamente desde o início.',

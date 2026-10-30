@@ -53,6 +53,7 @@ export default tseslint.config(
       'tests/fixtures/shell/*.tsx',
       'tests/fixtures/acesso/*.tsx',
       'tests/fixtures/telegram/*.tsx',
+      'tests/fixtures/calculadoras/*.tsx',
       'tests/fixtures/painel-proposta/*.tsx',
     ],
     languageOptions: { globals: globals.browser },

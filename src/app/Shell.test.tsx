@@ -8,6 +8,9 @@ import { App } from './App';
 import { createAppRoutes } from './routes';
 import { createAppQueryClient } from './queryClient';
 import { ABAS, abaAtual } from './nav';
+import { routeSession } from '../../tests/fixtures/route-session';
+import { billingStatus } from '../../tests/fixtures/acesso';
+import { ProvedorAuth } from '../auth/ProvedorAuth';
 import { Icone, NOMES_ICONES, type NomeIcone } from '../components/Icone';
 import {
   CHAVE_REVISAO,
@@ -16,10 +19,22 @@ import {
   type EstatisticasRevisao,
 } from '../features/revisao/estatisticas';
 
+// The shell assertions do not measure Vite's source compilation. Compile the
+// actual page before their deadlines, as the former eager route import did.
+// Cold loading of built chunks is measured separately against the real API.
+await import('../features/apostas/ApostasPage');
+
 const limpar: Array<() => void> = [];
 beforeEach(() => {
   vi.spyOn(api, 'getApiClient').mockReturnValue(
-    api.createApiClient(parseConfig({ VITE_API_URL: 'https://site.example' })),
+    api.createApiClient(parseConfig({ VITE_API_URL: 'https://site.example' }), {
+      fetcher: async (request) =>
+        Response.json(
+          new URL(request.url).pathname === '/api/v1/billing/status'
+            ? billingStatus
+            : {},
+        ),
+    }),
   );
 });
 it.each([
@@ -44,18 +59,33 @@ function dados(total: number): EstatisticasRevisao {
     idade_maxima_segundos: 0,
   };
 }
-function abrir(total: number, sessao = true) {
+async function abrir(total: number, sessao = true) {
   const consultar = vi.fn(async () => dados(total));
   const client = createAppQueryClient();
+  const identity = sessao ? await routeSession(client) : undefined;
   const router = createMemoryRouter(
     createAppRoutes(() => sessao, consultar),
     { initialEntries: ['/?apagadas=1'] },
   );
+  let unmount = () => {};
   limpar.push(() => {
+    unmount();
     router.dispose();
+    identity?.dispose();
     client.clear();
   });
-  render(<App router={router} queryClient={client} />);
+  await act(async () => {
+    const app = (
+      <App router={router} queryClient={client} access={identity?.access} />
+    );
+    unmount = render(
+      identity ? (
+        <ProvedorAuth service={identity.service}>{app}</ProvedorAuth>
+      ) : (
+        app
+      ),
+    ).unmount;
+  });
   return { client, consultar };
 }
 
@@ -136,7 +166,7 @@ it('catálogo canônico mantém rotas e ícones registrados', () => {
 });
 
 it('contador atualizado pelo cache aparece e desaparece nas duas navegações', async () => {
-  const { client } = abrir(12);
+  const { client } = await abrir(12);
   await screen.findByRole('heading', { name: 'Apostas' });
   const desktop = screen.getByRole('navigation', {
     name: 'Navegação principal',
@@ -166,7 +196,7 @@ it('contador atualizado pelo cache aparece e desaparece nas duas navegações', 
 });
 
 it('não consulta fila nem mostra shell sem sessão', async () => {
-  const { consultar } = abrir(12, false);
+  const { consultar } = await abrir(12, false);
   await screen.findByRole('heading', { name: 'Entrar' });
   expect(consultar).not.toHaveBeenCalled();
   expect(

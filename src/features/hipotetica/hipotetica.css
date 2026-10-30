@@ -1,0 +1,87 @@
+.hipotetica {
+  max-width: 76rem;
+  margin-inline: auto;
+}
+.hipotetica-cabecalho {
+  max-width: 48rem;
+  margin-bottom: var(--espaco-32);
+}
+.hipotetica-sobretitulo {
+  color: var(--tinta-secundaria);
+  font-weight: var(--peso-destaque);
+}
+.hipotetica-nota,
+.hipotetica-escopo {
+  color: var(--tinta-secundaria);
+}
+.hipotetica-filtros {
+  padding: var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  background: var(--superficie);
+}
+.hipotetica summary {
+  cursor: pointer;
+  min-height: var(--alvo-toque);
+  font-weight: var(--peso-destaque);
+}
+.hipotetica-cenarios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-24);
+}
+.hipotetica-cenario,
+.hipotetica-diferencas,
+.hipotetica-limitacoes {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  padding: var(--espaco-24);
+  min-width: 0;
+}
+.hipotetica-cenario h2 {
+  margin-top: 0;
+}
+.hipotetica-lucro {
+  display: grid;
+  gap: var(--espaco-8);
+  padding-block: var(--espaco-16);
+}
+.hipotetica-lucro strong {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  overflow-wrap: anywhere;
+}
+.hipotetica dl {
+  margin: 0;
+}
+.hipotetica dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--espaco-8) var(--espaco-24);
+  border-top: 1px solid var(--borda);
+  padding-block: var(--espaco-12);
+}
+.hipotetica dd {
+  margin: 0;
+  font-weight: var(--peso-destaque);
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.hipotetica-diferencas,
+.hipotetica-limitacoes,
+.hipotetica-escopo,
+.hipotetica-estado {
+  margin-block: var(--espaco-24);
+}
+@media (max-width: 42rem) {
+  .hipotetica-cenarios {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--espaco-16);
+  }
+  .hipotetica-cenario,
+  .hipotetica-diferencas,
+  .hipotetica-limitacoes {
+    padding: var(--espaco-16);
+  }
+}
