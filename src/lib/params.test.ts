@@ -30,8 +30,6 @@ it('origem inválida na fila usa o padrão antes do GET, sem apagar um filtro v�
   );
   expect(adaptar(valid, 'resultados').bloqueios).toEqual([]);
   expect(adaptar(valid, 'resultados').query.origem).toBe('casa');
-  // Queue pages of 25 (decision of 24/10/2026); a URL page size does not apply.
-  expect(adaptar(valid, 'resultados').query.page_size).toBe(25);
 });
 it('candidato da projeção nunca promete filtro ausente, somente apagadas ou ID impreciso', () => {
   for (const query of [

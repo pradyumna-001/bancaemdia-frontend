@@ -19,11 +19,7 @@ export function useLeituraPainel() {
       try {
         return await service.read(work);
       } catch (e) {
-        if (
-          e instanceof ApiError &&
-          e.retryAfterMs &&
-          e.retryAfterDeadline! >= embargo.current.deadline
-        ) {
+        if (e instanceof ApiError && e.retryAfterMs) {
           embargo.current = { deadline: e.retryAfterDeadline!, error: e };
           setError(e);
         }

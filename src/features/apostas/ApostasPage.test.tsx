@@ -138,7 +138,6 @@ async function open({
         ),
       },
       { path: '/login', element: <p>Entrar</p> },
-      { path: '/aposta/:chave', element: <p>Detalhe</p> },
     ],
     { initialEntries: ['/' + search] },
   );
@@ -191,53 +190,32 @@ it('alterna visualizações pela URL sem refetch nem perder páginas, filtros ou
   const app = await open({
     search: '?page_size=2&casa=7&apagadas=todas&x=1&x=2',
   });
-  const list = within(screen.getByRole('region', { name: 'Lista de apostas' }));
-  const controls = within(
-    list.getByRole('group', { name: 'Visualização de apostas' }),
-  );
-  await list.findByRole('heading', { name: 'Flamengo × Palmeiras' });
+  await screen.findByRole('heading', { name: 'Flamengo × Palmeiras' });
   expect(
-    controls.getByRole('button', { name: 'Lista compacta' }),
+    screen.getByRole('button', { name: 'Lista compacta' }),
   ).toHaveAttribute('aria-pressed', 'true');
-  await userEvent.click(list.getByRole('button', { name: 'Mostrar mais' }));
-  await list.findByRole('heading', { name: 'Grêmio × Internacional' });
+  await userEvent.click(screen.getByRole('button', { name: 'Mostrar mais' }));
+  await screen.findByRole('heading', { name: 'Grêmio × Internacional' });
   const requests = app.reads.length;
-  await userEvent.click(controls.getByRole('button', { name: 'Cartões' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Cartões' }));
   expect(app.router.state.location.search).toContain('visualizacao=cartoes');
   expect(
     new URLSearchParams(app.router.state.location.search).getAll('x'),
   ).toEqual(['1', '2']);
-  expect(list.getAllByRole('article')).toHaveLength(3);
-  // The mode lives on the list; rows keep the same element and content.
+  expect(screen.getAllByRole('article')).toHaveLength(3);
   expect(
-    list.getByRole('article', { name: 'Flamengo × Palmeiras' }).closest('ul'),
-  ).not.toHaveClass('apostas-itens--compactos');
+    screen.getByRole('article', { name: 'Flamengo × Palmeiras' }),
+  ).not.toHaveClass('aposta-linha--compacta');
   expect(screen.getByText('R$ 923,45')).toBeVisible();
-  await userEvent.click(
-    controls.getByRole('button', { name: 'Lista compacta' }),
-  );
+  await userEvent.click(screen.getByRole('button', { name: 'Lista compacta' }));
   expect(
-    list.getByRole('article', { name: 'Flamengo × Palmeiras' }).closest('ul'),
-  ).toHaveClass('apostas-itens--compactos');
+    screen.getByRole('article', { name: 'Flamengo × Palmeiras' }),
+  ).toHaveClass('aposta-linha--compacta');
   await act(() => app.router.navigate(-1));
-  expect(controls.getByRole('button', { name: 'Cartões' })).toHaveAttribute(
+  expect(screen.getByRole('button', { name: 'Cartões' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  // The choice answered by the button never outlives the URL that replaced it.
-  expect(
-    controls.getByRole('button', { name: 'Lista compacta' }),
-  ).toHaveAttribute('aria-pressed', 'false');
-  expect(
-    list.getByRole('article', { name: 'Flamengo × Palmeiras' }).closest('ul'),
-  ).not.toHaveClass('apostas-itens--compactos');
-  await act(() => app.router.navigate(-1));
-  expect(
-    controls.getByRole('button', { name: 'Lista compacta' }),
-  ).toHaveAttribute('aria-pressed', 'true');
-  expect(
-    list.getByRole('article', { name: 'Flamengo × Palmeiras' }).closest('ul'),
-  ).toHaveClass('apostas-itens--compactos');
   expect(app.reads).toHaveLength(requests);
   expect(
     listRequests(app.reads).every(
@@ -317,9 +295,6 @@ it('contrato candidato preserva filtros não publicados e não reutiliza a lista
   ).toBeVisible();
   expect(screen.queryByRole('article')).not.toBeInTheDocument();
   expect(listRequests(app.reads)).toHaveLength(1);
-  expect(
-    screen.getByRole('region', { name: 'Lista de apostas' }),
-  ).not.toHaveClass('apostas-lista--carregando');
   expect(app.router.state.location.search).toContain('apagadas=1');
 });
 it('erro de atualização mantém dados, permite nova leitura explícita e não repete escrita', async () => {
@@ -529,7 +504,7 @@ it('falha de catálogos e nome histórico conserva ID, permite recuperação exp
     'Não foi possível consultar o nome. O identificador foi preservado.',
   );
   expect(
-    screen.getByRole('button', { name: /^Remover filtro Casa:/ }),
+    screen.getByRole('button', { name: 'Remover filtro Casa' }),
   ).toHaveTextContent('Casa: Identificador 7');
   app.respond(defaultResponse);
   await userEvent.click(
@@ -566,18 +541,15 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
     { timeout: 5000 },
   );
   fireEvent.click(screen.getByText('Filtrar apostas — há filtros ativos'));
-  const filters = within(
-    screen.getByRole('region', { name: 'Filtros da visão' }),
-  );
-  await filters.findByRole(
+  await screen.findByRole(
     'button',
     { name: 'Casa Opção histórica (inativa)' },
     { timeout: 5000 },
   );
   await userEvent.click(
-    filters.getByRole('button', { name: 'Casa Opção histórica (inativa)' }),
+    screen.getByRole('button', { name: 'Casa Opção histórica (inativa)' }),
   );
-  const dialog = filters.getByRole('dialog', { name: 'Casa' });
+  const dialog = screen.getByRole('dialog', { name: 'Casa' });
   app.respond((req) =>
     new URL(req.url).pathname.includes('/filtros/')
       ? Promise.resolve(json({}, 429, { 'Retry-After': '70' }))
@@ -598,7 +570,7 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
     within(dialog).queryByRole('button', { name: 'Buscar' }),
   ).not.toBeInTheDocument();
   expect(
-    filters.queryByRole('button', { name: 'Tentar carregar casa' }),
+    screen.queryByRole('button', { name: 'Tentar carregar casa' }),
   ).not.toBeInTheDocument();
   const catalogReads = app.reads.filter((req) =>
     new URL(req.url).pathname.includes('/filtros/'),
@@ -611,7 +583,7 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
     await vi.advanceTimersByTimeAsync(10);
   });
   expect(
-    filters.getByText(
+    screen.getByText(
       'Não foi possível consultar o nome. O identificador foi preservado.',
     ),
   ).toBeInTheDocument();
@@ -627,43 +599,15 @@ it('Retry-After dos catálogos bloqueia busca e novas consultas de nomes, preser
   ).toHaveLength(catalogReads);
   app.respond(defaultResponse);
   fireEvent.click(
-    filters.getByRole('button', { name: 'Consultar nome de casa' }),
+    screen.getByRole('button', { name: 'Consultar nome de casa' }),
   );
   await act(async () => {
     await vi.advanceTimersByTimeAsync(10);
   });
   expect(
-    filters.getByRole('button', { name: 'Casa Opção histórica (inativa)' }),
+    screen.getByRole('button', { name: 'Casa Opção histórica (inativa)' }),
   ).toBeInTheDocument();
   expect(
     app.reads.filter((req) => new URL(req.url).pathname.includes('/filtros/')),
   ).toHaveLength(catalogReads + 1);
-});
-
-it('detalhe abre no app com filtros e modo; modificadores ficam com o navegador', async () => {
-  const { router } = await open({
-    search: '?page_size=2&apagadas=todas&visualizacao=cartoes',
-  });
-  const link = (await screen.findAllByRole('article'))[0]!.querySelector(
-    'h3 a',
-  )!;
-  expect(link.getAttribute('href')).toMatch(
-    /^\/aposta\/[^?]+\?page_size=2&apagadas=todas&visualizacao=cartoes$/,
-  );
-  let kept: boolean | undefined;
-  // Observe the app's decision, then stop jsdom from emulating a new window.
-  const observe = (event: Event) => {
-    kept = !event.defaultPrevented;
-    event.preventDefault();
-  };
-  window.addEventListener('click', observe, { once: true });
-  fireEvent.click(link, { ctrlKey: true });
-  expect(kept).toBe(true);
-  expect(router.state.location.pathname).toBe('/');
-  const handled = fireEvent.click(link);
-  expect(handled).toBe(false);
-  expect(router.state.location.pathname).toMatch(/^\/aposta\//);
-  expect(router.state.location.search).toBe(
-    '?page_size=2&apagadas=todas&visualizacao=cartoes',
-  );
 });

@@ -1,0 +1,31 @@
+{
+  "commit_id": "3074cada16c7349c128f4b473c7572af7a3f1322",
+  "event": "REQUEST_CHANGES",
+  "body": "## PR #73 Review — feat: acompanhar jobs de upload sem reenvio (#15)\n\n### Resumo\n\nImplementa infraestrutura de polling de jobs assíncronos:  (scheduler com backoff exponencial, limites de requisições/tempo, detecção de estado inalterado),  (React hook com , pool por  com cleanup automático),  (validação UUID, projeção , derivação de ). 4 arquivos + testes, ~600 linhas. Base  @ .\n\n### Pontos fortes\n- **Scheduler robusto**:  gerencia lifecycle completo (inativo → observando → encerrado/interrompido); backoff exponencial com  counter; limites , , .\n- **Detecção de estado inalterado**:  compara snapshots;  incrementa até 5; dobra intervalo a cada snapshot igual → reduz polling quando job estável.\n- **Pool compartilhado**:  evita múltiplos schedulers para mesmo job; cleanup via  no dispose.\n- ** correto**: // (server snapshot) para compatibilidade SSR;  exposto para retry manual.\n- **Validação estrita**:  valida UUID v4, status conhecido, contagens , ;  imutabilidade.\n- **Retry com /**: Respeita ; para em 404/422/max retries.\n- **Private context**:  no pool key isola observers por sessão;  + deadline evita observer órfão.\n\n### Alterações solicitadas\n\n1. **observarJob.ts -  para detectar inalterado**: Serialização JSON completa a cada poll é custosa para objetos grandes. Usar hash (ex: ) ou comparar campos-chave (, , ).\n2. **observarJob.ts -  hardcoded**: Deveria ser configurável via  ou parâmetro.\n3. **useJob.ts -  no pool key**: Se  undefined (fase checking), key = . Se epoch mudar para 0 legitimamente, colisão. Usar .\n4. **job.ts -  lança  genérico**: Perde contexto. Propagar  ou logar.\n5. **Middleware ASGI conversion**: Verificar regressão no polling e validação.\n\nVerdict: **Aprovar após os 5 itens acima**. Infraestrutura exemplar, scheduler inteligente, pool compartilhado, tipos rigorosos.",
+  "comments": [
+    {
+      "path": "src/features/enviar/observarJob.ts",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## signature = JSON.stringify(dados) custoso\n\nSerialização JSON completa a cada poll para comparar snapshots. Para objetos grandes, usar hash incremental ou comparar apenas campos-chave:\nconst keyFields = { status: dados.status, bets_processed: dados.bets_processed, percent: dados.progress.percent };\nconst nextSignature = JSON.stringify(keyFields);"
+    },
+    {
+      "path": "src/features/enviar/observarJob.ts",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## MAX_JOB_REQUESTS=300 hardcoded\n\nDeveria ser configurável via getConfig() ou parâmetro:\nexport const MAX_JOB_REQUESTS = getConfig().maxJobRequests ?? 300;"
+    },
+    {
+      "path": "src/features/enviar/useJob.ts",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## epoch ?? 0 no pool key - risco de colisão\n\nconst key = `${epoch}:${id}`; com epoch ?? 0. Se epoch undefined (fase checking), key = 0:id. Se epoch virar 0 legitimamente, colisão. Usar epoch ?? -1."
+    },
+    {
+      "path": "src/features/enviar/job.ts",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## projetarJob lança ApiError(invalid_response) genérico\n\nthrow new ApiError(invalid_response); perde stack trace. Propagar cause:\ncatch (e) { throw new ApiError(invalid_response, { cause: e }); }"
+    }
+  ]
+}

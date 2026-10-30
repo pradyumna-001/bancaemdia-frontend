@@ -16,6 +16,12 @@ export const DIMENSOES = {
   banca: 'Banca',
 } as const;
 export type Dimensao = keyof typeof DIMENSOES;
+/** Ação explícita de nova aposta; mantém filtros, sem reutilizar intenção anterior. */
+export function novaApostaDestino(search: string) {
+  const next = new URLSearchParams(search);
+  next.delete('manual_intencao');
+  return '/aposta/nova' + (next.size ? '?' + next.toString() : '');
+}
 export const PERIODOS = {
   '7d': 'Últimos 7 dias',
   '30d': 'Últimos 30 dias',
@@ -33,9 +39,8 @@ export type Filtro =
   | 'apagadas'
   | 'revisao';
 export type RecursoFiltros =
-  'apostas' | 'painel' | 'metricas' | 'export' | 'resultados' | 'hipotetica';
+  'apostas' | 'painel' | 'metricas' | 'export' | 'resultados';
 export const RECURSOS_FILTROS = {
-  hipotetica: '/api/v1/painel/hipotetica',
   apostas: '/api/v1/apostas',
   painel: '/api/v1/painel/filtrado',
   metricas: '/api/v1/painel/filtrado/metricas',
@@ -262,9 +267,7 @@ export function adaptarFiltros(
     query.page = visao.page;
     query.page_size = visao.page_size;
   }
-  // Decision of 24/10/2026 (#37): 25 per page keeps the first queue response
-  // within one round trip; later pages load on request.
-  if (recurso === 'resultados') query.page_size = 25;
+  if (recurso === 'resultados') query.page_size = 50;
   return {
     endpoint,
     query,

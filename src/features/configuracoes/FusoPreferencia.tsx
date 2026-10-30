@@ -108,7 +108,6 @@ export function FusoPreferencia({
       setNotice(
         `Fuso salvo: ${nomeFuso(data.fuso_horario)}. As análises usarão essa divisão dos dias.`,
       );
-      await queries.invalidateQueries({ queryKey: ['analises'] });
     } catch (cause) {
       if (!current()) return;
       const safe =

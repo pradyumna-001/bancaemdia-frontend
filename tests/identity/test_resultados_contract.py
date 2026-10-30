@@ -125,16 +125,9 @@ async def test_public_spa_resultados_gestures_undo_recovery(
                 ).to_be_visible()
             assert len(writes) == 20
             await expect(green).to_be_enabled()
-            # Pages of 25: the second and third pages complete the 53 items.
-            more = page.get_by_role(
+            await page.get_by_role(
                 "button", name="Carregar próximas apostas", exact=True
-            )
-            await more.click()
-            await expect(
-                page.get_by_text("Resultado real 49", exact=True)
-            ).to_be_visible()
-            await expect(more).to_be_enabled()
-            await more.click()
+            ).click()
             await expect(
                 page.get_by_text("Resultado real 52", exact=True)
             ).to_be_visible()

@@ -1,0 +1,31 @@
+{
+  "commit_id": "4b9b8f3aa1761a4a39593207438085aab1d1ab9b",
+  "event": "REQUEST_CHANGES",
+  "body": "## PR #87 Review - feat: envio de apostas via planilha/export Telegram (#20)\n\n### Resumo\n\nImplementa EnviarPage.tsx com upload de arquivo (ZIP/JSON do export Telegram), acompanhamento de job assíncrono via polling (useJob + observarJob), validação estrita de resposta (projetarJob), progresso granular (lidos, falhados, ignorados, acima do limite, pendentes), pausa/retomada de acompanhamento, e limpeza de recursos (AbortController, URL.revokeObjectURL). 1 commit, ~1.5k linhas (incluindo job.ts, observarJob.ts, useJob.ts, EnviarPage.test.tsx). Base main @ b5fb27d. Depende de #81.\n\n### Pontos fortes\n- **Upload multipart robusto**: FormData com file.name + file; bodySerializer personalizado; AbortController cancela upload em andamento.\n- **Job polling com useSyncExternalStore**: observarJob retorna ObservadorJob com getSnapshot/subscribe/retomar/dispose; pool por WeakMap<SessionService, Map> com cleanup no service.registerCleanup; evita múltiplas subscrições para mesmo job.\n- **Validação estrita**: projetarJob valida job_id (UUID v4), status conhecido, contagens seguras (Number.isSafeInteger >= 0), progress.percent opcional [0,100]; congela objeto com Object.freeze.\n- **Estados claros**: fase (observando, inativo, interrompido), resultado (completo, parcial, vazio, falha), motivo (limite); UI reativa a cada estado.\n- **Pausa sem cancelar**: setPaused(true) → useJob recebe undefined → observer unsubscribed; job remoto continua; retomar() reativa polling.\n- **Limpeza de recursos**: release() revoga objectURL; AbortController aborta requests; cleanup no unmount e no service.registerCleanup.\n- **Verificação de private context**: epoch capturado no send/checkResult; samePrivateContext() garante que resposta pertence à sessão atual.\n- **Testes abrangentes**: unitários para jobIdValido, projetarJob, etapaJob, resultadoJob; integração para observarJob, useJob; E2E para fluxo completo.\n\n### Alterações solicitadas\n\n1. **EnviarPage.tsx - send() valida access.can mas não epoch antes de upload**: access.run executa mutação; se epoch mudar durante upload (outra aba fez login), scope.isCurrent() falha mas erro vira cancelled. OK mas poderia validar epoch antes de iniciar upload para evitar request desnecessário.\n2. **job.ts - projetarJob usa Object.hasOwn(ETAPAS, data.status)**: ETAPAS é Record<string, string> frozen; Object.hasOwn funciona mas ETAPAS[data.status] no final assume existência. Adicionar type guard: if (!(data.status in ETAPAS)) throw...\n3. **useJob.ts - pool WeakMap key usa epoch ?? 0**: Se epoch for undefined (fase !== authenticated), key vira 0:id. Se epoch mudar, novo observer criado. OK mas epoch pode ser undefined; usar epoch ?? -1 para distinguir.\n4. **EnviarPage.tsx - checkResult() consulta /api/v1/apostas com page_size=1 para total**: Faz GET apenas para contar total; aceitável mas poderia usar endpoint /api/v1/painel se disponível.\n5. **Middleware ASGI conversion**: Verificar regressão no job polling e validação de resposta.\n\nVerdict: Aprovar após os 5 itens acima. Arquitetura exemplar, polling robusto, validação estrita, limpeza correta.",
+  "comments": [
+    {
+      "path": "src/features/enviar/job.ts",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## projetarJob - Object.hasOwn em Record frozen + acesso direto\n\nETAPAS é Record<string, string> frozen. Object.hasOwn(ETAPAS, data.status) funciona mas ETAPAS[data.status]! no final assume existência. Adicionar type guard explícito:\nif (!(data.status in ETAPAS)) throw new ApiError(invalid_response);\nconst etapa = ETAPAS[data.status]!; // agora seguro"
+    },
+    {
+      "path": "src/features/enviar/useJob.ts",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## pool key usa epoch ?? 0 - pode colidir se epoch undefined\n\nconst key = `${epoch}: ${id}`; com epoch ?? 0. Se epoch for undefined (fase checking), key = 0:id. Se depois epoch virar 1, novo observer criado (OK). Mas se epoch for 0 legitimamente, colisão. Usar epoch ?? -1 para distinguir estado não-autenticado."
+    },
+    {
+      "path": "src/features/enviar/EnviarPage.tsx",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## send() - validação de epoch antes de upload evitaria request desnecessário\n\naccess.run executa mutação; se epoch mudar durante upload, scope.isCurrent() falha e erro vira cancelled. Validar epoch antes:\nconst epoch = service.getSnapshot().privateEpoch;\nif (epoch !== auth?.state.privateEpoch) return; // sessão mudou"
+    },
+    {
+      "path": "src/features/enviar/observarJob.ts",
+      "line": 1,
+      "side": "RIGHT",
+      "body": "## observarJob não revisado (arquivo separado)\n\nVerificar: backoff exponencial em retryConsulta, tratamento de AbortSignal, cleanup de subscriptions, validação de resposta do GET /api/v1/upload/{job_id} contra contrato."
+    }
+  ]
+}

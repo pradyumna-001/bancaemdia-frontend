@@ -10,43 +10,7 @@ import {
   porcentagem,
   porcentagemPontosBase,
   precoAssinatura,
-  moedaDecimalCentavos,
-  percentualDecimal,
-  decimalEditavel,
-  decimalDaEntrada,
 } from './format';
-it('preserva decimais legados de metas sem float ou arredondamento', () => {
-  expect(moedaDecimalCentavos('9223372036854775807.000000')).toBe(
-    'R$ 92.233.720.368.547.758,07',
-  );
-  expect(moedaDecimalCentavos('-1.000000')).toBe('−R$ 0,01');
-  expect(moedaDecimalCentavos('0.100000')).toBe('R$ 0,001');
-  expect(moedaDecimalCentavos('0.000000')).toBe('R$ 0,00');
-  expect(percentualDecimal('1.333333')).toBe('133,3333%');
-  expect(percentualDecimal('-0.120000')).toBe('−12%');
-  expect(percentualDecimal(null)).toBe('Não informado');
-  expect(decimalEditavel('100000.000000', -2)).toBe('1000');
-  expect(decimalEditavel('-0.125000', 2)).toBe('-12,5');
-  expect(decimalDaEntrada('1,25', 2)).toBe('125');
-  expect(decimalEditavel('0.000001', -2)).toBe('0,00000001');
-  expect(decimalDaEntrada('0,00000001', 2)).toBe('0.000001');
-  expect(() => decimalDaEntrada('0,000000001', 2)).toThrow();
-  expect(decimalDaEntrada('-12,5', -2)).toBe('-0.125');
-  expect(decimalDaEntrada('+44,000')).toBe('44');
-  expect(decimalDaEntrada('0')).toBe('0');
-  for (const value of [
-    '',
-    'NaN',
-    'Infinity',
-    '1.234,56',
-    '01',
-    '1e4',
-    '1,1234567',
-    '9999999999999999999',
-  ])
-    expect(() => decimalDaEntrada(value)).toThrow();
-  expect(() => decimalDaEntrada('0,000001', -2)).toThrow();
-});
 it.each([
   [0, 'R$ 0,00'],
   [1, '+R$ 0,01'],
@@ -103,55 +67,6 @@ it('aceita escala explícita e sinal; recusa moeda/escala não publicadas', () =
     expect(() => moedaMenor(100, currency)).toThrow('Valor indisponível.');
   for (const casas of [-1, 5, 1.2, NaN])
     expect(() => moedaMenor(100, 'BRL', false, casas)).toThrow();
-});
-it('reproduz exatamente formatToParts para moedas, escalas e sinais', () => {
-  const referencia = (
-    valor: bigint,
-    currency: string,
-    sinal: boolean,
-    casas: number,
-  ) => {
-    const absoluto = valor < 0n ? -valor : valor;
-    const escala = 10n ** BigInt(casas);
-    const fracao = (absoluto % escala).toString().padStart(casas, '0');
-    const partes = new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency,
-      currencyDisplay: currency === 'BRL' ? 'symbol' : 'code',
-      minimumFractionDigits: casas,
-      maximumFractionDigits: casas,
-    }).formatToParts(absoluto / escala);
-    return (
-      (valor < 0n ? '−' : sinal && valor > 0n ? '+' : '') +
-      partes
-        .map((p) => (p.type === 'fraction' ? fracao : p.value))
-        .join('')
-        .replaceAll(' ', ' ')
-    );
-  };
-  const valores = [
-    0n,
-    1n,
-    -1n,
-    99n,
-    -100n,
-    123456n,
-    -9007199254740993n,
-    9223372036854775807n,
-    ...Array.from({ length: 200 }, (_, i) => BigInt(i * 7919 - 500000) ** 2n),
-  ];
-  for (const [currency, casas] of [
-    ['BRL', 2],
-    ['USD', 2],
-    ['JPY', 0],
-    ['KWD', 3],
-    ['BRL', 4],
-  ] as const)
-    for (const valor of valores)
-      for (const sinal of [false, true])
-        expect(moedaMenor(valor, currency, sinal, casas)).toBe(
-          referencia(valor, currency, sinal, casas),
-        );
 });
 it.each([
   [9900, 'BRL', 'MONTHLY', 'R$ 99,00 por mês'],

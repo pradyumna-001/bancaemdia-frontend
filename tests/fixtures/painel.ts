@@ -1,7 +1,7 @@
-import diarioExample from './painel-diario.json' with { type: 'json' };
-import gruposExample from './painel-grupos.json' with { type: 'json' };
-import legado from './painel-legado.json' with { type: 'json' };
-import filtrado from './painel-filtrado.json' with { type: 'json' };
+import diarioExample from './painel-diario.json';
+import gruposExample from './painel-grupos.json';
+import legado from './painel-legado.json';
+import filtrado from './painel-filtrado.json';
 import type { Diario, Hierarquia } from '../../src/features/painel/protocol';
 import { deslocarDia } from '../../src/lib/datasFiltro';
 

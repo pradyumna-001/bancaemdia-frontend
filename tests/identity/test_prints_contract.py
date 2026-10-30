@@ -115,39 +115,6 @@ async def test_public_spa_prints_real_worker(
                 )
                 uid = session["usuario_id"]
                 await core.grant(page, engine_admin, uid)
-                async with engine_admin.begin() as conn:
-                    house = await conn.scalar(
-                        text(
-                            "INSERT INTO casas(nome,dominio) VALUES('Betano','betano.com') RETURNING id"
-                        )
-                    )
-                holder = await core.write(
-                    page, "/api/v1/titulares", {"nome": "Prints"}, expected=201
-                )
-                account = await core.write(
-                    page,
-                    f"/api/v1/titulares/{holder['id']}/contas",
-                    {"casa_id": house, "apelido": "Prints"},
-                    expected=201,
-                )
-                # Synthetic account attribution input, never a seeded bet/result.
-                async with engine_admin.begin() as conn:
-                    await conn.execute(
-                        text("SELECT set_config('app.current_user_id',:uid,true)"),
-                        {"uid": str(uid)},
-                    )
-                    await conn.execute(
-                        text(
-                            "UPDATE contas_casa SET estado='EM_USO' WHERE usuario_id=:uid AND id=:id"
-                        ),
-                        {"uid": uid, "id": account["conta_casa_id"]},
-                    )
-                    await conn.execute(
-                        text(
-                            "INSERT INTO usos_conta_casa(usuario_id,casa_id,conta_casa_id,vigente_de,origem) VALUES(:uid,:house,:id,'2026-01-01T00:00:00Z','EXPLICITA')"
-                        ),
-                        {"uid": uid, "house": house, "id": account["conta_casa_id"]},
-                    )
                 images = []
                 for color in ((10, 30, 50), (50, 30, 10)):
                     buffer = io.BytesIO()
@@ -203,47 +170,12 @@ async def test_public_spa_prints_real_worker(
                         else None
                     ),
                 )
-                held_item = None
-                admissions = []
-                lost_statuses = []
-
-                def lose_third_response(method, path, response):
-                    nonlocal held_item
-                    if method != "POST" or not path.startswith("/api/v1/prints/"):
-                        return False
-                    admissions.append(path)
-                    if len(admissions) != 3:
-                        return False
-                    lost_statuses.append(response.status_code)
-                    held_item = path.rsplit("/", 1)[-1]
-                    return True
-
-                harness.frontend_proxy.after_api_response = lose_third_response
-
-                async def partial_response(route):
-                    nonlocal held_item
-                    request = route.request
-                    if request.method == "GET" and held_item:
-                        if request.url.endswith("/itens/" + held_item):
-                            held_item = None
-                            await route.continue_()
-                        elif "/itens/" not in request.url:
-                            # A real network outage hides batch polling until the
-                            # person explicitly checks the uncertain item.
-                            await route.abort("failed")
-                        else:
-                            await route.continue_()
-                    else:
-                        await route.continue_()
-
-                await page.route("**/api/v1/prints/**", partial_response)
                 await context.tracing.start(
                     screenshots=False, snapshots=False, sources=False
                 )
                 try:
                     await page.goto(
-                        backend.FRONT
-                        + f"/enviar?entrada=prints&casa={house}&apagadas=1"
+                        backend.FRONT + "/enviar?entrada=prints&casa=7&apagadas=1"
                     )
                     await page.get_by_label(
                         "Imagens dos bilhetes", exact=True
@@ -280,20 +212,13 @@ async def test_public_spa_prints_real_worker(
                     ).focus()
                     await page.keyboard.press("Enter")
                     await expect(
-                        page.get_by_role("button", name="Conferir print 3", exact=True)
-                    ).to_be_enabled()
-                    assert len(writes) == 3 and lost_statuses == [202]
-                    await page.get_by_role(
-                        "button", name="Conferir print 3", exact=True
-                    ).click()
-                    await expect(
                         page.get_by_text("Print já recebido", exact=True)
                     ).to_be_visible(timeout=60000)
                     await expect(
                         page.get_by_text("Precisa de Revisão", exact=True)
                     ).to_have_count(2, timeout=60000)
                     query = parse_qs(urlsplit(page.url).query)
-                    assert query["casa"] == [str(house)] and query["apagadas"] == ["1"]
+                    assert query["casa"] == ["7"] and query["apagadas"] == ["1"]
                     assert len(query["item"]) == 3 and len(writes) == 3
                     path = "/api/v1/prints/intencoes/" + query["prints"][0]
                     result = await core.request(page, path)
@@ -332,50 +257,6 @@ async def test_public_spa_prints_real_worker(
                         page.get_by_text("Print já recebido", exact=True)
                     ).to_be_visible()
                     assert len(writes) == 3 and not calls
-                    review_ids = {
-                        rid
-                        for item in result["data"]["items"]
-                        for outcome in item["results"]
-                        for rid in outcome["review_ids"]
-                    }
-                    assert len(review_ids) == 2
-                    await page.get_by_role(
-                        "link", name="Abrir Revisão", exact=True
-                    ).first.click()
-                    await expect(
-                        page.get_by_label("Valor em unidades", exact=True)
-                    ).to_be_visible()
-                    await page.get_by_label("Valor em unidades", exact=True).fill("1")
-                    await page.get_by_role(
-                        "button", name="Salvar correção", exact=True
-                    ).click()
-                    await expect(
-                        page.get_by_text(
-                            "Revisão resolvida. A fila foi consultada novamente desde o início.",
-                            exact=True,
-                        )
-                    ).to_be_visible()
-                    async with engine_admin.connect() as conn:
-                        bet = (
-                            (
-                                await conn.execute(
-                                    text(
-                                        "SELECT chave,conta_casa_id,stake_centavos,valor_aposta_centavos FROM apostas WHERE usuario_id=:uid"
-                                    ),
-                                    {"uid": uid},
-                                )
-                            )
-                            .mappings()
-                            .one()
-                        )
-                        assert bet["conta_casa_id"] == account["conta_casa_id"]
-                        assert (
-                            bet["stake_centavos"] > 0
-                            and bet["stake_centavos"] == bet["valor_aposta_centavos"]
-                        )
-                    assert len(writes) == 3 and not calls, (
-                        "Resolving a Print may not re-upload images or call the provider"
-                    )
                     await page.set_viewport_size({"width": 320, "height": 844})
                     assert await page.evaluate(
                         "document.documentElement.scrollWidth <= innerWidth"

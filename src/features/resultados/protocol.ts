@@ -25,13 +25,6 @@ export function validarAposta(
     value,
     SITE_READ_CONTRACT['/api/v1/resultados/apostas/{chave}'].response,
   );
-  return conferirAposta(value, chave);
-}
-/** Rules beyond the published schema; the caller has already checked it. */
-function conferirAposta(
-  value: ApostaResultado | undefined,
-  chave?: string,
-): ApostaResultado {
   if (
     !value ||
     !identidadeValida(value.revisao) ||
@@ -65,10 +58,8 @@ export function validarFila(value: Fila | undefined): Fila {
   if (!value) throw new ApiError('invalid_response');
   dataHora(value.observado_em, 'America/Sao_Paulo');
   dataHora(value.fronteira_iniciada_em, 'America/Sao_Paulo');
-  // The page schema already checks each item with the same schema as a single
-  // bet (a test keeps them equal); items only need the remaining rules.
   for (const item of value.data) {
-    conferirAposta(item);
+    validarAposta(item);
     if (
       !item.elegivel ||
       item.estado !== 'PENDENTE' ||
