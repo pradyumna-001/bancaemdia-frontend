@@ -2,108 +2,14 @@ export type InteiroExato = number | bigint | string;
 export type DecimalRecebido = number | string;
 export const NAO_INFORMADO = 'Não informado';
 const indisponivel = () => new Error('Valor indisponível.');
-// Only locale configuration is shared. No value, identity or formatted result
-// survives a call; repeated rows do not recreate the expensive ICU machinery.
-const moedasSuportadas = new Set(Intl.supportedValuesOf('currency'));
-const inteiroFormatado = new Intl.NumberFormat('pt-BR');
-const moedasFormatadas = new Map<string, Intl.NumberFormat>();
-const moldesMoeda = new Map<string, MoldeMoeda | null>();
-const datasFormatadas = new Map<
-  string,
-  { formato: Intl.DateTimeFormat; zona: string }
->();
-type MoldeMoeda = { antes: string; depois: string; decimal: string };
-const eixosFormatados = [1, 2].map(
-  (maximumFractionDigits) =>
-    new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      notation: 'compact',
-      maximumFractionDigits,
-      minimumFractionDigits: 0,
-    }),
-);
-function formatoMoeda(currency: string, casas?: number) {
-  const key = `${currency}:${casas ?? 'iso'}`;
-  let formato = moedasFormatadas.get(key);
-  if (!formato) {
-    formato = new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency,
-      currencyDisplay: currency === 'BRL' ? 'symbol' : 'code',
-      ...(casas === undefined
-        ? {}
-        : { minimumFractionDigits: casas, maximumFractionDigits: casas }),
-    });
-    moedasFormatadas.set(key, formato);
-  }
-  return formato;
-}
-
-/**
- * Locale configuration of one currency format: the literal text around the
- * grouped integer and its decimal separator, read from Intl itself. It holds
- * no value. Used only after sample integers reproduce formatToParts exactly;
- * otherwise the formatToParts path stays in charge.
- */
-function moldeMoeda(currency: string, casas: number) {
-  const key = `${currency}:${casas}`;
-  if (moldesMoeda.has(key)) return moldesMoeda.get(key)!;
-  const formato = formatoMoeda(currency, casas);
-  const partes = formato.formatToParts(0n);
-  const primeiro = partes.findIndex((p) => p.type === 'integer');
-  const ultimo =
-    partes.length -
-    1 -
-    [...partes]
-      .reverse()
-      .findIndex((p) => p.type === 'integer' || p.type === 'fraction');
-  const molde: MoldeMoeda = {
-    antes: partes
-      .slice(0, primeiro)
-      .map((p) => p.value)
-      .join(''),
-    depois: partes
-      .slice(ultimo + 1)
-      .map((p) => p.value)
-      .join(''),
-    decimal: partes.find((p) => p.type === 'decimal')?.value ?? '',
-  };
-  const fiel = [0n, 7n, 1234n, 1234567n, 12345678901234567890n].every(
-    (amostra) =>
-      montarMoeda(molde, amostra, '0'.repeat(casas)) ===
-      formato
-        .formatToParts(amostra)
-        .map((p) => p.value)
-        .join(''),
-  );
-  moldesMoeda.set(key, fiel ? molde : null);
-  return fiel ? molde : null;
-}
-
-function montarMoeda(molde: MoldeMoeda, inteiro: bigint, fracao: string) {
-  return (
-    molde.antes +
-    inteiroFormatado.format(inteiro) +
-    (fracao ? molde.decimal + fracao : '') +
-    molde.depois
-  );
-}
 
 /** Conversão textual de entrada BRL; não decide nenhum valor financeiro. */
 export function centavosDaEntrada(valor: string): number {
-  const inteiro = BigInt(centavosExatosDaEntrada(valor));
-  if (inteiro > BigInt(Number.MAX_SAFE_INTEGER)) throw indisponivel();
-  return Number(inteiro);
-}
-
-/** Entrada BRL para contratos BIGINT em string, sem arredondamento. */
-export function centavosExatosDaEntrada(valor: string): string {
   const match = /^(0|[1-9]\d*)(?:[,.](\d{1,2}))?$/.exec(valor.trim());
   if (!match) throw indisponivel();
   const inteiro = BigInt(match[1]! + (match[2] ?? '').padEnd(2, '0'));
-  if (inteiro > 9223372036854775807n) throw indisponivel();
-  return inteiro.toString();
+  if (inteiro > BigInt(Number.MAX_SAFE_INTEGER)) throw indisponivel();
+  return Number(inteiro);
 }
 
 /** Sinal de uma entrada BRL para ajuste, sem decidir o efeito financeiro. */
@@ -135,36 +41,40 @@ export function moedaMenor(
   casas?: number,
 ): string {
   if (valor === null) return NAO_INFORMADO;
-  if (!moedasSuportadas.has(currency)) throw indisponivel();
-  const digitos =
-    casas ?? formatoMoeda(currency).resolvedOptions().maximumFractionDigits!;
+  if (!Intl.supportedValuesOf('currency').includes(currency))
+    throw indisponivel();
+  const formato = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency,
+    currencyDisplay: currency === 'BRL' ? 'symbol' : 'code',
+  });
+  const digitos = casas ?? formato.resolvedOptions().maximumFractionDigits!;
   if (!Number.isInteger(digitos) || digitos < 0 || digitos > 4)
     throw indisponivel();
   const inteiro = inteiroExato(valor);
   const absoluto = inteiro < 0n ? -inteiro : inteiro;
   const escala = 10n ** BigInt(digitos);
-  const fracao = digitos
-    ? (absoluto % escala).toString().padStart(digitos, '0')
-    : '';
+  const fracao = (absoluto % escala).toString().padStart(digitos, '0');
+  const partes = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency,
+    currencyDisplay: currency === 'BRL' ? 'symbol' : 'code',
+    minimumFractionDigits: digitos,
+    maximumFractionDigits: digitos,
+  }).formatToParts(absoluto / escala);
   const prefixo = inteiro < 0n ? '−' : sinal && inteiro > 0n ? '+' : '';
-  const molde = moldeMoeda(currency, digitos);
-  const texto = molde
-    ? montarMoeda(molde, absoluto / escala, fracao)
-    : formatoMoeda(currency, digitos)
-        .formatToParts(absoluto / escala)
-        .map((p) => (p.type === 'fraction' ? fracao : p.value))
-        .join('');
-  return prefixo + texto.replaceAll('\u00a0', ' ');
+  return (
+    prefixo +
+    partes
+      .map((p) => (p.type === 'fraction' ? fracao : p.value))
+      .join('')
+      .replaceAll('\u00a0', ' ')
+  );
 }
 
 /** Centavos BRL do domínio; zero válido não é ausência. */
 export function moeda(centavos: InteiroExato | null, sinal = false): string {
   return moedaMenor(centavos, 'BRL', sinal, 2);
-}
-
-/** Centavos decimais ideais publicados pelo servidor, sem arredondar a decisão. */
-export function moedaCentavosDecimais(valor: string, sinal = false): string {
-  return `R$ ${numeroDecimal(valor, -2, 2, sinal)}`;
 }
 
 /** Preço recebido da API Stripe: cadência e escala não definem um plano local. */
@@ -232,45 +142,13 @@ function numeroDecimal(
         : '';
   return (
     prefixo +
-    inteiroFormatado.format(BigInt(inteiro)) +
+    new Intl.NumberFormat('pt-BR').format(BigInt(inteiro)) +
     (fracao ? `,${fracao}` : '')
   );
 }
 
 export function decimal(valor: DecimalRecebido | null): string {
   return valor === null ? NAO_INFORMADO : numeroDecimal(valor);
-}
-
-/** Configuração decimal legada de metas: preserva precisão e unidade da API. */
-function decimalReduzido(valor: string, deslocamento = 0, minimo = 0): string {
-  const [inteiro, fracao = ''] = numeroDecimal(valor, deslocamento).split(',');
-  const casas = fracao.replace(/0+$/, '').padEnd(minimo, '0');
-  return inteiro! + (casas ? ',' + casas : '');
-}
-export function moedaDecimalCentavos(valor: string): string {
-  const texto = decimalReduzido(valor, -2, 2);
-  return texto.startsWith('−') ? '−R$ ' + texto.slice(1) : 'R$ ' + texto;
-}
-export function percentualDecimal(valor: string | null): string {
-  return valor === null ? NAO_INFORMADO : decimalReduzido(valor, 2) + '%';
-}
-export function decimalEditavel(valor: string, deslocamento = 0): string {
-  return decimalReduzido(valor, deslocamento)
-    .replaceAll('.', '')
-    .replace('−', '-');
-}
-/** Conversão textual de unidade; não calcula alvo, progresso ou resultado. */
-export function decimalDaEntrada(valor: string, deslocamento = 0): string {
-  const texto = valor.trim();
-  if (!/^[+-]?(?:0|[1-9]\d{0,23})(?:[,.]\d{1,8})?$/.test(texto))
-    throw indisponivel();
-  const normalizado = decimalEditavel(
-    texto.replace(',', '.'),
-    deslocamento,
-  ).replace(',', '.');
-  const [inteiro, fracao = ''] = normalizado.replace(/^-/, '').split('.');
-  if (inteiro!.length > 18 || fracao.length > 6) throw indisponivel();
-  return normalizado;
 }
 
 export function odd(valor: DecimalRecebido | null): string {
@@ -324,27 +202,16 @@ export function dataHora(instante: string | null, fuso: string): string {
     throw new Error('Data indisponível.');
   dataCivil(instante.slice(0, 10));
   try {
-    let formato = datasFormatadas.get(fuso);
-    if (!formato) {
-      const configurado = new Intl.DateTimeFormat('pt-BR', {
-        timeZone: fuso,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hourCycle: 'h23',
-      });
-      formato = {
-        formato: configurado,
-        zona: configurado.resolvedOptions().timeZone,
-      };
-      // Unknown server-provided zones cannot grow a process-wide cache forever.
-      if (datasFormatadas.size === 16)
-        datasFormatadas.delete(datasFormatadas.keys().next().value!);
-      datasFormatadas.set(fuso, formato);
-    }
-    return `${formato.formato.format(new Date(instante))} (${formato.zona})`;
+    const formato = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: fuso,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    });
+    return `${formato.format(new Date(instante))} (${formato.resolvedOptions().timeZone})`;
   } catch {
     throw new Error('Data indisponível.');
   }
@@ -353,7 +220,11 @@ export function dataHora(instante: string | null, fuso: string): string {
 /** Escala compacta apenas para eixos; resumo e tabela preservam centavos exatos. */
 export function moedaEixo(centavos: number): string {
   if (!Number.isSafeInteger(centavos)) throw new Error('Valor indisponível.');
-  return eixosFormatados[Math.abs(centavos) < 100000 ? 1 : 0]!.format(
-    centavos / 100,
-  );
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    notation: 'compact',
+    maximumFractionDigits: Math.abs(centavos) < 100000 ? 2 : 1,
+    minimumFractionDigits: 0,
+  }).format(centavos / 100);
 }

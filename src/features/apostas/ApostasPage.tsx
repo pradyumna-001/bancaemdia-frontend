@@ -1,22 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import {
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent,
-} from 'react';
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from 'react-router-dom';
-import { novaApostaDestino } from '../../lib/novaApostaDestino';
+import { useEffect, useRef } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { getApiClient, type createApiClient } from '../../api/client';
 import { recuperacaoErro } from '../../api/recovery';
 import { SITE_READ_CONTRACT } from '../../api/site-read.generated';
@@ -40,201 +24,131 @@ import {
 } from './projecao';
 import './apostas.css';
 
-const ModoCompacto = createContext(true);
-
-// One URL read and one stable handler for the whole list: switching modes
-// changes the query string without rebuilding a router link per bet.
-const BuscaAtual = createContext('');
-const AbrirDetalhe = createContext<
-  (event: MouseEvent<HTMLAnchorElement>) => void
->(() => {});
-
-function LinkDetalheAposta({
-  chave,
-  evento,
-}: {
-  chave: string;
-  evento: string;
-}) {
-  const search = useContext(BuscaAtual);
-  const abrir = useContext(AbrirDetalhe);
-  return (
-    <a href={'/aposta/' + encodeURIComponent(chave) + search} onClick={abrir}>
-      {evento}
-    </a>
-  );
-}
-
-function ValorLinha({ value }: { value: string }) {
-  const compacta = useContext(ModoCompacto);
-  return compacta && value === NAO_INFORMADO ? '—' : value;
-}
-
-// The list class shows the icon and hides the text only visually in compact
-// mode (apostas.css): switching modes does not rebuild every row's summary.
-function ResumoLinha() {
-  return (
-    <summary title="Informações da aposta">
-      <span className="aposta-resumo-texto">Informações da aposta</span>
-      <Icone nome="expandir" />
-    </summary>
-  );
-}
-
-const ConteudoLinhaAposta = memo(function ConteudoLinhaAposta({
-  item,
-  view,
-}: {
-  item: Aposta;
-  view: ReturnType<typeof projetarAposta>;
-}) {
+function LinhaAposta({ item, compacta }: { item: Aposta; compacta: boolean }) {
+  const location = useLocation();
+  const view = projetarAposta(item);
   const account = item.conta_contexto;
   return (
-    <>
-      <div className="aposta-contexto">
-        <span className="legenda aposta-casa" title={view.casa}>
-          {view.casa}
-        </span>
-        <h3>
-          <LinkDetalheAposta chave={item.chave} evento={view.evento} />
-        </h3>
-        <p title={view.descricao}>{view.descricao}</p>
-        <p className="legenda">{view.mercado}</p>
-        <p className="legenda">Aposta: {view.data}</p>
-      </div>
-      <div className="aposta-situacao">
-        <span className="aposta-estado" data-estado={item.estado}>
-          {view.estado}
-        </span>
-        {item.apagada && (
-          <span className="aposta-aviso" title="Apagada — fora da apuração">
-            Apagada — fora da apuração
+    <li id={'aposta-' + encodeURIComponent(item.chave)}>
+      <article
+        className={`aposta-linha${compacta ? ' aposta-linha--compacta' : ''}`}
+        aria-label={view.evento}
+      >
+        <div className="aposta-contexto">
+          <span className="legenda aposta-casa" title={view.casa}>
+            {view.casa}
           </span>
-        )}
-        {item.revisao_grave && (
-          <span className="aposta-aviso" title="Revisão necessária">
-            Revisão necessária
+          <h3>
+            <Link
+              to={'/aposta/' + encodeURIComponent(item.chave) + location.search}
+            >
+              {view.evento}
+            </Link>
+          </h3>
+          <p title={view.descricao}>{view.descricao}</p>
+          <p className="legenda">{view.mercado}</p>
+          <p className="legenda">Aposta: {view.data}</p>
+        </div>
+        <div className="aposta-situacao">
+          <span className="aposta-estado" data-estado={item.estado}>
+            {view.estado}
           </span>
-        )}
-        {item.freebet && (
-          <span className="aposta-aviso" title="Freebet — valor de face">
-            Freebet — valor de face
-          </span>
-        )}
-        <span className="legenda">Origem: {view.origem}</span>
-      </div>
-      <dl className="aposta-valores">
-        <div>
-          <dt aria-label={item.freebet ? 'Valor de face' : 'Valor'}>
-            Valor
-            {item.freebet && (
-              <span className="aposta-face-label"> de face</span>
-            )}
-          </dt>
-          <dd className="numero" title={view.valor} aria-label={view.valor}>
-            <ValorLinha value={view.valor} />
-          </dd>
-        </div>
-        <div>
-          <dt>Odd</dt>
-          <dd className="numero" title={view.odd} aria-label={view.odd}>
-            <ValorLinha value={view.odd} />
-          </dd>
-        </div>
-        <div>
-          <dt>Lucro</dt>
-          <dd className="numero" title={view.lucro} aria-label={view.lucro}>
-            <ValorLinha value={view.lucro} />
-          </dd>
-        </div>
-      </dl>
-      <details className="aposta-detalhes">
-        <ResumoLinha />
-        <dl>
-          <div>
-            <dt>Conta atribuída</dt>
-            <dd>
-              {view.conta}
-              {account && !account.ativa ? ' (inativa)' : ''}
-            </dd>
-          </div>
-          {account && (
-            <div>
-              <dt>Identificador da conta</dt>
-              <dd className="numero">{account.id}</dd>
-            </div>
+          {item.apagada && (
+            <span className="aposta-aviso" title="Apagada — fora da apuração">
+              Apagada — fora da apuração
+            </span>
           )}
+          {item.revisao_grave && (
+            <span className="aposta-aviso" title="Revisão necessária">
+              Revisão necessária
+            </span>
+          )}
+          {item.freebet && (
+            <span className="aposta-aviso" title="Freebet — valor de face">
+              Freebet — valor de face
+            </span>
+          )}
+          <span className="legenda">Origem: {view.origem}</span>
+        </div>
+        <dl className="aposta-valores">
           <div>
-            <dt>Titular da conta</dt>
-            <dd>
-              {view.titular}
-              {account?.titular?.arquivado ? ' (arquivado)' : ''}
+            <dt aria-label={item.freebet ? 'Valor de face' : 'Valor'}>
+              Valor
+              {item.freebet && (
+                <span className="aposta-face-label"> de face</span>
+              )}
+            </dt>
+            <dd className="numero" title={view.valor} aria-label={view.valor}>
+              {compacta && view.valor === NAO_INFORMADO ? '—' : view.valor}
             </dd>
           </div>
           <div>
-            <dt>Banca da aposta</dt>
-            <dd>{view.banca}</dd>
-          </div>
-          {item.banca_contexto && (
-            <div>
-              <dt>Identificador da banca</dt>
-              <dd className="numero">{item.banca_contexto.id}</dd>
-            </div>
-          )}
-          <div>
-            <dt>Data do jogo</dt>
-            <dd>{view.jogo}</dd>
+            <dt>Odd</dt>
+            <dd className="numero" title={view.odd} aria-label={view.odd}>
+              {compacta && view.odd === NAO_INFORMADO ? '—' : view.odd}
+            </dd>
           </div>
           <div>
-            <dt>Retorno</dt>
-            <dd className="numero">{view.retorno}</dd>
+            <dt>Lucro</dt>
+            <dd className="numero" title={view.lucro} aria-label={view.lucro}>
+              {compacta && view.lucro === NAO_INFORMADO ? '—' : view.lucro}
+            </dd>
           </div>
         </dl>
-        <p className="legenda">
-          A conta e a banca são as referências registradas na aposta. Os nomes
-          exibidos são os atuais.
-        </p>
-      </details>
-    </>
-  );
-});
-
-const LinhaAposta = memo(function LinhaAposta({ item }: { item: Aposta }) {
-  // Private presentation stays scoped to this mounted row, never a global cache.
-  const view = useMemo(() => projetarAposta(item), [item]);
-  return (
-    <li id={'aposta-' + encodeURIComponent(item.chave)}>
-      <article className="aposta-linha" aria-label={view.evento}>
-        <ConteudoLinhaAposta item={item} view={view} />
+        <details className="aposta-detalhes">
+          <summary title="Informações da aposta">
+            <span className={compacta ? 'somente-leitor' : undefined}>
+              Informações da aposta
+            </span>
+            {compacta && <Icone nome="expandir" />}
+          </summary>
+          <dl>
+            <div>
+              <dt>Conta atribuída</dt>
+              <dd>
+                {view.conta}
+                {account && !account.ativa ? ' (inativa)' : ''}
+              </dd>
+            </div>
+            {account && (
+              <div>
+                <dt>Identificador da conta</dt>
+                <dd className="numero">{account.id}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Titular da conta</dt>
+              <dd>
+                {view.titular}
+                {account?.titular?.arquivado ? ' (arquivado)' : ''}
+              </dd>
+            </div>
+            <div>
+              <dt>Banca da aposta</dt>
+              <dd>{view.banca}</dd>
+            </div>
+            {item.banca_contexto && (
+              <div>
+                <dt>Identificador da banca</dt>
+                <dd className="numero">{item.banca_contexto.id}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Data do jogo</dt>
+              <dd>{view.jogo}</dd>
+            </div>
+            <div>
+              <dt>Retorno</dt>
+              <dd className="numero">{view.retorno}</dd>
+            </div>
+          </dl>
+          <p className="legenda">
+            A conta e a banca são as referências registradas na aposta. Os nomes
+            exibidos são os atuais.
+          </p>
+        </details>
       </article>
     </li>
-  );
-});
-
-function VisualizacaoApostas({
-  compacta,
-  escolher,
-}: {
-  compacta: boolean;
-  escolher: (mode: 'lista' | 'cartoes') => void;
-}) {
-  return (
-    <div
-      className="apostas-visualizacao"
-      role="group"
-      aria-label="Visualização de apostas"
-    >
-      {(['lista', 'cartoes'] as const).map((mode) => (
-        <button
-          key={mode}
-          type="button"
-          aria-pressed={mode === 'lista' ? compacta : !compacta}
-          onClick={() => escolher(mode)}
-        >
-          {mode === 'lista' ? 'Lista compacta' : 'Cartões'}
-        </button>
-      ))}
-    </div>
   );
 }
 
@@ -249,38 +163,10 @@ export function ApostasPage({
   const auth = useAuth();
   const access = useAcesso();
   const location = useLocation();
-  const navigate = useNavigate();
   const [search, setSearch] = useSearchParams();
-  const abrirDetalhe = useCallback(
-    (event: MouseEvent<HTMLAnchorElement>) => {
-      // Same in-app navigation as a router link; new tab/window keeps native.
-      if (
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.altKey ||
-        event.ctrlKey ||
-        event.shiftKey
-      )
-        return;
-      event.preventDefault();
-      navigate(event.currentTarget.getAttribute('href')!);
-    },
-    [navigate],
-  );
-  const compactaNaUrl =
+  const compacta =
     search.getAll('visualizacao').length !== 1 ||
     search.get('visualizacao') !== 'cartoes';
-  // The gesture's choice shows in the next frame, button and list together,
-  // while the navigation renders. The URL stays the only source of the mode:
-  // any URL change (including back/forward) discards the pending choice.
-  const [pedido, pedir] = useState<boolean | null>(null);
-  const [visto, ver] = useState(compactaNaUrl);
-  if (visto !== compactaNaUrl) {
-    ver(compactaNaUrl);
-    pedir(null);
-  }
-  const compacta = pedido ?? compactaNaUrl;
   const { visao, adapter } = useFiltros('apostas', contrato);
   const querySearch = new URLSearchParams(visao.busca);
   querySearch.delete('visualizacao');
@@ -412,7 +298,6 @@ export function ApostasPage({
           <p>Acompanhe suas apostas e encontre o que precisa de revisão.</p>
         </div>
         <div className="acoes">
-          <Link to={novaApostaDestino(location.search)}>Nova aposta</Link>
           <Link to={entry + location.search}>{entryLabel}</Link>
           <button
             type="button"
@@ -438,11 +323,7 @@ export function ApostasPage({
         <Filtros recurso="apostas" catalogos={catalogos} contrato={contrato} />
       </details>
       {!adapter.bloqueios.length && (
-        <section
-          className="apostas-resumo"
-          aria-label="Resumo desta visão"
-          aria-busy={summary.isFetching}
-        >
+        <section className="apostas-resumo" aria-label="Resumo desta visão">
           <h2>Resumo desta visão</h2>
           {summaryAdapter.bloqueios.length ? (
             <p>
@@ -450,49 +331,39 @@ export function ApostasPage({
               cada aposta continuam na lista.
             </p>
           ) : summary.isPending ? (
-            <p className="somente-leitor" role="status">
-              Carregando resumo…
-            </p>
+            <p role="status">Carregando resumo…</p>
           ) : null}
-          {!summaryAdapter.bloqueios.length &&
-            (summary.data || summary.isPending) && (
-              <>
-                <dl className="apostas-indicadores">
-                  <div>
-                    <dt>Apostas</dt>
-                    <dd className="numero">{summary.data?.total ?? '…'}</dd>
-                  </div>
-                  <div>
-                    <dt>Valor apostado</dt>
-                    <dd className="numero">{summary.data?.giro ?? '…'}</dd>
-                  </div>
-                  <div>
-                    <dt>Lucro</dt>
-                    <dd className="numero">{summary.data?.lucro ?? '…'}</dd>
-                  </div>
-                  <div>
-                    <dt>ROI</dt>
-                    <dd
-                      className={`numero${(summary.data?.roi.length ?? 0) > 18 ? ' numero-extenso' : ''}`}
-                    >
-                      {summary.data?.roi ?? '…'}
-                    </dd>
-                  </div>
-                </dl>
-                <p className="legenda">
-                  Valores financeiros dos resultados já liquidados. Apostas
-                  pendentes, anuladas e em Revisão ficam fora desses valores.
-                </p>
-                <p className="legenda">
-                  Resumo dos mesmos filtros da lista, consultado em{' '}
-                  <span className="apostas-instante numero">
-                    {summary.data?.instante ?? '…'}
-                  </span>
-                  . A lista e o resumo podem refletir alterações feitas entre as
-                  consultas.
-                </p>
-              </>
-            )}
+          {!summaryAdapter.bloqueios.length && summary.data && (
+            <>
+              <dl className="apostas-indicadores">
+                <div>
+                  <dt>Apostas</dt>
+                  <dd className="numero">{summary.data.total}</dd>
+                </div>
+                <div>
+                  <dt>Valor apostado</dt>
+                  <dd className="numero">{summary.data.giro}</dd>
+                </div>
+                <div>
+                  <dt>Lucro</dt>
+                  <dd className="numero">{summary.data.lucro}</dd>
+                </div>
+                <div>
+                  <dt>ROI</dt>
+                  <dd className="numero">{summary.data.roi}</dd>
+                </div>
+              </dl>
+              <p className="legenda">
+                Valores financeiros dos resultados já liquidados. Apostas
+                pendentes, anuladas e em Revisão ficam fora desses valores.
+              </p>
+              <p className="legenda">
+                Resumo dos mesmos filtros da lista, consultado em{' '}
+                {summary.data.instante}. A lista e o resumo podem refletir
+                alterações feitas entre as consultas.
+              </p>
+            </>
+          )}
           {summary.error && (
             <ErroApi
               contexto="Resumo de apostas"
@@ -510,26 +381,37 @@ export function ApostasPage({
         </section>
       )}
       <section
-        className={`apostas-lista${list.isPending && enabled && !adapter.bloqueios.length ? ' apostas-lista--carregando' : ''}`}
+        className="apostas-lista"
         aria-label="Lista de apostas"
         aria-busy={list.isFetching}
       >
         <div className="apostas-lista-cabecalho">
           <h2>Lista de apostas</h2>
-          <VisualizacaoApostas
-            compacta={compacta}
-            escolher={(mode) => {
-              pedir(mode === 'lista');
-              setSearch(
-                (current) => {
-                  const next = new URLSearchParams(current);
-                  next.set('visualizacao', mode);
-                  return next;
-                },
-                { preventScrollReset: true },
-              );
-            }}
-          />
+          <div
+            className="apostas-visualizacao"
+            role="group"
+            aria-label="Visualização de apostas"
+          >
+            {(['lista', 'cartoes'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                aria-pressed={mode === 'lista' ? compacta : !compacta}
+                onClick={() =>
+                  setSearch(
+                    (current) => {
+                      const next = new URLSearchParams(current);
+                      next.set('visualizacao', mode);
+                      return next;
+                    },
+                    { preventScrollReset: true },
+                  )
+                }
+              >
+                {mode === 'lista' ? 'Lista compacta' : 'Cartões'}
+              </button>
+            ))}
+          </div>
         </div>
         {!!adapter.bloqueios.length && (
           <div role="alert">
@@ -592,7 +474,6 @@ export function ApostasPage({
                   : 'Envie suas apostas para acompanhar os resultados aqui.'}
             </p>
             <Link to={entry + location.search}>{entryLabel}</Link>
-            <Link to={'/inicio' + location.search}>Ajuda para começar</Link>
             {visao.page > 1 && (
               <Link to={'/?' + firstPageSearch.toString()}>
                 Voltar à primeira página
@@ -629,19 +510,13 @@ export function ApostasPage({
                 </div>
               </div>
             )}
-            <BuscaAtual.Provider value={location.search}>
-              <AbrirDetalhe.Provider value={abrirDetalhe}>
-                <ModoCompacto.Provider value={compacta}>
-                  <ul
-                    className={`apostas-itens${compacta ? ' apostas-itens--compactos' : ''}`}
-                  >
-                    {rows.map((item) => (
-                      <LinhaAposta key={item.chave} item={item} />
-                    ))}
-                  </ul>
-                </ModoCompacto.Provider>
-              </AbrirDetalhe.Provider>
-            </BuscaAtual.Provider>
+            <ul
+              className={`apostas-itens${compacta ? ' apostas-itens--compactos' : ''}`}
+            >
+              {rows.map((item) => (
+                <LinhaAposta key={item.chave} item={item} compacta={compacta} />
+              ))}
+            </ul>
             <div className="apostas-paginacao">
               <button
                 type="button"

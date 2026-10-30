@@ -33,9 +33,8 @@ export type Filtro =
   | 'apagadas'
   | 'revisao';
 export type RecursoFiltros =
-  'apostas' | 'painel' | 'metricas' | 'export' | 'resultados' | 'hipotetica';
+  'apostas' | 'painel' | 'metricas' | 'export' | 'resultados';
 export const RECURSOS_FILTROS = {
-  hipotetica: '/api/v1/painel/hipotetica',
   apostas: '/api/v1/apostas',
   painel: '/api/v1/painel/filtrado',
   metricas: '/api/v1/painel/filtrado/metricas',
@@ -262,9 +261,7 @@ export function adaptarFiltros(
     query.page = visao.page;
     query.page_size = visao.page_size;
   }
-  // Decision of 24/10/2026 (#37): 25 per page keeps the first queue response
-  // within one round trip; later pages load on request.
-  if (recurso === 'resultados') query.page_size = 25;
+  if (recurso === 'resultados') query.page_size = 50;
   return {
     endpoint,
     query,

@@ -27,8 +27,7 @@
   outline-offset: 3px;
 }
 .enviar-seletor:has(input:disabled) {
-  color: var(--tinta-secundaria);
-  border-style: dashed;
+  opacity: 0.65;
 }
 .enviar-seletor input[type='file'] {
   position: absolute;

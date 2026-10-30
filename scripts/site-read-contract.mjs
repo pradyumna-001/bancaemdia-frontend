@@ -11,18 +11,13 @@ export function siteReadContract(document) {
     '/api/v1/titulares/{titular_id}/matriz',
     '/api/v1/titulares/casas/{casa_id}/matriz',
     '/api/v1/titulares/financeiro',
-    '/api/v1/titulares/trocas/intencao',
     '/api/v1/painel/filtrado',
     '/api/v1/painel/filtrado/metricas',
     '/api/v1/painel/filtrado/export',
     '/api/v1/painel/filtrado/grupos',
     '/api/v1/painel/filtrado/diario',
     '/api/v1/painel/filtrado/detalhado/export',
-    '/api/v1/painel/hipotetica',
     '/api/v1/painel',
-    '/api/v1/painel/analises',
-    '/api/v1/painel/metas',
-    '/api/v1/painel/metas/{meta_id}',
     '/api/v1/filtros/{dimensao}',
   ];
   function compact(node) {
@@ -66,17 +61,13 @@ export function siteReadContract(document) {
     ...Object.entries(document.paths).flatMap(([path, methods]) =>
       path.startsWith('/api/v1/planilhas/') ||
       path.startsWith('/api/v1/resultados/') ||
-      path.startsWith('/api/v1/revisao-operacional/') ||
-      path.startsWith('/api/v1/apostas-manuais/')
+      path.startsWith('/api/v1/revisao-operacional/')
         ? Object.keys(methods)
             .filter((method) => ['get', 'post', 'put'].includes(method))
             .map((method) => [path, method])
         : [],
     ),
     ...selected.map((path) => [path, 'get']),
-    ['/api/v1/painel/metas', 'post'],
-    ['/api/v1/painel/metas/{meta_id}', 'patch'],
-    ['/api/v1/painel/metas/{meta_id}', 'delete'],
     ['/api/v1/apostas/{chave}', 'patch'],
     ['/api/v1/caixa', 'post'],
     ['/api/v1/caixa/contas/{conta_casa_id}/banca', 'patch'],
@@ -85,8 +76,6 @@ export function siteReadContract(document) {
     ['/api/v1/apostas/{chave}/resultado', 'post'],
     ['/api/v1/revisao/{revisao_id}/resolver', 'post'],
     ['/api/v1/titulares', 'post'],
-    ['/api/v1/titulares/trocas/preview', 'post'],
-    ['/api/v1/titulares/trocas', 'post'],
     ['/api/v1/titulares/{titular_id}', 'patch'],
     ['/api/v1/titulares/{titular_id}', 'delete'],
     ['/api/v1/titulares/{titular_id}/contas', 'post'],
