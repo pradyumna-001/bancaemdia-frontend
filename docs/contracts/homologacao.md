@@ -16,7 +16,7 @@ O preparador verifica repositório/branch/evento/workflow, conclusão da CI, tod
 
 Na conferência de 06/10, a main frontend `b5fb27d197b4129c98c896232517e841bf8abca9` tem os dois checks de push aprovados, mas nenhum check/status GitGuardian. Antes da ativação, o administrador precisa habilitar execução e registro desse check no SHA integrado da main. Aprovação em outro SHA de PR não substitui essa evidência; ausência de check impede promoção.
 
-O empacotamento usa `deploy/staging/Dockerfile`, copiando `dist/` e `dist-security/` aprovados, sem `pnpm build`. O guard verifica árvore pública, ausência de fixture/source maps, HTML e hash CSP da mesma compilação e registra fingerprint dos bytes. Acrescenta somente `release.json` operacional; HTML, JS, CSS, fontes e nginx não são reescritos. A imagem GHCR é selecionada por digest, com label do SHA verificado no host. `config.json` é público, separado da imagem e montado somente para leitura.
+O empacotamento usa `deploy/staging/Dockerfile`, copiando `dist/` e `dist-security/` aprovados, sem `pnpm build`. O guard verifica árvore pública, ausência de fixture/source maps, HTML e hash CSP da mesma compilação e registra fingerprint dos bytes. Cada `.gz` do build (servido pelo `gzip_static` do nginx) precisa ter o original ao lado e descomprimir exatamente para ele; o manifesto público das fontes (`fontes/subsets.json`) também é aceito. Acrescenta somente `release.json` operacional; HTML, JS, CSS, fontes e nginx não são reescritos. A imagem GHCR é selecionada por digest, com label do SHA verificado no host. `config.json` é público, separado da imagem e montado somente para leitura.
 
 ## Pareamento e origem
 

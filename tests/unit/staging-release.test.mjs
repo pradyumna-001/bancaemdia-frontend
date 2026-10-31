@@ -1,6 +1,14 @@
 // @vitest-environment node
 import { expect, it, afterEach } from 'vitest';
-import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  writeFile,
+  rm,
+  symlink,
+} from 'node:fs/promises';
+import { gzipSync } from 'node:zlib';
 import { join, dirname, basename } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
@@ -256,6 +264,30 @@ it('recusa HTML/CSP misturados e sessão de fixture no JavaScript', async () => 
     'fixture-session',
   );
   await expect(verifyArtifact(directory, template)).rejects.toThrow();
+});
+it('aceita .gz do build só quando descomprime exatamente para o original', async () => {
+  const directory = await artifactDirectory();
+  const js = join(directory, 'dist/assets/index-AbCd12.js');
+  await writeFile(js + '.gz', gzipSync(await readFile(js)));
+  await mkdir(join(directory, 'dist/fontes'));
+  await writeFile(join(directory, 'dist/fontes/subsets.json'), '{}');
+  const first = await verifyArtifact(directory, template);
+  await writeFile(js + '.gz', gzipSync('export const outroBuild = true;'));
+  await expect(verifyArtifact(directory, template)).rejects.toThrow(
+    'não corresponde',
+  );
+  await writeFile(js + '.gz', 'não é gzip');
+  await expect(verifyArtifact(directory, template)).rejects.toThrow('inválido');
+  await writeFile(js + '.gz', gzipSync(await readFile(js)));
+  await writeFile(
+    join(directory, 'dist/assets/orfao-AbCd12.js.gz'),
+    gzipSync('x'),
+  );
+  await expect(verifyArtifact(directory, template)).rejects.toThrow(
+    'não corresponde',
+  );
+  await rm(join(directory, 'dist/assets/orfao-AbCd12.js.gz'));
+  expect(await verifyArtifact(directory, template)).toBe(first);
 });
 it('recusa symlink em vez de seguir arquivo externo', async () => {
   const directory = await artifactDirectory();

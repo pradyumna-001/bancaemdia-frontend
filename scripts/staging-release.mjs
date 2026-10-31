@@ -4,6 +4,7 @@ import { readFile, readdir, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isIP } from 'node:net';
+import { gunzipSync } from 'node:zlib';
 import { securityConfig } from './build-csp.mjs';
 
 export const repository = 'pradyumna-001/bancaemdia-frontend';
@@ -178,7 +179,7 @@ export async function verifyArtifact(directory, template) {
         await walk(path);
       } else if (entry.isFile()) {
         if (
-          !/^(dist\/(index\.html|config\.json|favicon\.svg|\.vite\/manifest\.json|assets\/[A-Za-z0-9_-]+\.(js|css)|fontes\/[A-Za-z0-9_.-]+\.(woff2|md))|dist-security\/default\.conf)$/.test(
+          !/^(dist\/((index\.html|favicon\.svg|assets\/[A-Za-z0-9_-]+\.(js|css))(\.gz)?|config\.json|\.vite\/manifest\.json|fontes\/([A-Za-z0-9_.-]+\.(woff2|md)|subsets\.json))|dist-security\/default\.conf)$/.test(
             path,
           )
         )
@@ -206,6 +207,21 @@ export async function verifyArtifact(directory, template) {
     throw new Error(
       'HTML e configuração CSP não pertencem à mesma compilação.',
     );
+  }
+  // nginx gzip_static serves <file>.gz: it must be exactly the approved file.
+  for (const path of files.filter((file) => file.endsWith('.gz'))) {
+    const original = path.slice(0, -3);
+    let unpacked;
+    try {
+      unpacked = gunzipSync(await readFile(join(directory, path)));
+    } catch {
+      throw new Error('Arquivo comprimido inválido no artefato.');
+    }
+    if (
+      !files.includes(original) ||
+      !unpacked.equals(await readFile(join(directory, original)))
+    )
+      throw new Error('Arquivo comprimido não corresponde ao original.');
   }
   const hashes = [];
   for (const path of files.sort()) {
