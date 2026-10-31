@@ -290,3 +290,143 @@ for (const [path, ready] of [
       billing.release();
     }
   });
+
+// A late billing/queue answer must not move a control the pointer already
+// targets: "Confirmar saída" kept the click while a READ_ONLY notice entered.
+for (const acesso of ['READ_ONLY', 'erro'] as const)
+  test(`aviso tardio de acesso (${acesso}) e de fila nao desloca a confirmacao de saida`, async ({
+    page,
+  }, info) => {
+    const billing = gate(),
+      fila = gate();
+    const cors = {
+      'Access-Control-Allow-Origin': 'http://127.0.0.1:4173',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Headers': 'X-CSRF-Token',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    };
+    let logouts = 0;
+    await page.addInitScript(watchLayout);
+    await page.route('http://127.0.0.1:8000/**', async (route) => {
+      if (route.request().method() === 'OPTIONS')
+        return route.fulfill({ status: 204, headers: cors });
+      const p = new URL(route.request().url()).pathname;
+      if (p === '/auth/session')
+        return route.fulfill(
+          logouts
+            ? {
+                status: 401,
+                json: { code: 'not_authenticated' },
+                headers: cors,
+              }
+            : {
+                json: {
+                  usuario_id: 1,
+                  nome: 'Sandbox',
+                  email: 'sandbox@example.org',
+                  session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
+                  csrf_token: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',
+                  refresh_required: false,
+                  access_expires_at: '2030-01-01T00:00:00Z',
+                  session_expires_at: '2030-01-02T00:00:00Z',
+                },
+                headers: cors,
+              },
+        );
+      if (p === '/auth/logout') {
+        logouts++;
+        return route.fulfill({ json: { logged_out: true }, headers: cors });
+      }
+      if (p === '/api/v1/billing/status') {
+        await billing.ready;
+        return route.fulfill(
+          acesso === 'READ_ONLY'
+            ? { json: { ...billingStatus, access: 'READ_ONLY' }, headers: cors }
+            : { status: 500, json: { detail: 'PRIVATE' }, headers: cors },
+        );
+      }
+      await fila.ready;
+      expect(p).toBe('/api/v1/revisao/stats');
+      return route.fulfill({
+        status: 500,
+        json: { detail: 'PRIVATE' },
+        headers: cors,
+      });
+    });
+    const frame = () =>
+      page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+    const sair = page.getByRole('button', {
+      name: 'Confirmar saída',
+      exact: true,
+    });
+    try {
+      await page.goto('/sair');
+      await expect(sair).toBeEnabled();
+      await expect(page.locator('.shell-consulta')).toHaveText(
+        'Conferindo acesso e fila…',
+      );
+      await page.evaluate(() => document.fonts.ready);
+      await frame();
+      const before = await sair.boundingBox();
+      billing.release();
+      fila.release();
+      const aviso = page.getByRole('region', { name: 'Acesso à conta' });
+      await expect(
+        aviso.getByRole('heading', {
+          name:
+            acesso === 'READ_ONLY'
+              ? 'Sua conta está em modo de leitura'
+              : 'Não foi possível conferir seu acesso',
+        }),
+      ).toBeVisible();
+      await expect(page.locator('.aviso-fila')).toBeVisible();
+      await frame();
+      const after = await sair.boundingBox();
+      expect(Math.abs(before!.x - after!.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(before!.y - after!.y)).toBeLessThanOrEqual(1);
+      expect(
+        await page.evaluate(() =>
+          ['.aviso-acesso', '.aviso-fila'].map(
+            (selector) =>
+              !!(
+                document
+                  .querySelector('main')!
+                  .compareDocumentPosition(document.querySelector(selector)!) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+              ),
+          ),
+        ),
+      ).toEqual([true, true]);
+      const timing = await page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              __loadingStability: { supported: boolean; value: number };
+            }
+          ).__loadingStability,
+      );
+      if (info.project.name.startsWith('chromium'))
+        expect(timing.supported).toBe(true);
+      if (timing.supported) expect(timing.value).toBeLessThan(0.1);
+      // The reserved header line keeps the state visible at the top.
+      await expect(page.locator('.shell-consulta')).toHaveText(
+        acesso === 'READ_ONLY'
+          ? 'Conta em modo de leitura'
+          : 'Acesso não confirmado',
+      );
+      await page.screenshot({ path: info.outputPath('avisos.png') });
+      await sair.click();
+      await expect(
+        page.getByRole('heading', { name: 'Entrar', exact: true }),
+      ).toBeVisible();
+      expect(logouts).toBe(1);
+    } finally {
+      billing.release();
+      fila.release();
+    }
+  });

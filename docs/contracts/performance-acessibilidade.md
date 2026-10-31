@@ -135,6 +135,13 @@ inteiras. Leitura não espera billing, e os avisos de erro/modo de leitura conse
 ações e mensagens. A regressão de apresentação libera as três respostas em ordens
 separadas e verifica geometria nos três navegadores/dois viewports.
 
+Avisos que dependem de resposta tardia (modo de leitura, acesso não confirmado,
+falha da fila) são renderizados depois do conteúdo da página; a linha reservada
+do cabeçalho anuncia o estado final sem mudar a geometria. A regressão libera
+billing READ_ONLY ou com erro e a fila com erro depois de "Confirmar saída"
+estar habilitado e exige a mesma caixa do botão (tolerância 1 px), CLS < 0,1 e
+um único POST de logout no clique seguinte.
+
 Painel, Caixa, Resultados, titulares, Análises e Telegram reservam a região da
 resposta inicial para impedir que seções já visíveis saltem. Consulta de billing
 em andamento não é apresentada como recusa de escrita; controles continuam
