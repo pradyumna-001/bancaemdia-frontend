@@ -1,6 +1,8 @@
 # Runbook — Rollback
 
-Alvo operacional: <7 minutos, a ensaiar em #14/#38. Ainda não há release implantado nem CD automático.
+Alvo operacional: <7 minutos, a ensaiar em #14/#38. A [preparação da homologação](../contracts/homologacao.md) preserva release anterior e transação; não há release público implantado ou duração real comprovada.
+
+Em homologação, falha de aplicação/smoke restaura imagem/config/Compose anteriores. Se runner/SSH for interrompido, conferir `pending.json` no host e executar `host.py abort <run-attempt>` somente para a transação correta; não apagar o registro para simular recuperação. Rollback posterior usa `host.py rollback <SHA atualmente instalado>` e recusa promoção pendente ou SHA alterado. Reexecutar o smoke real e registrar resultado/duração. Os testes de falha controlada em CI não substituem esse ensaio no servidor autorizado.
 
 1. Identificar último release aprovado por SHA/digest e a configuração runtime correspondente, com contrato compatível da API.
 2. No Compose de produção definido em #38, restaurar a imagem imutável anterior por digest. Preservar HTML, assets e nginx/CSP da mesma compilação; não reconstruir código antigo nem misturar HTML novo com hash antigo.

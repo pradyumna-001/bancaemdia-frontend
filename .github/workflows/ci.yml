@@ -66,6 +66,7 @@ jobs:
           docker exec "$container" cat "/usr/share/nginx/html/$entry" | cmp - /tmp/entry.js
           grep -i "Content-Security-Policy: default-src 'self'" /tmp/route.headers
           node tests/verify-nginx.mjs
+          node tests/verify-staging-proxy.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

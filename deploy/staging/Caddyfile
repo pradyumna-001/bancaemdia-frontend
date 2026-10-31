@@ -1,0 +1,29 @@
+# Reviewed replacement for the Phase 1 Caddyfile; install only on an approved host.
+{$SITE_DOMAIN} {
+    encode zstd gzip
+
+    @privateMetrics path /metrics /metrics/*
+    handle @privateMetrics {
+        respond 404
+    }
+
+    @backend path /auth /auth/* /api /api/* /health /ready
+    handle @backend {
+        reverse_proxy api:8000
+    }
+
+    handle {
+        reverse_proxy frontend-staging:8080
+    }
+
+    log {
+        output stdout
+        format filter {
+            wrap json
+            fields {
+                request>headers delete
+                request>uri delete
+            }
+        }
+    }
+}
