@@ -14,7 +14,12 @@ for (const [name, browserType] of Object.entries({
     ]) {
       const page = await browser.newPage({ viewport });
       const errors = [];
+      let identityReads = 0;
       page.on('pageerror', (error) => errors.push(error.message));
+      page.on('request', (request) => {
+        if (new URL(request.url()).pathname === '/auth/session')
+          identityReads++;
+      });
       await page.addInitScript(() => {
         document.addEventListener('securitypolicyviolation', () => {
           document.documentElement.dataset.cspFailure = 'true';
@@ -22,13 +27,26 @@ for (const [name, browserType] of Object.entries({
       });
       for (const path of ['/tutorial', '/extensao']) {
         await page.goto(`http://127.0.0.1:8080${path}`);
-        await expect(
-          page.getByText('Esta página está em preparação.'),
-        ).toBeVisible();
-        await page.reload();
-        await expect(
-          page.getByText('Esta página está em preparação.'),
-        ).toBeVisible();
+        for (const reload of [false, true]) {
+          if (reload) await page.reload();
+          await expect(
+            page.getByRole('heading', {
+              name: path === '/tutorial' ? 'Tutorial' : 'Extensão',
+              exact: true,
+            }),
+          ).toBeVisible();
+          await expect(
+            path === '/tutorial'
+              ? page.getByRole('region', {
+                  name: 'Export do Telegram',
+                  exact: true,
+                })
+              : page.getByRole('heading', {
+                  name: 'O download ainda não está disponível',
+                  exact: true,
+                }),
+          ).toBeVisible();
+        }
       }
       for (const [path, title, action] of [
         ['/login', 'Entrar', 'Entrar com minha conta'],
@@ -52,13 +70,11 @@ for (const [name, browserType] of Object.entries({
               name: 'O serviço está temporariamente indisponível',
               exact: true,
             }),
-          ).toBeVisible();
+          ).toHaveCount(0);
           await expect(
             page.getByRole('button', { name: action, exact: true }),
-          ).toBeDisabled();
-          await expect(
-            page.getByRole('button', { name: 'Tentar novamente', exact: true }),
           ).toBeEnabled();
+          expect(identityReads).toBe(0);
           await expect(
             page.locator('input[type="password"],input[type="email"]'),
           ).toHaveCount(0);
@@ -71,6 +87,19 @@ for (const [name, browserType] of Object.entries({
       expect(new URL(page.url()).searchParams.get('destino')).toBe(
         '/aposta/abc?apagadas=1#foto',
       );
+      expect(identityReads).toBeGreaterThan(0);
+      await expect(
+        page.getByRole('heading', {
+          name: 'O serviço está temporariamente indisponível',
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Entrar com minha conta' }),
+      ).toBeDisabled();
+      await expect(
+        page.getByRole('button', { name: 'Tentar novamente', exact: true }),
+      ).toBeEnabled();
       await page.goto('http://127.0.0.1:8080/nao-existe');
       await expect(
         page.getByRole('heading', { name: 'Não achei esta página' }),
@@ -127,9 +156,24 @@ for (const [name, browserType] of Object.entries({
       await page.evaluate(() => document.fonts.ready);
       expect(
         await page.evaluate(() =>
-          document.fonts.check('400 16px "Source Sans 3"'),
+          document.fonts.check('400 16px "Bancaemdia Interface"'),
         ),
       ).toBe(true);
+      // Preserve complete Unicode coverage through the original font fallback.
+      await page.evaluate(() =>
+        document.fonts.load('400 16px "Source Sans 3"', 'Ж'),
+      );
+      expect(
+        await page.evaluate(() =>
+          document.fonts.check('400 16px "Source Sans 3"', 'Ж'),
+        ),
+      ).toBe(true);
+      const entry = await page.request.get('http://127.0.0.1:8080/tutorial', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      });
+      expect(entry.headers()['content-encoding']).toBe('gzip');
+      expect(entry.headers().vary).toContain('Accept-Encoding');
+      expect(await entry.text()).toContain('<meta charset="UTF-8"');
       expect(
         (
           await page.request.get('http://127.0.0.1:8080/fontes/ausente.woff2')

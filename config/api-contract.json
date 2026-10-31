@@ -1,6 +1,61 @@
 {
   "repository": "pradyumna-001/bancaemdia-api",
-  "commit": "bd055417459f796fed960b5b37efb33a9744419f",
+  "commit": "37b130282c0d4a240f152b72fc76933074f38e4e",
   "schemaPath": "tests/contract/schemas/openapi.json",
-  "sha256": "cd35afa0d037f14f3c68d7502a4fff0402b4490f6d2a1552c2fa790a87447881"
+  "sha256": "04f091f45b327f4fe87d629afa0a2df4fca84674686fd4e145be35bb0b0460dd",
+  "availability": {
+    "kind": "sandbox_reconciliation",
+    "url": "https://github.com/pradyumna-001/bancaemdia-api/tree/37b130282c0d4a240f152b72fc76933074f38e4e",
+    "integratedBaseline": "b916f54331f14cf47a3800324bd61d8638043c06",
+    "sources": [
+      {
+        "pullRequest": 189,
+        "commit": "22d5b77f946c58dda4f0eeb64db201ee5c63c009"
+      },
+      {
+        "pullRequest": 187,
+        "commit": "186be7482437eb5dd4b70914843dc6c5f90395f1"
+      },
+      {
+        "pullRequest": 193,
+        "commit": "71f1a1acba17f2b99e8dcd55c25c672c98f43967"
+      },
+      {
+        "pullRequest": 195,
+        "commit": "6db8964d11c471b47d15c08bd5d46d864623bb1e"
+      },
+      {
+        "pullRequest": 197,
+        "commit": "2140bdabb21835e3c66487c4fe532b09fadebe0b"
+      },
+      {
+        "pullRequest": 199,
+        "commit": "a67920f1aa6f77de1fd34c6b142c3e611f584502"
+      },
+      {
+        "pullRequest": 201,
+        "commit": "e830c436dbdeb763f7a7d09b1d849fdbb6652db7"
+      },
+      {
+        "pullRequest": 203,
+        "commit": "b2bb0dfc66e26621d41c064f4690932938b877f5"
+      },
+      {
+        "pullRequest": 205,
+        "commit": "0f9b2aec8fa9b47ada6ce18d8382766a22e5469a"
+      },
+      {
+        "pullRequest": 207,
+        "commit": "132ee91585db41494b1c33c0ae499a77007ee16e"
+      },
+      {
+        "pullRequest": 191,
+        "commit": "552c4ffe3924df3eac2caa50ea4f5df4c553b816"
+      },
+      {
+        "pullRequest": 209,
+        "commit": "7484372620c9b5a3808eb697fd07157dd55d13b1"
+      }
+    ]
+  }
 }
