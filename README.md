@@ -162,6 +162,8 @@ O [ADR 019](docs/adrs/019-current-product-backend-alignment.md) substitui o plan
 
 ## Convenções
 
+Valores e estados usam [formatadores e vocabulário centrais](docs/contracts/formatacao.md): inteiros exatos, ausência distinta de zero, unidade menor por moeda, razão/basis points e fuso explícito. Face, custo próprio, retorno, lucro e saldo vêm separadamente da API. `pnpm lint:formatters` barra apresentação duplicada e aritmética financeira nas features.
+
 - Todo PR fecha uma issue deste repo e referencia o ADR relevante ("Implements ADR-XXX").
 - Decisões novas viram ADR antes do código (`docs/adrs/`): criar → revisar → aceitar → implementar → suplantar.
 - Nenhuma lógica financeira no cliente: número calculado no frontend é bug (ver `AGENTS.md`).
