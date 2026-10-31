@@ -36,7 +36,7 @@ ABAS define destinos e apresentação desktop/mobile. Apostas/Painel/Enviar dire
 - Nenhum cálculo financeiro, parsing de captura, matching, controle de saldo ou atribuição de conta no cliente.
 - Conversa/rascunho do bot permanece no Telegram; site conecta e orienta. Captura/outbox/permissões pertencem à extensão, não à SPA.
 - Infra/CLI/admin não viram telas comuns. Operações recebendo apostas/fundos não fazem parte do produto.
-- Calculadora de linhas não implementável enquanto pesquisa backend #104 está No-Go.
+- Calculadora de linhas arquivada para pós-lançamento por decisão do titular em 06/10/2026. Não é dependência do escopo atual; [arquivo](../archive/post-launch/line-calculator.md). A pesquisa histórica backend #104 permanece No-Go.
 - Hipotética não é removida silenciosamente, mas requer contrato/prioridade; não integra lançamento por um placeholder.
 - PWA/offline financeiro, notificações push, marketing/SSR e novas capacidades não descritas continuam fora do escopo desta revisão.
 
