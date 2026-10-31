@@ -24,6 +24,8 @@ Preservamos a disciplina de tokens, acessibilidade e consistência, substituindo
 
 ## Consequências e limites
 
+Revisão do responsável em 10/10/2026 (#82): as telas de acesso usam painel centralizado, marca, título curto, ação principal e links contextuais; instruções adicionais ficam na ajuda expansível. Não exibem seletor de aparência. A aparência continua seguindo sistema/preferência já existente. E-mail/senha continuam no emissor hospedado, com os mesmos intents e proteções da #12.
+
 A #12 aplica esta fundação às telas de conta: painel único de leitura, título por tarefa, próximo passo hospedado explícito, ação principal única, links secundários e ajuda expansível. Aparência permanece Sistema/Claro/Escuro, sem nova paleta/fontes. E-mail e senha são preenchidos no emissor; não desenhar formulários locais que prometam operações inexistentes. Ver `docs/contracts/conta.md` para rotas, limites e evidências mobile/desktop.
 
 - A #4 aplica a fundação às páginas provisórias e erros existentes. Não inventa telas financeiras nem libera acesso às rotas protegidas.
