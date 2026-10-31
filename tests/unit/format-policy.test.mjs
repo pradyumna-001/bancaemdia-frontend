@@ -36,3 +36,17 @@ it('permite o formatador, geometria e decisões de apresentação sem calcular r
     ),
   ).toEqual([]);
 });
+it('concatenação de texto não é aritmética financeira', () => {
+  expect(
+    violations(
+      "const c = 'numero ' + sinal(b.lucro_centavos); const u = '/senha?' + retornoParams;",
+      'src/features/apostas/Page.tsx',
+    ),
+  ).toEqual([]);
+  expect(
+    violations(
+      'const t = `${x}` + aposta.lucro_centavos * 2;',
+      'src/features/apostas/Page.tsx',
+    ).length,
+  ).toBeGreaterThan(0);
+});

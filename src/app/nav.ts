@@ -73,6 +73,13 @@ export const ABAS = [
     desktop: false,
   },
   {
+    path: '/inicio',
+    title: 'Primeiro uso',
+    icone: 'enviar',
+    mobile: false,
+    desktop: false,
+  },
+  {
     path: '/configuracoes',
     title: 'Configurações',
     icone: 'configuracoes',
@@ -89,6 +96,8 @@ export const ABAS = [
 
 export function abaAtual(path: string, pathname: string) {
   return path === '/'
-    ? pathname === '/' || pathname.startsWith('/aposta/')
+    ? pathname === '/' ||
+        pathname === '/e-se' ||
+        pathname.startsWith('/aposta/')
     : pathname === path || pathname.startsWith(`${path}/`);
 }

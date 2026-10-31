@@ -138,3 +138,28 @@ it.each([400, 401, 402, 403, 404, 405, 409, 413, 422, 429, 500, 503])(
     );
   },
 );
+
+it('Revisão projeta só campo seguro, sem conteúdo privado do provedor', () => {
+  const project = (body: unknown) =>
+    httpError(new Response(null, { status: 422 }), body, true);
+  const error = project({
+    detail: 'review_tipster_required',
+    campo: 'tipster_choice',
+    input: 'private',
+    ctx: { token: 'private' },
+  });
+  expect(error.invalidFields).toEqual([
+    { scope: 'body', field: 'tipster_choice' },
+  ]);
+  expect(JSON.stringify(error)).not.toContain('private');
+  for (const body of [
+    { detail: 'arbitrary', campo: 'odd' },
+    { detail: 'review_invalid', campo: '../secret' },
+    { detail: 'review_invalid', campo: 42 },
+    { detail: 42, campo: 'odd' },
+  ])
+    expect(project(body).invalidFields).toEqual([]);
+  expect(new ApiError('http', { status: 410 }).message).toContain(
+    'não confirma',
+  );
+});

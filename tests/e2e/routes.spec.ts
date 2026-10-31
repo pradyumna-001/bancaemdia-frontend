@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { ROTAS_PROTEGIDAS } from '../../src/app/paths';
 
 test('todas as páginas públicas abrem diretamente e após recarregar', async ({
   page,
@@ -28,24 +29,9 @@ test('todas as rotas protegidas exigem sessão e preservam destino permitido', a
   page,
 }) => {
   for (const path of [
-    '/',
-    '/painel',
-    '/enviar',
-    '/coleta',
-    '/banca',
-    '/resultados',
-    '/revisao',
-    '/aposta/abc-123',
-    '/configuracoes',
-    '/configuracoes/conexoes',
-    '/configuracoes/privacidade',
-    '/contas',
-    '/contas/42',
-    '/assinatura',
-    '/calculadoras',
-    '/painel/analises',
-    '/painel/metas',
-    '/sistema',
+    ...ROTAS_PROTEGIDAS.map(({ path }) =>
+      path.replace(':chave', 'abc-123').replace(':titularId', '42'),
+    ),
     '/senha',
     '/sair',
   ]) {

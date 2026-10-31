@@ -22,6 +22,14 @@ export function violations(source, file) {
     ts.SyntaxKind.PercentToken,
     ts.SyntaxKind.AsteriskAsteriskToken,
   ]);
+  // `'texto ' + valor` concatena texto; não é conta.
+  function text(node) {
+    return (
+      ts.isStringLiteral(node) ||
+      ts.isNoSubstitutionTemplateLiteral(node) ||
+      ts.isTemplateExpression(node)
+    );
+  }
   function monetary(node) {
     return (
       (ts.isIdentifier(node) && money.test(node.text)) ||
@@ -40,6 +48,10 @@ export function violations(source, file) {
       file !== 'src/components/graficos/geometria.ts' &&
       ts.isBinaryExpression(node) &&
       arithmetic.has(node.operatorToken.kind) &&
+      !(
+        node.operatorToken.kind === ts.SyntaxKind.PlusToken &&
+        (text(node.left) || text(node.right))
+      ) &&
       (monetary(node.left) || monetary(node.right))
     )
       errors.push('Aritmética financeira fora do formatador.');

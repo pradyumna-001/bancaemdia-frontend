@@ -4,11 +4,13 @@ import { createIdentityTransport, type SessionContext } from './protocol';
 import { loginDestination } from './returnDestination';
 
 export type AuthState = Readonly<{
-  phase: 'checking' | 'anonymous' | 'authenticated' | 'ending' | 'error';
+  phase:
+    'idle' | 'checking' | 'anonymous' | 'authenticated' | 'ending' | 'error';
   person?: SessionContext['person'];
   privateEpoch: number;
   error?: ApiError;
   logoutUnconfirmed?: boolean;
+  accountClosed?: boolean;
 }>;
 export type RequestContext = Readonly<{
   signal: AbortSignal;
@@ -52,11 +54,13 @@ export function createSession(options: {
   const transport =
     options.transport ?? createIdentityTransport(options.baseUrl);
   let context: SessionContext | undefined;
-  let state: AuthState = Object.freeze({ phase: 'checking', privateEpoch: 0 });
+  // No request has started. This is not evidence of an anonymous or valid session.
+  let state: AuthState = Object.freeze({ phase: 'idle', privateEpoch: 0 });
   let requests = new AbortController();
   let controls = new AbortController();
   let generation = 0;
   let inFlight: Promise<boolean> | undefined;
+  let renewing = false;
   let ending = false;
   let remoteEnding = false;
   let disposed = false;
@@ -79,14 +83,18 @@ export function createSession(options: {
     cleanups.forEach((cleanup) => cleanup());
     return state.privateEpoch + 1;
   };
-  const invalidate = () => {
+  const invalidate = (accountClosed = false) => {
     generation++;
     controls.abort();
     controls = new AbortController();
     inFlight = undefined;
     context = undefined;
     const privateEpoch = clearPrivate();
-    publish({ phase: 'anonymous', privateEpoch });
+    publish({
+      phase: 'anonymous',
+      privateEpoch,
+      ...(accountClosed ? { accountClosed: true } : {}),
+    });
   };
   const setContext = (next: SessionContext) => {
     const changed =
@@ -106,7 +114,7 @@ export function createSession(options: {
       options.channel?.postMessage('ended');
       return;
     }
-    retryAt = Date.now() + (safe.retryAfterMs ?? 0);
+    retryAt = safe.retryAfterDeadline ?? 0;
     publish({
       ...state,
       phase: state.person ? 'error' : 'anonymous',
@@ -129,7 +137,12 @@ export function createSession(options: {
       if (next.needsRenewal) {
         if (!options.exclusive) throw new ApiError('invalid_request');
         const previous = next;
-        next = await transport.renew(signal, next.proof);
+        renewing = true;
+        try {
+          next = await transport.renew(signal, next.proof);
+        } finally {
+          renewing = false;
+        }
         if (
           next.person.id !== previous.person.id ||
           next.version.split(':')[0] !== previous.version.split(':')[0] ||
@@ -293,6 +306,13 @@ export function createSession(options: {
     read,
     unauthorized,
     logout,
+    // Called only after the account service confirms anonymization. This clears
+    // local/private state and other tabs; it makes no claim about issuer logout.
+    accountClosed: () => {
+      logoutPerson = undefined;
+      invalidate(true);
+      options.channel?.postMessage('ended');
+    },
     registerCleanup: (cleanup: () => void) => {
       cleanups.add(cleanup);
       return () => {
@@ -303,6 +323,17 @@ export function createSession(options: {
       destination: string,
       intent: 'login' | 'signup' | 'recover' = 'login',
     ) => {
+      // A hosted entry must not race an in-flight cookie renewal/revocation,
+      // including a click delivered before the disabled UI finishes painting.
+      if (
+        disposed ||
+        ending ||
+        remoteEnding ||
+        renewing ||
+        state.logoutUnconfirmed ||
+        (state.error && state.error.kind !== 'invalid_request')
+      )
+        return;
       const returnTo = loginDestination(destination, options.storage);
       invalidate();
       options.channel?.postMessage('changed');
