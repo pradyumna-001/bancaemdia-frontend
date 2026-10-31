@@ -95,7 +95,15 @@ test('cadastro/confirmação/recuperação usam somente os intents suportados, s
     const action = page.locator('.conta-acoes button');
     await expect(action).toBeEnabled();
     entry = undefined;
-    await action.click();
+    await Promise.all([
+      page.waitForURL(
+        (url) =>
+          url.origin === 'http://127.0.0.1:8000' &&
+          url.pathname === '/auth/start',
+        { waitUntil: 'load' },
+      ),
+      action.click(),
+    ]);
     await expect.poll(() => entry?.searchParams.get('intent')).toBe(intent);
     expect(entry!.searchParams.get('return_to')).toBe('/painel?apagadas=1');
     expect(entry!.hash).toBe('');
@@ -147,6 +155,13 @@ test('conta respeita 429/Retry-After e retoma por tentativa explícita', async (
     });
   });
   await page.goto('/esqueci-senha');
+  await expect(
+    page.getByRole('button', { name: 'Continuar para recuperar senha' }),
+  ).toBeEnabled();
+  expect(reads).toBe(0);
+  await page
+    .getByRole('button', { name: 'Continuar para recuperar senha' })
+    .click();
   const retry = page.getByRole('button', { name: 'Tentar novamente' });
   await expect(retry).toBeDisabled();
   await expect(

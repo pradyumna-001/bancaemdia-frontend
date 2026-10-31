@@ -20,7 +20,8 @@
   --atencao-fundo: #faf0d7;
   --transparente: transparent;
   --sombra-modal: #101a1466;
-  --fonte-interface: 'Source Sans 3', 'Segoe UI', sans-serif;
+  --fonte-interface:
+    'Bancaemdia Interface', 'Source Sans 3', 'Segoe UI', sans-serif;
   --fonte-pequena: 0.875rem;
   --fonte-corpo: 1rem;
   --fonte-secao: 1.375rem;

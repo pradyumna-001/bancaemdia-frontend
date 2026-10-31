@@ -1,0 +1,134 @@
+.nova-pagina {
+  max-width: 68rem;
+  margin-inline: auto;
+}
+.nova-cabecalho {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--espaco-16);
+  margin-bottom: var(--espaco-24);
+}
+.nova-cabecalho h1 {
+  margin-bottom: var(--espaco-8);
+}
+.nova-cabecalho p,
+.nova-ajuda {
+  color: var(--tinta-secundaria);
+}
+.nova-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17rem;
+  gap: var(--espaco-24);
+  align-items: start;
+}
+.nova-form,
+.nova-nota,
+.nova-recuperacao {
+  padding: var(--espaco-24);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+}
+.nova-form fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.nova-form legend {
+  font-size: var(--fonte-secao);
+  font-weight: var(--peso-destaque);
+  margin-bottom: var(--espaco-16);
+}
+.nova-campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+.nova-campo,
+.nova-form .filtro-escolha {
+  display: grid;
+  gap: var(--espaco-8);
+  min-width: 0;
+}
+.nova-campo input,
+.nova-campo textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--alvo-toque);
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--tinta);
+  font: inherit;
+}
+.nova-form .botao-primario {
+  background: var(--acao);
+  color: var(--sobre-acao);
+  border-color: var(--acao);
+}
+.nova-form .botao-primario:hover:not(:disabled) {
+  background: var(--acao-hover);
+}
+.nova-campo textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+.nova-largo {
+  grid-column: 1 / -1;
+}
+.nova-check {
+  display: flex;
+  gap: var(--espaco-8);
+  align-items: center;
+  margin-block: var(--espaco-16);
+}
+.nova-form details {
+  border-top: 1px solid var(--borda);
+  margin-top: var(--espaco-24);
+  padding-top: var(--espaco-16);
+}
+.nova-form summary {
+  cursor: pointer;
+  font-weight: var(--peso-destaque);
+  min-height: var(--alvo-toque);
+}
+.nova-form .acoes {
+  margin-top: var(--espaco-24);
+}
+.nova-nota h2,
+.nova-recuperacao h2 {
+  margin-top: 0;
+}
+.nova-nota p:last-child {
+  margin-bottom: 0;
+}
+.nova-recuperacao {
+  margin-bottom: var(--espaco-24);
+}
+.nova-confirmacao {
+  border-inline-start: 0.25rem solid var(--acao);
+  padding: var(--espaco-16);
+  background: var(--superficie-secundaria);
+  margin-block: var(--espaco-16);
+}
+@media (max-width: 48rem) {
+  .nova-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nova-cabecalho {
+    flex-direction: column;
+  }
+  .nova-form,
+  .nova-nota,
+  .nova-recuperacao {
+    padding: var(--espaco-16);
+  }
+}
+@media (max-width: 30rem) {
+  .nova-campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

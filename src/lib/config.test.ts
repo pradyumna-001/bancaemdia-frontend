@@ -14,6 +14,29 @@ const json = (value: unknown) =>
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+it('consome configuração pública antecipada uma vez sem duplicar o GET', async () => {
+  const fetcher = json(minimal);
+  vi.stubGlobal('fetch', fetcher);
+  const take = vi
+    .fn()
+    .mockReturnValueOnce(Promise.resolve(Response.json(minimal)))
+    .mockReturnValue(undefined);
+  vi.stubGlobal('bancaemdiaConfigInicial', take);
+  expect((await loadConfig({}, true)).apiUrl).toBe('http://127.0.0.1:8000');
+  expect(fetcher).not.toHaveBeenCalled();
+  await loadConfig({}, true);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+it('a configuração antecipada passa pela mesma validação estrita', async () => {
+  const fetcher = json(minimal);
+  vi.stubGlobal('fetch', fetcher);
+  vi.stubGlobal('bancaemdiaConfigInicial', () =>
+    Promise.resolve(Response.json({ ...minimal, UNEXPECTED: 'rejeitar' })),
+  );
+  await expect(loadConfig({}, true)).rejects.toThrow('campos não reconhecidos');
+  expect(fetcher).not.toHaveBeenCalled();
 });
 
 describe('validação das variáveis públicas', () => {
