@@ -185,14 +185,17 @@ try {
       { width: 1440, height: 900 },
     ]) {
       const page = await browser.newPage({ viewport });
+      // Public Tutorial (#35): renders without identity, including after F5.
       await page.goto(origin + '/tutorial');
-      await expect(
-        page.getByText('Esta página está em preparação.'),
-      ).toBeVisible();
-      await page.reload();
-      await expect(
-        page.getByText('Esta página está em preparação.'),
-      ).toBeVisible();
+      for (const reload of [false, true]) {
+        if (reload) await page.reload();
+        await expect(
+          page.getByRole('heading', { name: 'Tutorial', exact: true }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('region', { name: 'Export do Telegram', exact: true }),
+        ).toBeVisible();
+      }
       await page.goto(origin + '/painel?periodo=mes#resumo');
       await expect(
         page.getByRole('heading', { name: 'Entrar', exact: true }),
