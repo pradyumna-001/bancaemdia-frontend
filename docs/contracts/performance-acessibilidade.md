@@ -165,6 +165,11 @@ delas são de API/identidade e quando a última terminou, e a soma e a maior das
 tarefas do processo principal iniciadas antes do LCP observado; nenhum endereço é
 publicado. Diagnóstico de CLS lista no máximo os três maiores deslocamentos, com a
 mesma projeção de tag/classe e a pontuação de cada um.
+Diagnóstico de rede publica a latência de servidor e o RTT que o Lighthouse estimou
+para a origem medida (`network-server-latency`/`network-rtt`, em ms; -1 quando não
+há valor único) e quantas requisições do trace são de API/identidade, sem endereço.
+O simulador soma a mediana dos TTFBs da origem a cada requisição simulada, e a API
+real divide a origem com os arquivos estáticos (#114).
 Gate de privacidade é independente do aceite numérico: um diagnóstico abaixo da
 meta pode ser publicado se tiver somente os campos permitidos, mas reprova o job.
 Campos adicionais, browser/perfil/pin incorretos, duplicação e ausência bloqueiam

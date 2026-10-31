@@ -237,7 +237,13 @@ export function inspectPerformanceReport(
     object(
       sample,
       ['route', 'run', 'scores', 'lcpMs', 'cls', 'tbtMs', 'proofs'],
-      ['failedAudits', 'httpStatuses', 'lcpDiagnostic', 'clsDiagnostic'],
+      [
+        'failedAudits',
+        'httpStatuses',
+        'lcpDiagnostic',
+        'clsDiagnostic',
+        'networkDiagnostic',
+      ],
     );
     const route = ROUTES.find((r) => r.id === sample.route);
     demand(
@@ -318,6 +324,21 @@ export function inspectPerformanceReport(
           ['apiBefore', 'lastApiEndMs', 'cpuBeforeMs', 'longestTaskMs'].every(
             (key) => Number.isInteger(d[key]) && finite(d[key], 0, 120_000),
           ),
+        'REPORT_DIAGNOSTICS_INVALID',
+      );
+    }
+    if (sample.networkDiagnostic !== undefined) {
+      const n = sample.networkDiagnostic;
+      object(n, ['serverLatencyMs', 'rttMs', 'requests', 'apiRequests']);
+      demand(
+        // -1: the audit had no single value for the measured origin.
+        ['serverLatencyMs', 'rttMs'].every(
+          (key) => Number.isInteger(n[key]) && finite(n[key], -1, 120_000),
+        ) &&
+          ['requests', 'apiRequests'].every(
+            (key) => Number.isInteger(n[key]) && finite(n[key], 0, 10_000),
+          ) &&
+          n.apiRequests <= n.requests,
         'REPORT_DIAGNOSTICS_INVALID',
       );
     }

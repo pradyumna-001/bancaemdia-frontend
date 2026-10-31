@@ -440,3 +440,33 @@ it('diagnóstico LCP aceita apenas projeção e números, sem aprovar falhas', (
     );
   }
 });
+
+it('diagnóstico de rede publica só latência estimada e contagens', () => {
+  const r = report();
+  r.samples[0].networkDiagnostic = {
+    serverLatencyMs: 42,
+    rttMs: 3,
+    requests: 31,
+    apiRequests: 17,
+  };
+  expect(inspectPerformanceReport(r).complete).toBe(true);
+  r.samples[0].networkDiagnostic.serverLatencyMs = -1;
+  expect(inspectPerformanceReport(r).complete).toBe(true);
+  for (const [key, value] of [
+    ['serverLatencyMs', 2.5],
+    ['serverLatencyMs', -2],
+    ['rttMs', 'lento'],
+    ['requests', -1],
+    ['apiRequests', 40],
+    ['origin', 'http://127.0.0.1:58001'],
+  ]) {
+    const bad = report();
+    bad.samples[0].networkDiagnostic = {
+      ...r.samples[0].networkDiagnostic,
+      [key]: value,
+    };
+    expect(() => inspectPerformanceReport(bad, { requirePass: false })).toThrow(
+      /REPORT_(DIAGNOSTICS|FIELDS)_INVALID/,
+    );
+  }
+});

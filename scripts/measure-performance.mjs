@@ -310,6 +310,31 @@ try {
         const tasksBefore = (
           lhr.audits['main-thread-tasks']?.details?.items ?? []
         ).filter((task) => task.startTime < observedLcp);
+        // Lantern adds one server response time per origin (the median of the
+        // observed TTFBs) to every simulated request: publish it as numbers only.
+        const allRequests =
+          lhr.audits['network-requests']?.details?.items ?? [];
+        const apiRequests = allRequests.filter((item) => {
+          try {
+            return /^\/(api|auth)\//.test(new URL(item.url).pathname);
+          } catch {
+            return false;
+          }
+        });
+        const ownOrigin = (items, key) => {
+          const values = (items ?? [])
+            .filter((item) => {
+              try {
+                return new URL(item.origin).origin === origin.origin;
+              } catch {
+                return false;
+              }
+            })
+            .map((item) => item[key]);
+          return values.length === 1 && Number.isFinite(values[0])
+            ? Math.round(values[0])
+            : -1;
+        };
         const lcpNode = (
           lhr.audits['lcp-breakdown-insight']?.details?.items ?? []
         ).find((item) => item?.type === 'node');
@@ -367,6 +392,15 @@ try {
             longestTaskMs: Math.round(
               Math.max(0, ...tasksBefore.map((task) => task.duration)),
             ),
+          },
+          networkDiagnostic: {
+            serverLatencyMs: ownOrigin(
+              lhr.audits['network-server-latency']?.details?.items,
+              'serverResponseTime',
+            ),
+            rttMs: ownOrigin(lhr.audits['network-rtt']?.details?.items, 'rtt'),
+            requests: allRequests.length,
+            apiRequests: apiRequests.length,
           },
           proofs: {
             headingVerified,
