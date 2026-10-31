@@ -13,6 +13,8 @@ import { App } from './App';
 import { createAppRoutes } from './routes';
 import { createAppQueryClient } from './queryClient';
 import { ApiError } from '../api/error';
+import * as api from '../api/client';
+import { parseConfig } from '../lib/config';
 import { RouteError } from './RouteError';
 
 const dispose: Array<() => void> = [];
@@ -59,6 +61,7 @@ it.each([
   '/coleta',
   '/configuracoes/privacidade',
   '/calculadoras',
+  '/e-se',
   '/senha',
 ])(
   '404/405/500 em %s mantêm navegação guardada e ocultam dados internos',
@@ -106,6 +109,14 @@ it('erro de recurso sem sessão não mostra shell privado nem dados', async () =
 
 it('tentativa é explícita, abre via GET uma vez e preserva URL/cache', async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
+  // The reopened page renders itself (its module may already be loaded); its
+  // reads stay pending, so only the page heading is asserted.
+  vi.spyOn(api, 'getApiClient').mockReturnValue(
+    api.createApiClient(
+      parseConfig({ VITE_API_URL: 'http://127.0.0.1:8000' }),
+      { fetcher: () => new Promise<Response>(() => {}) },
+    ),
+  );
   const { router, recover } = open(
     '/painel/analises',
     new Error('PRIVATE_STACK'),
@@ -135,7 +146,10 @@ it('Retry-After não dispara navegação automática e foco não muda quando o p
       headers: new Headers({ 'Retry-After': '1' }),
     }),
   );
-  await screen.findByRole('heading', { name: 'Aguarde para tentar novamente' });
+  const heading = await screen.findByRole('heading', {
+    name: 'Aguarde para tentar novamente',
+  });
+  await waitFor(() => expect(heading).toHaveFocus());
   const key = router.state.location.key;
   const retry = screen.getByRole('button', { name: 'Tentar novamente' });
   expect(retry).toBeDisabled();

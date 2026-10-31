@@ -1,0 +1,211 @@
+.ajuda-publica {
+  width: min(calc(100% - var(--espaco-32)), 72rem);
+  margin-inline: auto;
+}
+
+.ajuda-pular {
+  position: absolute;
+  top: -10rem;
+  padding: var(--espaco-12);
+  background: var(--superficie);
+}
+
+.ajuda-pular:focus {
+  top: var(--espaco-8);
+  z-index: 10;
+}
+
+.ajuda-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--espaco-16);
+  padding-block: var(--espaco-24);
+  border-bottom: 1px solid var(--borda);
+}
+
+.ajuda-cabecalho > a {
+  text-decoration: none;
+}
+
+.ajuda-cabecalho nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-8);
+}
+
+.ajuda-cabecalho nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo-toque);
+  padding: var(--espaco-8) var(--espaco-12);
+  border-radius: var(--raio-controle);
+}
+
+.ajuda-cabecalho [aria-current='page'] {
+  background: var(--superficie-secundaria);
+  color: var(--tinta);
+  font-weight: var(--peso-destaque);
+}
+
+.ajuda-conteudo {
+  margin-block: var(--espaco-48);
+  scroll-margin-top: var(--espaco-24);
+}
+
+.ajuda-abertura {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-32);
+  margin-block-end: var(--espaco-32);
+}
+
+.ajuda-abertura p:not(.legenda) {
+  max-width: 48ch;
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-secao);
+}
+
+.ajuda-ilustracao {
+  flex: 0 0 auto;
+  width: 17.5rem;
+  height: 6.25rem;
+  color: var(--acao);
+}
+
+.ajuda-grade {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  gap: var(--espaco-32);
+  align-items: start;
+}
+
+.ajuda-assuntos {
+  display: grid;
+  gap: var(--espaco-4);
+}
+
+.ajuda-assuntos a {
+  display: grid;
+  gap: var(--espaco-4);
+  padding: var(--espaco-12) var(--espaco-16);
+  border: 1px solid var(--transparente);
+  border-radius: var(--raio-controle);
+  text-decoration: none;
+}
+
+.ajuda-assuntos a[aria-current='page'] {
+  background: var(--superficie);
+  border-color: var(--borda-controle);
+  color: var(--tinta);
+}
+
+.ajuda-assuntos span {
+  font-weight: var(--peso-destaque);
+}
+
+.ajuda-assuntos small {
+  color: var(--tinta-secundaria);
+  font-size: var(--fonte-pequena);
+}
+
+.ajuda-guia,
+.ajuda-secao {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-painel);
+  padding: var(--espaco-32);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  scroll-margin-top: var(--espaco-24);
+}
+
+.ajuda-passos {
+  padding-inline-start: var(--espaco-24);
+  margin-block: var(--espaco-24);
+}
+
+.ajuda-passos li {
+  padding-inline-start: var(--espaco-8);
+  margin-block-end: var(--espaco-24);
+}
+
+.ajuda-passos li::marker {
+  color: var(--acao);
+  font-weight: var(--peso-forte);
+}
+
+.ajuda-passos strong {
+  font-weight: var(--peso-destaque);
+}
+
+.ajuda-fonte {
+  margin-block-start: var(--espaco-24);
+}
+
+.ajuda-aviso {
+  padding: var(--espaco-24);
+  background: var(--superficie-secundaria);
+  border-inline-start: 3px solid var(--borda-controle);
+  border-radius: var(--raio-controle);
+  overflow-wrap: anywhere;
+}
+
+.ajuda-extensao-grade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-24);
+  margin-block-start: var(--espaco-24);
+}
+
+.ajuda-alternativas {
+  display: grid;
+  gap: var(--espaco-8);
+}
+
+.ajuda-alternativas a {
+  display: flex;
+  align-items: center;
+  min-height: var(--alvo-toque);
+}
+
+.ajuda-rodape {
+  border-top: 1px solid var(--borda);
+  padding-block: var(--espaco-24);
+  color: var(--tinta-secundaria);
+}
+
+@media (max-width: 52rem) {
+  .ajuda-grade,
+  .ajuda-extensao-grade {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ajuda-assuntos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ajuda-assuntos a:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .ajuda-abertura {
+    display: block;
+  }
+
+  .ajuda-ilustracao {
+    width: 14rem;
+    height: 5rem;
+  }
+
+  .ajuda-guia,
+  .ajuda-secao {
+    padding: var(--espaco-24) var(--espaco-16);
+  }
+
+  .ajuda-assuntos a {
+    padding: var(--espaco-12);
+  }
+}
