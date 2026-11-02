@@ -59,8 +59,11 @@ function dados(total: number): EstatisticasRevisao {
     idade_maxima_segundos: 0,
   };
 }
-async function abrir(total: number, sessao = true) {
-  const consultar = vi.fn(async () => dados(total));
+async function abrir(
+  total: number,
+  sessao = true,
+  consultar = vi.fn(async () => dados(total)),
+) {
   const client = createAppQueryClient();
   const identity = sessao ? await routeSession(client) : undefined;
   const router = createMemoryRouter(
@@ -193,6 +196,33 @@ it('contador atualizado pelo cache aparece e desaparece nas duas navegações', 
   act(() => client.setQueryData(CHAVE_REVISAO, dados(120)));
   await within(desktop).findByRole('link', { name: /Revisão.*120 pendências/ });
   expect(within(desktop).getByText('99+')).toBeVisible();
+});
+
+it('avisos de acesso e fila entram depois da página e o estado fica no espaço reservado', async () => {
+  vi.spyOn(api, 'getApiClient').mockReturnValue(
+    api.createApiClient(parseConfig({ VITE_API_URL: 'https://site.example' }), {
+      fetcher: async () =>
+        Response.json({ ...billingStatus, access: 'READ_ONLY' }),
+    }),
+  );
+  await abrir(
+    0,
+    true,
+    vi.fn(async () => {
+      throw new Error('fila indisponível');
+    }),
+  );
+  const pagina = await screen.findByRole('heading', { name: 'Apostas' });
+  const aviso = await screen.findByRole('region', { name: 'Acesso à conta' });
+  const fila = await waitFor(() => document.querySelector('.aviso-fila')!);
+  for (const elemento of [aviso, fila])
+    expect(
+      pagina.closest('main')!.compareDocumentPosition(elemento) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  expect(document.querySelector('.shell-consulta')).toHaveTextContent(
+    'Conta em modo de leitura',
+  );
 });
 
 it('não consulta fila nem mostra shell sem sessão', async () => {
