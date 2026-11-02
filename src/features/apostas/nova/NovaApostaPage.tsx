@@ -439,7 +439,6 @@ function Formulario({ api }: { api: ReturnType<typeof getApiClient> }) {
               <div className="nova-largo">
                 <EscolhaFiltro
                   id="nova-casa"
-                  onOpen={catalog?.abrir}
                   dentroDeFormulario
                   label="Casa"
                   value={form.casa}
