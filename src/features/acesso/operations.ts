@@ -1,34 +1,25 @@
 import type { ApiOperation } from '../../api/client';
-
-// Explicit exceptions verified in backend b916f54: deps.py and calculators.py.
-// Unknown operations fail closed; the server remains authoritative.
-const exceptions = {
-  'GET /api/v1/apostas/{chave}/foto': true,
-  // Session controls use SessionService/Web Locks, and never depend on billing.
-  'POST /auth/logout': true,
-  'POST /auth/refresh': true,
-  'POST /api/v1/calculadoras/mercado-justo': true,
-  'POST /api/v1/calculadoras/distribuir-entre-resultados': true,
-  'POST /api/v1/calculadoras/cobertura-ao-vivo': true,
-  'POST /api/v1/calculadoras/percentual-banca': true,
-  'POST /api/v1/billing/subscribe': true,
-  'POST /api/v1/billing/portal': true,
-  'POST /api/v1/billing/cancel': true,
-  'POST /api/v1/telegram/link-codes': true,
-  'DELETE /api/v1/telegram/link': true,
-  'DELETE /api/v1/usuario/me': true,
-  'POST /api/v1/coleta/pairing-codes': true,
-  'POST /api/v1/coleta/installations/{instalacao_id}/rotate': true,
-  'DELETE /api/v1/coleta/installations/{instalacao_id}': true,
-} as const satisfies Partial<Record<AccessOperation, boolean>>;
+import { OPERATION_POLICIES } from '../../api/policies.generated';
 
 export type AccessOperation = ApiOperation;
-// Generated schema policies are insufficient to infer commercial permission from verbs.
+
+const policies: Readonly<
+  Record<string, { readonly access_modes: readonly string[] }>
+> = OPERATION_POLICIES;
+
+// Commercial permission comes from x-bancaemdia-policy in the pinned contract
+// (rule 32), never from the HTTP verb. Unknown operations fail closed; the
+// server remains authoritative.
 export function operationNeedsWrite(operation: AccessOperation): boolean {
-  if (Object.hasOwn(exceptions, operation)) return false;
-  return !operation.startsWith('GET ');
+  const policy = policies[operation];
+  return !policy || !policy.access_modes.includes('READ_ONLY');
 }
-// Compile-time check that every exception exists in the pinned contract.
-export const READ_ONLY_OPERATIONS: readonly AccessOperation[] = Object.keys(
-  exceptions,
-) as Array<keyof typeof exceptions>;
+
+// Writes the contract allows in READ_ONLY (session controls, calculators,
+// billing, Telegram link, account closure and Coleta devices).
+export const READ_ONLY_OPERATIONS: readonly AccessOperation[] = (
+  Object.keys(policies) as AccessOperation[]
+).filter(
+  (operation) =>
+    !operation.startsWith('GET ') && !operationNeedsWrite(operation),
+);
