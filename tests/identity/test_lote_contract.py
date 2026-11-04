@@ -196,7 +196,12 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
             assert await rows(engine_admin, BETS, uid) == before
             assert len(sends) == 2
 
-            # Isolation and scope: other owner and cash untouched.
+            # Isolation and scope: other owner and cash untouched. Entering
+            # through the SPA renews the other owner's idle session.
+            await other.goto(core.backend.FRONT + "/configuracoes")
+            await expect(
+                other.get_by_role("region", name="Apagar todas as apostas")
+            ).to_be_visible()
             assert (
                 await rows(engine_admin, BETS, other_user["usuario_id"]) == other_before
             )
