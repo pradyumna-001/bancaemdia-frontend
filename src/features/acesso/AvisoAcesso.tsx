@@ -7,8 +7,8 @@ import './acesso.css';
 export function AvisoAcesso() {
   const access = useAcesso();
   const location = useLocation();
-  // Shell announces initial checking in reserved header space. Reading stays
-  // available without inserting a temporary warning above the page's data.
+  // Shell announces checking and the final state in reserved header space and
+  // renders this notice after the page, so a late answer never shifts its data.
   if (!access || access.phase === 'write' || access.phase === 'checking')
     return null;
   const unknown = access.phase === 'unknown';
