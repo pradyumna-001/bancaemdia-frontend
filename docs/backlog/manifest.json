@@ -292,5 +292,11 @@
     "title": "[ADR-007] Jornadas reais — falhas de infraestrutura do harness sem mascarar defeitos",
     "file": "125.md",
     "dependencies": "nenhuma"
+  },
+  {
+    "number": 128,
+    "title": "[ADR-019] Financeiro nativo — contas, apostas e totais por moeda",
+    "file": "128.md",
+    "dependencies": "pradyumna-001/bancaemdia-api#221; #120; #121"
   }
 ]
