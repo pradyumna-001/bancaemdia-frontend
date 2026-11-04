@@ -120,3 +120,27 @@
   text-align: start;
   border-block-end: 1px solid var(--borda);
 }
+.lote-confirmacao,
+.lote-recibo,
+.lote-incerto {
+  display: grid;
+  gap: var(--espaco-8);
+}
+.lote-confirmacao input {
+  inline-size: 100%;
+  max-inline-size: 24rem;
+}
+.lote-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-8) var(--espaco-16);
+  align-items: center;
+}
+.lote-recibo {
+  padding-block-start: var(--espaco-12);
+  border-block-start: 1px solid var(--borda);
+}
+.lote-recibo h3 {
+  margin: 0;
+  font-size: 1rem;
+}

@@ -91,6 +91,12 @@ function montarMoeda(molde: MoldeMoeda, inteiro: bigint, fracao: string) {
 }
 
 /** Conversão textual de entrada BRL; não decide nenhum valor financeiro. */
+// Exact counts published by the API (bets, rows), grouped in pt-BR.
+export function quantidade(valor: number): string {
+  if (!Number.isSafeInteger(valor)) throw new RangeError('Quantidade inválida');
+  return inteiroFormatado.format(valor);
+}
+
 export function centavosDaEntrada(valor: string): number {
   const inteiro = BigInt(centavosExatosDaEntrada(valor));
   if (inteiro > BigInt(Number.MAX_SAFE_INTEGER)) throw indisponivel();
