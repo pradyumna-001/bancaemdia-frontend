@@ -105,3 +105,18 @@
     margin-top: 0;
   }
 }
+
+.unidade-historico {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+.unidade-historico caption {
+  text-align: start;
+  font-weight: var(--peso-destaque);
+}
+.unidade-historico th,
+.unidade-historico td {
+  padding-block: var(--espaco-8);
+  text-align: start;
+  border-block-end: 1px solid var(--borda);
+}

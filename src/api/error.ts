@@ -11,6 +11,21 @@ export type InvalidField = Readonly<{ scope: 'body' | 'query'; field: string }>;
 
 function invalidFields(body: unknown): readonly InvalidField[] {
   const detail = record(body)?.detail;
+  const campos = record(body)?.campos;
+  // UnidadeInvalidaSaida: one stable code per field, projected to the name only.
+  if (detail === 'unidade_invalida' && Array.isArray(campos)) {
+    const fields: InvalidField[] = [];
+    for (const item of campos.slice(0, 100)) {
+      const field = record(item)?.campo;
+      if (
+        typeof field === 'string' &&
+        /^[A-Za-z_][A-Za-z0-9_]{0,79}$/.test(field) &&
+        !fields.some((known) => known.field === field)
+      )
+        fields.push(Object.freeze({ scope: 'body' as const, field }));
+    }
+    return Object.freeze(fields);
+  }
   if (!Array.isArray(detail)) {
     const field = record(body)?.campo;
     return typeof detail === 'string' &&
