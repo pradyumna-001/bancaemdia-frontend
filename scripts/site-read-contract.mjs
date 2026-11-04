@@ -29,6 +29,8 @@ export function siteReadContract(document) {
     '/api/v1/apostas/lotes/previa-apagar',
     '/api/v1/apostas/lotes/{lote_id}',
     '/api/v1/apostas/lotes/intencao',
+    '/api/v1/bancas',
+    '/api/v1/bancas/intencao',
   ];
   function compact(node) {
     if (node.$ref) {
@@ -100,6 +102,9 @@ export function siteReadContract(document) {
     ['/api/v1/unidade/vigencias', 'post'],
     ['/api/v1/apostas/lotes', 'post'],
     ['/api/v1/apostas/lotes/{lote_id}/restaurar', 'post'],
+    ['/api/v1/bancas', 'post'],
+    ['/api/v1/bancas/{banca_id}', 'patch'],
+    ['/api/v1/bancas/{banca_id}/arquivar', 'post'],
   ];
   return Object.fromEntries(
     operations.flatMap(([path, method]) => {

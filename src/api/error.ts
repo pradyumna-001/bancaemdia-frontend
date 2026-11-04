@@ -15,7 +15,9 @@ function invalidFields(body: unknown): readonly InvalidField[] {
   // UnidadeInvalidaSaida/LoteInvalidoSaida: one stable code per field,
   // projected to the name only.
   if (
-    (detail === 'unidade_invalida' || detail === 'lote_invalido') &&
+    (detail === 'unidade_invalida' ||
+      detail === 'lote_invalido' ||
+      detail === 'banca_invalida') &&
     Array.isArray(campos)
   ) {
     const fields: InvalidField[] = [];
@@ -113,6 +115,10 @@ const knownCodes = new Set([
   'lote_nao_encontrado',
   'intencao_nao_encontrada',
   'idempotency_key_conflict',
+  'nome_em_uso',
+  'banca_arquivada',
+  'banca_com_contas',
+  'banca_nao_encontrada',
   'account_read_only',
   'access_expired',
   'not_authenticated',
