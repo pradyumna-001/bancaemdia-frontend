@@ -258,6 +258,11 @@ async def test_public_spa_unidade(harness, engine_admin, viewport, browser_name)
             assert len(sends) == 2
 
             # Isolation: the other owner keeps the default and sees no history.
+            # Entering through the SPA also renews that idle session.
+            await other.goto(core.backend.FRONT + "/configuracoes")
+            other_card = other.get_by_role("region", name="Valor da unidade")
+            await expect(other_card).to_contain_text("valor padrão do serviço")
+            await expect(other_card.get_by_role("table")).to_have_count(0)
             separate = await core.read(other, UNIT)
             assert separate["vigente"]["origem"] == "padrao"
             assert separate["historico"] == []
