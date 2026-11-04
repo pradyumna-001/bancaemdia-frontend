@@ -8,6 +8,7 @@ import { createAppRoutes } from '../../../src/app/routes';
 import { createAppQueryClient } from '../../../src/app/queryClient';
 import '../../../src/styles/base.css';
 import { RecoveryPage } from './RecoveryPage';
+import { ValoresPage } from './ValoresPage';
 import { routeFailures } from './routeFailures';
 import { initializeConfig } from '../../../src/lib/config';
 import { ProvedorAuth } from '../../../src/auth/ProvedorAuth';
@@ -47,6 +48,7 @@ void initializeConfig().then(() => {
       <App
         router={createBrowserRouter([
           { path: '/testes/recuperacao', element: <RecoveryPage /> },
+          { path: '/testes/valores', element: <ValoresPage /> },
           ...routeFailures(createAppRoutes(auth.resume, consultar)),
         ])}
         queryClient={queryClient}
