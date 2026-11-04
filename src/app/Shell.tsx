@@ -43,13 +43,19 @@ export function Shell({
   });
   const total = fila.data?.total ?? 0;
   const checkingAccess = access?.phase === 'checking';
+  // The full notices render after the page, so a late answer never moves a
+  // control already under the pointer. This reserved line keeps them visible.
   const loadingMessage = checkingAccess
     ? fila.isPending
       ? 'Conferindo acesso e fila…'
       : 'Conferindo acesso à conta…'
     : fila.isPending
       ? 'Consultando fila de revisão…'
-      : '';
+      : access?.phase === 'read-only'
+        ? 'Conta em modo de leitura'
+        : access?.phase === 'unknown' && access.error
+          ? 'Acesso não confirmado'
+          : '';
   const abas = ABAS.filter((aba) => aba.path !== '/revisao' || total > 0);
   const secundarias = abas.filter((aba) => !aba.mobile);
   useEffect(() => {
@@ -147,6 +153,7 @@ export function Shell({
         ref={conteudo}
         tabIndex={-1}
       >
+        {children}
         {fila.isError && (
           <div className="aviso-fila" role="alert">
             <p>
@@ -163,7 +170,6 @@ export function Shell({
           </div>
         )}
         <AvisoAcesso />
-        {children}
         {location.pathname === '/' && (
           <aside
             className="hipotetica-entrada"
