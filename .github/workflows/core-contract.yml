@@ -54,7 +54,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install -e '.identity-api[dev]'
+      - run: pip install -c tests/identity/api-constraints.txt -e '.identity-api[dev]'
       - run: ruff check tests/identity && ruff format --check tests/identity
       - name: Provar limpeza do ambiente antes e depois do bootstrap
         run: python -m pytest -c .identity-api/pyproject.toml --noconftest -o addopts='' --import-mode=importlib tests/identity/test_harness_resources.py --no-cov -n 0
