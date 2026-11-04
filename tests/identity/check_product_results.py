@@ -67,7 +67,7 @@ if __name__ == "__main__":
             "frontend_sha": sha,
             "api_sha": pin["commit"],
             "openapi_sha256": pin["sha256"],
-            "availability": pin["availability"]["kind"],
+            "availability": pin.get("availability", {}).get("kind", "main"),
             "browser": browser,
             "viewports": [390, 1440],
             "reports": reports,

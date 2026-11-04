@@ -4798,13 +4798,13 @@ export const SITE_READ_CONTRACT = {
   },
   '/api/v1/painel/hipotetica': {
     query: {
-      fresh: { type: 'boolean' },
       periodo: {
         anyOf: [
           { type: 'string', enum: ['7d', '30d', '90d', '1y', 'all'] },
           { type: 'null' },
         ],
       },
+      fresh: { type: 'boolean' },
       desde: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       casa_id: {
