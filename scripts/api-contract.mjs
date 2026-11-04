@@ -190,3 +190,14 @@ export function bancaemdiaPolicies(schema) {
   }
   return policies;
 }
+
+// Compact form for the entry bundle: only where the commercial permission
+// differs from "reads in READ_ONLY, writes in FULL_WRITE".
+export function accessExceptions(policies) {
+  const readOnly = (key) => policies[key].access_modes.includes('READ_ONLY');
+  const keys = Object.keys(policies).sort();
+  return {
+    readOnlyWrites: keys.filter((k) => !k.startsWith('GET ') && readOnly(k)),
+    fullWriteReads: keys.filter((k) => k.startsWith('GET ') && !readOnly(k)),
+  };
+}

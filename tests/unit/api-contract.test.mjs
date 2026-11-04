@@ -9,6 +9,7 @@ import {
   verifiedSchema,
   requireIntegratedContract,
   bancaemdiaPolicies,
+  accessExceptions,
 } from '../../scripts/api-contract.mjs';
 
 const bytes = Buffer.from(
@@ -93,6 +94,21 @@ it('política por operação vem de x-bancaemdia-policy, com identidade e recupe
       },
     })['POST /api/v1/caixa'].idempotency.recovery,
   ).toBe('replay');
+});
+
+it('a entrada recebe só as exceções de permissão ao verbo HTTP', () => {
+  const read = policy({
+    access_modes: ['FULL_WRITE', 'READ_ONLY'],
+    idempotency: { identity: 'none', recovery: null, retention: null },
+  });
+  expect(
+    accessExceptions({
+      'GET /a': read,
+      'GET /b': { ...read, access_modes: ['FULL_WRITE'] },
+      'POST /c': read,
+      'POST /d': policy(),
+    }),
+  ).toEqual({ readOnlyWrites: ['POST /c'], fullWriteReads: ['GET /b'] });
 });
 
 it('operação sem política ou com política inválida falha fechada', () => {

@@ -7,6 +7,7 @@ import {
   operationPolicies,
   paginationPolicies,
   bancaemdiaPolicies,
+  accessExceptions,
   verifiedSchema,
 } from './api-contract.mjs';
 
@@ -46,7 +47,8 @@ try {
       `export const API_SCHEMA_SHA256 = ${JSON.stringify(pin.sha256)};\n` +
       `export const IDEMPOTENT_OPERATIONS = ${JSON.stringify(policies.idempotent)} as const;\n` +
       `export const UPLOAD_OPERATIONS = ${JSON.stringify(policies.uploads)} as const;\n` +
-      `export const PAGINATION_RULES = ${JSON.stringify(paginationPolicies(document))} as const;\n`,
+      `export const PAGINATION_RULES = ${JSON.stringify(paginationPolicies(document))} as const;\n` +
+      `export const ACCESS_EXCEPTIONS = ${JSON.stringify(accessExceptions(bancaemdiaPolicies(document)))} as const;\n`,
     prettierOptions,
   );
   await mkdir('src/api', { recursive: true });
