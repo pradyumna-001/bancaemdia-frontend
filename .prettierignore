@@ -43,3 +43,7 @@ dist-analises-proposta/
 dist-troca-fixture/
 dist-metas-fixture/
 dist-inicio-fixture/
+
+.staging-artifact/
+.staging-release/
+.staging-ssh/
