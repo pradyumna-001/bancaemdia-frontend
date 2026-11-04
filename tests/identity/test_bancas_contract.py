@@ -201,7 +201,12 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
             ), "The bancas section must reflow at 320 px without horizontal scroll"
             await page.set_viewport_size(viewport)
 
-            # Isolation: the other owner sees nothing and cannot change it.
+            # Isolation: the other owner sees no banca. Entering through the
+            # SPA renews that idle session.
+            await other.goto(core.backend.FRONT + "/banca")
+            await expect(other.get_by_role("region", name="Bancas")).to_contain_text(
+                "Nenhuma banca ativa"
+            )
             assert (await core.read(other, BANCAS))["bancas"] == []
 
             # READ_ONLY keeps reading and blocks every write control.
