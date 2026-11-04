@@ -8,9 +8,7 @@ import {
   paginationPolicies,
   verifiedSchema,
   requireIntegratedContract,
-  resultsPolicies,
-  reviewPolicies,
-  manualPolicies,
+  bancaemdiaPolicies,
 } from '../../scripts/api-contract.mjs';
 
 const bytes = Buffer.from(
@@ -32,75 +30,106 @@ const pin = {
   sha256: createHash('sha256').update(bytes).digest('hex'),
 };
 
-it('Manual extrai identidade por caminho, retenção, READ_ONLY e ausência de retry do mesmo schema', () => {
-  const policy = {
-    identity: 'path.intencao_id',
-    scope: 'authenticated_user',
-    automatic_retry: false,
-    retention_days: 90,
-    expired_identity_reusable: false,
-  };
-  expect(
-    manualPolicies({
-      paths: {
-        '/api/v1/apostas-manuais/operacoes/{intencao_id}': {
-          post: { 'x-idempotency': policy },
-          get: { 'x-permission': 'READ_ONLY', 'x-automatic-retry': false },
-        },
-      },
-    }),
-  ).toEqual({
-    ...policy,
-    get_permission: 'READ_ONLY',
-    get_automatic_retry: false,
-  });
-  expect(() => manualPolicies({ paths: {} })).toThrow();
-  expect(() =>
-    manualPolicies({
-      paths: {
-        '/api/v1/apostas-manuais/operacoes/{intencao_id}': {
-          post: { 'x-idempotency': policy },
-          get: { 'x-permission': 'FULL_WRITE' },
-        },
-      },
-    }),
-  ).toThrow();
+const policy = (overrides = {}) => ({
+  access_modes: ['FULL_WRITE'],
+  automatic_retry: { allowed: false, max_attempts: null },
+  idempotency: {
+    identity: 'path:intencao_id',
+    recovery: 'GET /api/v1/apostas-manuais/operacoes/{intencao_id}',
+    retention: 'until_account_deletion',
+  },
+  ...overrides,
 });
-
-it('Revisão extrai CAS/consumo/acesso do mesmo documento, sem replay automático', () => {
-  const policy = {
-    access: 'FULL_WRITE',
-    precondition: 'opaque_evidence_cas',
-    automatic_mutation_replay: false,
-    consumption: 'restart_page_1',
-  };
-  expect(
-    reviewPolicies({
-      paths: {
-        '/review': { post: { 'x-bancaemdia-review': policy }, get: {} },
-      },
-    }),
-  ).toEqual({ 'POST /review': policy });
-});
-
-it('Resultados extrai matriz/cursor/intenção da mesma fonte sem habilitar replay automático', () => {
-  const policy = {
-    access: 'FULL_WRITE',
-    automatic_mutation_replay: false,
-    intention_parameter: 'intention_id',
-  };
-  const document = {
-    paths: {
-      '/api/v1/resultados/operacoes/{intention_id}': {
-        post: { 'x-bancaemdia-resultados': policy },
-        get: {},
-      },
+const manual = (post, get = policy({ access_modes: ['READ_ONLY'] })) => ({
+  paths: {
+    '/api/v1/apostas-manuais/operacoes/{intencao_id}': {
+      post: { 'x-bancaemdia-policy': post },
+      get: { 'x-bancaemdia-policy': get },
     },
-  };
-  expect(resultsPolicies(document)).toEqual({
-    'POST /api/v1/resultados/operacoes/{intention_id}': policy,
+  },
+});
+
+it('política por operação vem de x-bancaemdia-policy, com identidade e recuperação', () => {
+  expect(bancaemdiaPolicies(manual(policy()))).toEqual({
+    'POST /api/v1/apostas-manuais/operacoes/{intencao_id}': policy(),
+    'GET /api/v1/apostas-manuais/operacoes/{intencao_id}': policy({
+      access_modes: ['READ_ONLY'],
+    }),
   });
-  expect(operationPolicies(document).idempotent).toEqual([]);
+  // Recovery reads take the key header without it being their own identity.
+  const lookup = policy({
+    access_modes: ['READ_ONLY', 'FULL_WRITE'],
+    automatic_retry: { allowed: true, max_attempts: 3 },
+    idempotency: { identity: 'none', recovery: null, retention: null },
+  });
+  expect(
+    bancaemdiaPolicies({
+      paths: {
+        '/api/v1/bancas/intencao': {
+          get: {
+            parameters: [{ in: 'header', name: 'Idempotency-Key' }],
+            'x-bancaemdia-policy': lookup,
+          },
+        },
+      },
+    })['GET /api/v1/bancas/intencao'].access_modes,
+  ).toEqual(['FULL_WRITE', 'READ_ONLY']);
+  const replay = policy({
+    idempotency: {
+      identity: 'header:Idempotency-Key',
+      recovery: 'replay',
+      retention: 'until_account_deletion',
+    },
+  });
+  expect(
+    bancaemdiaPolicies({
+      paths: {
+        '/api/v1/caixa': {
+          post: {
+            parameters: [{ in: 'header', name: 'Idempotency-Key' }],
+            'x-bancaemdia-policy': replay,
+          },
+        },
+      },
+    })['POST /api/v1/caixa'].idempotency.recovery,
+  ).toBe('replay');
+});
+
+it('operação sem política ou com política inválida falha fechada', () => {
+  expect(() =>
+    bancaemdiaPolicies({ paths: { '/x': { get: { responses: {} } } } }),
+  ).toThrow('Política de operação ausente ou inválida: GET /x.');
+  for (const bad of [
+    policy({ access_modes: [] }),
+    policy({ access_modes: ['ADMIN'] }),
+    policy({ automatic_retry: { allowed: 'sim', max_attempts: null } }),
+    policy({ automatic_retry: { allowed: true, max_attempts: 0 } }),
+    policy({
+      idempotency: { identity: 'cookie:x', recovery: null, retention: null },
+    }),
+    // Path identity must name a parameter of the same path.
+    policy({
+      idempotency: { identity: 'path:outro', recovery: null, retention: null },
+    }),
+    // Header identity requires the published header.
+    policy({
+      idempotency: {
+        identity: 'header:Idempotency-Key',
+        recovery: null,
+        retention: null,
+      },
+    }),
+    policy({
+      idempotency: {
+        identity: 'path:intencao_id',
+        recovery: 'refazer',
+        retention: null,
+      },
+    }),
+  ])
+    expect(() => bancaemdiaPolicies(manual(bad))).toThrow(
+      'Política de operação ausente ou inválida',
+    );
 });
 
 it('só aceita commit completo, caminho e SHA-256 fixados', () => {

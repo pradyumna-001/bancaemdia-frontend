@@ -6,9 +6,7 @@ import {
   contractSource,
   operationPolicies,
   paginationPolicies,
-  resultsPolicies,
-  reviewPolicies,
-  manualPolicies,
+  bancaemdiaPolicies,
   verifiedSchema,
 } from './api-contract.mjs';
 
@@ -55,26 +53,10 @@ try {
   await writeFile('src/api/schema.d.ts', output);
   await writeFile('src/api/operations.generated.ts', metadata);
   await writeFile(
-    'src/api/resultados.generated.ts',
+    'src/api/policies.generated.ts',
     await format(
-      '// Generated from x-bancaemdia-resultados in the same verified OpenAPI.\n' +
-        `export const RESULTADOS_POLICIES = ${JSON.stringify(resultsPolicies(document))} as const;\n`,
-      prettierOptions,
-    ),
-  );
-  await writeFile(
-    'src/api/revisao.generated.ts',
-    await format(
-      '// Generated from x-bancaemdia-review in the same verified OpenAPI.\n' +
-        `export const REVISAO_POLICIES = ${JSON.stringify(reviewPolicies(document))} as const;\n`,
-      prettierOptions,
-    ),
-  );
-  await writeFile(
-    'src/api/manual.generated.ts',
-    await format(
-      '// Generated from x-idempotency in the same verified OpenAPI.\n' +
-        `export const MANUAL_POLICIES = ${JSON.stringify(manualPolicies(document))} as const;\n`,
+      '// Generated from x-bancaemdia-policy in the same verified OpenAPI.\n' +
+        `export const OPERATION_POLICIES = ${JSON.stringify(bancaemdiaPolicies(document))} as const;\n`,
       prettierOptions,
     ),
   );

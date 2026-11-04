@@ -2,7 +2,7 @@ import type { components } from '../../../api/schema';
 import { ApiError } from '../../../api/error';
 import { respostaPublicada } from '../../../api/readContract';
 import { SITE_READ_CONTRACT } from '../../../api/site-read.generated';
-import { MANUAL_POLICIES } from '../../../api/manual.generated';
+import { OPERATION_POLICIES } from '../../../api/policies.generated';
 import { centavosExatosDaEntrada, dataHora, moeda } from '../../../lib/format';
 import { instanteDaEntrada } from '../../caixa/protocol';
 export { uuidValido } from '../../revisao/protocol';
@@ -72,6 +72,21 @@ export function pedido(form: Rascunho, casa: string): Pedido {
     conta_casa_id: form.conta ?? null,
   };
 }
+// The contract keeps the creation identity in the path, never replays it
+// automatically and recovers it with a READ_ONLY read of the same intention.
+function manualSemReplay(): boolean {
+  const post =
+    OPERATION_POLICIES['POST /api/v1/apostas-manuais/operacoes/{intencao_id}'];
+  const get =
+    OPERATION_POLICIES['GET /api/v1/apostas-manuais/operacoes/{intencao_id}'];
+  return (
+    post.automatic_retry.allowed === false &&
+    post.idempotency.identity === 'path:intencao_id' &&
+    post.idempotency.recovery ===
+      'GET /api/v1/apostas-manuais/operacoes/{intencao_id}' &&
+    (get.access_modes as readonly string[]).includes('READ_ONLY')
+  );
+}
 export function validarRecibo(value: Recibo | undefined, id: string): Recibo {
   respostaPublicada(value, SITE_READ_CONTRACT[POST]?.response);
   if (
@@ -80,9 +95,7 @@ export function validarRecibo(value: Recibo | undefined, id: string): Recibo {
     value.estado !== 'confirmada' ||
     !/^m:[a-f\d]{32}$/.test(value.aposta_chave) ||
     value.detalhe_url !== '/api/v1/apostas/' + value.aposta_chave ||
-    MANUAL_POLICIES.automatic_retry !== false ||
-    MANUAL_POLICIES.expired_identity_reusable !== false ||
-    MANUAL_POLICIES.get_automatic_retry !== false
+    !manualSemReplay()
   )
     throw new ApiError('invalid_response');
   for (const date of [

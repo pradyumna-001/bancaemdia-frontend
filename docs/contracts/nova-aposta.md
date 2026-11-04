@@ -4,7 +4,7 @@
 
 Backend #202/PR #203 (`b2bb0dfc66e26621d41c064f4690932938b877f5`) publica POST/GET `/api/v1/apostas-manuais/operacoes/{intencao_id}`. O POST antigo não é usado pelo formulário. A capacidade está em PR aberta, sem merge administrativo. Sandbox completo fornecido: `ec46748b00ce97ae3c3cac032f03cc691f7f8908`, sobre `547a4d0`, 127 operações, SHA-256 `797c735e0fa6d63f46c3eb1635e569e434154dfc02fb17d27c940ff339cfcf96`. Módulos próprios de criação, migration e 44 aceites são idênticos entre candidata e sandbox. Head conjunto `u202sandbox2026` preserva `u200sandbox2026` e `m202manual2026`.
 
-Tipos, validadores e política x-idempotency são gerados do mesmo documento inteiro; drift inclui manual.generated.ts. Não unir schemas. Disponibilidade sandbox_reconciliation bloqueia publicação. Dependências frontend #95/#94 e backend #203/#201/#199/#197/#195/#193/#189/#187 declaradas contra main. Depois da integração, reconciliar um único pin integrado e repetir as provas.
+Tipos, validadores e a política da operação (`x-bancaemdia-policy`: identidade `path:intencao_id`, sem retry automático, recuperação pelo GET da mesma intenção) são gerados do mesmo documento inteiro; drift inclui `policies.generated.ts`. Atualização 04/11/2026: a criação manual está na `main` integrada da API (#203); o pin atual é o da #120. Não unir schemas. Disponibilidade sandbox_reconciliation bloqueia publicação. Dependências frontend #95/#94 e backend #203/#201/#199/#197/#195/#193/#189/#187 declaradas contra main. Depois da integração, reconciliar um único pin integrado e repetir as provas.
 
 ## Formulário
 
