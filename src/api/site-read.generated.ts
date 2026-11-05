@@ -4798,13 +4798,13 @@ export const SITE_READ_CONTRACT = {
   },
   '/api/v1/painel/hipotetica': {
     query: {
-      fresh: { type: 'boolean' },
       periodo: {
         anyOf: [
           { type: 'string', enum: ['7d', '30d', '90d', '1y', 'all'] },
           { type: 'null' },
         ],
       },
+      fresh: { type: 'boolean' },
       desde: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       casa_id: {
@@ -6045,6 +6045,123 @@ export const SITE_READ_CONTRACT = {
       },
     },
   },
+  '/api/v1/unidade': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'vigente',
+        'historico',
+        'fuso_horario',
+        'padrao_centavos',
+        'limite_centavos',
+      ],
+      properties: {
+        fuso_horario: { type: 'string' },
+        historico: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'id',
+              'valor_centavos',
+              'origem',
+              'vigente_de',
+              'vigente_ate',
+              'vigente_de_local',
+            ],
+            properties: {
+              id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+              origem: { type: 'string', enum: ['padrao', 'usuario'] },
+              valor_centavos: { type: 'integer' },
+              vigente_ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              vigente_de: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              vigente_de_local: {
+                anyOf: [{ type: 'string' }, { type: 'null' }],
+              },
+            },
+          },
+        },
+        limite_centavos: { type: 'integer' },
+        padrao_centavos: { type: 'integer' },
+        vigente: {
+          type: 'object',
+          required: [
+            'id',
+            'valor_centavos',
+            'origem',
+            'vigente_de',
+            'vigente_ate',
+            'vigente_de_local',
+          ],
+          properties: {
+            id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+            origem: { type: 'string', enum: ['padrao', 'usuario'] },
+            valor_centavos: { type: 'integer' },
+            vigente_ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            vigente_de: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            vigente_de_local: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          },
+        },
+      },
+    },
+  },
+  '/api/v1/unidade/vigencias/intencao': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'vigencia',
+        'anterior',
+        'vale_a_partir_de',
+        'apostas_existentes_alteradas',
+        'fuso_horario',
+      ],
+      properties: {
+        anterior: {
+          type: 'object',
+          required: [
+            'id',
+            'valor_centavos',
+            'origem',
+            'vigente_de',
+            'vigente_ate',
+            'vigente_de_local',
+          ],
+          properties: {
+            id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+            origem: { type: 'string', enum: ['padrao', 'usuario'] },
+            valor_centavos: { type: 'integer' },
+            vigente_ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            vigente_de: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            vigente_de_local: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          },
+        },
+        apostas_existentes_alteradas: { type: 'integer', const: 0 },
+        fuso_horario: { type: 'string' },
+        vale_a_partir_de: { type: 'string' },
+        vigencia: {
+          type: 'object',
+          required: [
+            'id',
+            'valor_centavos',
+            'origem',
+            'vigente_de',
+            'vigente_ate',
+            'vigente_de_local',
+          ],
+          properties: {
+            id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+            origem: { type: 'string', enum: ['padrao', 'usuario'] },
+            valor_centavos: { type: 'integer' },
+            vigente_ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            vigente_de: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            vigente_de_local: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          },
+        },
+      },
+    },
+  },
   'POST /api/v1/painel/metas': {
     query: {},
     response: {
@@ -7171,6 +7288,62 @@ export const SITE_READ_CONTRACT = {
         },
         titular_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
         titular_nome: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      },
+    },
+  },
+  'POST /api/v1/unidade/vigencias': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'vigencia',
+        'anterior',
+        'vale_a_partir_de',
+        'apostas_existentes_alteradas',
+        'fuso_horario',
+      ],
+      properties: {
+        anterior: {
+          type: 'object',
+          required: [
+            'id',
+            'valor_centavos',
+            'origem',
+            'vigente_de',
+            'vigente_ate',
+            'vigente_de_local',
+          ],
+          properties: {
+            id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+            origem: { type: 'string', enum: ['padrao', 'usuario'] },
+            valor_centavos: { type: 'integer' },
+            vigente_ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            vigente_de: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            vigente_de_local: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          },
+        },
+        apostas_existentes_alteradas: { type: 'integer', const: 0 },
+        fuso_horario: { type: 'string' },
+        vale_a_partir_de: { type: 'string' },
+        vigencia: {
+          type: 'object',
+          required: [
+            'id',
+            'valor_centavos',
+            'origem',
+            'vigente_de',
+            'vigente_ate',
+            'vigente_de_local',
+          ],
+          properties: {
+            id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+            origem: { type: 'string', enum: ['padrao', 'usuario'] },
+            valor_centavos: { type: 'integer' },
+            vigente_ate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            vigente_de: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            vigente_de_local: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          },
+        },
       },
     },
   },
