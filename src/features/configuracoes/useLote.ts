@@ -122,12 +122,15 @@ export function useLote(client: ReturnType<typeof createApiClient>) {
     }
   }
 
-  function guard(controller: AbortController) {
+  // A safe read goes through auth.service.read, which renews an expired
+  // access once and only resolves for the current session: its answer stays
+  // valid across that renewal. A write stays bound to the session that sent it.
+  function guard(controller: AbortController, leitura: boolean) {
     const scope = auth.service.capture();
     return () =>
       alive.current &&
       !controller.signal.aborted &&
-      scope.isCurrent() &&
+      (leitura || scope.isCurrent()) &&
       auth.service.getSnapshot().privateEpoch === epoch;
   }
 
@@ -149,6 +152,7 @@ export function useLote(client: ReturnType<typeof createApiClient>) {
 
   async function begin(
     work: (signal: AbortSignal, live: () => boolean) => Promise<void>,
+    leitura = false,
   ) {
     if (active.current || waiting) return;
     const controller = new AbortController();
@@ -156,7 +160,7 @@ export function useLote(client: ReturnType<typeof createApiClient>) {
     setBusy(true);
     setError(undefined);
     try {
-      await work(controller.signal, guard(controller));
+      await work(controller.signal, guard(controller, leitura));
     } finally {
       if (active.current === controller) active.current = undefined;
       if (alive.current && auth.service.getSnapshot().privateEpoch === epoch)
@@ -175,7 +179,7 @@ export function useLote(client: ReturnType<typeof createApiClient>) {
       } catch (cause) {
         if (live()) setError(cause);
       }
-    });
+    }, true);
   }
 
   async function send(value: Tentativa) {
@@ -287,7 +291,7 @@ export function useLote(client: ReturnType<typeof createApiClient>) {
             : 'uncertain',
         );
       }
-    });
+    }, true);
   }
 
   const podeReenviar =

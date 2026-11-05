@@ -44,28 +44,33 @@ type Hooks = {
   ) => Promise<Response>;
   intencao?: () => Promise<Response>;
   entry?: string;
+  expirePrevia?: boolean;
 };
 
 async function open(hooks: Hooks = {}) {
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Sandbox',
-    email: 'sandbox@example.org',
-    session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Sandbox',
+      email: 'sandbox@example.org',
+      session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
+  let expired = !!hooks.expirePrevia;
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
     exclusive: async (_signal, work) => work(),
@@ -97,6 +102,16 @@ async function open(hooks: Hooks = {}) {
           });
         if (path === '/api/v1/apostas/lotes/previa-apagar') {
           reads.push(path);
+          if (expired) {
+            expired = false;
+            return new Response(JSON.stringify({ detail: 'access_expired' }), {
+              status: 401,
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Auth-Error': 'access_expired',
+              },
+            });
+          }
           return json(fixture.previa());
         }
         if (path === '/api/v1/apostas/lotes/intencao') {
@@ -610,4 +625,11 @@ it('402 do servidor libera a chave sem gravar e preserva a mensagem', async () =
   expect(
     await screen.findByRole('button', { name: 'Preparar exclusão' }),
   ).toBeVisible();
+});
+
+it('prévia atravessa a renovação do acesso em vez de sumir em silêncio', async () => {
+  const { reads } = await open({ expirePrevia: true });
+  await preparar();
+  expect(await screen.findByText('APAGAR 12 APOSTAS')).toBeVisible();
+  expect(reads.filter((r) => r.endsWith('/previa-apagar'))).toHaveLength(2);
 });
