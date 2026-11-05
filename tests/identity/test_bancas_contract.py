@@ -3,6 +3,7 @@
 import asyncio
 import importlib.util
 import os
+import re
 import secrets
 import sys
 import time
@@ -28,6 +29,12 @@ ROWS = (
     "SELECT nome,saldo_inicial_centavos,arquivada_em IS NOT NULL AS arquivada "
     "FROM bancas WHERE usuario_id=:uid ORDER BY id"
 )
+
+
+async def settled(page):
+    # Cards load independently and grow when their data arrives; a click
+    # computed before that can land on a target that has already moved.
+    await expect(page.get_by_text(re.compile(r"^Consultando"))).to_have_count(0)
 
 
 async def rows(engine, uid):
@@ -86,6 +93,7 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
         try:
             address = core.backend.FRONT + f"/banca?casa={seeded['house']}"
             await page.goto(address)
+            await settled(page)
             section = page.get_by_role("region", name="Bancas")
             await expect(section).to_contain_text("Nenhuma banca ativa")
             first = await create(page, section, "Banca real", "1500,50")
@@ -126,6 +134,7 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
             key = parse_qs(urlsplit(page.url).query)["banca_intencao"][0]
             harness.frontend_proxy.after_api_response = None
             await page.reload()
+            await settled(page)
             assert parse_qs(urlsplit(page.url).query)["banca_intencao"] == [key]
             async with page.expect_response(
                 lambda r: r.url.endswith(BANCAS + "/intencao") and r.status == 200
@@ -149,6 +158,7 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
             )
             assert linked["banca_id"] == first["id"]
             await page.goto(address)
+            await settled(page)
             card = section.get_by_role("article", name="Banca real revisada")
             await expect(
                 card.get_by_role("button", name="Arquivar Banca real revisada")
@@ -204,6 +214,7 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
             # Isolation: the other owner sees no banca. Entering through the
             # SPA renews that idle session.
             await other.goto(core.backend.FRONT + "/banca")
+            await settled(other)
             await expect(other.get_by_role("region", name="Bancas")).to_contain_text(
                 "Nenhuma banca ativa"
             )
@@ -216,6 +227,7 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
                 "access"
             ] == "READ_ONLY"
             await page.goto(address)
+            await settled(page)
             await expect(
                 section.get_by_role("article", name="Banca real revisada")
             ).to_contain_text("R$ 1.500,50")
