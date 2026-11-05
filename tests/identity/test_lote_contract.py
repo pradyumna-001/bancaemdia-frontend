@@ -3,6 +3,7 @@
 import asyncio
 import importlib.util
 import os
+import re
 import secrets
 import sys
 import time
@@ -29,6 +30,12 @@ BETS = (
     "conta_casa_id FROM apostas WHERE usuario_id=:uid AND chave IS NOT NULL ORDER BY chave"
 )
 CASH = "SELECT count(*), COALESCE(sum(valor_centavos),0) FROM movimentos WHERE usuario_id=:uid"
+
+
+async def settled(page):
+    # Cards load independently and grow when their data arrives; a click
+    # computed before that can land on a target that has already moved.
+    await expect(page.get_by_text(re.compile(r"^Consultando"))).to_have_count(0)
 
 
 async def rows(engine, sql, uid):
@@ -105,6 +112,7 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
         try:
             address = core.backend.FRONT + f"/configuracoes?casa={seeded['house']}"
             await page.goto(address)
+            await settled(page)
             card = page.get_by_role("region", name="Apagar todas as apostas")
             await expect(card).to_contain_text("não exporta seus dados")
             phrase = await prepare(page, card)
@@ -148,6 +156,7 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
             harness.frontend_proxy.after_api_response = None
             # Reload keeps only the key: consultation is still possible.
             await page.reload()
+            await settled(page)
             async with page.expect_response(
                 lambda r: r.url.endswith(BATCHES + "/intencao") and r.status == 200
             ):
@@ -213,6 +222,7 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
             # Isolation and scope: other owner and cash untouched. Entering
             # through the SPA renews the other owner's idle session.
             await other.goto(core.backend.FRONT + "/configuracoes")
+            await settled(other)
             await expect(
                 other.get_by_role("region", name="Apagar todas as apostas")
             ).to_be_visible()
@@ -229,6 +239,7 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
                 "access"
             ] == "READ_ONLY"
             await page.goto(address + f"&lote={batch}")
+            await settled(page)
             await expect(card).to_contain_text("Lote restaurado em")
             phrase = await prepare(page, card)
             await phrase.fill(preview["frase"])
