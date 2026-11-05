@@ -10,6 +10,7 @@ import {
   porcentagem,
   porcentagemPontosBase,
   precoAssinatura,
+  quantidade,
   moedaDecimalCentavos,
   percentualDecimal,
   decimalEditavel,
@@ -263,4 +264,11 @@ it('mantém compactação de eixo separada dos valores exatos', () => {
   expect(moedaEixo(12345)).toContain('123,45');
   expect(moedaEixo(1234500)).toContain('mil');
   expect(() => moedaEixo(0.5)).toThrow();
+});
+
+it('quantidade agrupa contagens exatas e recusa valor não inteiro', () => {
+  expect(quantidade(1234567)).toBe('1.234.567');
+  expect(quantidade(0)).toBe('0');
+  expect(() => quantidade(1.5)).toThrow(RangeError);
+  expect(() => quantidade(Number.MAX_SAFE_INTEGER + 1)).toThrow(RangeError);
 });

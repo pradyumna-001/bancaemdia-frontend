@@ -107,6 +107,106 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/apostas/lotes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Apagar todas as apostas
+     * @description Apaga de uma vez, numa transação, todas as apostas ativas da prévia, com a mesma semântica do DELETE individual: um evento por aposta, nada removido fisicamente, visíveis com incluir_apagadas. Exige frase e token da prévia; 409 se o conjunto mudou, a prévia expirou ou outro lote está em curso. Idempotency-Key obrigatória: mesmo pedido devolve o recibo original. FULL_WRITE e CSRF; 402 sem efeito.
+     */
+    post: operations['apagar_todas_api_v1_apostas_lotes_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/apostas/lotes/intencao': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Recuperar lote de apostas
+     * @description Lê no primário a operação, o status e o recibo gravados para a Idempotency-Key após resposta perdida; 404 se nada foi gravado. Permitida em READ_ONLY.
+     */
+    get: operations['recuperar_intencao_api_v1_apostas_lotes_intencao_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/apostas/lotes/previa-apagar': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Prévia de apagar todas as apostas
+     * @description Conta as apostas ativas e devolve a frase que a pessoa precisa digitar e um token de confirmação assinado, válido por 10 minutos e preso a este conjunto exato. Escopo: apostas apenas; movimentos, bancas, cadastro, titulares, assinatura, Telegram e coleta não mudam.
+     */
+    get: operations['previa_apagar_api_v1_apostas_lotes_previa_apagar_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/apostas/lotes/{lote_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Consultar lote de apostas
+     * @description Recibo do lote, com contagem apagada e, se houver, quando e quantas foram restauradas. Permitida em READ_ONLY.
+     */
+    get: operations['consultar_lote_api_v1_apostas_lotes__lote_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/apostas/lotes/{lote_id}/restaurar': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Restaurar lote de apostas
+     * @description Restaura de uma vez exatamente as apostas que este lote apagou e que continuam apagadas; as alteradas uma a uma depois do lote ficam como estão. Um lote restaura uma vez (409 lote_restaurado). Idempotency-Key obrigatória; FULL_WRITE e CSRF.
+     */
+    post: operations['restaurar_lote_api_v1_apostas_lotes__lote_id__restaurar_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/apostas/{chave}': {
     parameters: {
       query?: never;
@@ -209,6 +309,90 @@ export interface paths {
      * @description Registra liquidação, cashout ou reabertura e rematerializa os valores financeiros.
      */
     post: operations['registrar_resultado_api_v1_apostas__chave__resultado_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/bancas': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Listar bancas
+     * @description Bancas do usuário com id, nome, estado (ativa/arquivada), capital inicial em centavos ou null (não informado) e contas vinculadas. Permitida em READ_ONLY.
+     */
+    get: operations['listar_bancas_api_v1_bancas_get'];
+    put?: never;
+    /**
+     * Criar banca
+     * @description Cria banca ativa; capital ausente ou null fica não informado e a progressão segue null. Nome único por usuário, inclusive entre arquivadas (409 nome_em_uso). Idempotency-Key obrigatória: mesmo pedido devolve a resposta original, outro pedido 409. FULL_WRITE e CSRF.
+     */
+    post: operations['criar_banca_api_v1_bancas_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/bancas/intencao': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Recuperar escrita de banca
+     * @description Lê no primário a operação, o status e a resposta gravados para a Idempotency-Key após resposta perdida; 404 se nada foi gravado. Permitida em READ_ONLY.
+     */
+    get: operations['recuperar_intencao_api_v1_bancas_intencao_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/bancas/{banca_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Alterar banca
+     * @description Renomeia ou define/remove o capital inicial (null apaga); só os campos enviados mudam. Banca arquivada recusa com 409 banca_arquivada. Idempotency-Key obrigatória; FULL_WRITE e CSRF.
+     */
+    patch: operations['alterar_banca_api_v1_bancas__banca_id__patch'];
+    trace?: never;
+  };
+  '/api/v1/bancas/{banca_id}/arquivar': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Arquivar banca
+     * @description Marca a banca como arquivada sem apagar movimentos, apostas nem vínculos históricos. Recusa com 409 banca_com_contas enquanto houver conta vinculada; banca arquivada não aceita novos vínculos. Idempotency-Key obrigatória; FULL_WRITE e CSRF.
+     */
+    post: operations['arquivar_banca_api_v1_bancas__banca_id__arquivar_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -719,6 +903,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/coleta/reader-captures': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Receber fonte textual com moeda nativa
+     * @description ReaderEnvelope lossless reader-capture-1 por X-Coleta-Token/HTTPS. Preserva USDT exato; conta pelo jogo e multicontas explícita. Duplicatas são no-op; conflitos sem versão vão à revisão. Admissão fechada até corpus financeiro aprovado e ativação explícita. Não altera coleta-v2.
+     */
+    post: operations['capture_api_v1_coleta_reader_captures_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/coleta/sessions': {
     parameters: {
       query?: never;
@@ -843,6 +1047,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/financeiro/nativo/apostas': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Listar apostas com moeda nativa
+     * @description Lista fatos do ledger nativo, incluindo os pendentes de revisão, por jogo/id decrescente. Valores exatos em texto, moeda explícita e retorno bruto; lucro calculado no servidor.
+     */
+    get: operations['list_bets_api_v1_financeiro_nativo_apostas_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/financeiro/nativo/contas': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Listar contas com moeda explícita
+     * @description Lista até 100 contas nativas do usuário, incluindo intervalos históricos. As contas legadas em reais permanecem em seu contrato vigente.
+     */
+    get: operations['list_accounts_api_v1_financeiro_nativo_contas_get'];
+    put?: never;
+    /**
+     * Criar conta com moeda explícita
+     * @description Cria conta do usuário autenticado em BRL ou USDT, com intervalo do jogo [valid_from, valid_to). Não converte nem movimenta saldo.
+     */
+    post: operations['create_account_api_v1_financeiro_nativo_contas_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/financeiro/nativo/resumo': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Consultar totais por moeda
+     * @description Agrupa somente fatos do ledger nativo por moeda, com decimais em texto. Exclui revisão/conta não atribuída; filtra pelo jogo [since, until). Não soma BRL com USDT nem inclui o ledger legado de centavos.
+     */
+    get: operations['summary_api_v1_financeiro_nativo_resumo_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/grupos': {
     parameters: {
       query?: never;
@@ -854,7 +1122,7 @@ export interface paths {
     put?: never;
     /**
      * Criar grupo privado de apostas
-     * @description Cria grupo explicitamente pertencente ao usuário; não infere vínculos de tipsters ou nomes. Escrita auditada e sujeita ao acesso vigente.
+     * @description Cria grupo ativo explicitamente pertencente ao usuário; arquivado é aplicado somente no PATCH. Não infere vínculos de tipsters ou nomes. Escrita auditada e sujeita ao acesso vigente.
      */
     post: operations['criar_grupo_api_v1_grupos_post'];
     delete?: never;
@@ -1995,6 +2263,66 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/unidade': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Consultar valor da unidade
+     * @description Unidade vigente agora e histórico de vigências do usuário, com centavos exatos, origem (padrao/usuario) e início no fuso do usuário. Sem vigência vale o padrão de 10.000 centavos. Permitida em READ_ONLY.
+     */
+    get: operations['consultar_unidade_api_v1_unidade_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/unidade/vigencias': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Definir valor da unidade
+     * @description Abre nova vigência no instante do servidor e encerra a anterior nesse instante. Apostas existentes guardam a unidade com que foram criadas e não mudam; criação manual, coleta, Telegram e XLSX leem a vigência do instante da aposta. Idempotency-Key obrigatória: mesmo corpo devolve o recibo original, corpo diferente 409. FULL_WRITE e CSRF.
+     */
+    post: operations['definir_unidade_api_v1_unidade_vigencias_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/unidade/vigencias/intencao': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Recuperar troca de unidade
+     * @description Lê no primário o recibo gravado para a Idempotency-Key após resposta perdida; 404 se nada foi gravado. Não cria nem renova vigência. Permitida em READ_ONLY.
+     */
+    get: operations['recuperar_intencao_api_v1_unidade_vigencias_intencao_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/upload': {
     parameters: {
       query?: never;
@@ -2596,6 +2924,67 @@ export interface components {
       code: string;
       /** Detail */
       detail: string;
+    };
+    /** BancaAlteracao */
+    BancaAlteracao: {
+      /** Nome */
+      nome?: string | null;
+      /** Saldo Inicial Centavos */
+      saldo_inicial_centavos?: number | null;
+    };
+    /** BancaInvalidaSaida */
+    BancaInvalidaSaida: {
+      /** Campos */
+      campos: components['schemas']['bancaemdia__api__v1__bancas__CampoInvalidoSaida'][];
+      /**
+       * Detail
+       * @constant
+       */
+      detail: 'banca_invalida';
+    };
+    /** BancaNova */
+    BancaNova: {
+      /** Nome */
+      nome: string;
+      /** Saldo Inicial Centavos */
+      saldo_inicial_centavos?: number | null;
+    };
+    /** BancaSaida */
+    BancaSaida: {
+      /** Arquivada Em */
+      arquivada_em: string | null;
+      /** Contas */
+      contas: components['schemas']['ContaVinculadaSaida'][];
+      /**
+       * Estado
+       * @enum {string}
+       */
+      estado: 'ativa' | 'arquivada';
+      /** Id */
+      id: number;
+      /** Nome */
+      nome: string;
+      /** Saldo Inicial Centavos */
+      saldo_inicial_centavos: number | null;
+    };
+    /** @description Política da operação: modos de acesso comercial em que ela pode ter efeito, retry automático permitido ao cliente e identidade de idempotência com retenção e recuperação. */
+    BancaemdiaPolicy: {
+      access_modes: ('FULL_WRITE' | 'READ_ONLY')[];
+      automatic_retry: {
+        allowed: boolean;
+        max_attempts: number | null;
+      };
+      idempotency: {
+        identity: string;
+        recovery: string | null;
+        /** @enum {string|null} */
+        retention: 'until_account_deletion' | 'while_resource_exists' | null;
+      };
+    };
+    /** BancasSaida */
+    BancasSaida: {
+      /** Bancas */
+      bancas: components['schemas']['BancaSaida'][];
     };
     /** BankrollRequest */
     BankrollRequest: {
@@ -3277,6 +3666,15 @@ export interface components {
       /** Titular Nome */
       titular_nome: string | null;
     };
+    /** ContaVinculadaSaida */
+    ContaVinculadaSaida: {
+      /** Apelido */
+      apelido: string;
+      /** Casa Id */
+      casa_id: number;
+      /** Id */
+      id: number;
+    };
     ContagemHipotetica: number;
     /**
      * Correcao
@@ -3356,6 +3754,22 @@ export interface components {
       recusadas: number;
       /** Revisoes */
       revisoes: number;
+    };
+    /** CurrencyTotals */
+    CurrencyTotals: {
+      /** Bets */
+      bets: number;
+      /**
+       * Currency
+       * @enum {string}
+       */
+      currency: 'BRL' | 'USDT';
+      /** Profit */
+      profit: string;
+      /** Returned */
+      returned: string;
+      /** Stake */
+      stake: string;
     };
     /** DatasetFiltrado */
     DatasetFiltrado: {
@@ -3737,6 +4151,7 @@ export interface components {
     GrupoEntrada: {
       /**
        * Arquivado
+       * @description Na criação o grupo sempre nasce ativo; arquivado é aplicado somente no PATCH.
        * @default false
        */
       arquivado: boolean;
@@ -4183,6 +4598,55 @@ export interface components {
       /** Logged Out */
       logged_out: boolean;
     };
+    /** LoteInvalidoSaida */
+    LoteInvalidoSaida: {
+      /** Campos */
+      campos: components['schemas']['bancaemdia__api__v1__apostas_lotes__CampoInvalidoSaida'][];
+      /**
+       * Detail
+       * @constant
+       */
+      detail: 'lote_invalido';
+    };
+    /** LoteNovo */
+    LoteNovo: {
+      /**
+       * Acao
+       * @constant
+       */
+      acao: 'apagar_todas';
+      /** Confirmacao */
+      confirmacao: string;
+      /** Frase */
+      frase: string;
+    };
+    LoteRecusadoSaida:
+      | components['schemas']['LoteInvalidoSaida']
+      | components['schemas']['ErrorResponse'];
+    /** LoteSaida */
+    LoteSaida: {
+      /** Apostas Afetadas */
+      apostas_afetadas: number;
+      /** Apostas Restauradas */
+      apostas_restauradas: number | null;
+      /**
+       * Criado Em
+       * Format: date-time
+       */
+      criado_em: string;
+      /**
+       * Escopo
+       * @constant
+       */
+      escopo: 'apostas';
+      /**
+       * Lote Id
+       * Format: uuid
+       */
+      lote_id: string;
+      /** Restaurado Em */
+      restaurado_em: string | null;
+    };
     /** ManualAssignmentNotice */
     ManualAssignmentNotice: {
       /**
@@ -4298,9 +4762,15 @@ export interface components {
       comissao_centavos?: string | null;
       /** Conta Casa Id */
       conta_casa_id?: string | null;
-      /** Data Aposta */
+      /**
+       * Data Aposta
+       * @description Omitida ou null: relógio do servidor somente na primeira criação; replay conserva a confirmação original. Não define a conta temporal.
+       */
       data_aposta?: string | null;
-      /** Data Jogo */
+      /**
+       * Data Jogo
+       * @description Define a conta pelo instante do jogo. Ausente ou ambígua: revisão sem presumir conta pela data da aposta. Multicontas explícita usa a conta informada.
+       */
       data_jogo?: string | null;
       /** Descricao */
       descricao?: string | null;
@@ -4801,6 +5271,124 @@ export interface components {
       data: components['schemas']['MovimentoSaida'][];
       pagination: components['schemas']['PaginacaoSaida'];
     };
+    /** NativeAccountCreate */
+    NativeAccountCreate: {
+      /** Casa Id */
+      casa_id: number;
+      /**
+       * Currency
+       * @enum {string}
+       */
+      currency: 'BRL' | 'USDT';
+      /** Label */
+      label: string;
+      /**
+       * Valid From
+       * Format: date-time
+       */
+      valid_from: string;
+      /** Valid To */
+      valid_to?: string | null;
+    };
+    /** NativeAccountResponse */
+    NativeAccountResponse: {
+      /** Active */
+      active: boolean;
+      /** Casa Id */
+      casa_id: number;
+      /**
+       * Currency
+       * @enum {string}
+       */
+      currency: 'BRL' | 'USDT';
+      /** Id */
+      id: number;
+      /** Label */
+      label: string;
+      /**
+       * Valid From
+       * Format: date-time
+       */
+      valid_from: string;
+      /** Valid To */
+      valid_to?: string | null;
+    };
+    /** NativeBetResponse */
+    NativeBetResponse: {
+      /** Account Id */
+      account_id: number | null;
+      /**
+       * Currency
+       * @enum {string}
+       */
+      currency: 'BRL' | 'USDT';
+      /**
+       * Game At
+       * Format: date-time
+       */
+      game_at: string;
+      /** Id */
+      id: number;
+      /** Needs Review */
+      needs_review: boolean;
+      /**
+       * Placed At
+       * Format: date-time
+       */
+      placed_at: string;
+      /** Profit */
+      profit: string;
+      /** Returned */
+      returned: string;
+      /** Stake */
+      stake: string;
+      /**
+       * State
+       * @enum {string}
+       */
+      state: 'GREEN' | 'RED';
+    };
+    /** NativeCapture */
+    NativeCapture: {
+      envelope: components['schemas']['SourceTextEnvelope'];
+      /** Explicit Account Id */
+      explicit_account_id?: number | null;
+      /**
+       * Multicontas
+       * @default false
+       */
+      multicontas: boolean;
+      /**
+       * Transport Contract
+       * @constant
+       */
+      transport_contract: 'reader-capture-1';
+    };
+    /** NativeCaptureResponse */
+    NativeCaptureResponse: {
+      /** Bet Id */
+      bet_id: number;
+      /** Needs Review */
+      needs_review: boolean;
+      /**
+       * Result
+       * @enum {string}
+       */
+      result: 'created' | 'account_review' | 'noop' | 'conflict_review';
+    };
+    /** NativeSummaryResponse */
+    NativeSummaryResponse: {
+      /** Combined Monetary Total */
+      combined_monetary_total?: null;
+      /**
+       * Money Contract
+       * @default 2
+       * @constant
+       */
+      money_contract: 2;
+      /** Totals By Currency */
+      totals_by_currency: components['schemas']['CurrencyTotals'][];
+    };
     /** ObservedTransport */
     ObservedTransport: {
       /** Adapter Version */
@@ -4889,7 +5477,10 @@ export interface components {
        * Format: date-time
        */
       criada_em: string;
-      /** Encerrada Em */
+      /**
+       * Encerrada Em
+       * @description Null para seleção atual; timestamp obrigatório para ultima_encerrada.
+       */
       encerrada_em: string | null;
       /**
        * Selecao
@@ -5058,6 +5649,25 @@ export interface components {
       criadas: number;
       /** Ignoradas */
       ignoradas: number;
+    };
+    /** PreviaSaida */
+    PreviaSaida: {
+      /** Confirmacao */
+      confirmacao: string;
+      /**
+       * Escopo
+       * @constant
+       */
+      escopo: 'apostas';
+      /**
+       * Expira Em
+       * Format: date-time
+       */
+      expira_em: string;
+      /** Frase */
+      frase: string;
+      /** Total */
+      total: number;
     };
     /** PreviewPage */
     PreviewPage: {
@@ -5357,6 +5967,23 @@ export interface components {
        * @enum {string}
        */
       status: 'ready' | 'not_ready';
+    };
+    /** ReciboVigenciaSaida */
+    ReciboVigenciaSaida: {
+      anterior: components['schemas']['VigenciaSaida'];
+      /**
+       * Apostas Existentes Alteradas
+       * @constant
+       */
+      apostas_existentes_alteradas: 0;
+      /** Fuso Horario */
+      fuso_horario: string;
+      /**
+       * Vale A Partir De
+       * Format: date-time
+       */
+      vale_a_partir_de: string;
+      vigencia: components['schemas']['VigenciaSaida'];
     };
     /** RemapInput */
     RemapInput: {
@@ -5962,6 +6589,23 @@ export interface components {
       /** Nome */
       nome: string;
     };
+    /** SourceLocation */
+    SourceLocation: {
+      /**
+       * Channel
+       * @enum {string}
+       */
+      channel: 'fetch' | 'xhr' | 'websocket';
+      /**
+       * Direction
+       * @enum {string}
+       */
+      direction: 'observed_response' | 'received_frame';
+      /** Endpoint */
+      endpoint: string;
+      /** Frame Signature */
+      frame_signature?: string | null;
+    };
     /** SourcePage */
     SourcePage: {
       /** Data */
@@ -5972,6 +6616,32 @@ export interface components {
       page_size: number;
       /** Total */
       total: number;
+    };
+    /**
+     * SourceTextEnvelope
+     * @description Distinct OpenAPI name preserves the existing collection-v2 ReaderEnvelope schema.
+     */
+    SourceTextEnvelope: {
+      /** Brand */
+      brand: string;
+      /**
+       * Captured At
+       * Format: date-time
+       */
+      captured_at: string;
+      /** Content Hash */
+      content_hash: string;
+      /** Content Type */
+      content_type: string;
+      /** Envelope Schema */
+      envelope_schema: number;
+      /** Hostname */
+      hostname: string;
+      /** Payload Text */
+      payload_text: string;
+      /** Raw Schema Version */
+      raw_schema_version: string;
+      source: components['schemas']['SourceLocation'];
     };
     /** SourceView */
     SourceView: {
@@ -6208,6 +6878,28 @@ export interface components {
        */
       revisao_esperada: string;
     };
+    /** UnidadeInvalidaSaida */
+    UnidadeInvalidaSaida: {
+      /** Campos */
+      campos: components['schemas']['bancaemdia__api__v1__unidade__CampoInvalidoSaida'][];
+      /**
+       * Detail
+       * @constant
+       */
+      detail: 'unidade_invalida';
+    };
+    /** UnidadeSaida */
+    UnidadeSaida: {
+      /** Fuso Horario */
+      fuso_horario: string;
+      /** Historico */
+      historico: components['schemas']['VigenciaSaida'][];
+      /** Limite Centavos */
+      limite_centavos: number;
+      /** Padrao Centavos */
+      padrao_centavos: number;
+      vigente: components['schemas']['VigenciaSaida'];
+    };
     /** UploadAcceptedResponse */
     UploadAcceptedResponse: {
       /** Aviso */
@@ -6307,6 +6999,29 @@ export interface components {
       /** Type */
       type: string;
     };
+    /** VigenciaNova */
+    VigenciaNova: {
+      /** Valor Centavos */
+      valor_centavos: number;
+    };
+    /** VigenciaSaida */
+    VigenciaSaida: {
+      /** Id */
+      id: number | null;
+      /**
+       * Origem
+       * @enum {string}
+       */
+      origem: 'padrao' | 'usuario';
+      /** Valor Centavos */
+      valor_centavos: number;
+      /** Vigente Ate */
+      vigente_ate: string | null;
+      /** Vigente De */
+      vigente_de: string | null;
+      /** Vigente De Local */
+      vigente_de_local: string | null;
+    };
     /** VinculoBancaNovo */
     VinculoBancaNovo: {
       /** Banca Id */
@@ -6324,6 +7039,56 @@ export interface components {
      * @enum {string}
      */
     VisibilidadeApostas: 'ativas' | 'apagadas' | 'todas';
+    /** CampoInvalidoSaida */
+    bancaemdia__api__v1__apostas_lotes__CampoInvalidoSaida: {
+      /** Campo */
+      campo: string;
+      /**
+       * Codigo
+       * @enum {string}
+       */
+      codigo: 'obrigatorio' | 'tamanho' | 'desconhecido' | 'invalido';
+    };
+    /** IntencaoSaida */
+    bancaemdia__api__v1__apostas_lotes__IntencaoSaida: {
+      /**
+       * Operacao
+       * @enum {string}
+       */
+      operacao: 'APAGAR' | 'RESTAURAR';
+      resposta: components['schemas']['LoteSaida'];
+      /** Status Code */
+      status_code: number;
+    };
+    /** CampoInvalidoSaida */
+    bancaemdia__api__v1__bancas__CampoInvalidoSaida: {
+      /** Campo */
+      campo: string;
+      /**
+       * Codigo
+       * @enum {string}
+       */
+      codigo:
+        | 'obrigatorio'
+        | 'inteiro'
+        | 'nao_negativo'
+        | 'acima_do_limite'
+        | 'tamanho'
+        | 'vazio'
+        | 'desconhecido'
+        | 'invalido';
+    };
+    /** IntencaoSaida */
+    bancaemdia__api__v1__bancas__IntencaoSaida: {
+      /**
+       * Operacao
+       * @enum {string}
+       */
+      operacao: 'CRIAR' | 'ALTERAR' | 'ARQUIVAR';
+      resposta: components['schemas']['BancaSaida'];
+      /** Status Code */
+      status_code: number;
+    };
     /** SaldoSaida */
     bancaemdia__api__v1__caixa__SaldoSaida: {
       /** Bancas */
@@ -6357,6 +7122,22 @@ export interface components {
       saldo_conhecido_centavos: number;
       /** Saldo Total Centavos */
       saldo_total_centavos: number | null;
+    };
+    /** CampoInvalidoSaida */
+    bancaemdia__api__v1__unidade__CampoInvalidoSaida: {
+      /** Campo */
+      campo: string;
+      /**
+       * Codigo
+       * @enum {string}
+       */
+      codigo:
+        | 'obrigatorio'
+        | 'inteiro'
+        | 'positivo'
+        | 'acima_do_limite'
+        | 'desconhecido'
+        | 'invalido';
     };
   };
   responses: never;
@@ -6398,15 +7179,6 @@ export interface operations {
       };
       /** @description Missing, expired, or invalid bearer token. */
       401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
         headers: {
           [name: string]: unknown;
         };
@@ -6508,15 +7280,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Explicit catalog operator authorization required. */
       403: {
         headers: {
@@ -6600,7 +7363,7 @@ export interface operations {
         conta_casa_id?: number | string | null;
         /** @description ID BIGINT do grupo privado, vínculo explícito por aposta. Ausente ou de outro usuário produz seleção vazia. */
         grupo_id?: number | string | null;
-        /** @description ID BIGINT da banca gravada na aposta; não usa a banca atual da conta. Ausente ou de outro usuário produz seleção vazia. */
+        /** @description Identificador da banca do usuário. */
         banca_id?: number | string | null;
         /** @description Estado de liquidação da aposta usado como filtro. */
         estado?: string | null;
@@ -6633,15 +7396,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -6824,15 +7578,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -7155,6 +7900,461 @@ export interface operations {
       };
     };
   };
+  apagar_todas_api_v1_apostas_lotes_post: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LoteNovo'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LoteSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Cookie mutation requires exact Origin and current CSRF proof. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description confirmacao_desatualizada, confirmacao_expirada, nada_a_apagar, lote_em_curso ou idempotency_key_conflict. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request body exceeds this endpoint's streaming limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          /** @example Content Too Large */
+          'text/plain': string;
+        };
+      };
+      /** @description lote_invalido (código por campo), frase_incorreta ou confirmacao_invalida; sem msg/input/ctx. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LoteRecusadoSaida'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  recuperar_intencao_api_v1_apostas_lotes_intencao_get: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['bancaemdia__api__v1__apostas_lotes__IntencaoSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description intencao_nao_encontrada: nenhum lote foi gravado com esta chave. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description lote_invalido (código por campo), frase_incorreta ou confirmacao_invalida; sem msg/input/ctx. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LoteRecusadoSaida'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  previa_apagar_api_v1_apostas_lotes_previa_apagar_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PreviaSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  consultar_lote_api_v1_apostas_lotes__lote_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Identificador do lote de exclusão devolvido no recibo. */
+        lote_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LoteSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description lote_nao_encontrado. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  restaurar_lote_api_v1_apostas_lotes__lote_id__restaurar_post: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path: {
+        /** @description Identificador do lote de exclusão devolvido no recibo. */
+        lote_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LoteSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Cookie mutation requires exact Origin and current CSRF proof. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description lote_nao_encontrado. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description lote_restaurado, lote_em_curso ou idempotency_key_conflict. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description lote_invalido (código por campo), frase_incorreta ou confirmacao_invalida; sem msg/input/ctx. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LoteRecusadoSaida'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   ver_aposta_api_v1_apostas__chave__get: {
     parameters: {
       query?: never;
@@ -7181,15 +8381,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -7899,6 +9090,505 @@ export interface operations {
       };
     };
   };
+  listar_bancas_api_v1_bancas_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BancasSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  criar_banca_api_v1_bancas_post: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BancaNova'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BancaSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Cookie mutation requires exact Origin and current CSRF proof. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description nome_em_uso ou idempotency_key_conflict. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request body exceeds this endpoint's streaming limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          /** @example Content Too Large */
+          'text/plain': string;
+        };
+      };
+      /** @description Pedido inválido; um código estável por campo, sem msg/input/ctx. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BancaInvalidaSaida'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  recuperar_intencao_api_v1_bancas_intencao_get: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['bancaemdia__api__v1__bancas__IntencaoSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description intencao_nao_encontrada: nenhuma escrita foi gravada com esta chave. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Pedido inválido; um código estável por campo, sem msg/input/ctx. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BancaInvalidaSaida'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  alterar_banca_api_v1_bancas__banca_id__patch: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path: {
+        /** @description Identificador da banca do usuário. */
+        banca_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BancaAlteracao'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BancaSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Cookie mutation requires exact Origin and current CSRF proof. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description banca_nao_encontrada. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description nome_em_uso, banca_arquivada ou idempotency_key_conflict. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request body exceeds this endpoint's streaming limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          /** @example Content Too Large */
+          'text/plain': string;
+        };
+      };
+      /** @description Pedido inválido; um código estável por campo, sem msg/input/ctx. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BancaInvalidaSaida'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  arquivar_banca_api_v1_bancas__banca_id__arquivar_post: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path: {
+        /** @description Identificador da banca do usuário. */
+        banca_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BancaSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Cookie mutation requires exact Origin and current CSRF proof. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description banca_nao_encontrada. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description banca_com_contas (desvincule as contas antes), banca_arquivada ou idempotency_key_conflict. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Pedido inválido; um código estável por campo, sem msg/input/ctx. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BancaInvalidaSaida'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   billing_cancel_api_v1_billing_cancel_post: {
     parameters: {
       query?: never;
@@ -7924,15 +9614,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -8026,15 +9707,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Cookie mutation requires exact Origin and current CSRF proof. */
       403: {
         headers: {
@@ -8122,15 +9794,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Billing configuration or current subscription prevents this action. */
       409: {
         headers: {
@@ -8210,15 +9873,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -8401,15 +10055,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -8645,6 +10290,15 @@ export interface operations {
           'application/json': components['schemas']['ErroSaida'];
         };
       };
+      /** @description A banca está arquivada */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErroSaida'];
+        };
+      };
       /** @description The request body exceeds this endpoint's streaming limit. */
       413: {
         headers: {
@@ -8735,15 +10389,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description The request does not satisfy the published contract or a domain rule. */
       422: {
         headers: {
@@ -8810,15 +10455,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -8892,15 +10528,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -8999,15 +10626,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Cookie mutation requires exact Origin and current CSRF proof. */
       403: {
         headers: {
@@ -9094,15 +10712,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -9201,15 +10810,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Cookie mutation requires exact Origin and current CSRF proof. */
       403: {
         headers: {
@@ -9302,15 +10902,6 @@ export interface operations {
       };
       /** @description Missing, expired, or invalid bearer token. */
       401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
         headers: {
           [name: string]: unknown;
         };
@@ -9761,15 +11352,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: retain the extension outbox. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Invalid collection token. */
       403: {
         headers: {
@@ -9866,15 +11448,6 @@ export interface operations {
       };
       /** @description Missing, expired, or invalid bearer token. */
       401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: retain the extension outbox. */
-      402: {
         headers: {
           [name: string]: unknown;
         };
@@ -10083,15 +11656,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: retain the extension outbox. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Cookie mutation requires exact Origin and current CSRF proof. */
       403: {
         headers: {
@@ -10185,15 +11749,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: retain the extension outbox. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -10409,15 +11964,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: retain the extension outbox. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Cookie mutation requires exact Origin and current CSRF proof. */
       403: {
         headers: {
@@ -10516,15 +12062,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: retain the extension outbox. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Invalid collection token. */
       403: {
         headers: {
@@ -10581,6 +12118,112 @@ export interface operations {
         };
       };
       /** @description The collection was saved but could not be queued. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  capture_api_v1_coleta_reader_captures_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['NativeCapture'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NativeCaptureResponse'];
+        };
+      };
+      /** @description Malformed collection payload. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: retain the extension outbox. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Invalid collection token. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request body exceeds this endpoint's streaming limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          /** @example Content Too Large */
+          'text/plain': string;
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The collection rate or daily limit was exceeded. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Native corpus admission is closed; retain capture without claiming ingestion. */
       503: {
         headers: {
           [name: string]: unknown;
@@ -10975,15 +12618,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: retain the extension outbox. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Invalid collection token. */
       403: {
         headers: {
@@ -11297,9 +12931,320 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  list_bets_api_v1_financeiro_nativo_apostas_get: {
+    parameters: {
+      query?: {
+        /** @description Máximo de apostas nativas, entre 1 e 100; padrão 50. */
+        limit?: number;
+        /** @description Moeda nativa explícita, BRL ou USDT; sem conversão. */
+        currency?: ('BRL' | 'USDT') | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NativeBetResponse'][];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  list_accounts_api_v1_financeiro_nativo_contas_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NativeAccountResponse'][];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  create_account_api_v1_financeiro_nativo_contas_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['NativeAccountCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NativeAccountResponse'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
       /** @description account_read_only: writes require confirmed trial or paid access. */
       402: {
         headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Cookie mutation requires exact Origin and current CSRF proof. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request body exceeds this endpoint's streaming limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          /** @example Content Too Large */
+          'text/plain': string;
+        };
+      };
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  summary_api_v1_financeiro_nativo_resumo_get: {
+    parameters: {
+      query?: {
+        /** @description Início inclusivo pelo instante do jogo, com fuso explícito. */
+        since?: string | null;
+        /** @description Fim exclusivo pelo instante do jogo, com fuso explícito. */
+        until?: string | null;
+        /** @description ID da conta nativa do próprio usuário; inexistente ou de terceiro retorna conjunto vazio. */
+        account_id?: number | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NativeSummaryResponse'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
           [name: string]: unknown;
         };
         content: {
@@ -11684,15 +13629,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description The request does not satisfy the published contract or a domain rule. */
       422: {
         headers: {
@@ -11765,15 +13701,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -11858,15 +13785,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description The request does not satisfy the published contract or a domain rule. */
       422: {
         headers: {
@@ -11932,7 +13850,7 @@ export interface operations {
         conta_casa_id?: number | string | null;
         /** @description ID BIGINT do grupo privado, vínculo explícito por aposta. Ausente ou de outro usuário produz seleção vazia. */
         grupo_id?: number | string | null;
-        /** @description ID BIGINT da banca gravada na aposta; não usa a banca atual da conta. Ausente ou de outro usuário produz seleção vazia. */
+        /** @description Identificador da banca do usuário. */
         banca_id?: number | string | null;
         /** @description Estado de liquidação da aposta usado como filtro. */
         estado?: string | null;
@@ -11965,15 +13883,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -12045,7 +13954,7 @@ export interface operations {
         conta_casa_id?: number | string | null;
         /** @description ID BIGINT do grupo privado, vínculo explícito por aposta. Ausente ou de outro usuário produz seleção vazia. */
         grupo_id?: number | string | null;
-        /** @description ID BIGINT da banca gravada na aposta; não usa a banca atual da conta. Ausente ou de outro usuário produz seleção vazia. */
+        /** @description Identificador da banca do usuário. */
         banca_id?: number | string | null;
         /** @description Estado de liquidação da aposta usado como filtro. */
         estado?: string | null;
@@ -12078,15 +13987,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -12164,7 +14064,7 @@ export interface operations {
         conta_casa_id?: number | string | null;
         /** @description ID BIGINT do grupo privado, vínculo explícito por aposta. Ausente ou de outro usuário produz seleção vazia. */
         grupo_id?: number | string | null;
-        /** @description ID BIGINT da banca gravada na aposta; não usa a banca atual da conta. Ausente ou de outro usuário produz seleção vazia. */
+        /** @description Identificador da banca do usuário. */
         banca_id?: number | string | null;
         /** @description Estado de liquidação da aposta usado como filtro. */
         estado?: string | null;
@@ -12197,15 +14097,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -12277,7 +14168,7 @@ export interface operations {
         conta_casa_id?: number | string | null;
         /** @description ID BIGINT do grupo privado, vínculo explícito por aposta. Ausente ou de outro usuário produz seleção vazia. */
         grupo_id?: number | string | null;
-        /** @description ID BIGINT da banca gravada na aposta; não usa a banca atual da conta. Ausente ou de outro usuário produz seleção vazia. */
+        /** @description Identificador da banca do usuário. */
         banca_id?: number | string | null;
         /** @description Estado de liquidação da aposta usado como filtro. */
         estado?: string | null;
@@ -12310,15 +14201,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -12394,7 +14276,7 @@ export interface operations {
         conta_casa_id?: number | string | null;
         /** @description ID BIGINT do grupo privado, vínculo explícito por aposta. Ausente ou de outro usuário produz seleção vazia. */
         grupo_id?: number | string | null;
-        /** @description ID BIGINT da banca gravada na aposta; não usa a banca atual da conta. Ausente ou de outro usuário produz seleção vazia. */
+        /** @description Identificador da banca do usuário. */
         banca_id?: number | string | null;
         /** @description Estado de liquidação da aposta usado como filtro. */
         estado?: string | null;
@@ -12427,15 +14309,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -12507,7 +14380,7 @@ export interface operations {
         conta_casa_id?: number | string | null;
         /** @description ID BIGINT do grupo privado, vínculo explícito por aposta. Ausente ou de outro usuário produz seleção vazia. */
         grupo_id?: number | string | null;
-        /** @description ID BIGINT da banca gravada na aposta; não usa a banca atual da conta. Ausente ou de outro usuário produz seleção vazia. */
+        /** @description Identificador da banca do usuário. */
         banca_id?: number | string | null;
         /** @description Estado de liquidação da aposta usado como filtro. */
         estado?: string | null;
@@ -12540,15 +14413,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -12598,10 +14462,10 @@ export interface operations {
   consultar_hipotetica_api_v1_painel_hipotetica_get: {
     parameters: {
       query?: {
-        /** @description Lê no primário quando verdadeiro, sem forçar refresh das materialized views. */
-        fresh?: boolean;
         /** @description Janela civil no fuso America/Sao_Paulo, aplicada a data_aposta. Lista/visão filtrada: omissão inclui todo o histórico, não combinar com desde/ate. Painel materializado legado: padrão 30d. */
         periodo?: components['schemas']['PeriodoPainel'] | null;
+        /** @description Lê no primário quando verdadeiro, sem forçar refresh das materialized views. */
+        fresh?: boolean;
         /** @description data_aposta: limite inicial inclusivo, ISO 8601 com offset; legado sem offset significa UTC. Não combinar com periodo na lista/visão filtrada. */
         desde?: string | null;
         /** @description data_aposta: limite final exclusivo, ISO 8601 com offset; legado sem offset significa UTC. Não combinar com periodo na lista/visão filtrada. */
@@ -12620,7 +14484,7 @@ export interface operations {
         conta_casa_id?: number | string | null;
         /** @description ID BIGINT do grupo privado, vínculo explícito por aposta. Ausente ou de outro usuário produz seleção vazia. */
         grupo_id?: number | string | null;
-        /** @description ID BIGINT da banca gravada na aposta; não usa a banca atual da conta. Ausente ou de outro usuário produz seleção vazia. */
+        /** @description Identificador da banca do usuário. */
         banca_id?: number | string | null;
         /** @description Estado de liquidação da aposta usado como filtro. */
         estado?: string | null;
@@ -12731,15 +14595,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -12913,15 +14768,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -13200,15 +15046,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description The request does not satisfy the published contract or a domain rule. */
       422: {
         headers: {
@@ -13272,15 +15109,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -13466,15 +15294,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Recusa segura de importação */
       409: {
         headers: {
@@ -13581,15 +15400,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -13846,15 +15656,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Recusa segura de importação */
       409: {
         headers: {
@@ -13961,15 +15762,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -14362,15 +16154,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Recusa segura de importação */
       409: {
         headers: {
@@ -14482,15 +16265,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -15329,15 +17103,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Código estável de recusa do fluxo de resultados */
       403: {
         headers: {
@@ -15417,7 +17182,7 @@ export interface operations {
   queue_api_v1_resultados_fila_get: {
     parameters: {
       query?: {
-        /** @description Cursor de Resultados privado por 30 minutos. */
+        /** @description Cursor privado vinculado à pessoa/filtros/fronteira, válido por 30 minutos; não usar offset. */
         cursor?: string | null;
         /** @description Quantidade máxima de itens retornados na página. */
         page_size?: number;
@@ -15431,7 +17196,7 @@ export interface operations {
         titular_id?: number | null;
         /** @description Identificador da conta da casa usada como filtro. */
         conta_casa_id?: number | null;
-        /** @description ID BIGINT da banca gravada na aposta; não usa a banca atual da conta. Ausente ou de outro usuário produz seleção vazia. */
+        /** @description Identificador da banca do usuário. */
         banca_id?: number | null;
         /** @description Identificador canônico do tipster usado como filtro. */
         tipster_id?: number | null;
@@ -15477,15 +17242,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -15594,15 +17350,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -15987,15 +17734,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description The request does not satisfy the published contract or a domain rule. */
       422: {
         headers: {
@@ -16079,15 +17817,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -16196,15 +17925,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -16450,15 +18170,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Código público e campo seguro; sem detalhes internos. */
       403: {
         headers: {
@@ -16570,15 +18281,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Código público e campo seguro; sem detalhes internos. */
       403: {
         headers: {
@@ -16684,15 +18386,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description The request does not satisfy the published contract or a domain rule. */
       422: {
         headers: {
@@ -16759,15 +18452,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -16853,15 +18537,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -17070,15 +18745,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description The request does not satisfy the published contract or a domain rule. */
       422: {
         headers: {
@@ -17142,15 +18808,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -17229,15 +18886,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -17325,15 +18973,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -17513,15 +19152,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description The request does not satisfy the published contract or a domain rule. */
       422: {
         headers: {
@@ -17596,15 +19226,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -17799,15 +19420,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -18011,15 +19623,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -18594,9 +20197,69 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
+      /** @description The request does not satisfy the published contract or a domain rule. */
+      422: {
         headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  consultar_unidade_api_v1_unidade_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UnidadeSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
           [name: string]: unknown;
         };
         content: {
@@ -18610,6 +20273,200 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorOrValidationResponse'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  definir_unidade_api_v1_unidade_vigencias_post: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VigenciaNova'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReciboVigenciaSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description account_read_only: writes require confirmed trial or paid access. */
+      402: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Cookie mutation requires exact Origin and current CSRF proof. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description idempotency_key_conflict: a chave já foi usada com outro corpo. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description The request body exceeds this endpoint's streaming limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          /** @example Content Too Large */
+          'text/plain': string;
+        };
+      };
+      /** @description Pedido inválido; um código estável por campo, sem msg/input/ctx. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UnidadeInvalidaSaida'];
+        };
+      };
+      /** @description The caller exceeded an applicable request limit. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unexpected internal failure with no sensitive exception details. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description A required dependency is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  recuperar_intencao_api_v1_unidade_vigencias_intencao_get: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Chave opaca obrigatória do cliente; reutilizá-la com o mesmo corpo reproduz a resposta original sem repetir a operação. */
+        'Idempotency-Key': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReciboVigenciaSaida'];
+        };
+      };
+      /** @description Missing, expired, or invalid bearer token. */
+      401: {
+        headers: {
+          /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
+          'X-Auth-Error'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description intencao_nao_encontrada: nenhuma troca foi gravada com esta chave. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Pedido inválido; um código estável por campo, sem msg/input/ctx. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UnidadeInvalidaSaida'];
         };
       };
       /** @description The caller exceeded an applicable request limit. */
@@ -18793,15 +20650,6 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
       /** @description Upload job not found. */
       404: {
         headers: {
@@ -18874,15 +20722,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {
@@ -18972,6 +20811,9 @@ export interface operations {
             apostas_grupos: {
               [key: string]: components['schemas']['JsonValue'];
             }[];
+            apostas_lotes: {
+              [key: string]: components['schemas']['JsonValue'];
+            }[];
             assinaturas: {
               [key: string]: components['schemas']['JsonValue'];
             }[];
@@ -18979,6 +20821,9 @@ export interface operations {
               [key: string]: components['schemas']['JsonValue'];
             }[];
             bancas: {
+              [key: string]: components['schemas']['JsonValue'];
+            }[];
+            bancas_requisicoes: {
               [key: string]: components['schemas']['JsonValue'];
             }[];
             chamadas_ia: {
@@ -19009,6 +20854,15 @@ export interface operations {
               [key: string]: components['schemas']['JsonValue'];
             }[];
             movimentos: {
+              [key: string]: components['schemas']['JsonValue'];
+            }[];
+            native_accounts: {
+              [key: string]: components['schemas']['JsonValue'];
+            }[];
+            native_bet_evidence: {
+              [key: string]: components['schemas']['JsonValue'];
+            }[];
+            native_bets: {
               [key: string]: components['schemas']['JsonValue'];
             }[];
             rascunho_correcoes: {
@@ -19065,15 +20919,6 @@ export interface operations {
         headers: {
           /** @description Identity error code when AUTH_ENABLED; legacy response body is preserved. */
           'X-Auth-Error'?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description account_read_only: writes require confirmed trial or paid access. */
-      402: {
-        headers: {
           [name: string]: unknown;
         };
         content: {

@@ -145,6 +145,28 @@ export function caixaFixture() {
       pageSize = Number(url.searchParams.get('page_size') ?? 20);
     if (url.pathname.endsWith('/matriz'))
       return { data: caixaMatriz, status: 200 };
+    // Cadastro de bancas (#122) derivado do mesmo saldo: contas vinculadas
+    // pelo banca_id atual, todas ativas.
+    if (method === 'GET' && url.pathname === '/api/v1/bancas')
+      return {
+        data: {
+          bancas: saldo.bancas.map((b) => ({
+            id: b.id,
+            nome: b.nome,
+            estado: 'ativa' as const,
+            arquivada_em: null,
+            saldo_inicial_centavos: b.saldo_inicial_centavos,
+            contas: saldo.contas
+              .filter((c) => c.banca_id === b.id)
+              .map((c) => ({
+                id: c.conta_casa_id,
+                casa_id: c.casa_id,
+                apelido: c.apelido ?? `Conta ${c.conta_casa_id}`,
+              })),
+          })),
+        },
+        status: 200,
+      };
     if (method === 'GET' && url.pathname === '/api/v1/caixa/saldo')
       return {
         data: { ...saldo, data_corte: url.searchParams.get('data_corte') },

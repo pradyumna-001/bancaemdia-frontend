@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { caixaFixture } from '../fixtures/caixa';
+import { bancasFixture } from '../fixtures/bancas';
 const url = 'http://127.0.0.1:4210/banca';
 test('Caixa: saldo desconhecido, transferência atômica, temas, teclado e reflow', async ({
   page,
@@ -115,6 +116,75 @@ test('Caixa: saldo desconhecido, transferência atômica, temas, teclado e reflo
   ).toBe(true);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
+test('Bancas: criar com capital, editar, arquivar com confirmação e teclado', async ({
+  page,
+}) => {
+  const bancas = bancasFixture();
+  const writes: Array<{ method: string; key: string; url: string }> = [];
+  await page.route('**/api/v1/bancas**', async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    const key = request.headers()['idempotency-key'] ?? '';
+    if (request.method() === 'GET' && path === '/api/v1/bancas')
+      return route.fulfill({ json: bancas.lista() });
+    if (path === '/api/v1/bancas/intencao') {
+      const r = bancas.intencao(key);
+      return route.fulfill({ status: r.status, json: r.data });
+    }
+    writes.push({ method: request.method(), key, url: page.url() });
+    const id = Number(path.split('/')[4]);
+    const r =
+      request.method() === 'PATCH'
+        ? bancas.alterar(key, id, request.postDataJSON())
+        : path.endsWith('/arquivar')
+          ? bancas.arquivar(key, id)
+          : bancas.criar(key, request.postDataJSON());
+    return route.fulfill({ status: r.status, json: r.data });
+  });
+  await page.goto(url);
+  const secao = page.getByRole('region', { name: 'Bancas' });
+  await expect(
+    secao.getByRole('heading', { name: 'Banca principal' }),
+  ).toBeVisible();
+  await secao.getByRole('button', { name: 'Nova banca' }).click();
+  await secao.getByLabel('Nome da banca').fill('Banca de teste');
+  await secao.getByLabel('Capital inicial (R$)').fill('2500,00');
+  await secao.getByLabel('Capital inicial (R$)').press('Enter');
+  await expect(secao).toContainText('Banca Banca de teste criada.');
+  expect(writes).toHaveLength(1);
+  expect(writes[0]!.key).toMatch(/^[0-9a-f-]{36}$/);
+  await expect(
+    secao.getByRole('article', { name: 'Banca de teste' }),
+  ).toContainText('R$ 2.500,00');
+  await secao.getByRole('button', { name: 'Editar Banca de teste' }).click();
+  await secao.getByLabel('Capital inicial (R$)').fill('');
+  await secao.getByRole('button', { name: 'Salvar alterações' }).click();
+  await expect(
+    secao.getByRole('article', { name: 'Banca de teste' }),
+  ).toContainText('Não informado');
+  const arquivar = secao.getByRole('button', {
+    name: 'Arquivar Banca de teste',
+  });
+  await arquivar.focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Arquivar esta banca?' });
+  await expect(dialog.getByRole('button', { name: 'Agora não' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(arquivar).toBeFocused();
+  expect(writes).toHaveLength(2);
+  await arquivar.click();
+  await dialog.getByRole('button', { name: 'Arquivar banca' }).click();
+  await expect(secao).toContainText('Bancas arquivadas (1)');
+  expect(writes).toHaveLength(3);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.setViewportSize({ width: 320, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
 test('build público rejeita sessão simulada do Caixa', async ({ page }) => {
   await page.route('**/config.json', (route) =>
     route.fulfill({

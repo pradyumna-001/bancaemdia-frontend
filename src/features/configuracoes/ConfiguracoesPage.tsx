@@ -1,6 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { PreferenciaTema } from '../../components/PreferenciaTema';
 import { FusoPreferencia } from './FusoPreferencia';
+import { UnidadePreferencia } from './UnidadePreferencia';
+import { ApagarApostas } from './ApagarApostas';
 import type { createApiClient } from '../../api/client';
 import './configuracoes.css';
 
@@ -17,8 +19,8 @@ export function ConfiguracoesPage({
       <header>
         <h1>Configurações</h1>
         <p>
-          Ajuste a aparência e os dias das análises. Acesse também as conexões e
-          os cuidados com sua conta.
+          Ajuste a aparência, os dias das análises e o valor da unidade. Acesse
+          também as conexões e os cuidados com sua conta.
         </p>
       </header>
       <div className="configuracoes-grid">
@@ -34,6 +36,7 @@ export function ConfiguracoesPage({
           <PreferenciaTema />
         </section>
         <FusoPreferencia client={client} />
+        <UnidadePreferencia client={client} />
         <section className="configuracoes-card" aria-labelledby="conta-titulo">
           <h2 id="conta-titulo">Sua conta</h2>
           <ul className="configuracoes-links">
@@ -65,6 +68,7 @@ export function ConfiguracoesPage({
             </li>
           </ul>
         </section>
+        <ApagarApostas client={client} />
       </div>
     </main>
   );
