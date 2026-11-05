@@ -163,3 +163,48 @@ it('Revisão projeta só campo seguro, sem conteúdo privado do provedor', () =>
     'não confirma',
   );
 });
+
+it('Unidade projeta só o nome de cada campo, uma vez, sem código nem valor', () => {
+  const project = (body: unknown) =>
+    httpError(new Response(null, { status: 422 }), body, true);
+  const error = project({
+    detail: 'unidade_invalida',
+    campos: [
+      { campo: 'valor_centavos', codigo: 'acima_do_limite', input: 'private' },
+      { campo: 'valor_centavos', codigo: 'inteiro' },
+      { campo: '../secret', codigo: 'invalido' },
+      { campo: 7 },
+      null,
+    ],
+  });
+  expect(error.invalidFields).toEqual([
+    { scope: 'body', field: 'valor_centavos' },
+  ]);
+  expect(Object.isFrozen(error.invalidFields)).toBe(true);
+  expect(JSON.stringify(error)).not.toContain('private');
+  for (const body of [
+    { detail: 'unidade_invalida', campos: 'valor_centavos' },
+    { detail: 'outra_coisa', campos: [{ campo: 'valor_centavos' }] },
+  ])
+    expect(project(body).invalidFields).toEqual([]);
+  expect(
+    project({ detail: 'lote_invalido', campos: [{ campo: 'frase' }] })
+      .invalidFields,
+  ).toEqual([{ scope: 'body', field: 'frase' }]);
+});
+
+it('códigos do lote de apostas são reconhecidos, sem aceitar desconhecidos', () => {
+  const code = (detail: string, status = 409) =>
+    httpError(new Response(null, { status }), { detail }, true).code;
+  for (const detail of [
+    'confirmacao_desatualizada',
+    'confirmacao_expirada',
+    'nada_a_apagar',
+    'lote_em_curso',
+    'lote_restaurado',
+  ])
+    expect(code(detail)).toBe(detail);
+  expect(code('frase_incorreta', 422)).toBe('frase_incorreta');
+  expect(code('lote_nao_encontrado', 404)).toBe('lote_nao_encontrado');
+  expect(code('lote_secreto')).toBeUndefined();
+});

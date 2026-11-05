@@ -18,6 +18,7 @@ import { parseConfig } from '../../lib/config';
 import { createAccessController } from '../acesso/controller';
 import { ProvedorAcesso } from '../acesso/ProvedorAcesso';
 import { billingStatus } from '../../../tests/fixtures/acesso';
+import { unidadePadrao } from '../../../tests/fixtures/unidade';
 import { ConfiguracoesPage } from './ConfiguracoesPage';
 
 const cleanups: Array<() => void> = [];
@@ -99,6 +100,9 @@ async function open(
       fetcher: async (req) => {
         if (new URL(req.url).pathname === '/api/v1/billing/status')
           return json({ ...billingStatus, access });
+        // The unit card has its own tests; keep fuso reads/writes isolated.
+        if (new URL(req.url).pathname === '/api/v1/unidade')
+          return json(unidadePadrao);
         if (req.method === 'GET') {
           reads.push(req.clone());
           return read();

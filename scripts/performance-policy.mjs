@@ -150,7 +150,9 @@ export function inspectPerformanceReport(
     'REPORT_API_MISMATCH',
   );
   demand(
-    report.availability === 'sandbox_reconciliation' &&
+    // Integrated pins have no availability block ("main"); production stays
+    // unauthorized until #38 regardless of the pin.
+    report.availability === (API_PIN.availability?.kind ?? 'main') &&
       report.productionAuthorized === false,
     'REPORT_RELEASE_SCOPE_INVALID',
   );
