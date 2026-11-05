@@ -4,6 +4,7 @@ import asyncio
 import importlib.util
 import json
 import os
+import re
 import secrets
 import subprocess
 import sys
@@ -31,6 +32,12 @@ BETS = (
     "SELECT chave,stake_centavos,valor_aposta_centavos,retorno_centavos,conta_casa_id "
     "FROM apostas WHERE usuario_id=:uid ORDER BY chave"
 )
+
+
+async def settled(page):
+    # Cards load independently and grow when their data arrives; a click
+    # computed before that can land on a target that has already moved.
+    await expect(page.get_by_text(re.compile(r"^Consultando"))).to_have_count(0)
 
 
 @lru_cache
@@ -115,6 +122,7 @@ async def test_public_spa_unidade(harness, engine_admin, viewport, browser_name)
             assert initial["vigente"]["origem"] == "padrao"
             assert initial["historico"] == []
             await page.goto(address)
+            await settled(page)
             card = page.get_by_role("region", name="Valor da unidade")
             await expect(card).to_contain_text(
                 money(initial["vigente"]["valor_centavos"])
@@ -210,6 +218,7 @@ async def test_public_spa_unidade(harness, engine_admin, viewport, browser_name)
 
             # New bet shows the unit in force now and keeps the filters in the link.
             await page.goto(core.backend.FRONT + f"/aposta/nova?casa={seeded['house']}")
+            await settled(page)
             hint = page.get_by_text("Unidade agora:", exact=False)
             await expect(hint).to_contain_text(money(4000))
             await expect(
@@ -217,6 +226,7 @@ async def test_public_spa_unidade(harness, engine_admin, viewport, browser_name)
             ).to_have_attribute("href", f"/configuracoes?casa={seeded['house']}")
 
             await page.goto(address)
+            await settled(page)
             await expect(card).to_contain_text(money(4000))
             for theme in ("claro", "escuro"):
                 await page.evaluate(
@@ -247,6 +257,7 @@ async def test_public_spa_unidade(harness, engine_admin, viewport, browser_name)
                 "access"
             ] == "READ_ONLY"
             await page.goto(address)
+            await settled(page)
             await expect(card).to_contain_text(money(4000))
             await expect(card).to_contain_text("modo de leitura")
             await expect(
@@ -260,6 +271,7 @@ async def test_public_spa_unidade(harness, engine_admin, viewport, browser_name)
             # Isolation: the other owner keeps the default and sees no history.
             # Entering through the SPA also renews that idle session.
             await other.goto(core.backend.FRONT + "/configuracoes")
+            await settled(other)
             other_card = other.get_by_role("region", name="Valor da unidade")
             await expect(other_card).to_contain_text("valor padrão do serviço")
             await expect(other_card.get_by_role("table")).to_have_count(0)
