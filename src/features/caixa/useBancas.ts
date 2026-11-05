@@ -105,8 +105,12 @@ export function useBancas(client: ReturnType<typeof createApiClient>) {
     }
   }
 
+  // A safe read goes through auth.service.read, which renews an expired
+  // access once and only resolves for the current session: its answer stays
+  // valid across that renewal. A write stays bound to the session that sent it.
   async function begin(
     work: (signal: AbortSignal, live: () => boolean) => Promise<void>,
+    leitura = false,
   ) {
     if (active.current || waiting) return;
     const controller = new AbortController();
@@ -115,7 +119,7 @@ export function useBancas(client: ReturnType<typeof createApiClient>) {
     const live = () =>
       alive.current &&
       !controller.signal.aborted &&
-      scope.isCurrent() &&
+      (leitura || scope.isCurrent()) &&
       auth.service.getSnapshot().privateEpoch === epoch;
     setBusy(true);
     setError(undefined);
@@ -250,7 +254,7 @@ export function useBancas(client: ReturnType<typeof createApiClient>) {
             : 'uncertain',
         );
       }
-    });
+    }, true);
   }
 
   const ocupado = busy || waiting || !!atual;

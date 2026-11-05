@@ -64,27 +64,32 @@ async function open(
     entry?: string;
     write?: (req: Request, fixture: Fixture) => Promise<Response> | undefined;
     intencao?: () => Promise<Response>;
+    expireIntencao?: boolean;
   } = {},
 ) {
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Sandbox',
-    email: 'sandbox@example.org',
-    session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Sandbox',
+      email: 'sandbox@example.org',
+      session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
+  let expired = !!hooks.expireIntencao;
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
     exclusive: async (_signal, work) => work(),
@@ -110,6 +115,16 @@ async function open(
           });
         if (path === '/api/v1/bancas/intencao') {
           lookups.push(key);
+          if (expired) {
+            expired = false;
+            return new Response(JSON.stringify({ detail: 'access_expired' }), {
+              status: 401,
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Auth-Error': 'access_expired',
+              },
+            });
+          }
           if (hooks.intencao) return hooks.intencao();
           const r = fixture.intencao(key ?? '');
           return json(r.data, r.status);
@@ -520,4 +535,22 @@ it('saída da sessão limpa a tentativa em memória', async () => {
   await screen.findByText('Não foi possível confirmar', { exact: false });
   await act(() => session.logout());
   await waitFor(() => expect(screen.queryByText('Banca principal')).toBeNull());
+});
+
+it('consulta atravessa a renovação do acesso e recupera a banca', async () => {
+  const { writes, lookups } = await open({
+    expireIntencao: true,
+    write: (req, fixture) =>
+      (async () => {
+        fixture.criar(req.headers.get('Idempotency-Key')!, await req.json());
+        throw new TypeError('rede');
+      })(),
+  });
+  const user = await criar('Renovada');
+  await user.click(
+    await screen.findByRole('button', { name: 'Consultar resultado' }),
+  );
+  expect(await screen.findByText('Banca Renovada criada.')).toBeVisible();
+  expect(lookups).toEqual([writes[0]!.key, writes[0]!.key]);
+  expect(writes).toHaveLength(1);
 });
