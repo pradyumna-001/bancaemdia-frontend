@@ -73,10 +73,24 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
             harness=harness,
         )
         await core.grant(other, engine_admin, other_user["usuario_id"], seconds=240)
-        other_seed = await core.seed(other, engine_admin, other_user["usuario_id"])
-        assert other_seed["house"]
+        # The house is global and already seeded: the other owner only needs
+        # active bets of their own to prove isolation.
+        for index in range(2):
+            await core.write(
+                other,
+                "/api/v1/apostas",
+                {
+                    "casa": "Betano",
+                    "odd": 2,
+                    "stake_unidades": 1,
+                    "evento": f"Outro dono {index}",
+                    "data_aposta": "2026-10-10T12:00:00Z",
+                },
+                expected=201,
+            )
         before = await rows(engine_admin, BETS, uid)
         other_before = await rows(engine_admin, BETS, other_user["usuario_id"])
+        assert sum(row.selecionada for row in other_before) == 2
         cash_before = await rows(engine_admin, CASH, uid)
         active = [row.chave for row in before if row.selecionada]
         assert len(active) >= 2, "The seed must leave active bets to delete"
