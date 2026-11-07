@@ -65,6 +65,22 @@ afterEach(() => {
   clean.splice(0).forEach((work) => work());
   vi.restoreAllMocks();
 });
+// The next billing check answers 401 access_expired once (renewal in the
+// write gate, before anything is sent).
+let expireBilling = false;
+const billingExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+const consumeExpiredBilling = () => {
+  if (!expireBilling) return undefined;
+  expireBilling = false;
+  return billingExpired();
+};
 async function open(
   options: {
     page?: boolean;
@@ -123,6 +139,8 @@ async function open(
         const url = new URL(request.url);
         if (url.pathname === '/api/v1/billing/status') {
           await options.beforeBilling?.(++billing);
+          const expired = consumeExpiredBilling();
+          if (expired) return expired;
           return json({
             ...billingStatus,
             access: options.readOnly ? 'READ_ONLY' : 'FULL_WRITE',
@@ -773,15 +791,38 @@ it('logout durante parsing remove estado privado e rejeita a resposta antiga', a
   expect(view.hook.busy).toBe(false);
   expect(view.queries.getQueryData(['metas', 'outro'])).toBeUndefined();
 });
-it('renovação antes do POST não envia nem prende o formulário em execução', async () => {
+it('renovação da mesma pessoa antes do POST não cancela a criação, que sai uma única vez', async () => {
   const view: Awaited<ReturnType<typeof open>> = await open({
     beforeBilling: async (count) => {
       if (count === 2) await view.rotate();
     },
   });
   await act(() => view.hook.write({ kind: 'create', body }));
-  expect(writes(view.requests)).toHaveLength(0);
+  // The write had not been sent: it goes out once, bound to the renewed
+  // session of the same person, and its answer is shown.
+  expect(writes(view.requests)).toHaveLength(1);
   expect(view.hook.busy).toBe(false);
   expect(view.hook.unknown).toBeUndefined();
-  expect(view.hook.error).toBeTruthy();
+  expect(view.hook.error).toBeUndefined();
+  expect(view.hook.notice).toBe('Meta criada.');
+});
+it('troca de pessoa antes do POST ainda cancela a criação sem enviar', async () => {
+  const view: Awaited<ReturnType<typeof open>> = await open({
+    beforeBilling: async (count) => {
+      if (count === 2) act(() => view.session.accountClosed());
+    },
+  });
+  await act(() => view.hook.write({ kind: 'create', body }));
+  expect(writes(view.requests)).toHaveLength(0);
+  expect(view.hook.notice).toBe('');
+});
+it('acesso vencido renovado na conferência de billing não cancela a criação', async () => {
+  const view = await open();
+  expireBilling = true;
+  await act(() => view.hook.write({ kind: 'create', body }));
+  expect(expireBilling).toBe(false);
+  expect(writes(view.requests)).toHaveLength(1);
+  expect(view.hook.notice).toBe('Meta criada.');
+  expect(view.hook.error).toBeUndefined();
+  expect(view.hook.busy).toBe(false);
 });

@@ -67,22 +67,42 @@ function Location() {
     </>
   );
 }
+// The next billing check answers 401 access_expired once (renewal in the
+// write gate, before anything is sent).
+let expireBilling = false;
+const billingExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+const consumeExpiredBilling = () => {
+  if (!expireBilling) return undefined;
+  expireBilling = false;
+  return billingExpired();
+};
 async function setup(
   fetcher: (r: Request) => Promise<Response> = async () =>
     json(acceptedUpload, 202),
   path = '/enviar?entrada=prints&estado=GREEN&apagadas=1',
   accessState: 'FULL_WRITE' | 'READ_ONLY' = 'FULL_WRITE',
 ) {
-  const person = sessionContext({
-    usuario_id: 1,
-    nome: 'Teste',
-    email: 'teste@example.org',
-    session_version: `${crypto.randomUUID()}:1`,
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  const sessionId = crypto.randomUUID();
+  let version = 0;
+  const person = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Teste',
+      email: 'teste@example.org',
+      session_version: `${sessionId}:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: 30_000 } },
   });
@@ -91,8 +111,8 @@ async function setup(
     queryClient: queries,
     exclusive: async (_signal, work) => work(),
     transport: {
-      read: async () => person,
-      renew: async () => person,
+      read: async () => person(),
+      renew: async () => person(),
       logout: async () => {},
     },
   });
@@ -102,7 +122,10 @@ async function setup(
     captureSession: service.capture,
     fetcher: (r) =>
       new URL(r.url).pathname === '/api/v1/billing/status'
-        ? Promise.resolve(json({ ...billingStatus, access: accessState }))
+        ? Promise.resolve(
+            consumeExpiredBilling() ??
+              json({ ...billingStatus, access: accessState }),
+          )
         : fetcher(r),
   });
   const access = createAccessController(service, queries);
@@ -611,4 +634,41 @@ it('Retry-After acima de 60 segundos interrompe GET automático sem antecipar co
   expect(
     screen.getByRole('button', { name: 'Conferir print 1' }),
   ).toBeEnabled();
+});
+it('acesso vencido renovado na conferência de billing ainda envia o print uma vez', async () => {
+  const writes: Request[] = [];
+  const received = new Map<string, ReturnType<typeof printItem>>();
+  await setup(async (request) => {
+    const identity = ids(request);
+    if (request.method === 'POST') {
+      writes.push(request);
+      const remote = printItem({
+        ...identity,
+        status: 'completed',
+        outcome: 'materialized',
+        progress_percent: 100,
+        results: [
+          { type: 'materialized', bet_key: 'real-key', review_ids: [] },
+        ],
+      });
+      received.set(identity.item_id, remote);
+      return json(remote, 202);
+    }
+    if (new URL(request.url).pathname.includes('/itens/'))
+      return json({ detail: 'missing' }, 404);
+    return received.size
+      ? json(
+          printIntent([...received.values()], {
+            intent_id: identity.intent_id,
+            state: 'complete',
+          }),
+        )
+      : json({ detail: 'missing' }, 404);
+  });
+  await selected(['first.png']);
+  expireBilling = true;
+  send();
+  await screen.findAllByText('Apostas registradas');
+  expect(expireBilling).toBe(false);
+  expect(writes).toHaveLength(1);
 });

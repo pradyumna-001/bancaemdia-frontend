@@ -19,13 +19,16 @@ async function sandbox() {
     defaultOptions: { queries: { retry: false } },
   });
   let person = 1;
+  // Opt-in: every session read publishes a new version, as a renewal does.
+  let renewals = 0;
+  let renewing = false;
   const transport = {
     read: vi.fn(async () =>
       sessionContext({
         usuario_id: person,
         nome: 'Teste',
         email: 'sandbox@example.org',
-        session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${person}`,
+        session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${renewing ? person * 1000 + ++renewals : person}`,
         csrf_token: crypto.randomUUID(),
         refresh_required: false,
         access_expires_at: '2030-01-01T00:00:00Z',
@@ -70,6 +73,9 @@ async function sandbox() {
     fetcher,
     switchPerson: (id: number) => {
       person = id;
+    },
+    renewEachRead: () => {
+      renewing = true;
     },
     reply: (body: unknown, code = 200, extra = {}) => {
       response = body;
@@ -184,5 +190,49 @@ it('recusa nova concorrente ao status não permite que confirmação antiga libe
   await expect(
     s.access.run(s.client, 'POST /api/v1/apostas', work),
   ).rejects.toBeInstanceOf(ApiError);
+  expect(work).not.toHaveBeenCalled();
+});
+const accessExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+it('renovação do acesso na conferência de billing não cancela a escrita ainda não enviada', async () => {
+  const s = await sandbox();
+  s.renewEachRead();
+  s.fetcher.mockImplementationOnce(async () => accessExpired());
+  const work = vi.fn(async () => 'enviado');
+  // The gate renews once and repeats its safe GET; the write was never
+  // sent, so it goes out once under the renewed session of the same person.
+  await expect(
+    s.access.run(s.client, 'POST /api/v1/apostas', work),
+  ).resolves.toBe('enviado');
+  expect(work).toHaveBeenCalledOnce();
+  expect(s.fetcher).toHaveBeenCalledTimes(2);
+});
+it('troca de pessoa durante a conferência de billing ainda cancela a escrita', async () => {
+  const s = await sandbox();
+  let resolve!: (response: Response) => void;
+  s.fetcher.mockImplementationOnce(
+    () =>
+      new Promise<Response>((r) => {
+        resolve = r;
+      }),
+  );
+  const work = vi.fn();
+  const pending = s.access.run(s.client, 'POST /api/v1/apostas', work);
+  const rejected = expect(pending).rejects.toMatchObject({ kind: 'cancelled' });
+  await Promise.resolve();
+  s.switchPerson(2);
+  await s.session.resume();
+  resolve(
+    new Response(JSON.stringify(billingStatus), {
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  );
+  await rejected;
   expect(work).not.toHaveBeenCalled();
 });

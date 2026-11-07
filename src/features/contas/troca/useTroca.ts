@@ -104,7 +104,7 @@ export function useTroca(client: ReturnType<typeof createApiClient>) {
     active.current = controller;
     setBusy(true);
     setError(undefined);
-    const scope = auth.service.capture();
+    let scope = auth.service.capture();
     // A consultation is a safe read: auth.service.read renews an expired
     // access once and only resolves for the current session, so its answer
     // stays valid across that renewal. A write stays bound to the session
@@ -139,6 +139,9 @@ export function useTroca(client: ReturnType<typeof createApiClient>) {
         if (value.recibo) await refresh();
       } else {
         const value = await access.run(operation, async () => {
+          // Bound to the sending session: a same-person renewal in the
+          // billing gate comes before the write and does not cancel it.
+          scope = auth.service.capture();
           if (!live()) throw new ApiError('cancelled', { mutation: true });
           sent = true;
           update({ ...current, uncertain: true, consulted: false });
@@ -197,8 +200,7 @@ export function useTroca(client: ReturnType<typeof createApiClient>) {
     } finally {
       if (active.current === controller) active.current = undefined;
       if (alive.current && auth.service.getSnapshot().privateEpoch === epoch) {
-        // A same-person session refresh may fence billing before any POST.
-        // Discard its old response while keeping the unsent form available.
+        // A preview fenced by the session before any POST is not kept.
         if (!sent && kind === 'preview' && !scope.isCurrent()) {
           update({});
           setError(new ApiError('cancelled'));

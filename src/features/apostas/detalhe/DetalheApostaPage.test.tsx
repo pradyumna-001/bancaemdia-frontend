@@ -51,6 +51,22 @@ const json = (
     status,
     headers: { 'Content-Type': 'application/json', ...headers },
   });
+// The next billing check answers 401 access_expired once (renewal in the
+// write gate, before anything is sent).
+let expireBilling = false;
+const billingExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+const consumeExpiredBilling = () => {
+  if (!expireBilling) return undefined;
+  expireBilling = false;
+  return billingExpired();
+};
 async function open({
   access = 'FULL_WRITE',
   data = structuredClone(detalheExemplo),
@@ -96,7 +112,7 @@ async function open({
       captureSession: session.capture,
       fetcher: async (req) => {
         if (req.url.endsWith('/billing/status'))
-          return json({ ...billingStatus, access });
+          return consumeExpiredBilling() ?? json({ ...billingStatus, access });
         requests.push(req.clone());
         const override = await handler?.(req, data);
         if (override) return override;
@@ -911,4 +927,25 @@ it('404/405 de escrita não reativam o pedido depois de consultar', async () => 
   await screen.findByText('Estado atual consultado.', { exact: false });
   expect(screen.getByRole('button', { name: 'Apagar aposta' })).toBeDisabled();
   expect(writes(app.requests)).toHaveLength(1);
+});
+it('acesso vencido renovado na conferência de billing não cancela a correção', async () => {
+  const app = await open();
+  await editable();
+  fireEvent.click(screen.getByRole('button', { name: 'Corrigir aposta' }));
+  fireEvent.change(screen.getByLabelText('Evento'), {
+    target: { value: 'Minha entrada' },
+  });
+  expireBilling = true;
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+  // The correction had not been sent: it goes out once under the renewed
+  // session and the editor closes, instead of a silent no-op.
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Corrigir aposta' }),
+    ).toBeEnabled(),
+  );
+  expect(expireBilling).toBe(false);
+  expect(writes(app.requests)).toHaveLength(1);
+  expect(app.data.aposta.evento).toBe('Minha entrada');
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });

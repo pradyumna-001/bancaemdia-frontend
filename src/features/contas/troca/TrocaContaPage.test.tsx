@@ -64,6 +64,22 @@ afterEach(() => {
   clean.splice(0).forEach((f) => f());
   vi.restoreAllMocks();
 });
+// The next billing check answers 401 access_expired once (renewal in the
+// write gate, before anything is sent).
+let expireBilling = false;
+const billingExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+const consumeExpiredBilling = () => {
+  if (!expireBilling) return undefined;
+  expireBilling = false;
+  return billingExpired();
+};
 async function open(
   options: {
     page?: boolean;
@@ -122,6 +138,8 @@ async function open(
         const url = new URL(req.url);
         if (url.pathname === '/api/v1/billing/status') {
           await options.beforeBilling?.(++billingCount);
+          const expired = consumeExpiredBilling();
+          if (expired) return expired;
           return json({
             ...billingStatus,
             access: options.readOnly ? 'READ_ONLY' : 'FULL_WRITE',
@@ -863,7 +881,7 @@ it('a refused preview preserves the visible form and never queues a write after 
   ).not.toBeInTheDocument();
 });
 
-it('a session refresh during access validation discards the unsent identity and preserves a new explicit gesture', async () => {
+it('a same-person session refresh during access validation sends the unsent preview once', async () => {
   let start!: () => void;
   let release!: () => void;
   const started = new Promise<void>((resolve) => {
@@ -891,13 +909,23 @@ it('a session refresh during access validation discards the unsent identity and 
     release();
     await pending;
   });
+  // The preview had not been sent: it goes out once, bound to the renewed
+  // session of the same person, with the identity of the original gesture.
   expect(h.session.getSnapshot().privateEpoch).toBe(epoch);
-  expect(writes(h.requests)).toHaveLength(0);
-  expect(h.hook.state).toEqual({});
-  await waitFor(() => expect(h.hook.canPreview).toBe(true));
+  expect(writes(h.requests)).toHaveLength(1);
+  expect(h.hook.state.preview).toBeTruthy();
+  expect(h.hook.error).toBeUndefined();
+  expect(h.hook.busy).toBe(false);
+});
+it('expired access renewed in the billing gate still sends the unsent preview once', async () => {
+  const h = await open();
+  expireBilling = true;
   await act(async () => {
     await h.hook.preview(pedidoTroca);
   });
+  expect(expireBilling).toBe(false);
   expect(writes(h.requests)).toHaveLength(1);
   expect(h.hook.state.preview).toBeTruthy();
+  expect(h.hook.error).toBeUndefined();
+  expect(h.hook.busy).toBe(false);
 });

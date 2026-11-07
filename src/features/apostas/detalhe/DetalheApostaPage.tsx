@@ -203,7 +203,7 @@ function DetalhePagina({
     setError(undefined);
     setNotice('');
     setLocalError('');
-    const scope = auth.service.capture();
+    let scope = auth.service.capture();
     const owner = auth.service.getSnapshot().privateEpoch;
     const sameOwner = () =>
       alive.current && auth.service.getSnapshot().privateEpoch === owner;
@@ -213,6 +213,9 @@ function DetalhePagina({
     const operation = OPERACOES[intent.tipo];
     try {
       const value = await access.run(operation, async () => {
+        // Bound to the sending session: a same-person renewal in the
+        // billing gate comes before the write and does not cancel it.
+        scope = auth.service.capture();
         const params = { path: { chave } };
         if (intent.tipo === 'corrigir')
           return (

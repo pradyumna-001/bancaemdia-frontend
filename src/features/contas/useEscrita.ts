@@ -41,7 +41,7 @@ export function useEscrita() {
   ) {
     if (active.current || waiting || unknown || !access?.can(operation))
       return false;
-    const scope = auth?.service.capture();
+    let scope = auth?.service.capture();
     if (!scope?.isCurrent()) return false;
     const epoch = auth!.service.getSnapshot().privateEpoch;
     const current = () =>
@@ -53,9 +53,14 @@ export function useEscrita() {
     setMessage('');
     setFields(mappedFields);
     try {
-      await access.run(operation, () => work(controller.signal));
+      await access.run(operation, () => {
+        // Bound to the sending session: a same-person renewal in the
+        // billing gate comes before the write and does not cancel it.
+        scope = auth!.service.capture();
+        return work(controller.signal);
+      });
       if (!current() || controller.signal.aborted) return false;
-      if (!scope.isCurrent())
+      if (!scope?.isCurrent())
         throw new ApiError('cancelled', { mutation: true });
       setMessage(success);
       await queries.invalidateQueries({ queryKey: ['contas'] });
