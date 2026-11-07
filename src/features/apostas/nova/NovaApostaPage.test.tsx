@@ -747,13 +747,15 @@ it.each([403, 405, 410, 422])(
     ).not.toBeInTheDocument();
   },
 );
-it('offers explicit consultation when a session fence cancels the confirmation', async () => {
+it('a session fence repeats the confirmation read once under the current session', async () => {
   const ui = await open();
   let started!: () => void;
   const pending = new Promise<void>((resolve) => {
     started = resolve;
   });
+  let calls = 0;
   ui.setGet(() => {
+    if (++calls > 1) return Promise.resolve(json(reciboManual));
     started();
     // Never answers: only the session fence ends this request.
     return new Promise<Response>(() => {});
@@ -764,13 +766,39 @@ it('offers explicit consultation when a session fence cancels the confirmation',
     );
   });
   await pending;
-  // A new session check fences in-flight requests of the same person.
+  // A new session check fences in-flight requests of the same person; the
+  // safe read is repeated once and only the current answer is shown.
   await act(() => ui.session.resume());
-  // The cancelled read is reported, never shown as a receipt.
-  await screen.findByText(/Você pode voltar a consultar quando quiser/);
+  await screen.findByRole('heading', { name: 'Registro manual confirmado' });
+  expect(calls).toBe(2);
+});
+it('a fenced confirmation read that fails again is reported, never shown as a receipt', async () => {
+  const ui = await open();
+  let started!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  let calls = 0;
+  ui.setGet(() => {
+    if (++calls > 1) return Promise.resolve(json({}, 503));
+    started();
+    return new Promise<Response>(() => {});
+  });
+  await act(async () => {
+    await ui.router.navigate(
+      '/aposta/' + manualKey + '?manual_intencao=' + manualId,
+    );
+  });
+  await pending;
+  await act(() => ui.session.resume());
+  await screen.findByRole('button', {
+    name: 'Consultar confirmação novamente',
+  });
   expect(
     screen.queryByText('Registro manual confirmado'),
   ).not.toBeInTheDocument();
+  // Recovery is one explicit gesture, never an automatic loop.
+  expect(calls).toBe(2);
   ui.setGet(async () => json(reciboManual));
   await ui.user.click(
     screen.getByRole('button', { name: 'Consultar confirmação novamente' }),

@@ -66,9 +66,17 @@ export function FusoPreferencia({
   }, []);
   async function consult() {
     if (!auth || busy || query.isFetching || waiting || queryWaiting) return;
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session consults.
+    // A renewal during the refetch repeats the safe read once, so its answer
+    // is current; logout or a person change (privateEpoch) still discards it.
+    const owner = auth.service.getSnapshot().privateEpoch;
     const result = await query.refetch();
-    if (!life.current.active || !scope.isCurrent() || result.error) return;
+    if (
+      !life.current.active ||
+      auth.service.getSnapshot().privateEpoch !== owner ||
+      result.error
+    )
+      return;
     setNeedsCheck(false);
     setError(undefined);
     setNotice(`Fuso atual confirmado: ${nomeFuso(result.data!.fuso_horario)}.`);

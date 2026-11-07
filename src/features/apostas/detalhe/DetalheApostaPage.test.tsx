@@ -819,6 +819,80 @@ it('mídia sem revisão, histórico vazio e nulidade permanecem explícitos', as
   ).toBeVisible();
   expect(writes(app.requests)).toHaveLength(0);
 });
+const accessExpired = () =>
+  json({ detail: 'access_expired' }, 401, { 'X-Auth-Error': 'access_expired' });
+const detailGet = (req: Request) =>
+  req.method === 'GET' &&
+  new URL(req.url).pathname === '/api/v1/apostas/exemplo-1';
+it('consulta explícita do estado atual sobrevive à renovação de um acesso vencido', async () => {
+  let expire = false;
+  const app = await open({
+    respond: async (req) => {
+      if (req.method === 'PATCH') return json({ detail: 'x' }, 409);
+      if (expire && detailGet(req)) {
+        expire = false;
+        return accessExpired();
+      }
+      return undefined;
+    },
+  });
+  await editable();
+  fireEvent.click(screen.getByRole('button', { name: 'Corrigir aposta' }));
+  fireEvent.change(screen.getByLabelText('Evento'), {
+    target: { value: 'Minha entrada' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: 'Consultar estado atual da aposta',
+    }),
+  );
+  expire = true;
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Consultar estado atual da aposta' }),
+  );
+  // The renewed read is repeated once and its answer is current: the notice
+  // appears and the form is released, instead of a silent no-op.
+  await screen.findByText('Estado atual consultado.', { exact: false });
+  expect(expire).toBe(false);
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    ).toBeEnabled(),
+  );
+  expect(writes(app.requests)).toHaveLength(1);
+});
+it('leitura depois de uma escrita confirmada não fica presa se o acesso renovar', async () => {
+  let expire = false;
+  const app = await open({
+    respond: async (req) => {
+      if (req.method === 'PATCH') expire = true;
+      else if (expire && detailGet(req)) {
+        expire = false;
+        return accessExpired();
+      }
+      return undefined;
+    },
+  });
+  await editable();
+  fireEvent.click(screen.getByRole('button', { name: 'Corrigir aposta' }));
+  fireEvent.change(screen.getByLabelText('Evento'), {
+    target: { value: 'Minha entrada' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+  // The confirmed write is read back under the renewed session: the editor
+  // closes and the actions are available again.
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Corrigir aposta' }),
+    ).toBeEnabled(),
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Salvar alterações' }),
+  ).not.toBeInTheDocument();
+  expect(expire).toBe(false);
+  expect(writes(app.requests)).toHaveLength(1);
+});
 it('404/405 de escrita não reativam o pedido depois de consultar', async () => {
   const app = await open({
     respond: async (req) =>

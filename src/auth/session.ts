@@ -72,13 +72,17 @@ export function createSession(options: {
     state = Object.freeze(next);
     listeners.forEach((listener) => listener());
   };
+  // A same-person/family fence aborts requests of the previous version; their
+  // safe reads recover once in read(). Queries are not reverted: a reverted
+  // query would drop that recovered answer (pending forever on a first load,
+  // old data on refetch). A person change or logout cancels and clears them.
   const fence = () => {
     requests.abort();
     requests = new AbortController();
-    void options.queryClient.cancelQueries();
   };
   const clearPrivate = () => {
     fence();
+    void options.queryClient.cancelQueries();
     options.queryClient.clear();
     cleanups.forEach((cleanup) => cleanup());
     return state.privateEpoch + 1;
@@ -185,6 +189,12 @@ export function createSession(options: {
         state.phase === 'authenticated',
     };
   };
+  // Waits for a session check in progress; true only for an authenticated
+  // session. Never starts a check of its own.
+  const settled = async () => {
+    if (inFlight) await inFlight;
+    return !disposed && state.phase === 'authenticated' && !!context;
+  };
   const unauthorized = (error: ApiError) => {
     if (error.status === 401 && error.code !== 'access_expired') {
       invalidate();
@@ -199,15 +209,14 @@ export function createSession(options: {
       if (!initialScope.isCurrent()) throw new ApiError('cancelled');
       return result;
     } catch (error) {
+      if (!(error instanceof ApiError) || !initial) throw error;
+      const expired = error.status === 401 && error.code === 'access_expired';
+      // Cancelled by this session's own fence (a same-family renewal or
+      // check), not by the caller: the scope's signal belongs to the session.
+      const fenced = error.kind === 'cancelled' && initialScope.signal.aborted;
+      if (!expired && !fenced) throw error;
       if (
-        !(error instanceof ApiError) ||
-        error.status !== 401 ||
-        error.code !== 'access_expired' ||
-        !initial
-      )
-        throw error;
-      if (
-        !(await resume()) ||
+        !(expired ? await resume() : await settled()) ||
         context?.person.id !== initial.person.id ||
         context?.version.split(':')[0] !== initial.version.split(':')[0]
       )

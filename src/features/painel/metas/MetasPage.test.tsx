@@ -698,6 +698,44 @@ it('mantém fuso compartilhado e confirma a preferência no servidor', async () 
     ),
   ).toBe(true);
 });
+const accessExpired = () =>
+  json({ detail: 'access_expired' }, 401, { 'X-Auth-Error': 'access_expired' });
+it('consulta da lista sobrevive à renovação de um acesso vencido', async () => {
+  let expire = false;
+  const view = await open({
+    override: (r) => {
+      if (expire && r.method === 'GET' && new URL(r.url).pathname === LIST) {
+        expire = false;
+        return accessExpired();
+      }
+      return undefined;
+    },
+  });
+  expire = true;
+  await act(() => view.hook.consult());
+  // The renewed read is repeated once and its answer is current.
+  expect(expire).toBe(false);
+  expect(view.hook.notice).toBe('Metas consultadas.');
+  expect(view.hook.query.data).toBeTruthy();
+});
+it('consulta do fuso salvo sobrevive à renovação de um acesso vencido', async () => {
+  let expire = false;
+  await open({
+    page: true,
+    override: (r) => {
+      if (expire && new URL(r.url).pathname.endsWith('/painel/preferencias')) {
+        expire = false;
+        return accessExpired();
+      }
+      return undefined;
+    },
+  });
+  await screen.findByText(/Salvo na conta/);
+  expire = true;
+  fireEvent.click(screen.getByRole('button', { name: 'Consultar fuso salvo' }));
+  await screen.findByText(/Fuso atual confirmado/);
+  expect(expire).toBe(false);
+});
 it('logout durante parsing remove estado privado e rejeita a resposta antiga', async () => {
   let stream!: ReadableStreamDefaultController<Uint8Array>;
   const bytes = new TextEncoder().encode(
