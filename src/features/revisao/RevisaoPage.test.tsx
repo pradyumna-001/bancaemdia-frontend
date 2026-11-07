@@ -64,16 +64,20 @@ async function setup(
   const fixture = revisaoFixture(),
     calls: Request[] = [],
     writes: Request[] = [];
-  const person = sessionContext({
-    usuario_id: 1,
-    nome: 'Teste',
-    email: 'teste@example.org',
-    session_version: `${crypto.randomUUID()}:1`,
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  const sessionId = crypto.randomUUID();
+  let version = 0;
+  const person = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Teste',
+      email: 'teste@example.org',
+      session_version: `${sessionId}:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: 30000 } },
   });
@@ -82,8 +86,8 @@ async function setup(
     queryClient: queries,
     exclusive: async (_signal, work) => work(),
     transport: {
-      read: async () => person,
-      renew: async () => person,
+      read: async () => person(),
+      renew: async () => person(),
       logout: async () => {},
     },
   });
@@ -356,6 +360,41 @@ it('commit com resposta perdida recupera recibo sem novo POST', async () => {
   await screen.findByText(
     'Revisão resolvida. A fila foi consultada novamente desde o início.',
   );
+  expect(s.writes).toHaveLength(1);
+});
+it('consulta da decisão sobrevive à renovação de um acesso vencido', async () => {
+  let fixture: ReturnType<typeof revisaoFixture> | undefined = undefined;
+  let expired = true;
+  const s = await setup(async (r) => {
+    if (r.method === 'POST' && fixture) {
+      fixture.handle('POST', new URL(r.url), await r.json());
+      throw new TypeError('network');
+    }
+    if (r.method === 'GET' && r.url.includes('/operacoes/') && expired) {
+      expired = false;
+      return json({ detail: 'access_expired' }, 401, {
+        'X-Auth-Error': 'access_expired',
+      });
+    }
+    return undefined;
+  });
+  fixture = s.fixture;
+  await editor();
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar correção' }));
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Consultar decisão' }),
+    ).toBeEnabled(),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Consultar decisão' }));
+  // auth.service.read renews once and repeats the safe GET; the renewed
+  // answer belongs to the same session and must not be discarded silently.
+  await screen.findByText(
+    'Revisão resolvida. A fila foi consultada novamente desde o início.',
+  );
+  expect(
+    s.calls.filter((r) => r.method === 'GET' && r.url.includes('/operacoes/')),
+  ).toHaveLength(2);
   expect(s.writes).toHaveLength(1);
 });
 it.each([409, 402, 503])(

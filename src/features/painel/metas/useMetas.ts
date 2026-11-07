@@ -156,9 +156,13 @@ export function useMetas(client: ReturnType<typeof createApiClient>) {
     const controller = new AbortController();
     active.current = controller;
     setBusy(true);
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session starts a lookup.
+    // A safe read survives the renewal done by auth.service.read; logout or a
+    // person change (privateEpoch) still discards it.
     const current = () =>
-      alive.current && scope.isCurrent() && !controller.signal.aborted;
+      alive.current &&
+      auth.service.getSnapshot().privateEpoch === epoch &&
+      !controller.signal.aborted;
     try {
       const value = await auth.service.read(async () =>
         conferir(

@@ -89,11 +89,20 @@ async function open(
     access_expires_at: '2030-01-01T00:00:00Z',
     session_expires_at: '2030-01-02T00:00:00Z',
   });
+  let reads = 0;
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => ctx,
+      // Each session read after the first publishes a new version, as a
+      // renewal does.
+      read: async () =>
+        (ctx = reads++
+          ? {
+              ...ctx,
+              version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${reads + 1}`,
+            }
+          : ctx),
       renew: async () => ctx,
       logout: async () => {},
     },
@@ -444,6 +453,42 @@ it('manually supplied identity supports READ_ONLY receipt lookup without reconst
   h.view.unmount();
   act(() => h.session.accountClosed());
   expect(sessionStorage.getItem('bancaemdia:troca:1')).toBeNull();
+});
+
+it('receipt lookup survives the renewal of an expired access', async () => {
+  const key = crypto.randomUUID();
+  let expired = true;
+  const h = await open({
+    key,
+    readOnly: true,
+    override: (req) => {
+      if (new URL(req.url).pathname !== GET) return undefined;
+      if (expired) {
+        expired = false;
+        return json({ detail: 'access_expired' }, 401, {
+          'X-Auth-Error': 'access_expired',
+        });
+      }
+      return json({
+        estado: 'APPLIED',
+        previa: previaTroca,
+        previa_expira_em: '2030-01-01T00:00:00Z',
+        recibo: { ...previaTroca, aplicada: true },
+      });
+    },
+  });
+  act(() => h.hook.recover(key));
+  await act(async () => {
+    await h.hook.consult();
+  });
+  // auth.service.read renews once and repeats the safe GET; the renewed
+  // answer belongs to the same session and must not be discarded silently.
+  expect(
+    h.requests.filter((r) => new URL(r.url).pathname === GET),
+  ).toHaveLength(2);
+  expect(h.hook.state.receipt?.aplicada).toBe(true);
+  expect(h.hook.error).toBeUndefined();
+  expect(h.hook.busy).toBe(false);
 });
 
 it('the intention stays in memory even when storage is unavailable and session cleanup removes it', async () => {

@@ -63,22 +63,25 @@ async function open({
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Sandbox',
-    email: 'sandbox@example.org',
-    session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Sandbox',
+      email: 'sandbox@example.org',
+      session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
     exclusive: async (_s, fn) => fn(),
@@ -552,6 +555,52 @@ it('foto privada é carregada sob gesto e revogada ao sair, com espaço reservad
   ).toBeVisible();
   await act(() => app.session.logout());
   expect(revoke).toHaveBeenCalledWith('blob:foto-privada');
+});
+it('foto da revisão continua após renovar um acesso vencido', async () => {
+  vi.stubGlobal(
+    'URL',
+    class extends URL {
+      static createObjectURL = vi.fn(() => 'blob:foto-privada');
+      static revokeObjectURL = vi.fn();
+    },
+  );
+  vi.stubGlobal('Blob', NodeBlob);
+  let expired = true;
+  const app = await open({
+    data: {
+      ...structuredClone(detalheExemplo),
+      revisao_pendente: {
+        id: 8,
+        motivo: 'duvida_de_par',
+        midia_hash: 'imagem-de-teste',
+        criado_em: '2026-10-10T12:00:00Z',
+      },
+    },
+    respond: async (req) => {
+      if (!req.url.endsWith('/foto')) return undefined;
+      if (expired) {
+        expired = false;
+        return json({ detail: 'access_expired' }, 401, {
+          'X-Auth-Error': 'access_expired',
+        });
+      }
+      return new Response(new Uint8Array([137, 80, 78, 71]), {
+        headers: { 'Content-Type': 'image/png' },
+      });
+    },
+  });
+  await editable();
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Abrir foto da revisão' }),
+  );
+  // auth.service.read renews once and repeats the safe GET; the renewed
+  // answer belongs to the same session and must not be discarded silently.
+  expect(
+    await screen.findByRole('img', {
+      name: 'Evidência da revisão desta aposta',
+    }),
+  ).toBeVisible();
+  expect(app.requests.filter((r) => r.url.endsWith('/foto'))).toHaveLength(2);
 });
 it.each([404, 503, 200])(
   'foto %s: autorização/recuperação e MIME real são obrigatórios',

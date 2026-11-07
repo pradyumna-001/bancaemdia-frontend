@@ -105,10 +105,14 @@ export function useTroca(client: ReturnType<typeof createApiClient>) {
     setBusy(true);
     setError(undefined);
     const scope = auth.service.capture();
+    // A consultation is a safe read: auth.service.read renews an expired
+    // access once and only resolves for the current session, so its answer
+    // stays valid across that renewal. A write stays bound to the session
+    // that sent it.
     const live = () =>
       alive.current &&
       !controller.signal.aborted &&
-      scope.isCurrent() &&
+      (kind === 'get' || scope.isCurrent()) &&
       auth.service.getSnapshot().privateEpoch === epoch;
     let sent = false;
     try {
