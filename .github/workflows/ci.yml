@@ -27,7 +27,10 @@ jobs:
       - run: npm install --global pnpm@10.34.6
       - run: make install lint typecheck test:coverage build check:bundle gen-types
       - run: git diff --exit-code -- src/api/schema.d.ts src/api/operations.generated.ts src/api/site-read.generated.ts src/api/resultados.generated.ts src/api/revisao.generated.ts src/api/manual.generated.ts
-      - run: pnpm exec playwright install --with-deps
+      - name: Instalar navegadores (cache e tentativas só de infraestrutura, #125)
+        uses: ./.github/actions/navegadores
+        with:
+          tool: pnpm
       - run: make measure:lighthouse
       - name: Guardar build público e CSP do mesmo SHA
         uses: actions/upload-artifact@v4
