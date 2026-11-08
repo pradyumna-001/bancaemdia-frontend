@@ -22,7 +22,7 @@ jobs:
     # The Chromium leg runs the most journeys (27-29 min); same tests, more room.
     timeout-minutes: 45
     env:
-      IDENTITY_API_SHA: af70d6a9cc87ce10abcff660e9a797d4a439d6da
+      IDENTITY_API_SHA: fb96e7c25974e9d9f70a1910d6b9a71b9f62a160
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api

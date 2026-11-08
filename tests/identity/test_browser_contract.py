@@ -217,10 +217,12 @@ async def complete_hosted_entry(page, email, password, destination):
         await page.locator("#kc-form-login").wait_for()
         if not await page.locator("#username").is_visible():
             await page.locator("#reset-login").click()
-        await page.locator("#username").fill(email)
+        # Fill only once the hosted form keeps the exact values (API #222).
+        journal = backend.default_journal()
+        await backend.fill_exactly(page, {"#username": email}, journal)
         if not await page.locator("#password").count():
             await page.locator("#kc-login").click()
-        await page.locator("#password").fill(password)
+        await backend.fill_exactly(page, {"#password": password}, journal)
         await page.locator("#kc-login").click()
         await page.wait_for_url(destination, timeout=30000)
     except BrowserError:
@@ -867,9 +869,7 @@ async def test_public_spa_account_registration_and_recovery(
                 )
                 assert count == 0, "Unconfirmed signup must not provision an API user"
             await page.goto(confirmation)
-            await page.locator("#password-new").fill(password)
-            await page.locator("#password-confirm").fill(password)
-            await page.locator('input[type="submit"],button[type="submit"]').click()
+            await backend.set_new_password(page, password, harness.journal)
             await page.wait_for_url(backend.FRONT + destination)
             await expect(
                 page.get_by_role("heading", name="Painel", exact=True)
@@ -911,13 +911,11 @@ async def test_public_spa_account_registration_and_recovery(
             await recovery.get_by_role(
                 "link", name="Forgot Password?", exact=True
             ).click()
-            await recovery.locator("#username").fill(email)
-            await recovery.locator('input[type="submit"],button[type="submit"]').click()
+            await backend.fill_exactly(recovery, {"#username": email}, harness.journal)
+            await backend.submit_and_wait(recovery, harness.journal, "recover")
             reset, _ = await backend.mail_link(email, {message})
             await recovery.goto(reset)
-            await recovery.locator("#password-new").fill(changed)
-            await recovery.locator("#password-confirm").fill(changed)
-            await recovery.locator('input[type="submit"],button[type="submit"]').click()
+            await backend.set_new_password(recovery, changed, harness.journal)
             await recovery.wait_for_url(backend.FRONT + destination)
             await expect(
                 recovery.get_by_role("heading", name="Painel", exact=True)
