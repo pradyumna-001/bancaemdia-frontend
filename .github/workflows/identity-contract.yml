@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
-      IDENTITY_API_SHA: 2d28fc74be9b784554e0fbb5a0fa445faeda6630
+      IDENTITY_API_SHA: af70d6a9cc87ce10abcff660e9a797d4a439d6da
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -87,6 +87,7 @@ jobs:
           name: identity-contract-${{ github.event_name }}-${{ github.run_id }}
           if-no-files-found: error
           path: |
+            .identity-api/identity-diagnostics/
             .identity-api/identity-results.xml
             .identity-api/browser-contract.xml
       - name: Encerrar somente o sandbox deste job

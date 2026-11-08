@@ -190,7 +190,9 @@ def serve_public_build():
         do_PATCH = handle_request
         do_DELETE = handle_request
 
-    return ThreadingHTTPServer(("127.0.0.1", 58001), PublicBuild)
+    # 58001 lies in the runner's ephemeral range: keep it reserved for the whole
+    # process so an outgoing connection never takes it between tests (API #222).
+    return backend.reserved_server(58001, PublicBuild)
 
 
 async def browser_request(page, path, *, method="GET", csrf=None, body=None):
@@ -814,7 +816,7 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         await browser.close()
 
 
-async def start_public_registration(page, email, destination):
+async def start_public_registration(page, email, destination, harness):
     from urllib.parse import urlencode
 
     await page.goto(
@@ -826,7 +828,9 @@ async def start_public_registration(page, email, destination):
     await page.locator("#firstName").fill("Disposable")
     await page.locator("#lastName").fill("Acceptance")
     assert await page.locator("#password").count() == 0
-    await page.locator('input[type="submit"],button[type="submit"]').click()
+    # Open the email only after the issuer answered the form, like a person;
+    # following the link mid-request raced the same Keycloak session (API #222).
+    await backend.submit_registration(page, harness.journal)
     return await backend.mail_link(email)
 
 
@@ -854,7 +858,7 @@ async def test_public_spa_account_registration_and_recovery(
             password, changed = (secrets.token_urlsafe(24) for _ in range(2))
             destination = "/painel?apagadas=1#serie"
             confirmation, message = await start_public_registration(
-                page, email, destination
+                page, email, destination, harness
             )
             async with engine_admin.connect() as conn:
                 count = await conn.scalar(
@@ -986,7 +990,9 @@ async def test_public_spa_expired_confirmation(
             context = await browser.new_context(viewport=viewport)
             page = await context.new_page()
             email = uuid4().hex + "@example.org"
-            confirmation, _ = await start_public_registration(page, email, "/painel")
+            confirmation, _ = await start_public_registration(
+                page, email, "/painel", harness
+            )
             await asyncio.sleep(2)
             await page.goto(confirmation)
             if "expired" not in (await page.locator("body").inner_text()).lower():
