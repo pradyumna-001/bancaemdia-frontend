@@ -161,3 +161,62 @@
     flex-direction: column;
   }
 }
+.caixa-nativo {
+  display: grid;
+  gap: var(--espaco-16);
+}
+.caixa-nativo h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.nativo-tabela {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+.nativo-tabela th,
+.nativo-tabela td {
+  padding-block: var(--espaco-8);
+  text-align: start;
+  border-block-end: 1px solid var(--borda);
+}
+.nativo-contas,
+.nativo-apostas {
+  display: grid;
+  gap: var(--espaco-8);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.nativo-apostas article {
+  padding: var(--espaco-12);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-controle);
+}
+.nativo-apostas dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-8) var(--espaco-24);
+  margin: 0;
+}
+.nativo-apostas dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.nativo-form,
+.nativo-incerto {
+  display: grid;
+  gap: var(--espaco-8);
+}
+.nativo-form fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-16);
+  border: 0;
+  padding: 0;
+}
+@media (max-width: 40rem) {
+  .nativo-tabela {
+    display: block;
+    overflow-x: auto;
+  }
+}

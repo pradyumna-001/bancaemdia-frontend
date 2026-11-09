@@ -2,6 +2,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { caixaFixture } from '../fixtures/caixa';
 import { bancasFixture } from '../fixtures/bancas';
+import { nativoFixture } from '../fixtures/nativo';
+import { casasManual } from '../fixtures/manual';
 const url = 'http://127.0.0.1:4210/banca';
 test('Caixa: saldo desconhecido, transferência atômica, temas, teclado e reflow', async ({
   page,
@@ -176,6 +178,63 @@ test('Bancas: criar com capital, editar, arquivar com confirmação e teclado', 
   await dialog.getByRole('button', { name: 'Arquivar banca' }).click();
   await expect(secao).toContainText('Bancas arquivadas (1)');
   expect(writes).toHaveLength(3);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.setViewportSize({ width: 320, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test('Outras moedas: totais por moeda, valores exatos e conta nova por teclado', async ({
+  page,
+}) => {
+  const nativo = nativoFixture();
+  const posts: unknown[] = [];
+  await page.route('**/api/v1/financeiro/nativo/**', async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const body =
+      request.method() === 'POST' ? request.postDataJSON() : undefined;
+    if (body) posts.push(body);
+    const r = nativo.handle(request.method(), url, body)!;
+    await route.fulfill({ status: r.status, json: r.data });
+  });
+  await page.route('**/api/v1/filtros/**', (route) =>
+    route.fulfill({ json: casasManual }),
+  );
+  await page.goto(url);
+  const secao = page.getByRole('region', {
+    name: 'Outras moedas',
+    exact: true,
+  });
+  await expect(secao.getByRole('table')).toContainText(
+    '+9,345000000000000000000000000001 USDT',
+  );
+  await expect(secao).toContainText('1win USDT');
+  await expect(
+    secao.getByRole('article', { name: 'Aposta 502' }),
+  ).toContainText('fica fora dos totais');
+  await expect(secao).not.toContainText('R$');
+  await secao.getByRole('button', { name: 'Conta em outra moeda' }).click();
+  await secao.getByRole('button', { name: /^Casa / }).click();
+  await page.getByRole('button', { name: 'Betano', exact: true }).click();
+  await secao.getByLabel('USDT').check();
+  await secao.getByLabel('Apelido').fill('Segunda 1win');
+  await secao
+    .getByLabel('Início da vigência (com fuso)')
+    .fill('15/10/2026 00:00-03:00');
+  await secao.getByLabel('Início da vigência (com fuso)').press('Enter');
+  await expect(secao).toContainText('Conta Segunda 1win em USDT criada.');
+  expect(posts).toEqual([
+    {
+      casa_id: 7,
+      currency: 'USDT',
+      label: 'Segunda 1win',
+      valid_from: '2026-10-15T00:00:00-03:00',
+    },
+  ]);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.setViewportSize({ width: 320, height: 844 });
   expect(
