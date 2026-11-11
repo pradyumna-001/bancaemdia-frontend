@@ -7,29 +7,51 @@ set -euo pipefail
 
 read -r -a browsers <<< "${BROWSERS:-}"
 if [ "${TOOL:-python}" = pnpm ]; then
-  command=(pnpm exec playwright install)
+  playwright=(pnpm exec playwright)
 else
-  command=(python -m playwright install)
-fi
-if [ "${WITH_DEPS:-true}" = true ]; then
-  command+=(--with-deps)
+  playwright=(python -m playwright)
 fi
 limit="${ATTEMPT_SECONDS:-300}"
 
-for attempt in 1 2 3; do
-  start=$(date +%s)
-  set +e
-  timeout "$limit" "${command[@]}" "${browsers[@]}"
-  code=$?
-  set -e
-  elapsed=$(( $(date +%s) - start ))
-  if [ "$code" -eq 0 ]; then
-    echo "Navegadores prontos na tentativa $attempt (${elapsed}s)."
-    exit 0
-  fi
-  reason=$([ "$code" -eq 124 ] && echo "prazo de ${limit}s esgotado" || echo "código de saída $code")
-  echo "::warning title=Instalação de navegadores (#125)::Tentativa $attempt sem sucesso após ${elapsed}s: $reason. Nenhum teste foi executado; repetindo só a instalação."
-  sleep 20
-done
-echo "::error title=Instalação de navegadores (#125)::Três tentativas de instalação falharam. Nenhum teste foi executado."
-exit 1
+# A timeout can stop apt in the middle of dpkg; the next apt run then refuses
+# with code 100 until dpkg is repaired. Repair and wait for the apt locks
+# before any new attempt, so a retry really retries.
+repair_apt() {
+  command -v dpkg > /dev/null || return 0
+  for lock in /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock; do
+    for _ in $(seq 1 60); do
+      sudo fuser "$lock" > /dev/null 2>&1 || break
+      sleep 2
+    done
+  done
+  sudo dpkg --configure -a || true
+}
+
+attempt() {
+  local step="$1"
+  shift
+  for n in 1 2 3; do
+    local start code elapsed reason
+    start=$(date +%s)
+    set +e
+    timeout "$limit" "$@"
+    code=$?
+    set -e
+    elapsed=$(( $(date +%s) - start ))
+    if [ "$code" -eq 0 ]; then
+      echo "$step pronto na tentativa $n (${elapsed}s)."
+      return 0
+    fi
+    reason=$([ "$code" -eq 124 ] && echo "prazo de ${limit}s esgotado" || echo "código de saída $code")
+    echo "::warning title=Instalação de navegadores (#125)::$step: tentativa $n sem sucesso após ${elapsed}s: $reason. Nenhum teste foi executado; repetindo só esta instalação."
+    repair_apt
+    sleep 20
+  done
+  echo "::error title=Instalação de navegadores (#125)::$step: três tentativas falharam. Nenhum teste foi executado."
+  return 1
+}
+
+if [ "${WITH_DEPS:-true}" = true ]; then
+  attempt "Dependências do sistema" "${playwright[@]}" install-deps "${browsers[@]}"
+fi
+attempt "Navegadores" "${playwright[@]}" install "${browsers[@]}"

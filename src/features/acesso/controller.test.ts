@@ -71,6 +71,7 @@ async function sandbox() {
     client,
     queries,
     fetcher,
+    transport,
     switchPerson: (id: number) => {
       person = id;
     },
@@ -269,4 +270,26 @@ it('troca de pessoa durante a conferência de billing ainda cancela a escrita', 
   );
   await rejected;
   expect(work).not.toHaveBeenCalled();
+});
+it('escrita pedida durante a conferência da sessão espera e sai uma vez sob a sessão confirmada', async () => {
+  const s = await sandbox();
+  let release!: () => void;
+  const same = await s.transport.read();
+  s.transport.read.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = () => resolve(same);
+      }),
+  );
+  // Return to the window: the check is in flight when the person clicks.
+  const check = s.session.resume();
+  expect(s.session.checking()).toBe(true);
+  const work = vi.fn(async () => 'enviado');
+  const pending = s.access.run(s.client, 'POST /api/v1/apostas', work);
+  await Promise.resolve();
+  expect(work).not.toHaveBeenCalled();
+  release();
+  await check;
+  await expect(pending).resolves.toBe('enviado');
+  expect(work).toHaveBeenCalledOnce();
 });
