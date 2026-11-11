@@ -35,7 +35,7 @@ Todas as linhas exigem a credencial válida correspondente; permissão comercial
 | Calculadoras            | Quatro POST stateless permitidos                    | mercado-justo, distribuir-entre-resultados, cobertura-ao-vivo, percentual-banca; resultados sempre calculados pelo servidor                                                                                             |
 | Billing                 | GET status                                          | POST subscribe/portal/cancel são exceções explícitas, com condições próprias da API; sem replay de uma escrita financeira após pagamento                                                                                |
 
-`operations.ts` enumera exceções com verificação estática contra paths gerados. Não classificar todo POST como escrita bloqueada ou todo DELETE como exceção.
+`operations.ts` decide pela política publicada no contrato pinado (`x-bancaemdia-policy`, gerada em `src/api/policies.generated.ts`): exige FULL_WRITE quando `access_modes` não inclui READ_ONLY (#121). O gerador recusa operação sem política válida; a entrada recebe só as exceções ao verbo (`ACCESS_EXCEPTIONS`), sem a política completa. As exceções da tabela acima continuam cobertas por teste contra o contrato. Não classificar todo POST como escrita bloqueada ou todo DELETE como exceção.
 
 ## Integração das PRs independentes
 

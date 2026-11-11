@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      IDENTITY_API_SHA: 37b130282c0d4a240f152b72fc76933074f38e4e
+      IDENTITY_API_SHA: 2d28fc74be9b784554e0fbb5a0fa445faeda6630
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -57,7 +57,10 @@ jobs:
       - run: ruff check tests/identity && ruff format --check tests/identity
       - name: Provar limpeza do ambiente antes e depois do bootstrap
         run: python -m pytest -c .identity-api/pyproject.toml --noconftest -o addopts='' --import-mode=importlib tests/identity/test_harness_resources.py --no-cov -n 0
-      - run: python -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Instalar navegadores (cache e tentativas só de infraestrutura, #125)
+        uses: ./.github/actions/navegadores
+        with:
+          browsers: ${{ matrix.browser }}
       - name: Gerar credenciais exclusivamente descartáveis e mascaradas
         shell: bash
         run: |

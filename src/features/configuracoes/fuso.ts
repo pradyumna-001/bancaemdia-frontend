@@ -1,5 +1,6 @@
 import { ApiError } from '../../api/error';
 import type { components } from '../../api/schema';
+import { fusoReconhecido } from '../../lib/format';
 
 export type PreferenciaFuso = components['schemas']['FusoEntrada'];
 
@@ -13,12 +14,7 @@ export const FUSOS_RAPIDOS = [
 
 export function fusoValido(value: unknown): value is string {
   if (typeof value !== 'string' || !value || value.length > 64) return false;
-  try {
-    new Intl.DateTimeFormat('pt-BR', { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
+  return fusoReconhecido(value);
 }
 
 export function preferenciaFuso(

@@ -2,7 +2,7 @@ import type { components } from '../../api/schema';
 import { ApiError } from '../../api/error';
 import { respostaPublicada } from '../../api/readContract';
 import { SITE_READ_CONTRACT } from '../../api/site-read.generated';
-import { RESULTADOS_POLICIES } from '../../api/resultados.generated';
+import { OPERATION_POLICIES } from '../../api/policies.generated';
 import { centavosDaEntrada, dataHora, moeda, odd } from '../../lib/format';
 
 export type ApostaResultado = components['schemas']['ResultBet'];
@@ -52,10 +52,11 @@ function conferirAposta(
   return value;
 }
 export function validarFila(value: Fila | undefined): Fila {
-  const policy = RESULTADOS_POLICIES['GET /api/v1/resultados/fila'];
+  // The queue stays readable in READ_ONLY and carries no write identity.
+  const policy = OPERATION_POLICIES['GET /api/v1/resultados/fila'];
   if (
-    policy.pagination !== 'keyset_cursor' ||
-    policy.read_source !== 'primary_snapshot'
+    !(policy.access_modes as readonly string[]).includes('READ_ONLY') ||
+    policy.idempotency.identity !== 'none'
   )
     throw new ApiError('invalid_response');
   respostaPublicada(

@@ -106,6 +106,40 @@ it('confere escrita com status fresco; exceções explícitas continuam disponí
   expect(s.fetcher).toHaveBeenCalledTimes(before);
   expect(operationNeedsWrite('PATCH /api/v1/apostas/{chave}')).toBe(true);
 });
+it('exceções de escrita em READ_ONLY vêm do contrato e continuam as verificadas no backend', () => {
+  // Previously kept by hand against backend b916f54; now each one must still be
+  // allowed in READ_ONLY by x-bancaemdia-policy of the pinned contract.
+  for (const operation of [
+    'GET /api/v1/apostas/{chave}/foto',
+    'POST /auth/logout',
+    'POST /auth/refresh',
+    'POST /api/v1/calculadoras/mercado-justo',
+    'POST /api/v1/calculadoras/distribuir-entre-resultados',
+    'POST /api/v1/calculadoras/cobertura-ao-vivo',
+    'POST /api/v1/calculadoras/percentual-banca',
+    'POST /api/v1/billing/subscribe',
+    'POST /api/v1/billing/portal',
+    'POST /api/v1/billing/cancel',
+    'POST /api/v1/telegram/link-codes',
+    'DELETE /api/v1/telegram/link',
+    'DELETE /api/v1/usuario/me',
+    'POST /api/v1/coleta/pairing-codes',
+    'POST /api/v1/coleta/installations/{instalacao_id}/rotate',
+    'DELETE /api/v1/coleta/installations/{instalacao_id}',
+  ] as const)
+    expect(operationNeedsWrite(operation)).toBe(false);
+  for (const operation of [
+    'POST /api/v1/apostas',
+    'POST /api/v1/caixa',
+    'POST /api/v1/bancas',
+    'POST /api/v1/unidade/vigencias',
+    'POST /api/v1/apostas/lotes',
+    'POST /api/v1/apostas-manuais/operacoes/{intencao_id}',
+  ] as const)
+    expect(operationNeedsWrite(operation)).toBe(true);
+  // An operation outside the contract is never treated as a read.
+  expect(operationNeedsWrite('POST /api/v1/inexistente' as never)).toBe(true);
+});
 it('402 real invalida a confirmação, notifica e não reenvia mutação; pagamento exige nova intenção', async () => {
   const s = await sandbox();
   const listener = vi.fn();

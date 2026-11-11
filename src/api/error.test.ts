@@ -163,3 +163,28 @@ it('Revisão projeta só campo seguro, sem conteúdo privado do provedor', () =>
     'não confirma',
   );
 });
+
+it('Unidade projeta só o nome de cada campo, uma vez, sem código nem valor', () => {
+  const project = (body: unknown) =>
+    httpError(new Response(null, { status: 422 }), body, true);
+  const error = project({
+    detail: 'unidade_invalida',
+    campos: [
+      { campo: 'valor_centavos', codigo: 'acima_do_limite', input: 'private' },
+      { campo: 'valor_centavos', codigo: 'inteiro' },
+      { campo: '../secret', codigo: 'invalido' },
+      { campo: 7 },
+      null,
+    ],
+  });
+  expect(error.invalidFields).toEqual([
+    { scope: 'body', field: 'valor_centavos' },
+  ]);
+  expect(Object.isFrozen(error.invalidFields)).toBe(true);
+  expect(JSON.stringify(error)).not.toContain('private');
+  for (const body of [
+    { detail: 'unidade_invalida', campos: 'valor_centavos' },
+    { detail: 'outra_coisa', campos: [{ campo: 'valor_centavos' }] },
+  ])
+    expect(project(body).invalidFields).toEqual([]);
+});
