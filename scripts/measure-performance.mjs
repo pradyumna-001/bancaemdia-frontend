@@ -120,7 +120,7 @@ const report = {
   }).trim(),
   apiSha: input.apiSha,
   apiSchemaSha256: API_PIN.sha256,
-  availability: API_PIN.availability.kind,
+  availability: API_PIN.availability?.kind ?? 'main',
   productionAuthorized: false,
   profile,
   repetitions: REPETITIONS,

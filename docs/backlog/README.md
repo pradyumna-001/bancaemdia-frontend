@@ -60,5 +60,5 @@ Revisão de produto autorizada em 29/09/2026, com correção de 06/10/2026 nas #
 | [#128](https://github.com/pradyumna-001/bancaemdia-frontend/issues/128) | [Financeiro nativo — contas, apostas e totais por moeda](128.md)                              | pradyumna-001/bancaemdia-api#221; #120; #121                                                                   |
 
 Reorganização de 04/11/2026: depois da integração da API (main `c866fe7`) e dos merges #104/#105/#108, as issues entregues foram fechadas com a PR de cada entrega. O que faltava sem issue dedicada ficou em #120 (contrato integrado), #121 (política por operação), #122 (bancas), #123 (unidade), #124 (apagar em lote), #125 (harness das jornadas reais) e #128 (financeiro nativo); #33 e #50 foram encerradas com o restante redistribuído.
-
+| [#82](https://github.com/pradyumna-001/bancaemdia-frontend/issues/82) | [Correção visual das telas de acesso](082.md) | #12 / PR #67 integrada em main |
 Atualização #20 em 11/10/2026: emergência backend #188/PR #189 conferida; diário, hierarquia e Excel têm candidata completa autorizada. O frontend usa documento único, declara dependências e mantém bloqueio de publicação até integração/reconciliação. Ver [Painel](../contracts/painel.md); as outras parcelas da #50 seguem abertas.

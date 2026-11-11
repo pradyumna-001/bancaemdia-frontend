@@ -1,5 +1,9 @@
 # Telas de conta — #12
 
+## Correção visual #82 — 10/10/2026
+
+Após a revisão do responsável, login/cadastro/recuperação/confirmação/redefinição passam a usar painel centralizado, marca, título, texto curto, ação principal e links contextuais. Remover seletor de aparência e bloco permanente de instruções; detalhes de recuperação/cadastro continuam sob demanda. Alteração de senha/saída usam o mesmo componente dentro do shell protegido. Tema segue sistema/preferência existente, sem alteração no bootstrap/CSP. A correção é uma PR independente contra main após a integração da PR #67; não muda intents, contrato, segurança ou aceites reais. Verificar mobile/desktop, dois temas, foco/contraste e reflow 320px.
+
 As rotas existentes agora apresentam a jornada real de acesso, substituindo os placeholders. A identidade e o transporte continuam em ProvedorAuth/#11; esta camada não recebe senha, e-mail, token ou código de confirmação e não cria endpoints alternativos.
 
 | Página               | Ação                           | Intent na API            |

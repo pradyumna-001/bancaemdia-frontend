@@ -126,51 +126,78 @@ export function paginationPolicies(schema) {
   return policies;
 }
 
-export function resultsPolicies(schema) {
-  return Object.fromEntries(
-    Object.entries(schema.paths).flatMap(([path, methods]) =>
-      Object.entries(methods).flatMap(([method, operation]) =>
-        operation['x-bancaemdia-resultados']
-          ? [
-              [
-                `${method.toUpperCase()} ${path}`,
-                operation['x-bancaemdia-resultados'],
-              ],
-            ]
-          : [],
-      ),
-    ),
-  );
+const MODES = new Set(['FULL_WRITE', 'READ_ONLY']);
+const IDENTITY = /^(none|header:Idempotency-Key|(path|body):[a-z_]+)$/;
+
+// x-bancaemdia-policy is the single machine-readable policy of every operation
+// (API #217): access modes, automatic retry and idempotency identity/recovery.
+export function bancaemdiaPolicies(schema) {
+  const policies = {};
+  for (const [path, item] of Object.entries(schema.paths)) {
+    for (const method of ['get', 'post', 'put', 'patch', 'delete']) {
+      const operation = item[method];
+      if (!operation) continue;
+      const key = `${method.toUpperCase()} ${path}`;
+      const policy = operation['x-bancaemdia-policy'];
+      const modes = policy?.access_modes;
+      const retry = policy?.automatic_retry;
+      const idempotency = policy?.idempotency;
+      const header = [
+        ...(item.parameters ?? []),
+        ...(operation.parameters ?? []),
+      ].some(
+        (p) => p.in === 'header' && p.name.toLowerCase() === 'idempotency-key',
+      );
+      if (
+        !Array.isArray(modes) ||
+        !modes.length ||
+        !modes.every((mode) => MODES.has(mode)) ||
+        typeof retry?.allowed !== 'boolean' ||
+        !(
+          retry.max_attempts === null ||
+          (Number.isSafeInteger(retry.max_attempts) && retry.max_attempts > 0)
+        ) ||
+        !IDENTITY.test(idempotency?.identity ?? '') ||
+        // Recovery reads also take the key header to find an intention.
+        (idempotency.identity === 'header:Idempotency-Key' && !header) ||
+        (idempotency.identity.startsWith('path:') &&
+          !path.includes(`{${idempotency.identity.slice(5)}}`)) ||
+        !(
+          idempotency.recovery === null ||
+          // Same request, same key: the server deduplicates (never automatic here).
+          idempotency.recovery === 'replay' ||
+          /^(GET|POST|PUT|PATCH|DELETE) \/\S+$/.test(idempotency.recovery)
+        ) ||
+        !(
+          idempotency.retention === null ||
+          typeof idempotency.retention === 'string'
+        )
+      )
+        throw new Error(`Política de operação ausente ou inválida: ${key}.`);
+      policies[key] = {
+        access_modes: [...modes].sort(),
+        automatic_retry: {
+          allowed: retry.allowed,
+          max_attempts: retry.max_attempts,
+        },
+        idempotency: {
+          identity: idempotency.identity,
+          recovery: idempotency.recovery,
+          retention: idempotency.retention,
+        },
+      };
+    }
+  }
+  return policies;
 }
 
-export function reviewPolicies(schema) {
-  return Object.fromEntries(
-    Object.entries(schema.paths).flatMap(([path, methods]) =>
-      Object.entries(methods).flatMap(([method, operation]) =>
-        operation['x-bancaemdia-review']
-          ? [
-              [
-                `${method.toUpperCase()} ${path}`,
-                operation['x-bancaemdia-review'],
-              ],
-            ]
-          : [],
-      ),
-    ),
-  );
-}
-
-export function manualPolicies(schema) {
-  const path = '/api/v1/apostas-manuais/operacoes/{intencao_id}';
-  const item = schema.paths[path];
-  if (
-    !item?.post?.['x-idempotency'] ||
-    item.get?.['x-permission'] !== 'READ_ONLY'
-  )
-    throw new Error('Contrato de criação manual sem política de recuperação.');
+// Compact form for the entry bundle: only where the commercial permission
+// differs from "reads in READ_ONLY, writes in FULL_WRITE".
+export function accessExceptions(policies) {
+  const readOnly = (key) => policies[key].access_modes.includes('READ_ONLY');
+  const keys = Object.keys(policies).sort();
   return {
-    ...item.post['x-idempotency'],
-    get_permission: item.get['x-permission'],
-    get_automatic_retry: item.get['x-automatic-retry'],
+    readOnlyWrites: keys.filter((k) => !k.startsWith('GET ') && readOnly(k)),
+    fullWriteReads: keys.filter((k) => k.startsWith('GET ') && !readOnly(k)),
   };
 }
