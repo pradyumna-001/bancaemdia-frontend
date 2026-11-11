@@ -67,6 +67,9 @@ export function createAccessController(
       operation: AccessOperation,
       work: () => Promise<T>,
     ): Promise<T> {
+      // A session check in progress (return to the window) finishes before
+      // the gate: the write was not sent and belongs to the confirmed session.
+      if (session.checking()) await session.settled();
       session.capture(); // Only an authenticated session may write.
       // The billing consult is a safe read and may renew an expired access of
       // the same person (new session version). The write was not sent yet, so
