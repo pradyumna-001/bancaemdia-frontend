@@ -92,7 +92,7 @@ export function FusoPreferencia({
       selected === query.data?.fuso_horario
     )
       return;
-    const scope = auth.service.capture();
+    let scope = auth.service.capture();
     const controller = new AbortController();
     pending.current = controller;
     const current = () =>
@@ -102,6 +102,9 @@ export function FusoPreferencia({
     setNotice('');
     try {
       const data = await access.run(operation, async () => {
+        // Bound to the sending session: a same-person renewal in the
+        // billing gate comes before the write and does not cancel it.
+        scope = auth.service.capture();
         const result = await api.PATCH('/api/v1/painel/preferencias', {
           body: { fuso_horario: selected },
           signal: controller.signal,

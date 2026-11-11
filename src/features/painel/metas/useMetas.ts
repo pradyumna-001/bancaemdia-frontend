@@ -72,7 +72,7 @@ export function useMetas(client: ReturnType<typeof createApiClient>) {
     setError(undefined);
     setErrorIntent('gravacao');
     setNotice('');
-    const scope = auth.service.capture();
+    let scope = auth.service.capture();
     const mounted = () =>
       alive.current && auth.service.getSnapshot().privateEpoch === epoch;
     const current = () =>
@@ -80,6 +80,9 @@ export function useMetas(client: ReturnType<typeof createApiClient>) {
     let sent = false;
     try {
       const value = await access.run(operation, async () => {
+        // Bound to the sending session: a same-person renewal in the
+        // billing gate comes before the write and does not cancel it.
+        scope = auth.service.capture();
         if (!current()) throw new ApiError('cancelled', { mutation: true });
         sent = true;
         setUnknown({

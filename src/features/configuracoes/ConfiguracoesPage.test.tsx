@@ -63,22 +63,25 @@ async function open(
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Sandbox',
-    email: 'sandbox@example.org',
-    session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Sandbox',
+      email: 'sandbox@example.org',
+      session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
     exclusive: async (_signal, work) => work(),
@@ -99,7 +102,7 @@ async function open(
       captureSession: session.capture,
       fetcher: async (req) => {
         if (new URL(req.url).pathname === '/api/v1/billing/status')
-          return json({ ...billingStatus, access });
+          return consumeExpiredBilling() ?? json({ ...billingStatus, access });
         // The unit card has its own tests; keep fuso reads/writes isolated.
         if (new URL(req.url).pathname === '/api/v1/unidade')
           return json(unidadePadrao);
@@ -163,6 +166,22 @@ async function open(
     },
   };
 }
+// The next billing check answers 401 access_expired once (renewal in the
+// write gate, before anything is sent).
+let expireBilling = false;
+const billingExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+const consumeExpiredBilling = () => {
+  if (!expireBilling) return undefined;
+  expireBilling = false;
+  return billingExpired();
+};
 async function choose(zone = 'UTC') {
   await userEvent.click(screen.getByLabelText('Fuso das análises'));
   await userEvent.type(screen.getByLabelText('Buscar cidade ou região'), zone);
@@ -385,5 +404,16 @@ it('descarta resposta de gravação recebida após logout e evita envio duplicad
   expect(
     screen.queryByText('Fuso salvo:', { exact: false }),
   ).not.toBeInTheDocument();
+  expect(app.writes).toHaveLength(1);
+});
+it('acesso vencido renovado na conferência de billing ainda salva o fuso uma vez', async () => {
+  const app = await open();
+  await choose();
+  expireBilling = true;
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar fuso' }));
+  await screen.findByText(
+    'Fuso salvo: UTC. As análises usarão essa divisão dos dias.',
+  );
+  expect(expireBilling).toBe(false);
   expect(app.writes).toHaveLength(1);
 });

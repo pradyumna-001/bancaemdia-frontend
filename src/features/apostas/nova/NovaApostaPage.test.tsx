@@ -50,6 +50,22 @@ afterEach(() => {
   cleanups.splice(0).forEach((fn) => fn());
   vi.restoreAllMocks();
 });
+// The next billing check answers 401 access_expired once (renewal in the
+// write gate, before anything is sent).
+let expireBilling = false;
+const billingExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+const consumeExpiredBilling = () => {
+  if (!expireBilling) return undefined;
+  expireBilling = false;
+  return billingExpired();
+};
 async function open(
   entry = '/aposta/nova?casa=7&apagadas=1',
   access: 'FULL_WRITE' | 'READ_ONLY' = 'FULL_WRITE',
@@ -111,7 +127,7 @@ async function open(
       onAccessDenied: controller.denied,
       fetcher: async (req) => {
         if (new URL(req.url).pathname === '/api/v1/billing/status')
-          return json({ ...billingStatus, access });
+          return consumeExpiredBilling() ?? json({ ...billingStatus, access });
         requests.push(req.clone());
         return req.method === 'GET' ? get(req) : post(req);
       },
@@ -854,5 +870,15 @@ it('keeps the receipt lookup after renewing an expired access', async () => {
     screen.getByRole('button', { name: 'Consultar registro' }),
   );
   await screen.findByRole('heading', { name: 'Detalhe confirmado' });
+  expect(ui.writes()).toHaveLength(1);
+});
+it('expired access renewed in the billing gate still registers the bet once', async () => {
+  const ui = await open();
+  await ui.fill();
+  expireBilling = true;
+  await ui.user.click(screen.getByRole('button', { name: 'Registrar aposta' }));
+  // The POST had not been sent: it goes out once under the renewed session.
+  await screen.findByRole('heading', { name: 'Detalhe confirmado' });
+  expect(expireBilling).toBe(false);
   expect(ui.writes()).toHaveLength(1);
 });

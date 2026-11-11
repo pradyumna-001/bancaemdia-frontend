@@ -158,7 +158,7 @@ function ExportPage() {
       return;
     const service = auth?.service;
     if (!service || service.getSnapshot().phase !== 'authenticated') return;
-    const scope = service.capture();
+    let scope = service.capture();
     if (!scope?.isCurrent()) return;
     const epoch = service.getSnapshot().privateEpoch;
     const samePrivateContext = () =>
@@ -168,8 +168,11 @@ function ExportPage() {
     setBusy(true);
     setError(undefined);
     try {
-      const result = await access.run('POST /api/v1/upload', () =>
-        getApiClient().POST('/api/v1/upload', {
+      const result = await access.run('POST /api/v1/upload', () => {
+        // Bound to the sending session: a same-person renewal in the
+        // billing gate comes before the write and does not cancel it.
+        scope = service.capture();
+        return getApiClient().POST('/api/v1/upload', {
           body: { file: file.name },
           bodySerializer: () => {
             const form = new FormData();
@@ -177,8 +180,8 @@ function ExportPage() {
             return form;
           },
           signal: controller.signal,
-        }),
-      );
+        });
+      });
       if (!samePrivateContext() || controller.signal.aborted) return;
       if (!scope.isCurrent()) {
         setError(new ApiError('cancelled', { mutation: true }));

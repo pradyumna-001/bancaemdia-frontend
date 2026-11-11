@@ -52,6 +52,22 @@ afterEach(() => {
   clean.splice(0).forEach((fn) => fn());
   vi.restoreAllMocks();
 });
+// The next billing check answers 401 access_expired once (renewal in the
+// write gate, before anything is sent).
+let expireBilling = false;
+const billingExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+const consumeExpiredBilling = () => {
+  if (!expireBilling) return undefined;
+  expireBilling = false;
+  return billingExpired();
+};
 async function open(
   initial = '/contas',
   override?: (
@@ -97,10 +113,13 @@ async function open(
         requests.push(req.clone());
         const url = new URL(req.url);
         if (url.pathname === '/api/v1/billing/status')
-          return json({
-            ...billingStatus,
-            access: readOnly ? 'READ_ONLY' : 'FULL_WRITE',
-          });
+          return (
+            consumeExpiredBilling() ??
+            json({
+              ...billingStatus,
+              access: readOnly ? 'READ_ONLY' : 'FULL_WRITE',
+            })
+          );
         const custom = await override?.(req);
         if (custom) return custom;
         const value = api.handle(
@@ -744,4 +763,16 @@ it('an exact catalog ID unsupported by the write contract is explained without r
     screen.getByRole('button', { name: 'Cadastrar conta' }),
   ).toBeDisabled();
   expect(writes(requests)).toHaveLength(0);
+});
+it('expired access renewed in the billing gate does not cancel the creation', async () => {
+  const { requests } = await open();
+  await ready();
+  fireEvent.change(screen.getByLabelText('Nome do titular'), {
+    target: { value: 'Paula' },
+  });
+  expireBilling = true;
+  fireEvent.click(screen.getByRole('button', { name: 'Cadastrar titular' }));
+  await screen.findByRole('link', { name: 'Paula' });
+  expect(expireBilling).toBe(false);
+  expect(writes(requests)).toHaveLength(1);
 });
