@@ -258,9 +258,45 @@
     "dependencies": "#12/#83; #32/#86; #24/#75; #34/#99; #51; #54; #52/#76; #29/#96; #25/#90; #26/#91; #35/#98; frontend #102/#101/#100 e antecedentes; backend pin completo 5f5f062, sandbox com publicacao bloqueada"
   },
   {
-    "number": 82,
-    "title": "[ADR-006] Corrigir apresentação das telas de acesso após revisão visual",
-    "file": "082.md",
-    "dependencies": "#12 / PR #67 integrada em main"
+    "number": 120,
+    "title": "[ADR-019] Contrato integrado — trocar o pin do sandbox pela main da API e revalidar o produto",
+    "file": "120.md",
+    "dependencies": "pradyumna-001/bancaemdia-api#221; #26"
+  },
+  {
+    "number": 121,
+    "title": "[ADR-019] Política por operação — acesso, retry e idempotência a partir do contrato",
+    "file": "121.md",
+    "dependencies": "#120; #52"
+  },
+  {
+    "number": 122,
+    "title": "[ADR-019] Bancas — cadastro, capital inicial e arquivamento",
+    "file": "122.md",
+    "dependencies": "#120; #121; #31"
+  },
+  {
+    "number": 123,
+    "title": "[ADR-019] Unidade — valor com vigência em Configurações e Nova aposta",
+    "file": "123.md",
+    "dependencies": "#120; #121; #33; #29; #57"
+  },
+  {
+    "number": 124,
+    "title": "[ADR-019] Apostas — apagar todas em lote e restaurar",
+    "file": "124.md",
+    "dependencies": "#120; #121; #33; #58"
+  },
+  {
+    "number": 125,
+    "title": "[ADR-007] Jornadas reais — falhas de infraestrutura do harness sem mascarar defeitos",
+    "file": "125.md",
+    "dependencies": "nenhuma"
+  },
+  {
+    "number": 128,
+    "title": "[ADR-019] Financeiro nativo — contas, apostas e totais por moeda",
+    "file": "128.md",
+    "dependencies": "pradyumna-001/bancaemdia-api#221; #120; #121"
   }
 ]
