@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      IDENTITY_API_SHA: 2d28fc74be9b784554e0fbb5a0fa445faeda6630
+      IDENTITY_API_SHA: fb96e7c25974e9d9f70a1910d6b9a71b9f62a160
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -97,6 +97,7 @@ jobs:
           if-no-files-found: error
           include-hidden-files: true
           path: |
+            .identity-api/identity-diagnostics/
             .identity-api/unidade-*-results.xml
             .identity-api/unidade-*.zip
             .identity-api/unidade-*.png
