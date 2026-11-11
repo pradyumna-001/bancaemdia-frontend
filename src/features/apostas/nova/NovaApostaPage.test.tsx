@@ -149,10 +149,10 @@ async function open(
   await screen.findByRole('heading', { name: 'Nova aposta' });
   const user = userEvent.setup();
   const chooseHouse = async () => {
-    await user.click(screen.getByRole('button', { name: /^Casa / }));
     await waitFor(() =>
       expect(requests.some((r) => r.url.includes('/filtros/'))).toBe(true),
     );
+    await user.click(screen.getByRole('button', { name: /^Casa / }));
     await user.click(await screen.findByRole('button', { name: 'Betano' }));
   };
   const fill = async () => {
