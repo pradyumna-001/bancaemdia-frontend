@@ -9,6 +9,8 @@ import secrets
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from uuid import uuid4
@@ -94,10 +96,11 @@ async def seed_bets(engine, uid, account):
                     "c": secrets.token_hex(32),
                     "s": secrets.token_hex(32),
                     "state": state,
-                    "stake": stake,
-                    "ret": returned,
-                    "game": f"2026-10-1{index}T18:00:00Z",
-                    "placed": f"2026-10-1{index}T12:00:00Z",
+                    # asyncpg binds typed values: exact Decimal and aware datetime.
+                    "stake": Decimal(stake),
+                    "ret": Decimal(returned),
+                    "game": datetime(2026, 10, 10 + index, 18, tzinfo=timezone.utc),
+                    "placed": datetime(2026, 10, 10 + index, 12, tzinfo=timezone.utc),
                     "review": review,
                 },
             )
