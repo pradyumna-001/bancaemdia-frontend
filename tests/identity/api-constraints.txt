@@ -1,0 +1,7 @@
+# Dependências do backend pinado (config/api-contract.json) instaladas nas
+# jornadas reais. O backend declara `celery>=5.4.0` sem fixar o kombu; o
+# kombu 5.7.0 (03/11/2026) mudou a tipagem pública e o mypy do commit
+# pinado deixa de passar sem nenhuma mudança de código. Mantém a faixa com
+# que o commit pinado foi validado; remover quando o backend fixar ou
+# corrigir (#125, #120).
+kombu<5.7

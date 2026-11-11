@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type MouseEvent,
+  useDeferredValue,
 } from 'react';
 import {
   Link,
@@ -281,6 +282,9 @@ export function ApostasPage({
     pedir(null);
   }
   const compacta = pedido ?? compactaNaUrl;
+  // The pressed button answers the gesture in its own frame; the 100 rows
+  // restyle in the following, interruptible render.
+  const compactaLista = useDeferredValue(compacta);
   const { visao, adapter } = useFiltros('apostas', contrato);
   const querySearch = new URLSearchParams(visao.busca);
   querySearch.delete('visualizacao');
@@ -615,10 +619,10 @@ export function ApostasPage({
                 conferir.
               </p>
             )}
-            {compacta && (
+            {compactaLista && (
               <p className="legenda">— indica dado não informado.</p>
             )}
-            {compacta && (
+            {compactaLista && (
               <div className="apostas-colunas" aria-hidden="true">
                 <span>Aposta</span>
                 <span>Estado e avisos</span>
@@ -631,9 +635,9 @@ export function ApostasPage({
             )}
             <BuscaAtual.Provider value={location.search}>
               <AbrirDetalhe.Provider value={abrirDetalhe}>
-                <ModoCompacto.Provider value={compacta}>
+                <ModoCompacto.Provider value={compactaLista}>
                   <ul
-                    className={`apostas-itens${compacta ? ' apostas-itens--compactos' : ''}`}
+                    className={`apostas-itens${compactaLista ? ' apostas-itens--compactos' : ''}`}
                   >
                     {rows.map((item) => (
                       <LinhaAposta key={item.chave} item={item} />
