@@ -13,6 +13,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from uuid import uuid4
 
 import pytest
+from playwright.async_api import TimeoutError as PlaywrightTimeout
 from playwright.async_api import async_playwright, expect
 from sqlalchemy import text
 
@@ -317,14 +318,29 @@ async def test_public_spa_manual_creation_recovery(
             await asyncio.sleep(max(0, expiry - time.time() + 1))
             # Observe the SPA's authenticated read, including its session renewal,
             # rather than issuing a second raw fetch outside the client policy.
-            async with page.expect_response(
-                lambda response: (
-                    response.url.endswith("/api/v1/billing/status")
-                    and response.request.method == "GET"
-                    and response.status == 200
-                )
-            ) as status_response:
-                await core.fresh_session(page)
+            # Only paths and status codes are kept for a failure message: no
+            # bodies, headers or identifiers.
+            seen = []
+
+            def observe(response):
+                path = urlparse(response.url).path
+                if path in ("/api/v1/billing/status", "/auth/session", "/auth/refresh"):
+                    seen.append(f"{response.request.method} {path} {response.status}")
+
+            page.on("response", observe)
+            try:
+                async with page.expect_response(
+                    lambda response: (
+                        response.url.endswith("/api/v1/billing/status")
+                        and response.request.method == "GET"
+                        and response.status == 200
+                    )
+                ) as status_response:
+                    await core.fresh_session(page)
+            except PlaywrightTimeout:
+                pytest.fail(f"Billing status after expiry never answered 200: {seen}")
+            finally:
+                page.remove_listener("response", observe)
             assert (await (await status_response.value).json())["access"] == "READ_ONLY"
             await page.goto(address + "&manual_intencao=" + first_id)
             await page.get_by_role(
