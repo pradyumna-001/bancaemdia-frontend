@@ -470,8 +470,12 @@ export function PlanilhaPage() {
             : preview;
     const context = auth?.service.capture();
     if (!context?.isCurrent()) return;
+    // A renewal during the refetch repeats the safe read once, so its answer
+    // is current; logout or a person change (privateEpoch) still discards it.
+    const owner = auth!.service.getSnapshot().privateEpoch;
     const response = await target.refetch();
-    if (!active.current || !context.isCurrent()) return;
+    if (!active.current || auth!.service.getSnapshot().privateEpoch !== owner)
+      return;
     if (response.data) {
       write.reconciled();
       setPending(undefined);

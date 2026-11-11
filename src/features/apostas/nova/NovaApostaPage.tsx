@@ -248,11 +248,15 @@ function Formulario({ api }: { api: ReturnType<typeof getApiClient> }) {
     if (blocked || !valid || active.current) return;
     const request = new AbortController();
     active.current = request;
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session starts a lookup.
+    // A safe read: auth.service.read renews an expired access once and only
+    // resolves for the current session, so its answer survives that renewal.
+    // Logout or a person change (privateEpoch) still discards it.
+    const owner = auth.service.getSnapshot().privateEpoch;
     const current = () =>
       alive.current &&
       !request.signal.aborted &&
-      scope.isCurrent() &&
+      auth.service.getSnapshot().privateEpoch === owner &&
       latest.current.get('manual_intencao') === id;
     setReading(true);
     setConsulted(false);

@@ -48,22 +48,25 @@ async function open(empty = false) {
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Sandbox',
-    email: 'sandbox@example.org',
-    session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Sandbox',
+      email: 'sandbox@example.org',
+      session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
     exclusive: async (_signal, work) => work(),
@@ -295,6 +298,48 @@ it('resposta perdida não é repetida e consulta não recupera o segredo', async
   await waitFor(() => expect(generate()).toBeEnabled());
   expect(app.writes).toHaveLength(1);
   expect(screen.queryByText(temporaryCode().codigo)).not.toBeInTheDocument();
+});
+const accessExpired = () =>
+  json({ detail: 'access_expired' }, 401, { 'X-Auth-Error': 'access_expired' });
+// The next GET answers 401 access_expired once, then the regular handler.
+function expireOnce(
+  app: { read: (h: () => Promise<Response>) => void },
+  next: () => Promise<Response>,
+) {
+  let expired = true;
+  app.read(async () => {
+    if (!expired) return next();
+    expired = false;
+    return accessExpired();
+  });
+}
+it('consulta depois de resposta perdida sobrevive à renovação do acesso', async () => {
+  const app = await open();
+  app.respond(async () => {
+    throw new TypeError('falha');
+  });
+  await app.user.click(generate());
+  await screen.findByText(
+    /A ação terminou sem confirmação e não será repetida/,
+  );
+  expect(generate()).toBeDisabled();
+  const before = app.reads.length;
+  expireOnce(app, async () => json(devices));
+  await app.user.click(consult());
+  // The renewed read is repeated once; its answer is current and releases
+  // the blocked action instead of a silent no-op.
+  await waitFor(() => expect(generate()).toBeEnabled());
+  expect(app.reads.length - before).toBe(2);
+  expect(app.writes).toHaveLength(1);
+});
+it('confirmação de revogação consulta o estado atual mesmo após renovar o acesso', async () => {
+  const app = await open();
+  expireOnce(app, async () => json(devices));
+  await app.user.click(
+    screen.getAllByRole('button', { name: 'Revogar acesso' })[0]!,
+  );
+  await screen.findByRole('heading', { name: /Revogar acesso:/ });
+  expect(app.writes).toHaveLength(0);
 });
 it('429 respeita Retry-After, segredo inválido é incerto, código expirado não aparece', async () => {
   const app = await open();

@@ -80,16 +80,20 @@ async function setup(
   path = '/enviar?entrada=planilha&estado=GREEN&apagadas=1',
   accessState: 'FULL_WRITE' | 'READ_ONLY' = 'FULL_WRITE',
 ) {
-  const person = sessionContext({
-    usuario_id: 1,
-    nome: 'Teste',
-    email: 'teste@example.org',
-    session_version: `${crypto.randomUUID()}:1`,
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  const sessionId = crypto.randomUUID();
+  let version = 0;
+  const person = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Teste',
+      email: 'teste@example.org',
+      session_version: `${sessionId}:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: 30_000 } },
   });
@@ -98,8 +102,8 @@ async function setup(
     queryClient: queries,
     exclusive: async (_signal, work) => work(),
     transport: {
-      read: async () => person,
-      renew: async () => person,
+      read: async () => person(),
+      renew: async () => person(),
       logout: async () => {},
     },
   });
@@ -453,6 +457,48 @@ it('resultado desconhecido consulta mesma confirmação sem reenviar', async () 
   await screen.findByText('Confira o recebimento deste pedido');
   fireEvent.click(screen.getByRole('button', { name: 'Conferir recebimento' }));
   await screen.findByRole('heading', { name: 'Importação concluída' });
+  expect(server.writes).toHaveLength(1);
+});
+it('conferência do recebimento sobrevive à renovação de um acesso vencido', async () => {
+  let lost = true;
+  let expire = false;
+  const server = simulated(async (r) => {
+    if (!r.url.includes('/confirmacoes/')) return undefined;
+    if (r.method === 'POST') {
+      const id = new URL(r.url).pathname.split('/').at(-1)!;
+      server.fixture.confirmations.set(id, result({ id }));
+      if (lost) {
+        lost = false;
+        throw new TypeError('offline');
+      }
+    } else if (expire) {
+      expire = false;
+      return json({ detail: 'access_expired' }, 401, {
+        'X-Auth-Error': 'access_expired',
+      });
+    }
+    return undefined;
+  });
+  await setup(server.fetch, restored);
+  await ready();
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar importação' }));
+  await screen.findByText('Confira o recebimento deste pedido');
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Conferir recebimento' }),
+    ).toBeEnabled(),
+  );
+  expire = true;
+  fireEvent.click(screen.getByRole('button', { name: 'Conferir recebimento' }));
+  // The renewed read is repeated once; its receipt is current, so the
+  // reconciliation closes the uncertain request instead of a silent no-op.
+  await screen.findByRole('heading', { name: 'Importação concluída' });
+  await waitFor(() =>
+    expect(
+      screen.queryByText('Confira o recebimento deste pedido'),
+    ).not.toBeInTheDocument(),
+  );
+  expect(expire).toBe(false);
   expect(server.writes).toHaveLength(1);
 });
 it('404 não repete; gesto explícito usa mesma identidade e DTO', async () => {

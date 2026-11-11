@@ -62,22 +62,25 @@ async function open(
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Sandbox',
-    email: 'sandbox@example.org',
-    session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Sandbox',
+      email: 'sandbox@example.org',
+      session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
     exclusive: async (_s, w) => w(),
@@ -434,6 +437,36 @@ it('unknown write is not replayed; explicit reconciliation performs only GETs', 
   await screen.findByText(
     'Confira os dados consultados antes de uma nova alteração.',
   );
+  expect(writes(requests)).toHaveLength(1);
+});
+it('explicit reconciliation survives the renewal of an expired access', async () => {
+  let expire = false;
+  const { requests } = await open('/contas', (req) => {
+    if (req.method === 'POST') return Promise.reject(new TypeError('offline'));
+    if (expire && req.method === 'GET') {
+      expire = false;
+      return json({ detail: 'access_expired' }, 401, {
+        'X-Auth-Error': 'access_expired',
+      });
+    }
+    return undefined;
+  });
+  await ready();
+  fireEvent.change(screen.getByLabelText('Nome do titular'), {
+    target: { value: 'Ana' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Cadastrar titular' }));
+  await screen.findByText('Confira se o pedido foi concluído');
+  expire = true;
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Consultar estado atual' }),
+  );
+  // The renewed reads are repeated once; their answer is current, so the
+  // consultation is reported instead of a silent no-op.
+  await screen.findByText(
+    'Confira os dados consultados antes de uma nova alteração.',
+  );
+  expect(expire).toBe(false);
   expect(writes(requests)).toHaveLength(1);
 });
 it('logout clears sensitive forms and aborts pending writes', async () => {

@@ -48,22 +48,25 @@ async function open(linked = false) {
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Sandbox',
-    email: 'sandbox@example.org',
-    session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Sandbox',
+      email: 'sandbox@example.org',
+      session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
     exclusive: async (_signal, work) => work(),
@@ -355,6 +358,41 @@ it('emissão desconhecida exige GET e confirmação de uma nova intenção', asy
   );
   await screen.findByText('/vincular ABCDEFGH');
   expect(app.writes).toHaveLength(2);
+});
+const accessExpired = () =>
+  json({ detail: 'access_expired' }, 401, { 'X-Auth-Error': 'access_expired' });
+// The next GET answers 401 access_expired once, then the regular handler.
+function expireOnce(
+  app: { read: (h: () => Promise<Response>) => void },
+  next: () => Promise<Response>,
+) {
+  let expired = true;
+  app.read(async () => {
+    if (!expired) return next();
+    expired = false;
+    return accessExpired();
+  });
+}
+it('consulta depois de emissão desconhecida sobrevive à renovação do acesso', async () => {
+  const app = await open();
+  app.respond(async () => {
+    throw Error('private network');
+  });
+  await app.user.click(generate());
+  await screen.findByRole('alert');
+  expect(
+    screen.getByRole('button', { name: 'Preparar novo código' }),
+  ).toBeDisabled();
+  expireOnce(app, async () => json(unlinkedTelegram));
+  await app.user.click(consult());
+  // The renewed read is repeated once; its answer is current and releases
+  // a new explicit intent instead of a silent no-op.
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Preparar novo código' }),
+    ).toBeEnabled(),
+  );
+  expect(app.writes).toHaveLength(1);
 });
 it('revogação desconhecida não repete o DELETE nem declara desconexão', async () => {
   const app = await open(true);

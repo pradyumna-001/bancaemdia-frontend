@@ -143,9 +143,16 @@ function Coleta({ api }: { api: ReturnType<typeof getApiClient> }) {
   async function consult() {
     if (pending.current || busy || query.isFetching || queryWaiting || waiting)
       return;
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session consults.
+    // A renewal during the refetch repeats the safe read once, so its answer
+    // is current; logout or a person change (privateEpoch) still discards it.
+    const owner = auth.service.getSnapshot().privateEpoch;
     const result = await query.refetch();
-    if (alive.current && scope.isCurrent() && !result.error)
+    if (
+      alive.current &&
+      auth.service.getSnapshot().privateEpoch === owner &&
+      !result.error
+    )
       setNeedsCheck(false);
   }
   async function ask(
@@ -155,9 +162,16 @@ function Coleta({ api }: { api: ReturnType<typeof getApiClient> }) {
   ) {
     if (blocked || pending.current) return;
     opener.current = button;
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session consults.
+    // Same read rule as consult(): the confirmation uses current data.
+    const owner = auth.service.getSnapshot().privateEpoch;
     const result = await query.refetch();
-    if (!alive.current || !scope.isCurrent() || result.error) return;
+    if (
+      !alive.current ||
+      auth.service.getSnapshot().privateEpoch !== owner ||
+      result.error
+    )
+      return;
     const current = result.data?.find(
       (item) => item.instalacao_publica_id === row.instalacao_publica_id,
     );

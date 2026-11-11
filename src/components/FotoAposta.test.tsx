@@ -50,22 +50,25 @@ const failure = (status: number, retry?: string) =>
   });
 async function open(read = async () => image(), revisaoId?: string) {
   const queries = new QueryClient();
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Teste',
-    email: 'test@example.org',
-    session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Teste',
+      email: 'test@example.org',
+      session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
     exclusive: async (_signal, work) => work(),
@@ -172,6 +175,26 @@ it('ignora resposta tardia depois de sair', async () => {
     await Promise.resolve();
   });
   expect(URL.createObjectURL).not.toHaveBeenCalled();
+});
+it('acesso vencido renovado durante a leitura ainda mostra a foto', async () => {
+  let expired = true;
+  const { requests } = await open(async () => {
+    if (!expired) return image();
+    expired = false;
+    return new Response('{"detail":"access_expired"}', {
+      status: 401,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Auth-Error': 'access_expired',
+      },
+    });
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir foto' }));
+  // auth.service.read renews once and repeats the safe GET; the renewed
+  // answer belongs to the same session and must not be discarded silently.
+  expect(await screen.findByRole('img')).toBeVisible();
+  expect(requests).toHaveLength(2);
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 it('404 mostra ausência segura, sem repetir ou revelar motivo', async () => {
   const { requests } = await open(async () => failure(404));
