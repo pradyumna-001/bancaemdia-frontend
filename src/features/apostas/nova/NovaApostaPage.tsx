@@ -19,6 +19,7 @@ import { useCatalogos } from '../catalogos';
 import { validar as validarConta } from '../../contas/protocol';
 import type { components } from '../../../api/schema';
 import { useOperacao } from '../../importar/useOperacao';
+import { UnidadeAgora } from '../../configuracoes/UnidadeAgora';
 import {
   PATH,
   POST,
@@ -507,6 +508,7 @@ function Formulario({ api }: { api: ReturnType<typeof getApiClient> }) {
               Informe o valor de face em unidades, inclusive na freebet. Os
               valores em dinheiro são definidos pelo serviço.
             </p>
+            <UnidadeAgora client={api} />
             <details>
               <summary>Evento e outros detalhes (opcional)</summary>
               <div className="nova-campos">
