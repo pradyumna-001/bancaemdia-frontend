@@ -83,7 +83,8 @@ async def seed_bets(engine, uid, account):
                     "INSERT INTO native_bets(usuario_id,account_id,currency,identity_hash,"
                     "canonical_hash,source_hash,state,stake,returned,game_at,placed_at,"
                     "needs_review,canonical) VALUES(:uid,:acc,'USDT',:i,:c,:s,:state,"
-                    "CAST(:stake AS numeric),CAST(:ret AS numeric),:game,:placed,:review,"
+                    "CAST(:stake AS numeric),CAST(:ret AS numeric),CAST(:game AS timestamptz),"
+                    "CAST(:placed AS timestamptz),:review,"
                     "CAST('{}' AS jsonb))"
                 ),
                 {
