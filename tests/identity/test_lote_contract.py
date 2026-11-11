@@ -48,9 +48,30 @@ def query(page):
 
 
 async def prepare(page, card):
-    await card.get_by_role("button", name="Preparar exclusão", exact=True).click()
-    phrase = card.get_by_label("Para confirmar, digite", exact=False)
-    await expect(phrase).to_have_value("")
+    button = card.get_by_role("button", name="Preparar exclusão", exact=True)
+    await expect(button).to_be_enabled()
+    statuses = []
+
+    def seen(response):
+        if response.url.endswith(BATCHES + "/previa-apagar"):
+            statuses.append(response.status)
+
+    page.on("response", seen)
+    try:
+        await button.click()
+        phrase = card.get_by_label("Para confirmar, digite", exact=False)
+        try:
+            # A real read that may first renew an expired access, like the
+            # other network waits of these journeys.
+            await expect(phrase).to_have_value("", timeout=30000)
+        except AssertionError:
+            busy = await button.is_disabled() if await button.count() else None
+            pytest.fail(
+                f"Preview did not open: statuses={statuses}, button busy={busy}",
+                pytrace=False,
+            )
+    finally:
+        page.remove_listener("response", seen)
     return phrase
 
 
