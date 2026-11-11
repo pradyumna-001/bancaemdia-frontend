@@ -90,7 +90,10 @@ test('409 contextual e 413/422 levam a revisão e campo sem apagar entrada', asy
   ).toBeVisible();
   for (const code of [413, 422]) {
     status = code;
-    await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+    // Ativação nativa por teclado torna determinístico o início do prazo.
+    await page
+      .getByRole('button', { name: 'Enviar', exact: true })
+      .press('Enter');
     await expect(
       page.getByRole('heading', {
         name:
