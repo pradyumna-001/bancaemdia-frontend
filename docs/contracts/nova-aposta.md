@@ -10,7 +10,7 @@ Tipos, validadores e a política da operação (`x-bancaemdia-policy`: identidad
 
 `/aposta/nova` é rota protegida da área Apostas, acessível também em Enviar. Nova aposta é gesto explícito que remove só a intenção anterior e preserva filtros; filtros não preenchem o formulário. Casa vem do catálogo real paginado com busca, vazio e recuperação, sem lista fixa. Busca dentro do formulário não cria forms aninhados nem dispara registro.
 
-Casa, odd e unidades são essenciais; detalhes são opcionais. Freebet preserva face positiva em unidades. Dinheiro, lucro, retorno, custo próprio e unidade vigente são da API. Comissão BRL é convertida textualmente apenas em format.ts, com string BIGINT exata e limite PostgreSQL, sem arredondar. Datas pedem offset explícito; ausência de data da aposta delega o relógio à primeira criação do servidor. Textos são preservados.
+Casa, odd e unidades são essenciais; detalhes são opcionais. Freebet preserva face positiva em unidades. Dinheiro, lucro, retorno, custo próprio e unidade vigente são da API. A dica “Unidade agora” consulta `GET /api/v1/unidade` (#123) e avisa que apostas de outras datas usam a vigência do instante da aposta; falha na consulta não bloqueia o formulário nem inventa um valor. Comissão BRL é convertida textualmente apenas em format.ts, com string BIGINT exata e limite PostgreSQL, sem arredondar. Datas pedem offset explícito; ausência de data da aposta delega o relógio à primeira criação do servidor. Textos são preservados.
 
 Matriz da casa informa contas/titulares distintos, incluindo histórico, conta sem titular e encerradas. Não há escolha arbitrária nem edição de vigência. Sem referência explícita, a API resolve pelo dia do jogo ou publica conta ausente/ambígua com referência autorizada à Revisão.
 

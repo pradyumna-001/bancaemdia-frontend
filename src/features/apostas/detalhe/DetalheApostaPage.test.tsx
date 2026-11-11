@@ -51,6 +51,22 @@ const json = (
     status,
     headers: { 'Content-Type': 'application/json', ...headers },
   });
+// The next billing check answers 401 access_expired once (renewal in the
+// write gate, before anything is sent).
+let expireBilling = false;
+const billingExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+const consumeExpiredBilling = () => {
+  if (!expireBilling) return undefined;
+  expireBilling = false;
+  return billingExpired();
+};
 async function open({
   access = 'FULL_WRITE',
   data = structuredClone(detalheExemplo),
@@ -63,22 +79,25 @@ async function open({
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Sandbox',
-    email: 'sandbox@example.org',
-    session_version: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:1',
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Sandbox',
+      email: 'sandbox@example.org',
+      session_version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
     exclusive: async (_s, fn) => fn(),
@@ -93,7 +112,7 @@ async function open({
       captureSession: session.capture,
       fetcher: async (req) => {
         if (req.url.endsWith('/billing/status'))
-          return json({ ...billingStatus, access });
+          return consumeExpiredBilling() ?? json({ ...billingStatus, access });
         requests.push(req.clone());
         const override = await handler?.(req, data);
         if (override) return override;
@@ -553,6 +572,52 @@ it('foto privada é carregada sob gesto e revogada ao sair, com espaço reservad
   await act(() => app.session.logout());
   expect(revoke).toHaveBeenCalledWith('blob:foto-privada');
 });
+it('foto da revisão continua após renovar um acesso vencido', async () => {
+  vi.stubGlobal(
+    'URL',
+    class extends URL {
+      static createObjectURL = vi.fn(() => 'blob:foto-privada');
+      static revokeObjectURL = vi.fn();
+    },
+  );
+  vi.stubGlobal('Blob', NodeBlob);
+  let expired = true;
+  const app = await open({
+    data: {
+      ...structuredClone(detalheExemplo),
+      revisao_pendente: {
+        id: 8,
+        motivo: 'duvida_de_par',
+        midia_hash: 'imagem-de-teste',
+        criado_em: '2026-10-10T12:00:00Z',
+      },
+    },
+    respond: async (req) => {
+      if (!req.url.endsWith('/foto')) return undefined;
+      if (expired) {
+        expired = false;
+        return json({ detail: 'access_expired' }, 401, {
+          'X-Auth-Error': 'access_expired',
+        });
+      }
+      return new Response(new Uint8Array([137, 80, 78, 71]), {
+        headers: { 'Content-Type': 'image/png' },
+      });
+    },
+  });
+  await editable();
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Abrir foto da revisão' }),
+  );
+  // auth.service.read renews once and repeats the safe GET; the renewed
+  // answer belongs to the same session and must not be discarded silently.
+  expect(
+    await screen.findByRole('img', {
+      name: 'Evidência da revisão desta aposta',
+    }),
+  ).toBeVisible();
+  expect(app.requests.filter((r) => r.url.endsWith('/foto'))).toHaveLength(2);
+});
 it.each([404, 503, 200])(
   'foto %s: autorização/recuperação e MIME real são obrigatórios',
   async (status) => {
@@ -770,6 +835,80 @@ it('mídia sem revisão, histórico vazio e nulidade permanecem explícitos', as
   ).toBeVisible();
   expect(writes(app.requests)).toHaveLength(0);
 });
+const accessExpired = () =>
+  json({ detail: 'access_expired' }, 401, { 'X-Auth-Error': 'access_expired' });
+const detailGet = (req: Request) =>
+  req.method === 'GET' &&
+  new URL(req.url).pathname === '/api/v1/apostas/exemplo-1';
+it('consulta explícita do estado atual sobrevive à renovação de um acesso vencido', async () => {
+  let expire = false;
+  const app = await open({
+    respond: async (req) => {
+      if (req.method === 'PATCH') return json({ detail: 'x' }, 409);
+      if (expire && detailGet(req)) {
+        expire = false;
+        return accessExpired();
+      }
+      return undefined;
+    },
+  });
+  await editable();
+  fireEvent.click(screen.getByRole('button', { name: 'Corrigir aposta' }));
+  fireEvent.change(screen.getByLabelText('Evento'), {
+    target: { value: 'Minha entrada' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: 'Consultar estado atual da aposta',
+    }),
+  );
+  expire = true;
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Consultar estado atual da aposta' }),
+  );
+  // The renewed read is repeated once and its answer is current: the notice
+  // appears and the form is released, instead of a silent no-op.
+  await screen.findByText('Estado atual consultado.', { exact: false });
+  expect(expire).toBe(false);
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    ).toBeEnabled(),
+  );
+  expect(writes(app.requests)).toHaveLength(1);
+});
+it('leitura depois de uma escrita confirmada não fica presa se o acesso renovar', async () => {
+  let expire = false;
+  const app = await open({
+    respond: async (req) => {
+      if (req.method === 'PATCH') expire = true;
+      else if (expire && detailGet(req)) {
+        expire = false;
+        return accessExpired();
+      }
+      return undefined;
+    },
+  });
+  await editable();
+  fireEvent.click(screen.getByRole('button', { name: 'Corrigir aposta' }));
+  fireEvent.change(screen.getByLabelText('Evento'), {
+    target: { value: 'Minha entrada' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+  // The confirmed write is read back under the renewed session: the editor
+  // closes and the actions are available again.
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Corrigir aposta' }),
+    ).toBeEnabled(),
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Salvar alterações' }),
+  ).not.toBeInTheDocument();
+  expect(expire).toBe(false);
+  expect(writes(app.requests)).toHaveLength(1);
+});
 it('404/405 de escrita não reativam o pedido depois de consultar', async () => {
   const app = await open({
     respond: async (req) =>
@@ -788,4 +927,25 @@ it('404/405 de escrita não reativam o pedido depois de consultar', async () => 
   await screen.findByText('Estado atual consultado.', { exact: false });
   expect(screen.getByRole('button', { name: 'Apagar aposta' })).toBeDisabled();
   expect(writes(app.requests)).toHaveLength(1);
+});
+it('acesso vencido renovado na conferência de billing não cancela a correção', async () => {
+  const app = await open();
+  await editable();
+  fireEvent.click(screen.getByRole('button', { name: 'Corrigir aposta' }));
+  fireEvent.change(screen.getByLabelText('Evento'), {
+    target: { value: 'Minha entrada' },
+  });
+  expireBilling = true;
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+  // The correction had not been sent: it goes out once under the renewed
+  // session and the editor closes, instead of a silent no-op.
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Corrigir aposta' }),
+    ).toBeEnabled(),
+  );
+  expect(expireBilling).toBe(false);
+  expect(writes(app.requests)).toHaveLength(1);
+  expect(app.data.aposta.evento).toBe('Minha entrada');
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });

@@ -264,8 +264,11 @@ test('Lista compacta mostra mais apostas; Cartões preserva dados, páginas, fil
     page.getByRole('button', { name: 'Cartões', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
   expect(new URL(page.url()).searchParams.get('casa')).toBe('7');
-  const cardsHeight = (await list.boundingBox())!.height;
-  expect(compactHeight).toBeLessThan(cardsHeight * 0.3);
+  // The pressed state answers first; the list relayout follows (#116), so
+  // the same 30% rule is checked once the deferred cards are drawn.
+  await expect
+    .poll(async () => (await list.boundingBox())!.height)
+    .toBeGreaterThan(compactHeight / 0.3);
   await expect(page.getByRole('article')).toHaveCount(3);
   expect(app.requests).toHaveLength(reads);
   for (const mode of ['lista', 'cartoes']) {

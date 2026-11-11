@@ -438,9 +438,15 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
       (currentBet && !pending.current)
     )
       return;
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session starts a lookup.
+    // A safe read survives the renewal done by auth.service.read; logout or a
+    // person change (privateEpoch) still discards it.
     const controller = new AbortController();
     readController.current = controller;
+    const live = () =>
+      alive.current &&
+      !controller.signal.aborted &&
+      auth.service.getSnapshot().privateEpoch === epoch;
     setReading(true);
     setReadError(undefined);
     try {
@@ -457,8 +463,7 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
             key,
           ),
         );
-        if (!alive.current || controller.signal.aborted || !scope.isCurrent())
-          return;
+        if (!live()) return;
         if (
           pending.current?.tipo === 'undo' &&
           current.revisao !== pending.current.body.revisao_esperada
@@ -490,12 +495,10 @@ function Resultados({ api }: { api: ReturnType<typeof createApiClient> }) {
               : undefined,
           ),
         );
-        if (alive.current && !controller.signal.aborted && scope.isCurrent())
-          install(value);
+        if (live()) install(value);
       }
     } catch (cause) {
-      if (alive.current && !controller.signal.aborted && scope.isCurrent())
-        setReadError(cause);
+      if (live()) setReadError(cause);
     } finally {
       if (alive.current) setReading(false);
     }

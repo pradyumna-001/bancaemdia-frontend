@@ -19,6 +19,7 @@ import { useCatalogos } from '../catalogos';
 import { validar as validarConta } from '../../contas/protocol';
 import type { components } from '../../../api/schema';
 import { useOperacao } from '../../importar/useOperacao';
+import { UnidadeAgora } from '../../configuracoes/UnidadeAgora';
 import {
   PATH,
   POST,
@@ -247,11 +248,15 @@ function Formulario({ api }: { api: ReturnType<typeof getApiClient> }) {
     if (blocked || !valid || active.current) return;
     const request = new AbortController();
     active.current = request;
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session starts a lookup.
+    // A safe read: auth.service.read renews an expired access once and only
+    // resolves for the current session, so its answer survives that renewal.
+    // Logout or a person change (privateEpoch) still discards it.
+    const owner = auth.service.getSnapshot().privateEpoch;
     const current = () =>
       alive.current &&
       !request.signal.aborted &&
-      scope.isCurrent() &&
+      auth.service.getSnapshot().privateEpoch === owner &&
       latest.current.get('manual_intencao') === id;
     setReading(true);
     setConsulted(false);
@@ -439,7 +444,6 @@ function Formulario({ api }: { api: ReturnType<typeof getApiClient> }) {
               <div className="nova-largo">
                 <EscolhaFiltro
                   id="nova-casa"
-                  onOpen={catalog?.abrir}
                   dentroDeFormulario
                   label="Casa"
                   value={form.casa}
@@ -508,6 +512,7 @@ function Formulario({ api }: { api: ReturnType<typeof getApiClient> }) {
               Informe o valor de face em unidades, inclusive na freebet. Os
               valores em dinheiro são definidos pelo serviço.
             </p>
+            <UnidadeAgora client={api} />
             <details>
               <summary>Evento e outros detalhes (opcional)</summary>
               <div className="nova-campos">

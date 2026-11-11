@@ -65,6 +65,22 @@ afterEach(() => {
   clean.splice(0).forEach((work) => work());
   vi.restoreAllMocks();
 });
+// The next billing check answers 401 access_expired once (renewal in the
+// write gate, before anything is sent).
+let expireBilling = false;
+const billingExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+const consumeExpiredBilling = () => {
+  if (!expireBilling) return undefined;
+  expireBilling = false;
+  return billingExpired();
+};
 async function open(
   options: {
     page?: boolean;
@@ -90,11 +106,20 @@ async function open(
     access_expires_at: '2030-01-01T00:00:00Z',
     session_expires_at: '2030-01-02T00:00:00Z',
   });
+  let reads = 0;
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
+      // Each session read after the first publishes a new version, as a
+      // renewal does.
+      read: async () =>
+        (context = reads++
+          ? {
+              ...context,
+              version: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa:${reads + 1}`,
+            }
+          : context),
       renew: async () => context,
       logout: async () => {},
     },
@@ -114,6 +139,8 @@ async function open(
         const url = new URL(request.url);
         if (url.pathname === '/api/v1/billing/status') {
           await options.beforeBilling?.(++billing);
+          const expired = consumeExpiredBilling();
+          if (expired) return expired;
           return json({
             ...billingStatus,
             access: options.readOnly ? 'READ_ONLY' : 'FULL_WRITE',
@@ -591,6 +618,40 @@ it.each(['edit', 'archive'] as const)(
     expect(writes(view.requests)).toHaveLength(1);
   },
 );
+it('consulta do recurso atual sobrevive à renovação de um acesso vencido', async () => {
+  let expired = true;
+  const view = await open({
+    override: (r) => {
+      if (r.method === 'PATCH') throw new TypeError('rede');
+      if (
+        r.method === 'GET' &&
+        new URL(r.url).pathname.endsWith('/metas/1') &&
+        expired
+      ) {
+        expired = false;
+        return json({ detail: 'access_expired' }, 401, {
+          'X-Auth-Error': 'access_expired',
+        });
+      }
+      return undefined;
+    },
+  });
+  await act(() =>
+    view.hook.write({ kind: 'edit', id: 1, body: { titulo: 'Edição' } }),
+  );
+  await act(() => view.hook.consult());
+  // auth.service.read renews once and repeats the safe GET; the renewed
+  // answer belongs to the same session and must not be discarded silently.
+  expect(
+    view.requests.filter(
+      (r) => r.method === 'GET' && new URL(r.url).pathname.endsWith('/metas/1'),
+    ),
+  ).toHaveLength(2);
+  expect(view.hook.unknown?.consulted).toBe(true);
+  expect(view.hook.notice).toContain('não é um recibo');
+  expect(view.hook.busy).toBe(false);
+  expect(writes(view.requests)).toHaveLength(1);
+});
 it.each([404, 503])(
   'consulta recusada %s não vira confirmação nem repete a escrita',
   async (status) => {
@@ -655,6 +716,44 @@ it('mantém fuso compartilhado e confirma a preferência no servidor', async () 
     ),
   ).toBe(true);
 });
+const accessExpired = () =>
+  json({ detail: 'access_expired' }, 401, { 'X-Auth-Error': 'access_expired' });
+it('consulta da lista sobrevive à renovação de um acesso vencido', async () => {
+  let expire = false;
+  const view = await open({
+    override: (r) => {
+      if (expire && r.method === 'GET' && new URL(r.url).pathname === LIST) {
+        expire = false;
+        return accessExpired();
+      }
+      return undefined;
+    },
+  });
+  expire = true;
+  await act(() => view.hook.consult());
+  // The renewed read is repeated once and its answer is current.
+  expect(expire).toBe(false);
+  expect(view.hook.notice).toBe('Metas consultadas.');
+  expect(view.hook.query.data).toBeTruthy();
+});
+it('consulta do fuso salvo sobrevive à renovação de um acesso vencido', async () => {
+  let expire = false;
+  await open({
+    page: true,
+    override: (r) => {
+      if (expire && new URL(r.url).pathname.endsWith('/painel/preferencias')) {
+        expire = false;
+        return accessExpired();
+      }
+      return undefined;
+    },
+  });
+  await screen.findByText(/Salvo na conta/);
+  expire = true;
+  fireEvent.click(screen.getByRole('button', { name: 'Consultar fuso salvo' }));
+  await screen.findByText(/Fuso atual confirmado/);
+  expect(expire).toBe(false);
+});
 it('logout durante parsing remove estado privado e rejeita a resposta antiga', async () => {
   let stream!: ReadableStreamDefaultController<Uint8Array>;
   const bytes = new TextEncoder().encode(
@@ -692,15 +791,38 @@ it('logout durante parsing remove estado privado e rejeita a resposta antiga', a
   expect(view.hook.busy).toBe(false);
   expect(view.queries.getQueryData(['metas', 'outro'])).toBeUndefined();
 });
-it('renovação antes do POST não envia nem prende o formulário em execução', async () => {
+it('renovação da mesma pessoa antes do POST não cancela a criação, que sai uma única vez', async () => {
   const view: Awaited<ReturnType<typeof open>> = await open({
     beforeBilling: async (count) => {
       if (count === 2) await view.rotate();
     },
   });
   await act(() => view.hook.write({ kind: 'create', body }));
-  expect(writes(view.requests)).toHaveLength(0);
+  // The write had not been sent: it goes out once, bound to the renewed
+  // session of the same person, and its answer is shown.
+  expect(writes(view.requests)).toHaveLength(1);
   expect(view.hook.busy).toBe(false);
   expect(view.hook.unknown).toBeUndefined();
-  expect(view.hook.error).toBeTruthy();
+  expect(view.hook.error).toBeUndefined();
+  expect(view.hook.notice).toBe('Meta criada.');
+});
+it('troca de pessoa antes do POST ainda cancela a criação sem enviar', async () => {
+  const view: Awaited<ReturnType<typeof open>> = await open({
+    beforeBilling: async (count) => {
+      if (count === 2) act(() => view.session.accountClosed());
+    },
+  });
+  await act(() => view.hook.write({ kind: 'create', body }));
+  expect(writes(view.requests)).toHaveLength(0);
+  expect(view.hook.notice).toBe('');
+});
+it('acesso vencido renovado na conferência de billing não cancela a criação', async () => {
+  const view = await open();
+  expireBilling = true;
+  await act(() => view.hook.write({ kind: 'create', body }));
+  expect(expireBilling).toBe(false);
+  expect(writes(view.requests)).toHaveLength(1);
+  expect(view.hook.notice).toBe('Meta criada.');
+  expect(view.hook.error).toBeUndefined();
+  expect(view.hook.busy).toBe(false);
 });

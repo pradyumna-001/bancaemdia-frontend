@@ -477,6 +477,34 @@ it('vínculo da banca exige escolha/confirmar; resposta desconhecida só faz GET
     screen.queryByText('Vínculo da conta com a banca atualizado.'),
   ).not.toBeInTheDocument();
 });
+it('vínculo com banca arquivada é recusa conhecida: nada muda e as escolhas são relidas', async () => {
+  const s = await setup(async (r) =>
+    r.method === 'PATCH' ? json({ detail: 'banca_arquivada' }, 409) : undefined,
+  );
+  await screen.findByRole('heading', { name: 'Marina · Betano · Principal' });
+  await select('Banca da conta 11', 'Banca de reserva');
+  const article = screen
+    .getByRole('heading', { name: 'Marina · Betano · Principal' })
+    .closest('article')!;
+  fireEvent.click(
+    within(article).getByRole('button', { name: 'Salvar vínculo' }),
+  );
+  confirm();
+  expect(
+    await screen.findByText('A banca escolhida foi arquivada', {
+      exact: false,
+    }),
+  ).toBeVisible();
+  expect(s.writes).toHaveLength(1);
+  // Not an unknown result: no consultation is required before a new choice.
+  expect(
+    screen.queryByRole('heading', { name: 'Conferir o lançamento' }),
+  ).toBeNull();
+  // Bancas section lists the cadastro from GET /bancas.
+  expect(
+    screen.getByRole('article', { name: 'Banca de reserva' }),
+  ).toHaveTextContent('Não informado');
+});
 it('restauração de referência sem corpo nunca reconstrói/reenvia POST', async () => {
   const id = crypto.randomUUID();
   const s = await setup(undefined, `/banca?movimento=${id}`);

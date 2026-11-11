@@ -24,6 +24,13 @@ export function siteReadContract(document) {
     '/api/v1/painel/metas',
     '/api/v1/painel/metas/{meta_id}',
     '/api/v1/filtros/{dimensao}',
+    '/api/v1/unidade',
+    '/api/v1/unidade/vigencias/intencao',
+    '/api/v1/apostas/lotes/previa-apagar',
+    '/api/v1/apostas/lotes/{lote_id}',
+    '/api/v1/apostas/lotes/intencao',
+    '/api/v1/bancas',
+    '/api/v1/bancas/intencao',
   ];
   function compact(node) {
     if (node.$ref) {
@@ -92,6 +99,12 @@ export function siteReadContract(document) {
     ['/api/v1/titulares/{titular_id}/contas', 'post'],
     ['/api/v1/titulares/{titular_id}/contas/{conta_id}', 'patch'],
     ['/api/v1/titulares/{titular_id}/contas/{conta_id}/ativar', 'post'],
+    ['/api/v1/unidade/vigencias', 'post'],
+    ['/api/v1/apostas/lotes', 'post'],
+    ['/api/v1/apostas/lotes/{lote_id}/restaurar', 'post'],
+    ['/api/v1/bancas', 'post'],
+    ['/api/v1/bancas/{banca_id}', 'patch'],
+    ['/api/v1/bancas/{banca_id}/arquivar', 'post'],
   ];
   return Object.fromEntries(
     operations.flatMap(([path, method]) => {

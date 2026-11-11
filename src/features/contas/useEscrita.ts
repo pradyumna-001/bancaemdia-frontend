@@ -41,7 +41,7 @@ export function useEscrita() {
   ) {
     if (active.current || waiting || unknown || !access?.can(operation))
       return false;
-    const scope = auth?.service.capture();
+    let scope = auth?.service.capture();
     if (!scope?.isCurrent()) return false;
     const epoch = auth!.service.getSnapshot().privateEpoch;
     const current = () =>
@@ -53,9 +53,14 @@ export function useEscrita() {
     setMessage('');
     setFields(mappedFields);
     try {
-      await access.run(operation, () => work(controller.signal));
+      await access.run(operation, () => {
+        // Bound to the sending session: a same-person renewal in the
+        // billing gate comes before the write and does not cancel it.
+        scope = auth!.service.capture();
+        return work(controller.signal);
+      });
       if (!current() || controller.signal.aborted) return false;
-      if (!scope.isCurrent())
+      if (!scope?.isCurrent())
         throw new ApiError('cancelled', { mutation: true });
       setMessage(success);
       await queries.invalidateQueries({ queryKey: ['contas'] });
@@ -78,19 +83,24 @@ export function useEscrita() {
     if (busy || waiting) return;
     const scope = auth?.service.capture();
     if (!scope?.isCurrent()) return;
+    // A renewal during the reads repeats them once, so their answer is
+    // current; logout or a person change (privateEpoch) still discards it.
+    const owner = auth!.service.getSnapshot().privateEpoch;
+    const current = () =>
+      alive.current && auth!.service.getSnapshot().privateEpoch === owner;
     setBusy(true);
     try {
       await queries.resetQueries(
         { queryKey: ['contas'] },
         { throwOnError: true },
       );
-      if (alive.current && scope.isCurrent()) {
+      if (current()) {
         setError(undefined);
         setMessage('Confira os dados consultados antes de uma nova alteração.');
       }
     } catch {
       // Keep the uncertain write blocked when its state could not be consulted.
-      if (alive.current && scope.isCurrent())
+      if (current())
         setMessage(
           'Não foi possível confirmar o estado. Consulte novamente antes de alterar.',
         );

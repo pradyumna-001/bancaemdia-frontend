@@ -307,14 +307,15 @@ function Revisoes({ api }: { api: ReturnType<typeof getApiClient> }) {
       (evidence && (!pendingRef.current || !consulted))
     )
       return;
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session starts a lookup.
     const request = new AbortController();
     controller.current = request;
-    const sameOwner = () =>
+    // A safe read survives the renewal done by read.read (auth.service.read);
+    // logout or a person change (privateEpoch) still discards it.
+    const current = () =>
       alive.current &&
       !request.signal.aborted &&
       auth.service.getSnapshot().privateEpoch === epoch;
-    const current = () => sameOwner() && scope.isCurrent();
     setReading(true);
     setLookupError(undefined);
     setReplayAllowed(false);
@@ -376,10 +377,7 @@ function Revisoes({ api }: { api: ReturnType<typeof getApiClient> }) {
         );
       }
     } finally {
-      if (sameOwner()) {
-        setReading(false);
-        if (!scope.isCurrent()) setLookupError(new ApiError('cancelled'));
-      }
+      if (current()) setReading(false);
     }
   }
   const preserved = [
