@@ -6,6 +6,7 @@ import { temaInicial } from '../../scripts/tema-vite';
 import { billingStatus } from './acesso';
 import { unlinkedTelegram } from './telegram';
 import { unidadeFixture } from './unidade';
+import { loteFixture } from './lote';
 
 export default defineConfig({
   root: fileURLToPath(new URL('./configuracoes/', import.meta.url)),
@@ -18,6 +19,7 @@ export default defineConfig({
       configurePreviewServer(server) {
         let fuso = 'America/Sao_Paulo';
         const unidade = unidadeFixture();
+        const lote = loteFixture();
         const session = {
           usuario_id: 1,
           nome: 'Demonstração',
@@ -70,6 +72,39 @@ export default defineConfig({
               send(r.data);
             });
             return;
+          }
+          const key = String(req.headers['idempotency-key']);
+          if (path === '/api/v1/apostas/lotes/previa-apagar')
+            return send(lote.previa());
+          if (path === '/api/v1/apostas/lotes/intencao') {
+            const r = lote.intencao(key);
+            res.statusCode = r.status;
+            return send(r.data);
+          }
+          const restore =
+            /^\/api\/v1\/apostas\/lotes\/([^/]+)\/restaurar$/.exec(path ?? '');
+          if (restore && req.method === 'POST') {
+            const r = lote.restaurar(key, restore[1]!);
+            res.statusCode = r.status;
+            return send(r.data);
+          }
+          if (path === '/api/v1/apostas/lotes' && req.method === 'POST') {
+            let raw = '';
+            req.on('data', (chunk) => {
+              raw += String(chunk);
+            });
+            req.on('end', () => {
+              const r = lote.apagar(key, JSON.parse(raw));
+              res.statusCode = r.status;
+              send(r.data);
+            });
+            return;
+          }
+          const one = /^\/api\/v1\/apostas\/lotes\/([^/]+)$/.exec(path ?? '');
+          if (one && req.method === 'GET') {
+            const r = lote.consultar(one[1]!);
+            res.statusCode = r.status;
+            return send(r.data);
           }
           if (path !== '/api/v1/painel/preferencias') return next();
           if (req.method === 'GET') return send({ fuso_horario: fuso });

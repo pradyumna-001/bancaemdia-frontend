@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { billingStatus } from '../fixtures/acesso';
 import { unidadeFixture } from '../fixtures/unidade';
+import { loteFixture } from '../fixtures/lote';
 
 const headers = {
   'Access-Control-Allow-Origin': 'http://127.0.0.1:4173',
@@ -24,6 +25,8 @@ async function api(page: Page, access = 'FULL_WRITE') {
   const reads: string[] = [];
   const unidade = unidadeFixture();
   const unidadePosts: Array<{ key: string; csrf: boolean; body: unknown }> = [];
+  const lote = loteFixture();
+  const lotePosts: Array<{ path: string; key: string; csrf: boolean }> = [];
   await page.route('http://127.0.0.1:8000/**', async (route) => {
     const req = route.request();
     const path = new URL(req.url()).pathname;
@@ -58,6 +61,27 @@ async function api(page: Page, access = 'FULL_WRITE') {
       const r = unidade.post(key, body, new Date().toISOString());
       return route.fulfill({ status: r.status, json: r.data, headers });
     }
+    if (path.startsWith('/api/v1/apostas/lotes')) {
+      const key = req.headers()['idempotency-key'] ?? '';
+      let r: { status: number; data: unknown };
+      if (path.endsWith('/previa-apagar'))
+        r = { status: 200, data: lote.previa() };
+      else if (path.endsWith('/intencao')) r = lote.intencao(key);
+      else if (req.method() === 'POST') {
+        lotePosts.push({ path, key, csrf: !!req.headers()['x-csrf-token'] });
+        r = path.endsWith('/restaurar')
+          ? lote.restaurar(key, path.split('/').at(-2)!)
+          : lote.apagar(
+              key,
+              req.postDataJSON() as {
+                acao: string;
+                confirmacao: string;
+                frase: string;
+              },
+            );
+      } else r = lote.consultar(path.split('/').at(-1)!);
+      return route.fulfill({ status: r.status, json: r.data, headers });
+    }
     if (path === '/api/v1/painel/preferencias') {
       if (req.method() === 'GET') {
         reads.push(path);
@@ -83,6 +107,7 @@ async function api(page: Page, access = 'FULL_WRITE') {
     reads,
     writes,
     unidadePosts,
+    lotePosts,
     read: (next: typeof read) => {
       read = next;
     },
@@ -323,6 +348,67 @@ test('unidade em modo de leitura é consultada e não gravada', async ({
   await expect(card).toContainText('pode ser consultada, mas não alterada');
   await expect(card.getByLabel('Nova unidade (R$)')).toBeDisabled();
   expect(app.unidadePosts).toEqual([]);
+});
+
+test('apagar todas: prévia, frase digitada, lote na URL e restauração', async ({
+  page,
+}) => {
+  const app = await api(page);
+  await page.goto(url);
+  const card = page.getByRole('region', { name: 'Apagar todas as apostas' });
+  await expect(card).toContainText(
+    'não exporta seus dados nem encerra a conta',
+  );
+  await card.getByRole('button', { name: 'Preparar exclusão' }).click();
+  const frase = card.getByLabel('Para confirmar, digite', { exact: false });
+  await expect(frase).toHaveValue('');
+  const apagar = card.getByRole('button', { name: 'Apagar 12 apostas' });
+  await expect(apagar).toBeDisabled();
+  await frase.focus();
+  await page.keyboard.type('APAGAR 12 APOSTAS');
+  await expect(apagar).toBeEnabled();
+  await page.keyboard.press('Enter');
+  await expect(card).toContainText('12 apostas apagadas em');
+  expect(app.lotePosts).toHaveLength(1);
+  expect(app.lotePosts[0]).toMatchObject({
+    path: '/api/v1/apostas/lotes',
+    csrf: true,
+  });
+  await expect(page).toHaveURL(/[?&]lote=[0-9a-f-]{36}/);
+  expect(page.url()).toContain('casa=7');
+  expect(page.url()).not.toContain('lote_apagar');
+  // Reload keeps the batch through the URL; restoration stays available.
+  await page.reload();
+  const restaurar = card.getByRole('button', {
+    name: 'Restaurar apostas deste lote',
+  });
+  await expect(restaurar).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await restaurar.click();
+  await expect(card).toContainText('Lote restaurado em');
+  expect(app.lotePosts).toHaveLength(2);
+  expect(app.lotePosts[1]!.key).not.toBe(app.lotePosts[0]!.key);
+  await page.setViewportSize({ width: 320, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test('apagar todas em modo de leitura não grava', async ({ page }) => {
+  const app = await api(page, 'READ_ONLY');
+  await page.goto(url);
+  const card = page.getByRole('region', { name: 'Apagar todas as apostas' });
+  await card.getByRole('button', { name: 'Preparar exclusão' }).click();
+  await card
+    .getByLabel('Para confirmar, digite', { exact: false })
+    .fill('APAGAR 12 APOSTAS');
+  await expect(
+    card.getByRole('button', { name: 'Apagar 12 apostas' }),
+  ).toBeDisabled();
+  await expect(card).toContainText('podem ser consultadas, mas não apagadas');
+  expect(app.lotePosts).toEqual([]);
 });
 
 test('fixture permanece separada e endereço da demonstração não libera sessão no build público', async ({

@@ -12,8 +12,14 @@ export type InvalidField = Readonly<{ scope: 'body' | 'query'; field: string }>;
 function invalidFields(body: unknown): readonly InvalidField[] {
   const detail = record(body)?.detail;
   const campos = record(body)?.campos;
-  // UnidadeInvalidaSaida: one stable code per field, projected to the name only.
-  if (detail === 'unidade_invalida' && Array.isArray(campos)) {
+  // UnidadeInvalidaSaida/LoteInvalidoSaida: one stable code per field,
+  // projected to the name only.
+  if (
+    (detail === 'unidade_invalida' ||
+      detail === 'lote_invalido' ||
+      detail === 'banca_invalida') &&
+    Array.isArray(campos)
+  ) {
     const fields: InvalidField[] = [];
     for (const item of campos.slice(0, 100)) {
       const field = record(item)?.campo;
@@ -99,6 +105,20 @@ const knownCodes = new Set([
   'review_evidence_changed',
   'review_already_resolved',
   'review_intention_conflict',
+  'confirmacao_desatualizada',
+  'confirmacao_expirada',
+  'confirmacao_invalida',
+  'frase_incorreta',
+  'nada_a_apagar',
+  'lote_em_curso',
+  'lote_restaurado',
+  'lote_nao_encontrado',
+  'intencao_nao_encontrada',
+  'idempotency_key_conflict',
+  'nome_em_uso',
+  'banca_arquivada',
+  'banca_com_contas',
+  'banca_nao_encontrada',
   'account_read_only',
   'access_expired',
   'not_authenticated',

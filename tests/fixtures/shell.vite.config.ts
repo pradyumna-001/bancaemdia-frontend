@@ -58,6 +58,7 @@ export default defineConfig({
               });
             if (
               url.pathname.startsWith('/api/v1/caixa') ||
+              url.pathname === '/api/v1/bancas' ||
               url.pathname === '/api/v1/titulares/casas/7/matriz'
             ) {
               const result = caixa.handle('GET', url);

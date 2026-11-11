@@ -6162,6 +6162,161 @@ export const SITE_READ_CONTRACT = {
       },
     },
   },
+  '/api/v1/apostas/lotes/previa-apagar': {
+    query: {},
+    response: {
+      type: 'object',
+      required: ['escopo', 'total', 'frase', 'confirmacao', 'expira_em'],
+      properties: {
+        confirmacao: { type: 'string' },
+        escopo: { type: 'string', const: 'apostas' },
+        expira_em: { type: 'string' },
+        frase: { type: 'string' },
+        total: { type: 'integer' },
+      },
+    },
+  },
+  '/api/v1/apostas/lotes/{lote_id}': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'lote_id',
+        'escopo',
+        'apostas_afetadas',
+        'criado_em',
+        'restaurado_em',
+        'apostas_restauradas',
+      ],
+      properties: {
+        apostas_afetadas: { type: 'integer' },
+        apostas_restauradas: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+        criado_em: { type: 'string' },
+        escopo: { type: 'string', const: 'apostas' },
+        lote_id: { type: 'string' },
+        restaurado_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      },
+    },
+  },
+  '/api/v1/apostas/lotes/intencao': {
+    query: {},
+    response: {
+      type: 'object',
+      required: ['operacao', 'status_code', 'resposta'],
+      properties: {
+        operacao: { type: 'string', enum: ['APAGAR', 'RESTAURAR'] },
+        resposta: {
+          type: 'object',
+          required: [
+            'lote_id',
+            'escopo',
+            'apostas_afetadas',
+            'criado_em',
+            'restaurado_em',
+            'apostas_restauradas',
+          ],
+          properties: {
+            apostas_afetadas: { type: 'integer' },
+            apostas_restauradas: {
+              anyOf: [{ type: 'integer' }, { type: 'null' }],
+            },
+            criado_em: { type: 'string' },
+            escopo: { type: 'string', const: 'apostas' },
+            lote_id: { type: 'string' },
+            restaurado_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          },
+        },
+        status_code: { type: 'integer' },
+      },
+    },
+  },
+  '/api/v1/bancas': {
+    query: {},
+    response: {
+      type: 'object',
+      required: ['bancas'],
+      properties: {
+        bancas: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'id',
+              'nome',
+              'estado',
+              'arquivada_em',
+              'saldo_inicial_centavos',
+              'contas',
+            ],
+            properties: {
+              arquivada_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              contas: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['id', 'casa_id', 'apelido'],
+                  properties: {
+                    apelido: { type: 'string' },
+                    casa_id: { type: 'integer' },
+                    id: { type: 'integer' },
+                  },
+                },
+              },
+              estado: { type: 'string', enum: ['ativa', 'arquivada'] },
+              id: { type: 'integer' },
+              nome: { type: 'string' },
+              saldo_inicial_centavos: {
+                anyOf: [{ type: 'integer' }, { type: 'null' }],
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  '/api/v1/bancas/intencao': {
+    query: {},
+    response: {
+      type: 'object',
+      required: ['operacao', 'status_code', 'resposta'],
+      properties: {
+        operacao: { type: 'string', enum: ['CRIAR', 'ALTERAR', 'ARQUIVAR'] },
+        resposta: {
+          type: 'object',
+          required: [
+            'id',
+            'nome',
+            'estado',
+            'arquivada_em',
+            'saldo_inicial_centavos',
+            'contas',
+          ],
+          properties: {
+            arquivada_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            contas: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['id', 'casa_id', 'apelido'],
+                properties: {
+                  apelido: { type: 'string' },
+                  casa_id: { type: 'integer' },
+                  id: { type: 'integer' },
+                },
+              },
+            },
+            estado: { type: 'string', enum: ['ativa', 'arquivada'] },
+            id: { type: 'integer' },
+            nome: { type: 'string' },
+            saldo_inicial_centavos: {
+              anyOf: [{ type: 'integer' }, { type: 'null' }],
+            },
+          },
+        },
+        status_code: { type: 'integer' },
+      },
+    },
+  },
   'POST /api/v1/painel/metas': {
     query: {},
     response: {
@@ -7343,6 +7498,155 @@ export const SITE_READ_CONTRACT = {
             vigente_de: { anyOf: [{ type: 'string' }, { type: 'null' }] },
             vigente_de_local: { anyOf: [{ type: 'string' }, { type: 'null' }] },
           },
+        },
+      },
+    },
+  },
+  'POST /api/v1/apostas/lotes': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'lote_id',
+        'escopo',
+        'apostas_afetadas',
+        'criado_em',
+        'restaurado_em',
+        'apostas_restauradas',
+      ],
+      properties: {
+        apostas_afetadas: { type: 'integer' },
+        apostas_restauradas: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+        criado_em: { type: 'string' },
+        escopo: { type: 'string', const: 'apostas' },
+        lote_id: { type: 'string' },
+        restaurado_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      },
+    },
+  },
+  'POST /api/v1/apostas/lotes/{lote_id}/restaurar': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'lote_id',
+        'escopo',
+        'apostas_afetadas',
+        'criado_em',
+        'restaurado_em',
+        'apostas_restauradas',
+      ],
+      properties: {
+        apostas_afetadas: { type: 'integer' },
+        apostas_restauradas: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+        criado_em: { type: 'string' },
+        escopo: { type: 'string', const: 'apostas' },
+        lote_id: { type: 'string' },
+        restaurado_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      },
+    },
+  },
+  'POST /api/v1/bancas': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'id',
+        'nome',
+        'estado',
+        'arquivada_em',
+        'saldo_inicial_centavos',
+        'contas',
+      ],
+      properties: {
+        arquivada_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        contas: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['id', 'casa_id', 'apelido'],
+            properties: {
+              apelido: { type: 'string' },
+              casa_id: { type: 'integer' },
+              id: { type: 'integer' },
+            },
+          },
+        },
+        estado: { type: 'string', enum: ['ativa', 'arquivada'] },
+        id: { type: 'integer' },
+        nome: { type: 'string' },
+        saldo_inicial_centavos: {
+          anyOf: [{ type: 'integer' }, { type: 'null' }],
+        },
+      },
+    },
+  },
+  'PATCH /api/v1/bancas/{banca_id}': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'id',
+        'nome',
+        'estado',
+        'arquivada_em',
+        'saldo_inicial_centavos',
+        'contas',
+      ],
+      properties: {
+        arquivada_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        contas: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['id', 'casa_id', 'apelido'],
+            properties: {
+              apelido: { type: 'string' },
+              casa_id: { type: 'integer' },
+              id: { type: 'integer' },
+            },
+          },
+        },
+        estado: { type: 'string', enum: ['ativa', 'arquivada'] },
+        id: { type: 'integer' },
+        nome: { type: 'string' },
+        saldo_inicial_centavos: {
+          anyOf: [{ type: 'integer' }, { type: 'null' }],
+        },
+      },
+    },
+  },
+  'POST /api/v1/bancas/{banca_id}/arquivar': {
+    query: {},
+    response: {
+      type: 'object',
+      required: [
+        'id',
+        'nome',
+        'estado',
+        'arquivada_em',
+        'saldo_inicial_centavos',
+        'contas',
+      ],
+      properties: {
+        arquivada_em: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        contas: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['id', 'casa_id', 'apelido'],
+            properties: {
+              apelido: { type: 'string' },
+              casa_id: { type: 'integer' },
+              id: { type: 'integer' },
+            },
+          },
+        },
+        estado: { type: 'string', enum: ['ativa', 'arquivada'] },
+        id: { type: 'integer' },
+        nome: { type: 'string' },
+        saldo_inicial_centavos: {
+          anyOf: [{ type: 'integer' }, { type: 'null' }],
         },
       },
     },

@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { PreferenciaTema } from '../../components/PreferenciaTema';
 import { FusoPreferencia } from './FusoPreferencia';
 import { UnidadePreferencia } from './UnidadePreferencia';
+import { ApagarApostas } from './ApagarApostas';
 import type { createApiClient } from '../../api/client';
 import './configuracoes.css';
 
@@ -67,6 +68,7 @@ export function ConfiguracoesPage({
             </li>
           </ul>
         </section>
+        <ApagarApostas client={client} />
       </div>
     </main>
   );

@@ -10,6 +10,8 @@ import { DataFiltro } from '../../components/filtros/DataFiltro';
 import { dataHora, moeda } from '../../lib/format';
 import { useRetryAfter } from '../../lib/useRetryAfter';
 import { useOperacao } from '../importar/useOperacao';
+import { BancasCaixa } from './BancasCaixa';
+import { useListaBancas } from './useBancas';
 import { useLeituraPainel } from '../painel/useLeituraPainel';
 import { identificador } from '../contas/protocol';
 import {
@@ -231,6 +233,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
   });
   const current = () =>
     alive.current && auth.service.getSnapshot().privateEpoch === epoch;
+  const listaBancas = useListaBancas(api);
   const canMove = op.can(POST);
   const canLink = op.can(PATCH);
   useEffect(() => {
@@ -352,6 +355,24 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
       }
     }
   }, [op.error, setSearch]);
+  useEffect(() => {
+    // A link to an archived banca is a known refusal (409), not an unknown
+    // result: nothing changed and the choices are read again.
+    if (
+      op.error instanceof ApiError &&
+      op.error.code === 'banca_arquivada' &&
+      pending.current?.kind === 'vinculo'
+    ) {
+      pending.current = undefined;
+      setPendente(undefined);
+      setConsulted(false);
+      op.reconciled();
+      setMessage(
+        'A banca escolhida foi arquivada. Nada foi alterado; escolha outra banca ou deixe a conta sem banca.',
+      );
+      void queries.invalidateQueries({ queryKey: ['caixa', epoch] });
+    }
+  }, [op, queries, epoch]);
   function show(value: Pendente) {
     focusId.current =
       value.kind === 'vinculo'
@@ -866,7 +887,13 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
                       key={`${conta.conta_casa_id}:${conta.banca_id}`}
                       conta={conta.conta_casa_id}
                       value={conta.banca_id}
-                      options={saldo.data!.bancas.map((b) => ({
+                      options={(listaBancas.data
+                        ? listaBancas.data.filter(
+                            (b) =>
+                              b.estado === 'ativa' || b.id === conta.banca_id,
+                          )
+                        : saldo.data!.bancas
+                      ).map((b) => ({
                         value: String(b.id),
                         label: b.nome,
                       }))}
@@ -888,36 +915,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
                   </article>
                 ))}
               </div>
-              <section>
-                <h2>Bancas</h2>
-                <p className="legenda">
-                  Saldo e capital inicial informados por banca.
-                </p>
-                {saldo.data.bancas.length ? (
-                  <ul className="caixa-lista">
-                    {saldo.data.bancas.map((b) => (
-                      <li key={b.id}>
-                        <strong>{b.nome}</strong>
-                        <span className="numero">
-                          {moeda(b.saldo_total_centavos)}
-                        </span>
-                        {b.motivo_saldo_indisponivel && (
-                          <small>Saldo da banca indisponível.</small>
-                        )}
-                        <small>
-                          Capital inicial informado:{' '}
-                          {moeda(b.saldo_inicial_centavos)}
-                        </small>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>
-                    Não há bancas cadastradas.{' '}
-                    <Link to={linked('/contas')}>Consultar contas</Link>.
-                  </p>
-                )}
-              </section>
+              <BancasCaixa client={api} saldos={saldo.data.bancas} />
             </>
           )}
         </>
