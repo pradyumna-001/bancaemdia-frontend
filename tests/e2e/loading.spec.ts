@@ -232,6 +232,7 @@ for (const [path, ready] of [
         else if (
           p.startsWith('/api/v1/caixa') ||
           p === '/api/v1/bancas' ||
+          p.startsWith('/api/v1/financeiro/nativo/') ||
           p.startsWith('/api/v1/casas/')
         )
           json = caixa.handle('GET', url).data;

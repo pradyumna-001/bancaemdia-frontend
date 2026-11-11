@@ -396,6 +396,32 @@ test('apagar todas: prévia, frase digitada, lote na URL e restauração', async
   ).toBe(true);
 });
 
+test('voltar à janela clicando em Preparar exclusão abre a prévia com um toque', async ({
+  page,
+}) => {
+  const app = await api(page);
+  await page.goto(url);
+  const card = page.getByRole('region', { name: 'Apagar todas as apostas' });
+  await expect(card).toContainText(
+    'não exporta seus dados nem encerra a conta',
+  );
+  await expect(page.getByText(/^Consultando/)).toHaveCount(0);
+  // The window had lost focus; the press that brings it back focuses it
+  // and starts a session check before the button is released.
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('blur'));
+    window.addEventListener(
+      'mousedown',
+      () => window.dispatchEvent(new Event('focus')),
+      { capture: true, once: true },
+    );
+  });
+  await card.getByRole('button', { name: 'Preparar exclusão' }).click();
+  await expect(
+    card.getByLabel('Para confirmar, digite', { exact: false }),
+  ).toHaveValue('');
+  expect(app.lotePosts).toHaveLength(0);
+});
 test('apagar todas em modo de leitura não grava', async ({ page }) => {
   const app = await api(page, 'READ_ONLY');
   await page.goto(url);
