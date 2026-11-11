@@ -17,8 +17,8 @@ Uma mesma falha de infraestrutura que se repete na reexecução deixa de ser int
 
 ## O que o CI já faz
 
-- `.github/actions/navegadores` guarda os binários dos navegadores em cache por versão do Playwright e repete **apenas** a instalação, até três vezes, com prazo por tentativa e aviso registrado com tempo e motivo. Testes, asserções e medições nunca são repetidos.
-- O backend pinado é instalado com `tests/identity/api-constraints.txt` (`kombu<5.7`), para que uma versão nova de dependência não quebre o `mypy` da API antes das jornadas.
+- `.github/actions/navegadores` guarda os binários dos navegadores em cache por versão do Playwright e instala separadamente as dependências do sistema (apt) e os navegadores, repetindo **apenas** essas instalações, até três vezes cada, com prazo por tentativa e aviso registrado com tempo e motivo. Antes de cada nova tentativa ela espera as travas do apt e repara o dpkg (`dpkg --configure -a`), porque um prazo esgotado no meio do apt fazia as tentativas seguintes falharem com código 100. Testes, asserções e medições nunca são repetidos.
+- O backend pinado é instalado com `tests/identity/api-constraints.txt`, que fixa as faixas validadas quando uma versão nova muda o comportamento sem mudança de código: `kombu<5.7` (quebrava o `mypy` da API) e `playwright<1.65` (o Firefox 159 trava a página ao rodar o axe, "Page crashed").
 
 ## Pendências fora deste repositório
 
