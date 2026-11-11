@@ -316,7 +316,12 @@ test('consulta da mesma sessão durante POST bloqueia reenvio e descarta confirm
   await select(page);
   await page.getByRole('button', { name: 'Enviar export' }).click();
   await expect.poll(() => writes).toBe(1);
-  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  // Returning to the window re-checks the session only after leaving it
+  // (ProvedorAuth): a lone focus is the document's first activation.
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('blur'));
+    window.dispatchEvent(new Event('focus'));
+  });
   await expect(
     page.getByRole('heading', { name: 'Confira se o pedido foi concluído' }),
   ).toBeVisible();

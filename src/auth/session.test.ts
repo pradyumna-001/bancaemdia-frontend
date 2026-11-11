@@ -619,3 +619,38 @@ it('duas abas consultam dentro da mesma trava e emitem um único grant rotativo'
   expect(transport.renew).toHaveBeenCalledOnce();
   expect(a.capture().csrfToken).toBe(b.capture().csrfToken);
 });
+it('leitura pedida durante uma conferência espera a sessão confirmada em vez de falhar', async () => {
+  const { service, transport } = setup();
+  await service.resume();
+  let release!: () => void;
+  const current = context();
+  transport.read.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = () => resolve(current);
+      }),
+  );
+  const check = service.resume();
+  // A re-check of the confirmed session is not published as 'checking'.
+  expect(service.getSnapshot().phase).toBe('authenticated');
+  expect(service.checking()).toBe(true);
+  const work = vi.fn(async () => service.capture().csrfToken);
+  const pending = service.read(work);
+  await tick();
+  expect(work).not.toHaveBeenCalled();
+  release();
+  await check;
+  expect(await pending).toBe(current.proof);
+  expect(work).toHaveBeenCalledOnce();
+});
+it('leitura pedida durante conferência que encerra a sessão não é enviada', async () => {
+  const { service, transport } = setup();
+  await service.resume();
+  transport.read.mockRejectedValueOnce(new ApiError('http', { status: 401 }));
+  const check = service.resume();
+  const work = vi.fn();
+  const pending = service.read(work);
+  await check;
+  await expect(pending).rejects.toMatchObject({ status: 401 });
+  expect(work).not.toHaveBeenCalled();
+});
