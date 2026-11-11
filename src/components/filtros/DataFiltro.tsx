@@ -1,17 +1,8 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { diaCivil, diaValido, deslocarDia } from '../../lib/datasFiltro';
+import { rotuloDia, rotuloMes } from '../../lib/format';
 import './filtros.css';
-const formatoDia = new Intl.DateTimeFormat('pt-BR', {
-  timeZone: 'UTC',
-  dateStyle: 'long',
-});
-const formatoMes = new Intl.DateTimeFormat('pt-BR', {
-  timeZone: 'UTC',
-  month: 'long',
-  year: 'numeric',
-});
-const dateLabel = (day: string) =>
-  formatoDia.format(new Date(day + 'T12:00:00Z'));
+const dateLabel = rotuloDia;
 export function DataFiltro({
   label,
   value,
@@ -121,9 +112,7 @@ export function DataFiltro({
               <button type="button" onClick={() => moveMonth(-1)}>
                 Mês anterior
               </button>
-              <span aria-live="polite">
-                {formatoMes.format(new Date(day + 'T12:00:00Z'))}
-              </span>
+              <span aria-live="polite">{rotuloMes(day)}</span>
               <button type="button" onClick={() => moveMonth(1)}>
                 Próximo mês
               </button>

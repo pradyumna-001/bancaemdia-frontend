@@ -1,51 +1,52 @@
 import type { NomeIcone } from '../components/Icone';
+import { TERMOS } from '../lib/termos';
 // Fonte única: rotas, topo, barra inferior e destinos do menu Mais.
 export const ABAS = [
   {
     path: '/',
-    title: 'Apostas',
+    title: TERMOS.apostas,
     icone: 'apostas',
     mobile: true,
     desktop: true,
   },
   {
     path: '/painel',
-    title: 'Painel',
+    title: TERMOS.painel,
     icone: 'painel',
     mobile: true,
     desktop: true,
   },
   {
     path: '/enviar',
-    title: 'Enviar',
+    title: TERMOS.enviar,
     icone: 'enviar',
     mobile: true,
     desktop: true,
   },
   {
     path: '/coleta',
-    title: 'Coleta',
+    title: TERMOS.coleta,
     icone: 'coleta',
     mobile: false,
     desktop: true,
   },
   {
     path: '/banca',
-    title: 'Caixa',
+    title: TERMOS.caixa,
     icone: 'caixa',
     mobile: false,
     desktop: true,
   },
   {
     path: '/resultados',
-    title: 'Resultados',
+    title: TERMOS.resultados,
     icone: 'resultados',
     mobile: false,
     desktop: true,
   },
   {
     path: '/revisao',
-    title: 'Revisão',
+    title: TERMOS.revisao,
     icone: 'revisao',
     mobile: true,
     desktop: true,
@@ -66,7 +67,7 @@ export const ABAS = [
   },
   {
     path: '/assinatura',
-    title: 'Assinatura',
+    title: TERMOS.assinatura,
     icone: 'assinatura',
     mobile: false,
     desktop: false,

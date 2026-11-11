@@ -48,7 +48,7 @@ export function useOperacao() {
     )
       return;
     const service = auth?.service;
-    const scope = service?.capture();
+    let scope = service?.capture();
     if (!service || !scope?.isCurrent()) return;
     const epoch = service.getSnapshot().privateEpoch;
     const request = new AbortController();
@@ -60,15 +60,20 @@ export function useOperacao() {
     setBusy(true);
     setError(undefined);
     try {
-      const result = await access.run(operation, () => work(request.signal));
+      const result = await access.run(operation, () => {
+        // Bound to the sending session: a same-person renewal in the
+        // billing gate comes before the write and does not cancel it.
+        scope = service.capture();
+        return work(request.signal);
+      });
       if (!current()) return;
-      if (!scope.isCurrent())
+      if (!scope?.isCurrent())
         throw new ApiError('cancelled', { mutation: true });
       setUncertain(false);
       return result;
     } catch (cause) {
       if (current()) {
-        const safe = !scope.isCurrent()
+        const safe = !scope?.isCurrent()
           ? new ApiError('cancelled', { mutation: true })
           : cause instanceof ApiError
             ? cause.kind === 'invalid_response'

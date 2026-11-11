@@ -259,7 +259,7 @@ export function PrintsPage() {
       !access.can(`POST ${retry ? RETRY_PATH : PRINT_PATH}`)
     )
       return false;
-    const scope = service.capture();
+    let scope = service.capture();
     if (!scope?.isCurrent()) return false;
     const capturedEpoch = service.getSnapshot().privateEpoch;
     const controller = new AbortController();
@@ -267,18 +267,24 @@ export function PrintsPage() {
     update(row.id, { phase: 'sending', error: undefined, confirmed: false });
     try {
       const result = retry
-        ? await access.run(`POST ${RETRY_PATH}`, () =>
-            getApiClient().POST(RETRY_PATH, {
+        ? await access.run(`POST ${RETRY_PATH}`, () => {
+            // Bound to the sending session: a same-person renewal in the
+            // billing gate comes before the write and does not cancel it.
+            scope = service.capture();
+            return getApiClient().POST(RETRY_PATH, {
               params: { path: { intent_id: intent, item_id: row.id } },
               body: {
                 retry_id: crypto.randomUUID(),
                 expected_attempt: row.remote!.attempt,
               },
               signal: controller.signal,
-            }),
-          )
-        : await access.run(`POST ${PRINT_PATH}`, () =>
-            getApiClient().POST(PRINT_PATH, {
+            });
+          })
+        : await access.run(`POST ${PRINT_PATH}`, () => {
+            // Bound to the sending session: a same-person renewal in the
+            // billing gate comes before the write and does not cancel it.
+            scope = service.capture();
+            return getApiClient().POST(PRINT_PATH, {
               params: { path: { intent_id: intent, item_id: row.id } },
               body: { file: row.file!.name },
               bodySerializer: () => {
@@ -287,8 +293,8 @@ export function PrintsPage() {
                 return form;
               },
               signal: controller.signal,
-            }),
-          );
+            });
+          });
       if (!current(capturedEpoch, controller.signal)) return false;
       if (!scope.isCurrent())
         throw new ApiError('cancelled', { mutation: true });

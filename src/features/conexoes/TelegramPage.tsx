@@ -124,9 +124,17 @@ export function TelegramPage({
   }, [started]);
   async function consult() {
     if (busy || query.isFetching || queryWaiting || !auth) return;
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session consults.
+    // A renewal during the refetch repeats the safe read once, so its answer
+    // is current; logout or a person change (privateEpoch) still discards it.
+    const owner = auth.service.getSnapshot().privateEpoch;
     const status = await query.refetch();
-    if (!life.current.active || !scope.isCurrent() || status.error) return;
+    if (
+      !life.current.active ||
+      auth.service.getSnapshot().privateEpoch !== owner ||
+      status.error
+    )
+      return;
     setNeedsCheck(false);
   }
   async function mutate(action: 'generate' | 'revoke') {
