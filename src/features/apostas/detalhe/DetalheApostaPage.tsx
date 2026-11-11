@@ -175,9 +175,17 @@ function DetalhePagina({
       return;
     reading.current = true;
     try {
-      const scope = auth.service.capture();
+      auth.service.capture(); // Only an authenticated session consults.
+      // A renewal during the refetch repeats the safe read once, so its
+      // answer is current; logout or a person change still discards it.
+      const owner = auth.service.getSnapshot().privateEpoch;
       const response = await detail.refetch();
-      if (!alive.current || !scope.isCurrent() || response.error) return;
+      if (
+        !alive.current ||
+        auth.service.getSnapshot().privateEpoch !== owner ||
+        response.error
+      )
+        return;
       setNeedsRead(false);
       setError(undefined);
       setNotice(
@@ -195,10 +203,19 @@ function DetalhePagina({
     setError(undefined);
     setNotice('');
     setLocalError('');
-    const scope = auth.service.capture();
+    let scope = auth.service.capture();
+    const owner = auth.service.getSnapshot().privateEpoch;
+    const sameOwner = () =>
+      alive.current && auth.service.getSnapshot().privateEpoch === owner;
+    // Set once the write is confirmed for the session that sent it; the
+    // follow-up read may renew the session without undoing that.
+    let confirmed = false;
     const operation = OPERACOES[intent.tipo];
     try {
       const value = await access.run(operation, async () => {
+        // Bound to the sending session: a same-person renewal in the
+        // billing gate comes before the write and does not cancel it.
+        scope = auth.service.capture();
         const params = { path: { chave } };
         if (intent.tipo === 'corrigir')
           return (
@@ -239,6 +256,7 @@ function DetalhePagina({
       });
       validarMudanca(value, chave, operation, SITE_READ_CONTRACT);
       if (!alive.current || !scope.isCurrent()) return;
+      confirmed = true;
       setNeedsRead(true);
       setNotice(
         'Alteração confirmada. Os resumos podem levar um tempo para refletir esta mudança.',
@@ -248,7 +266,7 @@ function DetalhePagina({
       void queries.invalidateQueries({ queryKey: ['resumo-apostas'] });
       void queries.invalidateQueries({ queryKey: ['revisao'] });
       const response = await detail.refetch();
-      if (!alive.current || !scope.isCurrent()) return;
+      if (!sameOwner()) return;
       if (!response.error) {
         setNeedsRead(false);
         setDraft(undefined);
@@ -280,7 +298,8 @@ function DetalhePagina({
       }
     } finally {
       acting.current = false;
-      if (alive.current && scope.isCurrent()) setBusy(false);
+      if (alive.current && (scope.isCurrent() || (confirmed && sameOwner())))
+        setBusy(false);
     }
   }
   const fields = CAMPOS.map(([field, label]) => ({

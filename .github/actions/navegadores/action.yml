@@ -1,0 +1,52 @@
+name: Instalar navegadores do Playwright
+description: >-
+  Cache dos binários dos navegadores e instalação das dependências do sistema
+  com tentativas limitadas e registradas. Só repete a instalação, nunca testes
+  nem medições (#125).
+inputs:
+  browsers:
+    description: Navegadores separados por espaço (chromium, firefox, webkit). Vazio instala todos.
+    required: false
+    default: ''
+  tool:
+    description: python (pacote playwright do pip) ou pnpm (pacote do projeto).
+    required: false
+    default: python
+  with-deps:
+    description: Instalar também as dependências do sistema (apt).
+    required: false
+    default: 'true'
+  attempt-seconds:
+    description: Prazo de cada tentativa de instalação.
+    required: false
+    default: '300'
+runs:
+  using: composite
+  steps:
+    - name: Versão do Playwright
+      id: versao
+      shell: bash
+      env:
+        TOOL: ${{ inputs.tool }}
+      run: |
+        set -euo pipefail
+        if [ "$TOOL" = pnpm ]; then
+          version=$(pnpm exec playwright --version | awk '{print $2}')
+        else
+          version=$(python -c "import importlib.metadata as m; print(m.version('playwright'))")
+        fi
+        test -n "$version"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+    - name: Cache dos binários dos navegadores
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ inputs.tool }}-${{ steps.versao.outputs.version }}-${{ inputs.browsers || 'todos' }}
+    - name: Instalar navegadores e dependências
+      shell: bash
+      env:
+        TOOL: ${{ inputs.tool }}
+        BROWSERS: ${{ inputs.browsers }}
+        WITH_DEPS: ${{ inputs.with-deps }}
+        ATTEMPT_SECONDS: ${{ inputs.attempt-seconds }}
+      run: bash "$GITHUB_ACTION_PATH/instalar.sh"

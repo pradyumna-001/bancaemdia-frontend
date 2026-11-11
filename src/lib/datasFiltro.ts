@@ -1,22 +1,8 @@
+import { diaCivilNoFuso } from './format';
+
 export const FUSO_FILTROS = 'America/Sao_Paulo';
-const civil = new Intl.DateTimeFormat('en-CA', {
-  timeZone: FUSO_FILTROS,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  era: 'short',
-});
 export function diaCivil(instant: Date): string {
-  const parts = civil.formatToParts(instant);
-  const part = (type: string) =>
-    parts.find((item) => item.type === type)!.value;
-  return (
-    (part('era') === 'BC' ? '0000' : part('year').padStart(4, '0')) +
-    '-' +
-    part('month') +
-    '-' +
-    part('day')
-  );
+  return diaCivilNoFuso(instant, FUSO_FILTROS);
 }
 export function diaValido(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith('0000'))

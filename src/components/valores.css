@@ -1,0 +1,18 @@
+.valor-financeiro {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-4) var(--espaco-8);
+  max-width: 100%;
+}
+.valor-numero {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.estado-aposta {
+  display: inline-block;
+  max-width: 100%;
+  padding: var(--espaco-4) var(--espaco-8);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-controle);
+  overflow-wrap: anywhere;
+}

@@ -54,22 +54,42 @@ function Location() {
     <output data-testid="url">{location.pathname + location.search}</output>
   );
 }
+// The next billing check answers 401 access_expired once (renewal in the
+// write gate, before anything is sent).
+let expireBilling = false;
+const billingExpired = () =>
+  new Response(JSON.stringify({ detail: 'access_expired' }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Error': 'access_expired',
+    },
+  });
+const consumeExpiredBilling = () => {
+  if (!expireBilling) return undefined;
+  expireBilling = false;
+  return billingExpired();
+};
 async function setup(
   fetcher: (r: Request) => Promise<Response> = async () =>
     json(acceptedUpload, 202),
   path = '/enviar?estado=GREEN&apagadas=1',
   accessState: 'FULL_WRITE' | 'READ_ONLY' = 'FULL_WRITE',
 ) {
-  const person = sessionContext({
-    usuario_id: 1,
-    nome: 'Teste',
-    email: 'teste@example.org',
-    session_version: `${crypto.randomUUID()}:1`,
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  const sessionId = crypto.randomUUID();
+  let version = 0;
+  const person = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Teste',
+      email: 'teste@example.org',
+      session_version: `${sessionId}:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: 30_000 } },
   });
@@ -78,8 +98,8 @@ async function setup(
     queryClient: queries,
     exclusive: async (_signal, work) => work(),
     transport: {
-      read: async () => person,
-      renew: async () => person,
+      read: async () => person(),
+      renew: async () => person(),
       logout: async () => {},
     },
   });
@@ -89,7 +109,10 @@ async function setup(
     captureSession: service.capture,
     fetcher: (r) =>
       new URL(r.url).pathname === '/api/v1/billing/status'
-        ? Promise.resolve(json({ ...billingStatus, access: accessState }))
+        ? Promise.resolve(
+            consumeExpiredBilling() ??
+              json({ ...billingStatus, access: accessState }),
+          )
         : fetcher(r),
   });
   const access = createAccessController(service, queries);
@@ -450,4 +473,23 @@ it('nova consulta da mesma sessão interrompe POST como resultado desconhecido e
   expect(screen.getByTestId('url')).not.toHaveTextContent('envio=');
   submit();
   expect(fetcher).toHaveBeenCalledTimes(1);
+});
+it('acesso vencido renovado na conferência de billing ainda envia o export uma vez', async () => {
+  const fetcher = vi.fn(async (request: Request) => {
+    void request;
+    return json(acceptedUpload, 202);
+  });
+  await setup(fetcher);
+  select();
+  expireBilling = true;
+  submit();
+  await waitFor(() =>
+    expect(screen.getByTestId('url')).toHaveTextContent(
+      `envio=${acceptedUpload.job_id}`,
+    ),
+  );
+  expect(expireBilling).toBe(false);
+  expect(fetcher.mock.calls.filter(([r]) => r.method === 'POST')).toHaveLength(
+    1,
+  );
 });

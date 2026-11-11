@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryObserver } from '@tanstack/react-query';
 import { ApiError } from '../api/error';
 import {
   browserExclusive,
@@ -345,6 +345,122 @@ it('renova e repete somente uma leitura ainda do mesmo usuário', async () => {
     .mockResolvedValueOnce('resultado');
   expect(await service.read(read)).toBe('resultado');
   expect(read).toHaveBeenCalledTimes(2);
+});
+// A session read after the first renews the same family with a new version.
+function renewing() {
+  const family = crypto.randomUUID();
+  let version = 1;
+  const ctx = setup(context(1, family));
+  ctx.transport.read.mockImplementation(async () =>
+    context(1, family, version++),
+  );
+  return ctx;
+}
+const expired = () =>
+  new ApiError('http', { status: 401, code: 'access_expired' });
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+it('primeira carga renovada entrega a leitura repetida à consulta, sem ficar pendente', async () => {
+  const { service, queryClient } = renewing();
+  await service.resume();
+  const work = vi
+    .fn()
+    .mockRejectedValueOnce(expired())
+    .mockResolvedValue('novo');
+  const observer = new QueryObserver(queryClient, {
+    queryKey: ['privado'],
+    queryFn: () => service.read(work),
+    retry: false,
+  });
+  const stop = observer.subscribe(() => {});
+  await vi.waitFor(() =>
+    expect(observer.getCurrentResult().status).toBe('success'),
+  );
+  expect(observer.getCurrentResult().data).toBe('novo');
+  expect(work).toHaveBeenCalledTimes(2);
+  stop();
+});
+it('refetch renovado devolve o dado novo, não o anterior revertido', async () => {
+  const { service, queryClient } = renewing();
+  await service.resume();
+  let value = 0;
+  let fail = false;
+  const observer = new QueryObserver(queryClient, {
+    queryKey: ['privado'],
+    queryFn: () =>
+      service.read(async () => {
+        if (fail) {
+          fail = false;
+          throw expired();
+        }
+        return ++value;
+      }),
+    retry: false,
+  });
+  const stop = observer.subscribe(() => {});
+  await vi.waitFor(() => expect(observer.getCurrentResult().data).toBe(1));
+  fail = true;
+  const result = await observer.refetch();
+  expect(result.data).toBe(2);
+  expect(result.error).toBeNull();
+  stop();
+});
+it('leitura cercada por renovação da mesma família é repetida uma vez', async () => {
+  const { service } = renewing();
+  await service.resume();
+  let release!: () => void;
+  const work = vi
+    .fn()
+    .mockImplementationOnce(async () => {
+      const scope = service.capture();
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      // The client rejects a response whose request scope was fenced.
+      if (!scope.isCurrent()) throw new ApiError('cancelled');
+      return 'antigo';
+    })
+    .mockResolvedValue('atual');
+  const pending = service.read(work);
+  await tick();
+  await service.resume();
+  release();
+  expect(await pending).toBe('atual');
+  expect(work).toHaveBeenCalledTimes(2);
+});
+it('cancelamento do chamador ou troca de pessoa durante a leitura não é repetido', async () => {
+  const { service, transport } = renewing();
+  await service.resume();
+  const own = vi.fn().mockRejectedValue(new ApiError('cancelled'));
+  await expect(service.read(own)).rejects.toMatchObject({ kind: 'cancelled' });
+  expect(own).toHaveBeenCalledOnce();
+  let release!: () => void;
+  const other = vi.fn(async () => {
+    const scope = service.capture();
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    if (!scope.isCurrent()) throw new ApiError('cancelled');
+    return 'privado';
+  });
+  const pending = service.read(other);
+  await tick();
+  transport.read.mockResolvedValue(context(2));
+  await service.resume();
+  release();
+  await expect(pending).rejects.toMatchObject({ kind: 'cancelled' });
+  expect(other).toHaveBeenCalledOnce();
+});
+it('troca de pessoa ainda cancela e limpa as consultas', async () => {
+  const family = crypto.randomUUID();
+  const { service, transport, queryClient } = setup(context(1, family));
+  await service.resume();
+  const cancel = vi.spyOn(queryClient, 'cancelQueries');
+  transport.read.mockResolvedValue(context(1, family, 2));
+  await service.resume();
+  expect(cancel).not.toHaveBeenCalled();
+  transport.read.mockResolvedValue(context(2));
+  await service.resume();
+  expect(cancel).toHaveBeenCalled();
 });
 it('outra identidade após 401 nunca recebe repetição da leitura antiga', async () => {
   const { service, transport } = setup();

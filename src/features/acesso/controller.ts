@@ -67,7 +67,16 @@ export function createAccessController(
       operation: AccessOperation,
       work: () => Promise<T>,
     ): Promise<T> {
-      const context = session.capture();
+      session.capture(); // Only an authenticated session may write.
+      // The billing consult is a safe read and may renew an expired access of
+      // the same person (new session version). The write was not sent yet, so
+      // that renewal does not cancel it; logout or a person change does. The
+      // write itself is bound to the session that sends it (API client).
+      const owner = session.getSnapshot().privateEpoch;
+      const sameOwner = () => {
+        const state = session.getSnapshot();
+        return state.phase === 'authenticated' && state.privateEpoch === owner;
+      };
       const currentRevision = revision;
       if (operationNeedsWrite(operation)) {
         const data = await queries
@@ -78,7 +87,7 @@ export function createAccessController(
           })
           .catch((error: unknown) => {
             if (isCancelledError(error))
-              throw currentRevision !== revision && context.isCurrent()
+              throw currentRevision !== revision && sameOwner()
                 ? new ApiError('http', {
                     status: 402,
                     code: 'account_read_only',
@@ -92,7 +101,7 @@ export function createAccessController(
             code: 'account_read_only',
           });
       }
-      if (!context.isCurrent()) throw new ApiError('cancelled');
+      if (!sameOwner()) throw new ApiError('cancelled');
       // No replay after payment, refresh, timeout or a 402: one explicit intent only.
       return work();
     },
