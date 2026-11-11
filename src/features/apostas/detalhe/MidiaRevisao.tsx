@@ -51,8 +51,16 @@ export function MidiaRevisao({
       (error && recuperacaoErro(error, 'leitura').action !== 'tentar')
     )
       return;
-    const scope = auth.service.capture();
-    control.current = new AbortController();
+    auth.service.capture(); // Only an authenticated session starts a read.
+    // A safe read survives the renewal done by auth.service.read; logout or a
+    // person change (privateEpoch) still discards it and its bytes.
+    const owner = auth.service.getSnapshot().privateEpoch;
+    const request = new AbortController();
+    control.current = request;
+    const current = () =>
+      alive.current &&
+      !request.signal.aborted &&
+      auth.service.getSnapshot().privateEpoch === owner;
     setBusy(true);
     setError(undefined);
     try {
@@ -60,7 +68,7 @@ export function MidiaRevisao({
         api.GET('/api/v1/revisao/{revisao_id}/foto', {
           params: { path: { revisao_id: id } },
           parseAs: 'blob',
-          signal: control.current!.signal,
+          signal: request.signal,
         }),
       );
       const blob = result.data;
@@ -72,14 +80,14 @@ export function MidiaRevisao({
         !blob.size
       )
         throw new ApiError('invalid_response');
-      if (!alive.current || !scope.isCurrent()) return;
+      if (!current()) return;
       const next = URL.createObjectURL(blob);
       resource.current = next;
       setUrl(next);
     } catch (failure) {
-      if (alive.current && scope.isCurrent()) setError(failure);
+      if (current()) setError(failure);
     } finally {
-      if (alive.current && scope.isCurrent()) setBusy(false);
+      if (current()) setBusy(false);
     }
   }
   return (

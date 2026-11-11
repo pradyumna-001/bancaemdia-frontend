@@ -143,9 +143,15 @@ export function useMetas(client: ReturnType<typeof createApiClient>) {
     setErrorIntent('leitura');
     setNotice('');
     if (!unknown?.id) {
-      const scope = auth.service.capture();
+      auth.service.capture(); // Only an authenticated session consults.
+      // A renewal during the refetch repeats the safe read once, so its
+      // answer is current; logout or a person change still discards it.
       const result = await query.refetch();
-      if (!result.error && alive.current && scope.isCurrent())
+      if (
+        !result.error &&
+        alive.current &&
+        auth.service.getSnapshot().privateEpoch === epoch
+      )
         setNotice(
           unknown
             ? 'Lista consultada. Ela não confirma o resultado daquela criação.'
@@ -156,9 +162,13 @@ export function useMetas(client: ReturnType<typeof createApiClient>) {
     const controller = new AbortController();
     active.current = controller;
     setBusy(true);
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session starts a lookup.
+    // A safe read survives the renewal done by auth.service.read; logout or a
+    // person change (privateEpoch) still discards it.
     const current = () =>
-      alive.current && scope.isCurrent() && !controller.signal.aborted;
+      alive.current &&
+      auth.service.getSnapshot().privateEpoch === epoch &&
+      !controller.signal.aborted;
     try {
       const value = await auth.service.read(async () =>
         conferir(

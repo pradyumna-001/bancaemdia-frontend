@@ -350,6 +350,62 @@ export function dataHora(instante: string | null, fuso: string): string {
   }
 }
 
+const rotulosCalendario = {
+  dia: new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC', dateStyle: 'long' }),
+  mes: new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'UTC',
+    month: 'long',
+    year: 'numeric',
+  }),
+};
+
+/** Rótulo de um dia civil (AAAA-MM-DD) nos seletores de data, sem fuso local. */
+export function rotuloDia(dia: string): string {
+  return rotulosCalendario.dia.format(new Date(dia + 'T12:00:00Z'));
+}
+
+/** Mês e ano do dia civil exibido no calendário. */
+export function rotuloMes(dia: string): string {
+  return rotulosCalendario.mes.format(new Date(dia + 'T12:00:00Z'));
+}
+
+/** O ambiente reconhece o nome IANA; o servidor continua autoritativo. */
+export function fusoReconhecido(fuso: string): boolean {
+  try {
+    new Intl.DateTimeFormat('pt-BR', { timeZone: fuso });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const diasCivis = new Map<string, Intl.DateTimeFormat>();
+
+/** Dia civil AAAA-MM-DD de um instante no fuso indicado (ano 0000 antes de Cristo). */
+export function diaCivilNoFuso(instante: Date, fuso: string): string {
+  let formato = diasCivis.get(fuso);
+  if (!formato) {
+    formato = new Intl.DateTimeFormat('en-CA', {
+      timeZone: fuso,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      era: 'short',
+    });
+    diasCivis.set(fuso, formato);
+  }
+  const partes = formato.formatToParts(instante);
+  const parte = (tipo: string) =>
+    partes.find((item) => item.type === tipo)!.value;
+  return (
+    (parte('era') === 'BC' ? '0000' : parte('year').padStart(4, '0')) +
+    '-' +
+    parte('month') +
+    '-' +
+    parte('day')
+  );
+}
+
 /** Escala compacta apenas para eixos; resumo e tabela preservam centavos exatos. */
 export function moedaEixo(centavos: number): string {
   if (!Number.isSafeInteger(centavos)) throw new Error('Valor indisponível.');

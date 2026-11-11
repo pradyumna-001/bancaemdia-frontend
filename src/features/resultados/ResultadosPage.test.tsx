@@ -65,16 +65,20 @@ async function setup(
   const fixture = resultadosFixture();
   const writes: Request[] = [];
   const calls: Request[] = [];
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Teste',
-    email: 'teste@example.org',
-    session_version: `${crypto.randomUUID()}:1`,
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  const sessionId = crypto.randomUUID();
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Teste',
+      email: 'teste@example.org',
+      session_version: `${sessionId}:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: 30000 } },
   });
@@ -83,8 +87,8 @@ async function setup(
     queryClient: queries,
     exclusive: async (_signal, work) => work(),
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
   });
@@ -254,6 +258,61 @@ it('resposta perdida consulta a mesma identidade e não repete POST', async () =
   );
   await screen.findByRole('button', { name: 'Desfazer Botafogo × Fluminense' });
   expect(state.writes).toHaveLength(1);
+});
+const accessExpired = () =>
+  json({ detail: 'access_expired' }, 401, { 'X-Auth-Error': 'access_expired' });
+it('consulta do pedido sobrevive à renovação de um acesso vencido', async () => {
+  let receipt: ReturnType<typeof reciboResultado> | undefined;
+  let expired = true;
+  const state = await setup(async (r) => {
+    if (r.method === 'POST') {
+      receipt = reciboResultado(new URL(r.url).pathname.split('/').at(-1)!);
+      throw new TypeError('network');
+    }
+    if (r.url.includes('/operacoes/') && receipt) {
+      if (!expired) return json(receipt);
+      expired = false;
+      return accessExpired();
+    }
+  });
+  await ready();
+  fireEvent.click(green());
+  await screen.findByRole('heading', { name: 'Consultar este pedido' });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Consultar resultado do pedido' }),
+  );
+  // auth.service.read renews once and repeats the safe GET; the renewed
+  // answer belongs to the same session and must not be discarded silently.
+  await screen.findByRole('button', { name: 'Desfazer Botafogo × Fluminense' });
+  expect(
+    state.calls.filter(
+      (r) => r.method === 'GET' && r.url.includes('/operacoes/'),
+    ),
+  ).toHaveLength(2);
+  expect(state.writes).toHaveLength(1);
+});
+it('consulta da aposta atual sobrevive à renovação de um acesso vencido', async () => {
+  let expired = true;
+  const state = await setup(async (r) => {
+    if (r.method === 'POST')
+      return json({ detail: { code: 'result_revision_conflict' } }, 409);
+    if (r.url.includes('/resultados/apostas/') && expired) {
+      expired = false;
+      return accessExpired();
+    }
+    return undefined;
+  });
+  await ready();
+  fireEvent.click(green());
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Consultar aposta atual' }),
+  );
+  await ready();
+  expect(
+    state.calls.filter((r) => r.url.includes('/resultados/apostas/')),
+  ).toHaveLength(2);
+  expect(state.writes).toHaveLength(1);
+  expect(screen.getByTestId('url').textContent).not.toContain('resultado');
 });
 it('404 após incerteza admite somente replay explícito do payload/UUID guardado', async () => {
   let first = true;

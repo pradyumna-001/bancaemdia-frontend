@@ -39,9 +39,10 @@ concorrer com a rotação em outro navegador. Nenhuma validade, limite ou relóg
 é alterado. Falha na preparação reprova o ensaio; não repete nem substitui uma
 amostra. As jornadas próprias de expiração/renovação continuam obrigatórias.
 
-O botão de visualização de Apostas e a classe da lista mudam juntos no quadro
-seguinte ao gesto, enquanto a navegação renderiza; a URL continua a única fonte do
-modo, e qualquer mudança dela, inclusive voltar/avançar, descarta a escolha
+O botão de visualização de Apostas responde no quadro seguinte ao gesto; a classe
+da lista, a legenda e as células de valor seguem na renderização seguinte,
+interrompível, sem entrar no quadro que encerra o evento (#116). A URL continua a
+única fonte do modo, e qualquer mudança dela, inclusive voltar/avançar, descarta a escolha
 pendente. Seções do Painel que não mudaram não renderizam de novo quando
 outra consulta termina, e os formatadores reutilizam só configuração de Intl.
 Seletores de data e de opções, e o menu "Mais opções" do shell, montam seu

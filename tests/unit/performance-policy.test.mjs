@@ -82,7 +82,7 @@ function report(profile = 'mobile') {
     frontendSha: 'a'.repeat(40),
     apiSha: API_PIN.commit,
     apiSchemaSha256: API_PIN.sha256,
-    availability: 'sandbox_reconciliation',
+    availability: API_PIN.availability?.kind ?? 'main',
     productionAuthorized: false,
     profile,
     repetitions: REPETITIONS,

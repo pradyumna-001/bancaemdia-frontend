@@ -1,13 +1,14 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { billingStatus } from '../fixtures/acesso';
+import { unidadeFixture } from '../fixtures/unidade';
 
 const headers = {
   'Access-Control-Allow-Origin': 'http://127.0.0.1:4173',
   'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Expose-Headers': 'Retry-After',
-  'Access-Control-Allow-Headers': 'X-CSRF-Token, Content-Type',
-  'Access-Control-Allow-Methods': 'GET, PATCH, OPTIONS',
+  'Access-Control-Allow-Headers': 'X-CSRF-Token, Content-Type, Idempotency-Key',
+  'Access-Control-Allow-Methods': 'GET, PATCH, POST, OPTIONS',
 };
 const url = '/configuracoes?casa=7&apagadas=1';
 async function api(page: Page, access = 'FULL_WRITE') {
@@ -21,6 +22,8 @@ async function api(page: Page, access = 'FULL_WRITE') {
   };
   const writes: Array<{ csrf: boolean; body: unknown }> = [];
   const reads: string[] = [];
+  const unidade = unidadeFixture();
+  const unidadePosts: Array<{ key: string; csrf: boolean; body: unknown }> = [];
   await page.route('http://127.0.0.1:8000/**', async (route) => {
     const req = route.request();
     const path = new URL(req.url()).pathname;
@@ -42,6 +45,19 @@ async function api(page: Page, access = 'FULL_WRITE') {
       });
     if (path === '/api/v1/billing/status')
       return route.fulfill({ json: { ...billingStatus, access }, headers });
+    if (path === '/api/v1/unidade')
+      return route.fulfill({ json: unidade.get(), headers });
+    if (path === '/api/v1/unidade/vigencias/intencao') {
+      const r = unidade.intencao(req.headers()['idempotency-key'] ?? '');
+      return route.fulfill({ status: r.status, json: r.data, headers });
+    }
+    if (path === '/api/v1/unidade/vigencias') {
+      const key = req.headers()['idempotency-key'] ?? '';
+      const body = req.postDataJSON() as { valor_centavos: number };
+      unidadePosts.push({ key, csrf: !!req.headers()['x-csrf-token'], body });
+      const r = unidade.post(key, body, new Date().toISOString());
+      return route.fulfill({ status: r.status, json: r.data, headers });
+    }
     if (path === '/api/v1/painel/preferencias') {
       if (req.method() === 'GET') {
         reads.push(path);
@@ -66,6 +82,7 @@ async function api(page: Page, access = 'FULL_WRITE') {
   return {
     reads,
     writes,
+    unidadePosts,
     read: (next: typeof read) => {
       read = next;
     },
@@ -257,6 +274,55 @@ test('resposta desconhecida exige consulta; 503 com Retry-After não permite rep
   await expect(
     page.getByText('Salvo na conta:', { exact: false }),
   ).toContainText('America / Sao Paulo');
+});
+
+test('unidade: valor atual, confirmação explícita, recibo e histórico sem hover', async ({
+  page,
+}) => {
+  const app = await api(page);
+  await page.goto(url);
+  const card = page.getByRole('region', { name: 'Valor da unidade' });
+  await expect(card).toContainText('R$ 100,00');
+  await expect(card).toContainText('valor padrão do serviço');
+  const input = card.getByLabel('Nova unidade (R$)');
+  await input.fill('25,50');
+  await card.getByRole('button', { name: 'Revisar nova unidade' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Salvar nova unidade?' });
+  await expect(dialog).toContainText('R$ 25,50');
+  await expect(dialog).toContainText('continuam com a unidade');
+  // Cancelling sends nothing.
+  await dialog.getByRole('button', { name: 'Agora não' }).click();
+  expect(app.unidadePosts).toEqual([]);
+  await card.getByRole('button', { name: 'Revisar nova unidade' }).click();
+  await dialog.getByRole('button', { name: 'Salvar unidade' }).click();
+  await expect(card).toContainText('nenhuma aposta existente foi alterada');
+  expect(app.unidadePosts).toHaveLength(1);
+  expect(app.unidadePosts[0]).toMatchObject({
+    csrf: true,
+    body: { valor_centavos: 2550 },
+  });
+  expect(app.unidadePosts[0]!.key).toMatch(/^[0-9a-f-]{36}$/);
+  const historico = card.getByRole('table', { name: 'Histórico de unidades' });
+  await expect(historico).toBeVisible();
+  await expect(historico).toContainText('Em vigor');
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.setViewportSize({ width: 320, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test('unidade em modo de leitura é consultada e não gravada', async ({
+  page,
+}) => {
+  const app = await api(page, 'READ_ONLY');
+  await page.goto(url);
+  const card = page.getByRole('region', { name: 'Valor da unidade' });
+  await expect(card).toContainText('pode ser consultada, mas não alterada');
+  await expect(card.getByLabel('Nova unidade (R$)')).toBeDisabled();
+  expect(app.unidadePosts).toEqual([]);
 });
 
 test('fixture permanece separada e endereço da demonstração não libera sessão no build público', async ({

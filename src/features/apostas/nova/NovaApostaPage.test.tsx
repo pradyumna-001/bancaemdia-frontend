@@ -57,22 +57,26 @@ async function open(
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Teste',
-    email: 'test@example.org',
-    session_version: `${crypto.randomUUID()}:1`,
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  const sessionId = crypto.randomUUID();
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Teste',
+      email: 'test@example.org',
+      session_version: `${sessionId}:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const session = createSession({
     baseUrl: 'http://127.0.0.1:8000',
     queryClient: queries,
     transport: {
-      read: async () => context,
-      renew: async () => context,
+      read: async () => context(),
+      renew: async () => context(),
       logout: async () => {},
     },
     exclusive: async (_signal, work) => work(),
@@ -149,10 +153,10 @@ async function open(
   await screen.findByRole('heading', { name: 'Nova aposta' });
   const user = userEvent.setup();
   const chooseHouse = async () => {
-    await user.click(screen.getByRole('button', { name: /^Casa / }));
     await waitFor(() =>
       expect(requests.some((r) => r.url.includes('/filtros/'))).toBe(true),
     );
+    await user.click(screen.getByRole('button', { name: /^Casa / }));
     await user.click(await screen.findByRole('button', { name: 'Betano' }));
   };
   const fill = async () => {
@@ -743,26 +747,112 @@ it.each([403, 405, 410, 422])(
     ).not.toBeInTheDocument();
   },
 );
-it('offers explicit consultation when an old session scope discards confirmation', async () => {
+it('a session fence repeats the confirmation read once under the current session', async () => {
   const ui = await open();
-  const captured = ui.session.capture();
-  const old = vi
-    .spyOn(ui.session, 'capture')
-    .mockReturnValue({ ...captured, isCurrent: () => false });
+  let started!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  let calls = 0;
+  ui.setGet(() => {
+    if (++calls > 1) return Promise.resolve(json(reciboManual));
+    started();
+    // Never answers: only the session fence ends this request.
+    return new Promise<Response>(() => {});
+  });
   await act(async () => {
     await ui.router.navigate(
       '/aposta/' + manualKey + '?manual_intencao=' + manualId,
     );
   });
-  await screen.findByText(
-    'A confirmação precisa ser consultada novamente nesta sessão.',
-  );
+  await pending;
+  // A new session check fences in-flight requests of the same person; the
+  // safe read is repeated once and only the current answer is shown.
+  await act(() => ui.session.resume());
+  await screen.findByRole('heading', { name: 'Registro manual confirmado' });
+  expect(calls).toBe(2);
+});
+it('a fenced confirmation read that fails again is reported, never shown as a receipt', async () => {
+  const ui = await open();
+  let started!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  let calls = 0;
+  ui.setGet(() => {
+    if (++calls > 1) return Promise.resolve(json({}, 503));
+    started();
+    return new Promise<Response>(() => {});
+  });
+  await act(async () => {
+    await ui.router.navigate(
+      '/aposta/' + manualKey + '?manual_intencao=' + manualId,
+    );
+  });
+  await pending;
+  await act(() => ui.session.resume());
+  await screen.findByRole('button', {
+    name: 'Consultar confirmação novamente',
+  });
   expect(
     screen.queryByText('Registro manual confirmado'),
   ).not.toBeInTheDocument();
-  old.mockRestore();
+  // Recovery is one explicit gesture, never an automatic loop.
+  expect(calls).toBe(2);
+  ui.setGet(async () => json(reciboManual));
   await ui.user.click(
     screen.getByRole('button', { name: 'Consultar confirmação novamente' }),
   );
   await screen.findByRole('heading', { name: 'Registro manual confirmado' });
+});
+const accessExpired = () =>
+  json({ detail: 'access_expired' }, 401, { 'X-Auth-Error': 'access_expired' });
+it('keeps the confirmation read after renewing an expired access', async () => {
+  const ui = await open();
+  let expired = true;
+  ui.setGet(async () => {
+    if (!expired) return json(reciboManual);
+    expired = false;
+    return accessExpired();
+  });
+  await act(async () => {
+    await ui.router.navigate(
+      '/aposta/' + manualKey + '?manual_intencao=' + manualId,
+    );
+  });
+  // auth.service.read renews once and repeats the safe GET; its answer is
+  // for the same session and must not be discarded silently.
+  await screen.findByRole('heading', { name: 'Registro manual confirmado' });
+  expect(
+    ui.requests.filter((r) => r.url.includes('/apostas-manuais/')),
+  ).toHaveLength(2);
+});
+it('keeps the receipt lookup after renewing an expired access', async () => {
+  const ui = await open();
+  await ui.fill();
+  ui.setPost(async () => {
+    throw new Error('lost');
+  });
+  await ui.user.click(screen.getByRole('button', { name: 'Registrar aposta' }));
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Consultar registro' }),
+    ).toBeEnabled(),
+  );
+  let expired = true;
+  ui.setGet(async (req) => {
+    if (expired) {
+      expired = false;
+      return accessExpired();
+    }
+    return json({
+      ...reciboManual,
+      intencao_id: new URL(req.url).pathname.split('/').at(-1),
+    });
+  });
+  await ui.user.click(
+    screen.getByRole('button', { name: 'Consultar registro' }),
+  );
+  await screen.findByRole('heading', { name: 'Detalhe confirmado' });
+  expect(ui.writes()).toHaveLength(1);
 });

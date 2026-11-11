@@ -64,19 +64,23 @@ async function open(access: 'FULL_WRITE' | 'READ_ONLY' = 'READ_ONLY') {
   const queries = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const context = sessionContext({
-    usuario_id: 1,
-    nome: 'Teste',
-    email: 'test@example.org',
-    session_version: `${crypto.randomUUID()}:1`,
-    csrf_token: crypto.randomUUID(),
-    refresh_required: false,
-    access_expires_at: '2030-01-01T00:00:00Z',
-    session_expires_at: '2030-01-02T00:00:00Z',
-  });
+  // Each session read publishes a new version, as a renewal does.
+  const sessionId = crypto.randomUUID();
+  let version = 0;
+  const context = () =>
+    sessionContext({
+      usuario_id: 1,
+      nome: 'Teste',
+      email: 'test@example.org',
+      session_version: `${sessionId}:${++version}`,
+      csrf_token: crypto.randomUUID(),
+      refresh_required: false,
+      access_expires_at: '2030-01-01T00:00:00Z',
+      session_expires_at: '2030-01-02T00:00:00Z',
+    });
   const transport = {
-    read: vi.fn(async () => context),
-    renew: vi.fn(async () => context),
+    read: vi.fn(async () => context()),
+    renew: vi.fn(async () => context()),
     logout: vi.fn(async () => {}),
   };
   const session = createSession({
@@ -379,6 +383,24 @@ it('duplo gesto não repete exportação pendente e saída remove recurso', asyn
   s.view.unmount();
   await act(async () => resolve(file('application/json')));
   expect(URL.createObjectURL).not.toHaveBeenCalled();
+});
+it('exportação continua após renovar um acesso vencido', async () => {
+  const s = await open();
+  let expired = true;
+  s.read(async () => {
+    if (!expired) return file('application/json');
+    expired = false;
+    return json({ detail: 'access_expired' }, 401, {
+      'X-Auth-Error': 'access_expired',
+    });
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Baixar JSON' }));
+  // auth.service.read renews once and repeats the safe GET; the renewed
+  // answer belongs to the same session and must not be discarded silently.
+  await screen.findByText('Arquivo JSON preparado para baixar.');
+  expect(clicked.map((link) => link.download)).toEqual(['meus-dados.json']);
+  expect(s.requests).toHaveLength(2);
+  expect(screen.getByRole('button', { name: 'Baixar JSON' })).toBeEnabled();
 });
 it('401 na exportação encerra a sessão sem afirmar encerramento da conta', async () => {
   const s = await open();

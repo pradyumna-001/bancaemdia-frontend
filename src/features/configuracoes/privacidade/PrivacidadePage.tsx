@@ -88,17 +88,16 @@ function Privacidade({ api }: { api: ReturnType<typeof getApiClient> }) {
 
   async function download(chosen = format) {
     if (active.current || blocked) return;
-    const scope = auth.service.capture();
-    if (!scope.isCurrent()) return;
+    if (!auth.service.capture().isCurrent()) return;
     const request = new AbortController();
     active.current = request;
     const epoch = auth.state.privateEpoch;
-    const sameOwner = () =>
+    // A safe read survives the renewal done by auth.service.read; logout or a
+    // person change (privateEpoch) still discards it and its bytes.
+    const current = () =>
       alive.current &&
       !request.signal.aborted &&
       auth.service.getSnapshot().privateEpoch === epoch;
-    const current = () =>
-      alive.current && !request.signal.aborted && scope.isCurrent();
     setBusy(true);
     setError(undefined);
     setNotice('');
@@ -141,7 +140,7 @@ function Privacidade({ api }: { api: ReturnType<typeof getApiClient> }) {
       if (current()) setError(cause);
     } finally {
       if (active.current === request) active.current = undefined;
-      if (sameOwner()) setBusy(false);
+      if (current()) setBusy(false);
     }
   }
 

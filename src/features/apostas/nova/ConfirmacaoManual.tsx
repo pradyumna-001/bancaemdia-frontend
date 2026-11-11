@@ -47,9 +47,14 @@ function Confirmacao({
     if (controller.current || wait) return;
     const request = new AbortController();
     controller.current = request;
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session starts a lookup.
+    // A safe read survives the renewal done by auth.service.read; logout or a
+    // person change (privateEpoch) still discards it.
+    const owner = auth.service.getSnapshot().privateEpoch;
     const current = () =>
-      alive.current && !request.signal.aborted && scope.isCurrent();
+      alive.current &&
+      !request.signal.aborted &&
+      auth.service.getSnapshot().privateEpoch === owner;
     setBusy(true);
     setError(undefined);
     try {

@@ -14,6 +14,10 @@ import {
   percentualDecimal,
   decimalEditavel,
   decimalDaEntrada,
+  rotuloDia,
+  rotuloMes,
+  fusoReconhecido,
+  diaCivilNoFuso,
 } from './format';
 it('preserva decimais legados de metas sem float ou arredondamento', () => {
   expect(moedaDecimalCentavos('9223372036854775807.000000')).toBe(
@@ -263,4 +267,17 @@ it('mantém compactação de eixo separada dos valores exatos', () => {
   expect(moedaEixo(12345)).toContain('123,45');
   expect(moedaEixo(1234500)).toContain('mil');
   expect(() => moedaEixo(0.5)).toThrow();
+});
+
+it('rótulos do calendário e dia civil não dependem do fuso do navegador', () => {
+  expect(rotuloDia('2026-03-01')).toBe('1 de março de 2026');
+  expect(rotuloMes('2026-03-01')).toBe('março de 2026');
+  expect(fusoReconhecido('America/Sao_Paulo')).toBe(true);
+  expect(fusoReconhecido('Fuso/Inexistente')).toBe(false);
+  const instante = new Date('2026-03-01T02:30:00Z');
+  expect(diaCivilNoFuso(instante, 'America/Sao_Paulo')).toBe('2026-02-28');
+  expect(diaCivilNoFuso(instante, 'UTC')).toBe('2026-03-01');
+  expect(diaCivilNoFuso(new Date('-000001-06-01T12:00:00Z'), 'UTC')).toBe(
+    '0000-06-01',
+  );
 });

@@ -17,7 +17,12 @@ type Props = {
 };
 export function FotoAposta(props: Props) {
   const auth = useAuth();
-  return auth?.state.phase === 'authenticated' ? (
+  // A same-person renewal passes through 'checking' (as in RequireSession);
+  // staying mounted keeps the read that triggered it. Logout or a person
+  // change still remounts through privateEpoch.
+  const phase = auth?.state.phase;
+  return auth?.state.person &&
+    (phase === 'authenticated' || phase === 'checking') ? (
     <FotoPrivada
       key={`${auth.state.privateEpoch}:${props.revisaoId ?? props.chave}`}
       {...props}
@@ -92,11 +97,16 @@ function FotoPrivada({ chave, revisaoId, client, destination }: Props) {
       return;
     pending.current = true;
     restoreLoadFocus.current = document.activeElement === loader.current;
-    const scope = auth.service.capture();
+    auth.service.capture(); // Only an authenticated session starts a read.
+    // A safe read survives the renewal done by auth.service.read; logout or a
+    // person change (privateEpoch) still discards it and its bytes.
+    const owner = auth.service.getSnapshot().privateEpoch;
     const abort = new AbortController();
     controller.current = abort;
     const current = () =>
-      alive.current && !abort.signal.aborted && scope.isCurrent();
+      alive.current &&
+      !abort.signal.aborted &&
+      auth.service.getSnapshot().privateEpoch === owner;
     setBusy(true);
     setError(undefined);
     try {
@@ -167,10 +177,7 @@ function FotoPrivada({ chave, revisaoId, client, destination }: Props) {
       }
     } finally {
       pending.current = false;
-      if (alive.current && !abort.signal.aborted) {
-        setBusy(false);
-        if (!scope.isCurrent()) setError(new ApiError('cancelled'));
-      }
+      if (alive.current && !abort.signal.aborted) setBusy(false);
     }
   }
   function broken() {
