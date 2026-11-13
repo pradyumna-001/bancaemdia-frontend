@@ -287,3 +287,45 @@ it('sem Web Locks não renova, mas permite reentrada hospedada explícita', asyn
   await userEvent.click(login);
   expect(new URL(navigate.mock.calls[0]![0]).pathname).toBe('/auth/start');
 });
+it('retorno à janela pelo próprio controle mantém a página e o clique durante a conferência', async () => {
+  const { transport } = open();
+  const input = await screen.findByRole('textbox');
+  await userEvent.type(input, 'rascunho');
+  let release!: () => void;
+  const same = await transport.read();
+  transport.read.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = () => resolve(same);
+      }),
+  );
+  // Clicking back into the window: blur, then focus while pressing.
+  act(() => {
+    window.dispatchEvent(new Event('blur'));
+    window.dispatchEvent(new Event('focus'));
+  });
+  expect(transport.read).toHaveBeenCalledTimes(3);
+  expect(screen.queryByText('Conferindo sessão…')).toBeNull();
+  // The same person's page stays where it was: the press lands on it.
+  expect(input).toBeVisible();
+  expect(input).toHaveValue('rascunho');
+  await userEvent.type(input, ' mantido');
+  await act(async () => release());
+  expect(screen.getByRole('textbox')).toBe(input);
+  expect(input).toHaveValue('rascunho mantido');
+});
+it('conferência que falha ainda oculta a identidade anterior', async () => {
+  const { transport } = open();
+  const input = await screen.findByRole('textbox');
+  transport.read.mockRejectedValueOnce(new ApiError('http', { status: 503 }));
+  await act(async () => {
+    window.dispatchEvent(new Event('blur'));
+    window.dispatchEvent(new Event('focus'));
+  });
+  expect(
+    await screen.findByRole('heading', {
+      name: 'Não foi possível conferir sua sessão',
+    }),
+  ).toBeVisible();
+  expect(input).not.toBeVisible();
+});

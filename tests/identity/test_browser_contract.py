@@ -190,7 +190,9 @@ def serve_public_build():
         do_PATCH = handle_request
         do_DELETE = handle_request
 
-    return ThreadingHTTPServer(("127.0.0.1", 58001), PublicBuild)
+    # 58001 lies in the runner's ephemeral range: keep it reserved for the whole
+    # process so an outgoing connection never takes it between tests (API #222).
+    return backend.reserved_server(58001, PublicBuild)
 
 
 async def browser_request(page, path, *, method="GET", csrf=None, body=None):
@@ -215,10 +217,12 @@ async def complete_hosted_entry(page, email, password, destination):
         await page.locator("#kc-form-login").wait_for()
         if not await page.locator("#username").is_visible():
             await page.locator("#reset-login").click()
-        await page.locator("#username").fill(email)
+        # Fill only once the hosted form keeps the exact values (API #222).
+        journal = backend.default_journal()
+        await backend.fill_exactly(page, {"#username": email}, journal)
         if not await page.locator("#password").count():
             await page.locator("#kc-login").click()
-        await page.locator("#password").fill(password)
+        await backend.fill_exactly(page, {"#password": password}, journal)
         await page.locator("#kc-login").click()
         await page.wait_for_url(destination, timeout=30000)
     except BrowserError:
@@ -814,7 +818,7 @@ async def test_public_spa_session_lifecycle(harness, engine_admin, viewport):
         await browser.close()
 
 
-async def start_public_registration(page, email, destination):
+async def start_public_registration(page, email, destination, harness):
     from urllib.parse import urlencode
 
     await page.goto(
@@ -826,7 +830,9 @@ async def start_public_registration(page, email, destination):
     await page.locator("#firstName").fill("Disposable")
     await page.locator("#lastName").fill("Acceptance")
     assert await page.locator("#password").count() == 0
-    await page.locator('input[type="submit"],button[type="submit"]').click()
+    # Open the email only after the issuer answered the form, like a person;
+    # following the link mid-request raced the same Keycloak session (API #222).
+    await backend.submit_registration(page, harness.journal)
     return await backend.mail_link(email)
 
 
@@ -854,7 +860,7 @@ async def test_public_spa_account_registration_and_recovery(
             password, changed = (secrets.token_urlsafe(24) for _ in range(2))
             destination = "/painel?apagadas=1#serie"
             confirmation, message = await start_public_registration(
-                page, email, destination
+                page, email, destination, harness
             )
             async with engine_admin.connect() as conn:
                 count = await conn.scalar(
@@ -863,9 +869,7 @@ async def test_public_spa_account_registration_and_recovery(
                 )
                 assert count == 0, "Unconfirmed signup must not provision an API user"
             await page.goto(confirmation)
-            await page.locator("#password-new").fill(password)
-            await page.locator("#password-confirm").fill(password)
-            await page.locator('input[type="submit"],button[type="submit"]').click()
+            await backend.set_new_password(page, password, harness.journal)
             await page.wait_for_url(backend.FRONT + destination)
             await expect(
                 page.get_by_role("heading", name="Painel", exact=True)
@@ -907,13 +911,11 @@ async def test_public_spa_account_registration_and_recovery(
             await recovery.get_by_role(
                 "link", name="Forgot Password?", exact=True
             ).click()
-            await recovery.locator("#username").fill(email)
-            await recovery.locator('input[type="submit"],button[type="submit"]').click()
+            await backend.fill_exactly(recovery, {"#username": email}, harness.journal)
+            await backend.submit_and_wait(recovery, harness.journal, "recover")
             reset, _ = await backend.mail_link(email, {message})
             await recovery.goto(reset)
-            await recovery.locator("#password-new").fill(changed)
-            await recovery.locator("#password-confirm").fill(changed)
-            await recovery.locator('input[type="submit"],button[type="submit"]').click()
+            await backend.set_new_password(recovery, changed, harness.journal)
             await recovery.wait_for_url(backend.FRONT + destination)
             await expect(
                 recovery.get_by_role("heading", name="Painel", exact=True)
@@ -986,7 +988,9 @@ async def test_public_spa_expired_confirmation(
             context = await browser.new_context(viewport=viewport)
             page = await context.new_page()
             email = uuid4().hex + "@example.org"
-            confirmation, _ = await start_public_registration(page, email, "/painel")
+            confirmation, _ = await start_public_registration(
+                page, email, "/painel", harness
+            )
             await asyncio.sleep(2)
             await page.goto(confirmation)
             if "expired" not in (await page.locator("body").inner_text()).lower():

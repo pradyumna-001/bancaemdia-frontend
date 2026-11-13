@@ -133,7 +133,14 @@ export function createSession(options: {
     const mine = generation;
     const signal = controls.signal;
     fence();
-    publish({ ...state, phase: 'checking', error: undefined });
+    // Re-checking a confirmed session (return to the window, another tab,
+    // visibility, renewal) keeps it published: hiding the page between press
+    // and release lost the click that brought the person back. Requests of
+    // the previous version are still fenced, reads and the write gate wait
+    // for this check, and a failure, person change or logout publish as
+    // before. A first check or one after a failure still shows 'checking'.
+    if (state.phase !== 'authenticated')
+      publish({ ...state, phase: 'checking', error: undefined });
     const work = async () => {
       let next = await transport.read(signal);
       if (mine !== generation || signal.aborted)
@@ -202,6 +209,10 @@ export function createSession(options: {
     }
   };
   const read = async <T>(operation: () => Promise<T>): Promise<T> => {
+    // A check in progress (return to the window, tab change) finishes first:
+    // a read asked for during it belongs to the confirmed session instead of
+    // failing as unauthenticated. Never starts a check of its own.
+    if (inFlight) await inFlight;
     const initial = context;
     const initialScope = capture();
     try {
@@ -311,6 +322,9 @@ export function createSession(options: {
       };
     },
     resume,
+    // True while a session check is in flight, published or not.
+    checking: () => inFlight !== undefined,
+    settled,
     capture,
     read,
     unauthorized,

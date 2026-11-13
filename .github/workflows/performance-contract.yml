@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     env:
-      IDENTITY_API_SHA: 2d28fc74be9b784554e0fbb5a0fa445faeda6630
+      IDENTITY_API_SHA: b46ddbd44e67c0a2e5595ecee586934053baa9cc
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
-      IDENTITY_API_SHA: 2d28fc74be9b784554e0fbb5a0fa445faeda6630
+      IDENTITY_API_SHA: b46ddbd44e67c0a2e5595ecee586934053baa9cc
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
