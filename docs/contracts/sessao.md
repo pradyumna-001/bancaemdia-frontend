@@ -24,6 +24,13 @@ não dispara outra conferência que esconda o controle no primeiro clique. O ret
 visibilidade, os eventos entre abas e as consultas dentro do Web Lock permanecem.
 Um retorno real `blur` → `focus` continua cancelando respostas privadas antigas e
 não repete mutations. As provas distinguem primeira ativação de retorno à janela.
+A reconsulta de uma sessão já confirmada (retorno à janela, visibilidade, outra
+aba, renovação) não publica `checking` nem esconde a página: escondê-la entre o
+toque e a soltura perdia o clique que trouxe a pessoa de volta. Leituras e o
+portão de escrita pedidos durante a reconsulta esperam seu resultado em vez de
+falhar como não autenticados; falha oculta a identidade, troca de pessoa ou
+saída desmontam os dados privados, como antes. A primeira conferência e a
+conferência depois de falha continuam publicando `checking`.
 
 Web Lock exclusivo `bancaemdia:identity` serializa consulta/refresh/logout entre abas da origem. Cada aquisição consulta `/auth/session` novamente; se outra aba renovou, não emite outro grant. Refresh precisa mudar versão na mesma pessoa/família e retornar `refresh_required=false`. Sem Web Locks, sessão ainda válida pode ser lida, mas refresh/logout não são enviados; a interface oferece reentrada e não confirma saída.
 

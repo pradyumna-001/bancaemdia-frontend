@@ -5,3 +5,8 @@
 # que o commit pinado foi validado; remover quando o backend fixar ou
 # corrigir (#125, #120).
 kombu<5.7
+# O Playwright 1.65.0 (entre 05 e 11/11/2026) troca o Firefox 157 pelo 159,
+# que trava a página ao executar o axe nas jornadas reais ("Page crashed"),
+# sem mudança de código. Mantém a versão com que as jornadas foram validadas
+# (1.64.1, Firefox 157); revisar ao atualizar o Playwright de propósito.
+playwright<1.65

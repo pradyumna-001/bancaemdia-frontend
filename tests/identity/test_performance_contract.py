@@ -29,6 +29,7 @@ def load(name, filename):
 
 core = load("frontend_performance_core", "test_core_contract.py")
 seed = load("frontend_performance_seed", "performance_seed.py")
+tls_api = load("frontend_performance_tls_api", "tls_api.py")
 session_setup = load("frontend_measurement_session", "measurement_session.py")
 banco = core.banco
 harness = core.harness
@@ -36,29 +37,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def spawn_owned_tls(harness, public, private):
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "uvicorn",
-            "bancaemdia.main:app",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            "58443",
-            "--ssl-certfile",
-            str(public),
-            "--ssl-keyfile",
-            str(private),
-            "--no-access-log",
-        ],
-        cwd=harness.root,
-        env=harness.env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    harness.processes.append(process)
-    return process
+    # Reserved 58443 and inherited listening socket (#125, API #222).
+    return tls_api.spawn(core.backend, harness, public, private)
 
 
 @pytest.fixture
@@ -67,7 +47,7 @@ async def performance_transport(harness, tmp_path):
     # than trusting invented forwarding headers or weakening the API requirement.
     collection = load("frontend_performance_collection", "test_coleta_contract.py")
     public, private = collection.tls_files(tmp_path)
-    upstream = "https://127.0.0.1:58443"
+    upstream = tls_api.UPSTREAM
     creating = asyncio.create_task(
         asyncio.to_thread(spawn_owned_tls, harness, public, private)
     )

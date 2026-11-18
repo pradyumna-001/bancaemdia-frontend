@@ -5,7 +5,6 @@ import importlib.util
 import ipaddress
 import os
 import secrets
-import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -25,6 +24,11 @@ _spec = importlib.util.spec_from_file_location(
 core = importlib.util.module_from_spec(_spec)
 sys.modules[_spec.name] = core
 _spec.loader.exec_module(core)
+_tls_spec = importlib.util.spec_from_file_location(
+    "frontend_owned_tls_api", Path(__file__).with_name("tls_api.py")
+)
+tls_api = importlib.util.module_from_spec(_tls_spec)
+_tls_spec.loader.exec_module(tls_api)
 banco = core.banco
 harness = core.harness
 
@@ -76,30 +80,10 @@ async def test_public_spa_coleta_owner_devices(
 ):
     await harness.restart()
     public, private = tls_files(tmp_path)
-    upstream = "https://127.0.0.1:58443"
+    upstream = tls_api.UPSTREAM
     process = await asyncio.to_thread(
-        subprocess.Popen,
-        [
-            sys.executable,
-            "-m",
-            "uvicorn",
-            "bancaemdia.main:app",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            "58443",
-            "--ssl-certfile",
-            str(public),
-            "--ssl-keyfile",
-            str(private),
-            "--no-access-log",
-        ],
-        cwd=harness.root,
-        env=harness.env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        tls_api.spawn, core.backend, harness, public, private
     )
-    harness.processes.append(process)
     harness.frontend_proxy.collection_tls = (upstream, str(public))
     trace = (
         Path(os.environ["CORE_TRACE_DIR"])

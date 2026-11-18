@@ -22,7 +22,7 @@ jobs:
     # The Chromium leg runs the most journeys (27-29 min); same tests, more room.
     timeout-minutes: 45
     env:
-      IDENTITY_API_SHA: 2d28fc74be9b784554e0fbb5a0fa445faeda6630
+      IDENTITY_API_SHA: b46ddbd44e67c0a2e5595ecee586934053baa9cc
       APP_ENV: testing
       JWT_ALGORITHM: RS256
       JWT_AUDIENCE: bancaemdia-api
@@ -142,6 +142,7 @@ jobs:
           if-no-files-found: error
           include-hidden-files: true
           path: |
+            .identity-api/identity-diagnostics/
             .identity-api/*-results.xml
             .identity-api/central-*.zip
             .identity-api/prints-*.zip
