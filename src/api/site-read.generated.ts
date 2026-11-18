@@ -6317,6 +6317,104 @@ export const SITE_READ_CONTRACT = {
       },
     },
   },
+  '/api/v1/financeiro/nativo/contas': {
+    query: {},
+    response: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: [
+          'casa_id',
+          'currency',
+          'label',
+          'valid_from',
+          'id',
+          'active',
+        ],
+        properties: {
+          active: { type: 'boolean' },
+          casa_id: { type: 'integer', maximum: 9223372036854776000 },
+          currency: { type: 'string', enum: ['BRL', 'USDT'] },
+          id: { type: 'integer' },
+          label: { type: 'string', minLength: 1, maxLength: 120 },
+          valid_from: { type: 'string' },
+          valid_to: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        },
+      },
+    },
+  },
+  '/api/v1/financeiro/nativo/apostas': {
+    query: {
+      limit: { type: 'integer', minimum: 1, maximum: 100 },
+      currency: {
+        anyOf: [{ type: 'string', enum: ['BRL', 'USDT'] }, { type: 'null' }],
+      },
+    },
+    response: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: [
+          'id',
+          'account_id',
+          'currency',
+          'state',
+          'stake',
+          'returned',
+          'profit',
+          'game_at',
+          'placed_at',
+          'needs_review',
+        ],
+        properties: {
+          account_id: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+          currency: { type: 'string', enum: ['BRL', 'USDT'] },
+          game_at: { type: 'string' },
+          id: { type: 'integer' },
+          needs_review: { type: 'boolean' },
+          placed_at: { type: 'string' },
+          profit: { type: 'string' },
+          returned: { type: 'string' },
+          stake: { type: 'string' },
+          state: { type: 'string', enum: ['GREEN', 'RED'] },
+        },
+      },
+    },
+  },
+  '/api/v1/financeiro/nativo/resumo': {
+    query: {
+      since: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      until: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      account_id: {
+        anyOf: [
+          { type: 'integer', maximum: 9223372036854776000 },
+          { type: 'null' },
+        ],
+      },
+    },
+    response: {
+      type: 'object',
+      required: ['totals_by_currency'],
+      properties: {
+        combined_monetary_total: { type: 'null' },
+        money_contract: { type: 'integer', const: 2 },
+        totals_by_currency: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['currency', 'bets', 'stake', 'returned', 'profit'],
+            properties: {
+              bets: { type: 'integer' },
+              currency: { type: 'string', enum: ['BRL', 'USDT'] },
+              profit: { type: 'string' },
+              returned: { type: 'string' },
+              stake: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+  },
   'POST /api/v1/painel/metas': {
     query: {},
     response: {
@@ -7648,6 +7746,22 @@ export const SITE_READ_CONTRACT = {
         saldo_inicial_centavos: {
           anyOf: [{ type: 'integer' }, { type: 'null' }],
         },
+      },
+    },
+  },
+  'POST /api/v1/financeiro/nativo/contas': {
+    query: {},
+    response: {
+      type: 'object',
+      required: ['casa_id', 'currency', 'label', 'valid_from', 'id', 'active'],
+      properties: {
+        active: { type: 'boolean' },
+        casa_id: { type: 'integer', maximum: 9223372036854776000 },
+        currency: { type: 'string', enum: ['BRL', 'USDT'] },
+        id: { type: 'integer' },
+        label: { type: 'string', minLength: 1, maxLength: 120 },
+        valid_from: { type: 'string' },
+        valid_to: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       },
     },
   },

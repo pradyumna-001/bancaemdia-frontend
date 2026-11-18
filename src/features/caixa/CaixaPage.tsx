@@ -11,6 +11,7 @@ import { dataHora, moeda } from '../../lib/format';
 import { useRetryAfter } from '../../lib/useRetryAfter';
 import { useOperacao } from '../importar/useOperacao';
 import { BancasCaixa } from './BancasCaixa';
+import { OutrasMoedas } from './OutrasMoedas';
 import { useListaBancas } from './useBancas';
 import { useLeituraPainel } from '../painel/useLeituraPainel';
 import { identificador } from '../contas/protocol';
@@ -916,6 +917,7 @@ function Caixa({ client }: { client?: ReturnType<typeof getApiClient> }) {
                 ))}
               </div>
               <BancasCaixa client={api} saldos={saldo.data.bancas} />
+              <OutrasMoedas client={api} />
             </>
           )}
         </>

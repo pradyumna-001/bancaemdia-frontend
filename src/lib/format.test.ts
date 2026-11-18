@@ -11,6 +11,7 @@ import {
   porcentagemPontosBase,
   precoAssinatura,
   quantidade,
+  valorNativo,
   moedaDecimalCentavos,
   percentualDecimal,
   decimalEditavel,
@@ -275,6 +276,22 @@ it('quantidade agrupa contagens exatas e recusa valor não inteiro', () => {
   expect(quantidade(0)).toBe('0');
   expect(() => quantidade(1.5)).toThrow(RangeError);
   expect(() => quantidade(Number.MAX_SAFE_INTEGER + 1)).toThrow(RangeError);
+});
+
+it('valorNativo preserva o texto exato na moeda de origem, sem converter', () => {
+  expect(valorNativo('12.5', 'USDT')).toBe('12,50 USDT');
+  expect(valorNativo('1234.123456789012345678901234567890', 'USDT')).toBe(
+    '1.234,12345678901234567890123456789 USDT',
+  );
+  expect(valorNativo('-3.4', 'USDT')).toBe('−3,40 USDT');
+  expect(valorNativo('3.4', 'USDT', true)).toBe('+3,40 USDT');
+  expect(valorNativo('0', 'USDT', true)).toBe('0,00 USDT');
+  expect(valorNativo('99999999999999999999.5', 'BRL')).toBe(
+    'R$ 99.999.999.999.999.999.999,50',
+  );
+  for (const bad of ['1e3', '12,5', '1.', '.5', '123456789012345678901', ''])
+    expect(() => valorNativo(bad, 'USDT')).toThrow();
+  expect(() => valorNativo('1.' + '1'.repeat(31), 'USDT')).toThrow();
 });
 
 it('rótulos do calendário e dia civil não dependem do fuso do navegador', () => {

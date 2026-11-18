@@ -257,6 +257,25 @@ export function moedaDecimalCentavos(valor: string): string {
   const texto = decimalReduzido(valor, -2, 2);
   return texto.startsWith('−') ? '−R$ ' + texto.slice(1) : 'R$ ' + texto;
 }
+/**
+ * Valor nativo exato (contrato monetário 2 da API): texto decimal na moeda de
+ * origem, sem conversão para reais, float ou arredondamento. Zeros finais
+ * além de duas casas são omitidos; nenhuma casa significativa é cortada.
+ */
+export function valorNativo(
+  valor: string,
+  moedaNativa: 'BRL' | 'USDT',
+  sinal = false,
+): string {
+  if (!/^-?\d{1,20}(\.\d{1,30})?$/.test(valor)) throw indisponivel();
+  const texto = decimalReduzido(valor, 0, 2);
+  const negativo = texto.startsWith('−');
+  const corpo = negativo ? texto.slice(1) : texto;
+  const prefixo = negativo ? '−' : sinal && /[1-9]/.test(valor) ? '+' : '';
+  return moedaNativa === 'BRL'
+    ? `${prefixo}R$ ${corpo}`
+    : `${prefixo}${corpo} USDT`;
+}
 export function percentualDecimal(valor: string | null): string {
   return valor === null ? NAO_INFORMADO : decimalReduzido(valor, 2) + '%';
 }

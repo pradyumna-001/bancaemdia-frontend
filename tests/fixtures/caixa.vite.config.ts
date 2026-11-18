@@ -60,6 +60,7 @@ export default defineConfig({
           if (
             !url.pathname.startsWith('/api/v1/caixa') &&
             url.pathname !== '/api/v1/bancas' &&
+            !url.pathname.startsWith('/api/v1/financeiro/nativo/') &&
             !url.pathname.startsWith('/api/v1/titulares/casas/')
           )
             return next();

@@ -1,3 +1,4 @@
+import { nativoVazio } from './nativo';
 import type {
   Saldo,
   Matriz,
@@ -140,11 +141,15 @@ export function caixaFixture() {
     moves = structuredClone(caixaMovimentos),
     feed = structuredClone(caixaExtrato);
   const receipts = new Map<string, { body: string; data: Recibo }>();
+  const nativo0 = nativoVazio();
   function handle(method: string, url: URL, input?: unknown, key?: string) {
     const page = Number(url.searchParams.get('page') ?? 1),
       pageSize = Number(url.searchParams.get('page_size') ?? 20);
     if (url.pathname.endsWith('/matriz'))
       return { data: caixaMatriz, status: 200 };
+    // Outras moedas (#128): sem contas nem apostas nativas neste cenário.
+    const nativo = nativo0.handle(method, url, input);
+    if (nativo) return nativo;
     // Cadastro de bancas (#122) derivado do mesmo saldo: contas vinculadas
     // pelo banca_id atual, todas ativas.
     if (method === 'GET' && url.pathname === '/api/v1/bancas')

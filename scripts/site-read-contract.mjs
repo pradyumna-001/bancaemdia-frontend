@@ -31,6 +31,9 @@ export function siteReadContract(document) {
     '/api/v1/apostas/lotes/intencao',
     '/api/v1/bancas',
     '/api/v1/bancas/intencao',
+    '/api/v1/financeiro/nativo/contas',
+    '/api/v1/financeiro/nativo/apostas',
+    '/api/v1/financeiro/nativo/resumo',
   ];
   function compact(node) {
     if (node.$ref) {
@@ -105,6 +108,7 @@ export function siteReadContract(document) {
     ['/api/v1/bancas', 'post'],
     ['/api/v1/bancas/{banca_id}', 'patch'],
     ['/api/v1/bancas/{banca_id}/arquivar', 'post'],
+    ['/api/v1/financeiro/nativo/contas', 'post'],
   ];
   return Object.fromEntries(
     operations.flatMap(([path, method]) => {
