@@ -1,5 +1,7 @@
 # Prints web — #25
 
+**Situação atual (21/11/2026, #120):** o contrato está fixado na `main` integrada da API (`c7dde0718ed08dbab1e6ec5ee005386f7936c01d`, 147 operações, OpenAPI SHA-256 `b6be9685…`), sem bloco de disponibilidade. Os pins de candidata, sandbox e `sandbox_reconciliation` citados abaixo são o registro histórico desta entrega e não bloqueiam mais a publicação, que passa a depender só dos aceites próprios (#14, #38, #39). As exigências de prova abaixo continuam valendo.
+
 ## Contrato candidato e origem
 
 Backend [#195](https://github.com/pradyumna-001/bancaemdia-api/pull/195), issue #194, HEAD `6db8964d11c471b47d15c08bd5d46d864623bb1e`: 28 checks aprovados. O consumidor usa uma única árvore real reconciliada `cf20de6862b1f155fbff19043f89f5f6db4c5cd2`, estendendo o sandbox da #23 com o código da #195. OpenAPI inteiro gerado pelo app: 105 operações, SHA-256 `310e0612597074367e48800de71e249defaf5624eca5b4c4d6f14341baac0281`. Nenhuma união de schemas. A origem e os SHAs estão em config/api-contract.json; sandbox_reconciliation continua impedindo publicação. Após integração administrativa, regenerar/revalidar todos os artefatos contra uma única main integrada.

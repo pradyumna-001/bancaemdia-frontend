@@ -1,5 +1,7 @@
 # Privacidade — frontend #58
 
+**Situação atual (21/11/2026, #120):** o contrato está fixado na `main` integrada da API (`c7dde0718ed08dbab1e6ec5ee005386f7936c01d`, 147 operações, OpenAPI SHA-256 `b6be9685…`), sem bloco de disponibilidade. Os pins de candidata, sandbox e `sandbox_reconciliation` citados abaixo são o registro histórico desta entrega e não bloqueiam mais a publicação, que passa a depender só dos aceites próprios (#14, #38, #39). As exigências de prova abaixo continuam valendo.
+
 ## Contrato e escopo
 
 GET `/api/v1/usuario/me/export?formato=json|xlsx` e DELETE `/api/v1/usuario/me` estão integrados na API main b916f54. A #58 fixou o sandbox 547a4d0 da frontend #94. A ampliação #29 usa ec46748 com 127 operações e preserva estes endpoints, sem promover candidatas a main. Tipos do encerramento vêm de AnonymizeResponse gerado; exportação usa o binário do contrato. Nenhum cálculo financeiro, exclusão ou anonimização é realizado pela SPA.

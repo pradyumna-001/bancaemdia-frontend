@@ -1,5 +1,7 @@
 # Revisão por motivo — #28
 
+**Situação atual (21/11/2026, #120):** o contrato está fixado na `main` integrada da API (`c7dde0718ed08dbab1e6ec5ee005386f7936c01d`, 147 operações, OpenAPI SHA-256 `b6be9685…`), sem bloco de disponibilidade. Os pins de candidata, sandbox e `sandbox_reconciliation` citados abaixo são o registro histórico desta entrega e não bloqueiam mais a publicação, que passa a depender só dos aceites próprios (#14, #38, #39). As exigências de prova abaixo continuam valendo.
+
 ## Disponibilidade e proveniência
 
 Backend #200 / [PR #201](https://github.com/pradyumna-001/bancaemdia-api/pull/201), candidato `e830c436dbdeb763f7a7d09b1d849fdbb6652db7`, entrega a projeção por família, escolha explícita de tipster e protocolo condicional. Não é merge nem deploy. O backend forneceu a árvore `27054591bf223d97151b06b0ab2632ccd20048d3`, filha direta de `b37a3f88b922b471d25d5f1c92c84b336cd2c9c0`. O pin de validação é a descendente `547a4d0cfce5308dfe71221a77ad6fd5eb6e47cd`, que apenas atualiza o head esperado e restaura o inventário de tabelas da planilha nos testes da reconciliação, sem mudar código da API, migrações ou OpenAPI. Preserva as 120 operações anteriores e acrescenta cinco. O OpenAPI completo gerado pelo aplicativo tem SHA-256 `09cf9fbb4b46a8dfc20fc4f4a3c97c3b88000612308cfb4e1e8fd4565901854a`. Não há união de schemas. Tipos, descritores e políticas `x-bancaemdia-review` provêm desse mesmo documento verificado.

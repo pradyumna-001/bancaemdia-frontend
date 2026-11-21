@@ -1,5 +1,7 @@
 # Nova aposta — frontend #29
 
+**Situação atual (21/11/2026, #120):** o contrato está fixado na `main` integrada da API (`c7dde0718ed08dbab1e6ec5ee005386f7936c01d`, 147 operações, OpenAPI SHA-256 `b6be9685…`), sem bloco de disponibilidade. Os pins de candidata, sandbox e `sandbox_reconciliation` citados abaixo são o registro histórico desta entrega e não bloqueiam mais a publicação, que passa a depender só dos aceites próprios (#14, #38, #39). As exigências de prova abaixo continuam valendo.
+
 ## Fonte e disponibilidade
 
 Backend #202/PR #203 (`b2bb0dfc66e26621d41c064f4690932938b877f5`) publica POST/GET `/api/v1/apostas-manuais/operacoes/{intencao_id}`. O POST antigo não é usado pelo formulário. A capacidade está em PR aberta, sem merge administrativo. Sandbox completo fornecido: `ec46748b00ce97ae3c3cac032f03cc691f7f8908`, sobre `547a4d0`, 127 operações, SHA-256 `797c735e0fa6d63f46c3eb1635e569e434154dfc02fb17d27c940ff339cfcf96`. Módulos próprios de criação, migration e 44 aceites são idênticos entre candidata e sandbox. Head conjunto `u202sandbox2026` preserva `u200sandbox2026` e `m202manual2026`.
