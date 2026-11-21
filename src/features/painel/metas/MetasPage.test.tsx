@@ -13,6 +13,7 @@ import { createSession } from '../../../auth/session';
 import { sessionContext } from '../../../auth/protocol';
 import { ProvedorAuth } from '../../../auth/ProvedorAuth';
 import { createApiClient } from '../../../api/client';
+import { ApiError } from '../../../api/error';
 import { parseConfig } from '../../../lib/config';
 import { createAccessController } from '../../acesso/controller';
 import { ProvedorAcesso } from '../../acesso/ProvedorAcesso';
@@ -825,4 +826,62 @@ it('acesso vencido renovado na conferência de billing não cancela a criação'
   expect(view.hook.notice).toBe('Meta criada.');
   expect(view.hook.error).toBeUndefined();
   expect(view.hook.busy).toBe(false);
+});
+// No session at the gesture: capture() refuses with 401 until it returns.
+function semSessao(session: { capture: () => unknown }) {
+  return vi.spyOn(session, 'capture').mockImplementation(() => {
+    throw new ApiError('http', { status: 401 });
+  });
+}
+it('criação sem sessão no gesto mostra o erro e libera o próximo toque', async () => {
+  const view = await open({ page: true, empty: true });
+  await fillNew();
+  const recusa = semSessao(view.session);
+  const criar = () =>
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Criar meta', hidden: true }),
+    );
+  criar();
+  expect(
+    await screen.findByRole('heading', {
+      name: 'Entre novamente para continuar',
+    }),
+  ).toBeVisible();
+  expect(writes(view.requests)).toHaveLength(0);
+  recusa.mockRestore();
+  criar();
+  await screen.findByText('Meta criada.');
+  expect(writes(view.requests)).toHaveLength(1);
+});
+it('consulta da lista sem sessão no gesto mostra o erro e libera a próxima', async () => {
+  const view = await open();
+  const recusa = semSessao(view.session);
+  await act(() => view.hook.consult());
+  expect(view.hook.error).toMatchObject({ status: 401 });
+  expect(view.hook.notice).toBe('');
+  recusa.mockRestore();
+  await act(() => view.hook.consult());
+  expect(view.hook.error).toBeUndefined();
+  expect(view.hook.notice).toBe('Metas consultadas.');
+});
+it('consulta do recurso sem sessão no gesto mostra o erro e libera a próxima', async () => {
+  const view = await open({
+    override: (r) => {
+      if (r.method === 'PATCH') throw new TypeError('rede');
+      return undefined;
+    },
+  });
+  await act(() =>
+    view.hook.write({ kind: 'edit', id: 1, body: { titulo: 'Edição' } }),
+  );
+  const recusa = semSessao(view.session);
+  await act(() => view.hook.consult());
+  expect(view.hook.error).toMatchObject({ status: 401 });
+  expect(view.hook.busy).toBe(false);
+  expect(view.hook.unknown?.consulted).toBe(false);
+  recusa.mockRestore();
+  await act(() => view.hook.consult());
+  expect(view.hook.unknown?.consulted).toBe(true);
+  expect(view.hook.notice).toContain('não é um recibo');
+  expect(writes(view.requests)).toHaveLength(1);
 });

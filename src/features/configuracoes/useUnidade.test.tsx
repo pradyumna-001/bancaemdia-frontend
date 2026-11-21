@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createSession } from '../../auth/session';
 import { sessionContext } from '../../auth/protocol';
 import { ProvedorAuth } from '../../auth/ProvedorAuth';
 import { createApiClient } from '../../api/client';
+import { ApiError } from '../../api/error';
 import { parseConfig } from '../../lib/config';
 import { createAccessController } from '../acesso/controller';
 import { ProvedorAcesso } from '../acesso/ProvedorAcesso';
@@ -14,7 +15,10 @@ import { unidadeFixture } from '../../../tests/fixtures/unidade';
 import { useUnidade } from './useUnidade';
 
 const cleanups: Array<() => void> = [];
-afterEach(() => cleanups.splice(0).forEach((fn) => fn()));
+afterEach(() => {
+  cleanups.splice(0).forEach((fn) => fn());
+  vi.restoreAllMocks();
+});
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -182,6 +186,45 @@ it('consulta atravessa a renovação do acesso e mostra o recibo, sem novo envio
   // The renewed read answers 404 from this fixture (another instance), but
   // the answer is delivered instead of being silently dropped.
   await waitFor(() => expect(hook.result.current.busy).toBe(false));
+  expect(hook.result.current.state.notRecorded).toBe(true);
+  expect(requests.filter((r) => r.method === 'POST')).toHaveLength(1);
+});
+
+// No session at the gesture: capture() refuses with 401 until it returns.
+const semSessao = (session: { capture: () => unknown }) =>
+  vi.spyOn(session, 'capture').mockImplementation(() => {
+    throw new ApiError('http', { status: 401 });
+  });
+
+it('envio sem sessão no gesto mostra o erro e libera o próximo toque', async () => {
+  const { hook, requests, session } = await setup();
+  const recusa = semSessao(session);
+  await act(() => hook.result.current.send({ valor_centavos: 1000 }));
+  expect(hook.result.current.error).toMatchObject({ status: 401 });
+  expect(hook.result.current.busy).toBe(false);
+  // Nothing was sent: no identity is kept for this gesture.
+  expect(hook.result.current.state).toEqual({});
+  expect(requests).toHaveLength(0);
+  recusa.mockRestore();
+  await act(() => hook.result.current.send({ valor_centavos: 1000 }));
+  expect(hook.result.current.error).toBeUndefined();
+  expect(hook.result.current.state.receipt?.vigencia.valor_centavos).toBe(1000);
+  expect(requests).toHaveLength(1);
+});
+
+it('consulta sem sessão no gesto mostra o erro e mantém a incerteza consultável', async () => {
+  const { hook, requests, session } = await setup(async () => {
+    throw new TypeError('rede');
+  });
+  await act(() => hook.result.current.send({ valor_centavos: 1000 }));
+  expect(hook.result.current.state.uncertain).toBe(true);
+  const recusa = semSessao(session);
+  await act(() => hook.result.current.consult());
+  expect(hook.result.current.error).toMatchObject({ status: 401 });
+  expect(hook.result.current.busy).toBe(false);
+  expect(hook.result.current.state.uncertain).toBe(true);
+  recusa.mockRestore();
+  await act(() => hook.result.current.consult());
   expect(hook.result.current.state.notRecorded).toBe(true);
   expect(requests.filter((r) => r.method === 'POST')).toHaveLength(1);
 });

@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { createApiClient } from '../../api/client';
 import { ApiError } from '../../api/error';
 import { useAuth } from '../../auth/ProvedorAuth';
+import type { RequestContext } from '../../auth/session';
 import { useRetryAfter } from '../../lib/useRetryAfter';
 import { useAcesso } from '../acesso/ProvedorAcesso';
 import {
@@ -115,21 +116,38 @@ export function useBancas(client: ReturnType<typeof createApiClient>) {
     if (active.current || waiting) return;
     const controller = new AbortController();
     active.current = controller;
-    const scope = auth.service.capture();
-    const live = () =>
-      alive.current &&
-      !controller.signal.aborted &&
-      (leitura || scope.isCurrent()) &&
-      auth.service.getSnapshot().privateEpoch === epoch;
+    const mounted = () =>
+      alive.current && auth.service.getSnapshot().privateEpoch === epoch;
     setBusy(true);
     setError(undefined);
     try {
+      let scope: RequestContext;
+      try {
+        scope = auth.service.capture();
+      } catch (cause) {
+        // No session at the gesture: nothing was sent; it ends with its error
+        // and a write releases its key, as any refusal before a record does.
+        if (mounted()) {
+          setError(cause);
+          if (!leitura) liberar();
+        }
+        return;
+      }
+      const live = () =>
+        mounted() &&
+        !controller.signal.aborted &&
+        (leitura || scope.isCurrent());
       await work(controller.signal, live);
     } finally {
       if (active.current === controller) active.current = undefined;
-      if (alive.current && auth.service.getSnapshot().privateEpoch === epoch)
-        setBusy(false);
+      if (mounted()) setBusy(false);
     }
+  }
+
+  function liberar() {
+    setTentativa(undefined);
+    setFase('idle');
+    navigateTo(undefined);
   }
 
   async function settle(value: Resultado) {
@@ -193,9 +211,7 @@ export function useBancas(client: ReturnType<typeof createApiClient>) {
           return;
         }
         // Refusals are not recorded: the key is released, the form stays.
-        setTentativa(undefined);
-        setFase('idle');
-        navigateTo(undefined);
+        liberar();
         if (failure.status === 404 || failure.status === 409)
           void queries.invalidateQueries({ queryKey: ['caixa', epoch] });
       }

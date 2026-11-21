@@ -13,6 +13,7 @@ import { createSession } from '../../../auth/session';
 import { sessionContext } from '../../../auth/protocol';
 import { ProvedorAuth } from '../../../auth/ProvedorAuth';
 import { createApiClient } from '../../../api/client';
+import { ApiError } from '../../../api/error';
 import { parseConfig } from '../../../lib/config';
 import { createAccessController } from '../../acesso/controller';
 import { ProvedorAcesso } from '../../acesso/ProvedorAcesso';
@@ -928,4 +929,50 @@ it('expired access renewed in the billing gate still sends the unsent preview on
   expect(h.hook.state.preview).toBeTruthy();
   expect(h.hook.error).toBeUndefined();
   expect(h.hook.busy).toBe(false);
+});
+
+it('page without a session at the gesture shows the error and frees the next preview and confirmation', async () => {
+  const h = await open({ page: true });
+  await form();
+  // No session at the gesture: capture() refuses with 401 until it returns.
+  const refuse = () =>
+    vi.spyOn(h.session, 'capture').mockImplementation(() => {
+      throw new ApiError('http', { status: 401 });
+    });
+  const signIn = () =>
+    screen.findByRole('heading', { name: 'Entre novamente para continuar' });
+  let refusal = refuse();
+  const preview = screen.getByRole('button', {
+    name: 'Consultar prévia da troca',
+  });
+  fireEvent.click(preview);
+  expect(await signIn()).toBeVisible();
+  expect(writes(h.requests)).toHaveLength(0);
+  refusal.mockRestore();
+  fireEvent.click(preview);
+  await screen.findByRole('heading', { name: '3. Confira a prévia' });
+  expect(writes(h.requests)).toHaveLength(1);
+
+  refusal = refuse();
+  const confirm = () => {
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Continuar para confirmação' }),
+    );
+    fireEvent.click(
+      within(
+        screen.getByRole('dialog', { name: 'Confirmar esta troca?' }),
+      ).getByRole('button', { name: 'Confirmar troca' }),
+    );
+  };
+  confirm();
+  expect(await signIn()).toBeVisible();
+  expect(writes(h.requests)).toHaveLength(1);
+  // Nothing was sent: the preview stays, still awaiting its confirmation.
+  expect(
+    screen.getByRole('heading', { name: '3. Confira a prévia' }),
+  ).toBeVisible();
+  refusal.mockRestore();
+  confirm();
+  await screen.findByRole('heading', { name: 'Troca confirmada' });
+  expect(writes(h.requests)).toHaveLength(2);
 });
