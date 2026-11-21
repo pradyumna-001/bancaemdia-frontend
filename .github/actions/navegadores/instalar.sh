@@ -14,16 +14,35 @@ fi
 limit="${ATTEMPT_SECONDS:-300}"
 
 # A timeout can stop apt in the middle of dpkg; the next apt run then refuses
-# with code 100 until dpkg is repaired. Repair and wait for the apt locks
-# before any new attempt, so a retry really retries.
+# with code 100 until dpkg is repaired. `timeout` only stops the installer it
+# started: the root apt-get it spawned keeps running and holding the dpkg
+# lock, so every later attempt failed at once. Wait for the locks; if they are
+# still held, stop that abandoned apt (this runner is disposable), then repair
+# dpkg, so a retry really retries.
+LOCKS=(/var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock)
+locks_held() {
+  local lock
+  for lock in "${LOCKS[@]}"; do
+    sudo fuser "$lock" > /dev/null 2>&1 && return 0
+  done
+  return 1
+}
 repair_apt() {
   command -v dpkg > /dev/null || return 0
-  for lock in /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock; do
-    for _ in $(seq 1 60); do
-      sudo fuser "$lock" > /dev/null 2>&1 || break
-      sleep 2
-    done
+  for _ in $(seq 1 30); do
+    locks_held || break
+    sleep 2
   done
+  if locks_held; then
+    echo "::warning title=Instalação de navegadores (#125)::O apt da tentativa anterior ainda segura a trava do dpkg; encerrando-o antes de reparar."
+    for signal in TERM KILL; do
+      for lock in "${LOCKS[@]}"; do
+        sudo fuser -k "-$signal" "$lock" > /dev/null 2>&1 || true
+      done
+      sleep 5
+      locks_held || break
+    done
+  fi
   sudo dpkg --configure -a || true
 }
 
