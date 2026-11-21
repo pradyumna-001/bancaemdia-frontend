@@ -13,6 +13,7 @@ from uuid import uuid4
 
 import pytest
 from playwright.async_api import Error as BrowserError
+from playwright.async_api import TimeoutError as PlaywrightTimeout
 from playwright.async_api import async_playwright, expect
 from sqlalchemy import text
 
@@ -136,10 +137,33 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
             await page.reload()
             await settled(page)
             assert parse_qs(urlsplit(page.url).query)["banca_intencao"] == [key]
-            async with page.expect_response(
-                lambda r: r.url.endswith(BANCAS + "/intencao") and r.status == 200
-            ):
-                await section.get_by_role("button", name="Consultar resultado").click()
+            # Only paths, status codes and the button state are kept for a
+            # failure message: no bodies, headers, keys or page text.
+            seen = []
+
+            def note(response):
+                path = urlsplit(response.url).path
+                if path.endswith(BANCAS + "/intencao") or path.startswith("/auth/"):
+                    seen.append(f"{response.request.method} {path} {response.status}")
+
+            consult = section.get_by_role("button", name="Consultar resultado")
+            page.on("response", note)
+            try:
+                async with page.expect_response(
+                    lambda r: r.url.endswith(BANCAS + "/intencao") and r.status == 200
+                ):
+                    await consult.click()
+            except PlaywrightTimeout:
+                disabled = (
+                    await consult.is_disabled() if await consult.count() else None
+                )
+                alerts = await section.get_by_role("alert").count()
+                pytest.fail(
+                    "Intention consult never answered 200: "
+                    f"{seen}, button disabled={disabled}, alerts={alerts}"
+                )
+            finally:
+                page.remove_listener("response", note)
             await expect(section).to_contain_text(
                 "Alterações da banca Banca real revisada salvas."
             )
