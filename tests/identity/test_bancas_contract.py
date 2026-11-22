@@ -137,17 +137,36 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
             await page.reload()
             await settled(page)
             assert parse_qs(urlsplit(page.url).query)["banca_intencao"] == [key]
-            # Only paths, status codes and the button state are kept for a
-            # failure message: no bodies, headers, keys or page text.
+            # Only methods, paths, status or browser error codes and the button
+            # state are kept for a failure message: no bodies, headers, keys or
+            # page text.
             seen = []
 
+            def watched(url):
+                path = urlsplit(url).path
+                return (
+                    path.endswith((BANCAS + "/intencao", "/billing/status"))
+                    or path.startswith("/auth/")
+                ) and path
+
             def note(response):
-                path = urlsplit(response.url).path
-                if path.endswith(BANCAS + "/intencao") or path.startswith("/auth/"):
+                if path := watched(response.url):
                     seen.append(f"{response.request.method} {path} {response.status}")
+
+            def sent(request):
+                if path := watched(request.url):
+                    seen.append(f"enviado {request.method} {path}")
+
+            def failed(request):
+                # The browser's error code only (e.g. NS_BINDING_ABORTED).
+                if path := watched(request.url):
+                    code = (request.failure or "").split(" ")[0][:40]
+                    seen.append(f"falhou {request.method} {path} {code}")
 
             consult = section.get_by_role("button", name="Consultar resultado")
             page.on("response", note)
+            page.on("request", sent)
+            page.on("requestfailed", failed)
             try:
                 async with page.expect_response(
                     lambda r: r.url.endswith(BANCAS + "/intencao") and r.status == 200
@@ -164,6 +183,8 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
                 )
             finally:
                 page.remove_listener("response", note)
+                page.remove_listener("request", sent)
+                page.remove_listener("requestfailed", failed)
             await expect(section).to_contain_text(
                 "Alterações da banca Banca real revisada salvas."
             )
