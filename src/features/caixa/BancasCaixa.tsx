@@ -231,6 +231,11 @@ export function BancasCaixa({
             Não foi possível confirmar se a alteração da banca foi gravada.
             Consulte o resultado antes de qualquer nova tentativa.
           </p>
+          {/* A failed consultation keeps the intent; its reason is shown here,
+              never a silent button (#144). */}
+          {escrita.error !== undefined && (
+            <ErroApi error={escrita.error} intent="leitura" />
+          )}
           <button
             type="button"
             disabled={escrita.busy || escrita.waiting}

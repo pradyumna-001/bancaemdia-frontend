@@ -153,19 +153,40 @@ export function useLote(client: ReturnType<typeof createApiClient>) {
   async function begin(
     work: (signal: AbortSignal, live: () => boolean) => Promise<void>,
     leitura = false,
+    liberar?: () => void,
   ) {
     if (active.current || waiting) return;
     const controller = new AbortController();
     active.current = controller;
+    const mounted = () =>
+      alive.current && auth.service.getSnapshot().privateEpoch === epoch;
     setBusy(true);
     setError(undefined);
     try {
-      await work(controller.signal, guard(controller, leitura));
+      let live: () => boolean;
+      try {
+        live = guard(controller, leitura);
+      } catch (cause) {
+        // No session at the gesture: nothing was sent. It ends with its error
+        // on screen, and a write releases its key, as any refusal before a
+        // record does (#144); a silent rejection left the key stuck.
+        if (mounted()) {
+          setError(cause);
+          liberar?.();
+        }
+        return;
+      }
+      await work(controller.signal, live);
     } finally {
       if (active.current === controller) active.current = undefined;
-      if (alive.current && auth.service.getSnapshot().privateEpoch === epoch)
-        setBusy(false);
+      if (mounted()) setBusy(false);
     }
+  }
+
+  function liberar(value: Tentativa) {
+    setTentativa(undefined);
+    setFase('idle');
+    navigateTo((next) => next.delete(PARAM[value.operacao]));
   }
 
   async function preparar() {
@@ -183,63 +204,65 @@ export function useLote(client: ReturnType<typeof createApiClient>) {
   }
 
   async function send(value: Tentativa) {
-    await begin(async (signal, live) => {
-      let sent = false;
-      const headers = { 'Idempotency-Key': value.id };
-      try {
-        const receipt = await access.run(
-          OPERATION[value.operacao],
-          async () => {
-            if (!live()) throw new ApiError('cancelled', { mutation: true });
-            sent = true;
-            setFase('sending');
-            if (value.operacao === 'APAGAR') {
-              const { data } = await client.POST(LOTES, {
-                body: value.body!,
-                params: { header: headers },
+    await begin(
+      async (signal, live) => {
+        let sent = false;
+        const headers = { 'Idempotency-Key': value.id };
+        try {
+          const receipt = await access.run(
+            OPERATION[value.operacao],
+            async () => {
+              if (!live()) throw new ApiError('cancelled', { mutation: true });
+              sent = true;
+              setFase('sending');
+              if (value.operacao === 'APAGAR') {
+                const { data } = await client.POST(LOTES, {
+                  body: value.body!,
+                  params: { header: headers },
+                  signal,
+                });
+                const lote = conferirLote(data, `POST ${LOTES}`, true);
+                if (lote.restaurado_em !== null)
+                  throw new ApiError('invalid_response', { mutation: true });
+                return lote;
+              }
+              const { data } = await client.POST(RESTAURAR, {
+                params: { header: headers, path: { lote_id: value.loteId! } },
                 signal,
               });
-              const lote = conferirLote(data, `POST ${LOTES}`, true);
-              if (lote.restaurado_em !== null)
+              const lote = conferirLote(data, `POST ${RESTAURAR}`, true);
+              if (lote.lote_id !== value.loteId || lote.restaurado_em === null)
                 throw new ApiError('invalid_response', { mutation: true });
               return lote;
-            }
-            const { data } = await client.POST(RESTAURAR, {
-              params: { header: headers, path: { lote_id: value.loteId! } },
-              signal,
-            });
-            const lote = conferirLote(data, `POST ${RESTAURAR}`, true);
-            if (lote.lote_id !== value.loteId || lote.restaurado_em === null)
-              throw new ApiError('invalid_response', { mutation: true });
-            return lote;
-          },
-        );
-        if (live()) await settle(receipt, value.operacao);
-      } catch (cause) {
-        if (!live()) return;
-        const failure =
-          cause instanceof ApiError
-            ? cause
-            : new ApiError('invalid_response', { mutation: true });
-        setError(failure);
-        const uncertain =
-          sent &&
-          (failure.outcomeUnknown ||
-            failure.kind === 'invalid_response' ||
-            failure.status === 429);
-        if (uncertain) {
-          setFase('uncertain');
-          return;
+            },
+          );
+          if (live()) await settle(receipt, value.operacao);
+        } catch (cause) {
+          if (!live()) return;
+          const failure =
+            cause instanceof ApiError
+              ? cause
+              : new ApiError('invalid_response', { mutation: true });
+          setError(failure);
+          const uncertain =
+            sent &&
+            (failure.outcomeUnknown ||
+              failure.kind === 'invalid_response' ||
+              failure.status === 429);
+          if (uncertain) {
+            setFase('uncertain');
+            return;
+          }
+          // A known refusal is not recorded: the key is released.
+          liberar(value);
+          if (value.operacao === 'APAGAR' && failure.code !== 'frase_incorreta')
+            setPrevia(undefined);
+          if (value.operacao === 'RESTAURAR') void lote.refetch();
         }
-        // A known refusal is not recorded: the key is released.
-        setTentativa(undefined);
-        setFase('idle');
-        navigateTo((next) => next.delete(PARAM[value.operacao]));
-        if (value.operacao === 'APAGAR' && failure.code !== 'frase_incorreta')
-          setPrevia(undefined);
-        if (value.operacao === 'RESTAURAR') void lote.refetch();
-      }
-    });
+      },
+      false,
+      () => liberar(value),
+    );
   }
 
   // Send only once the key is in the URL.
