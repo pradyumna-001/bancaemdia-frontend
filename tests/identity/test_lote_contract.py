@@ -179,17 +179,36 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
             # Reload keeps only the key: consultation is still possible.
             await page.reload()
             await settled(page)
-            # Only paths, status codes and the button state are kept for a
-            # failure message: no bodies, headers, keys or page text.
+            # Only methods, paths, status or browser error codes and the button
+            # state are kept for a failure message: no bodies, headers, keys or
+            # page text.
             seen = []
 
+            def watched(url):
+                path = urlsplit(url).path
+                return (
+                    path.endswith((BATCHES + "/intencao", "/billing/status"))
+                    or path.startswith("/auth/")
+                ) and path
+
             def note(response):
-                path = urlsplit(response.url).path
-                if path.endswith(BATCHES + "/intencao") or path.startswith("/auth/"):
+                if path := watched(response.url):
                     seen.append(f"{response.request.method} {path} {response.status}")
+
+            def sent(request):
+                if path := watched(request.url):
+                    seen.append(f"enviado {request.method} {path}")
+
+            def failed(request):
+                # The browser's error code only (e.g. NS_BINDING_ABORTED).
+                if path := watched(request.url):
+                    code = (request.failure or "").split(" ")[0][:40]
+                    seen.append(f"falhou {request.method} {path} {code}")
 
             consult = card.get_by_role("button", name="Consultar resultado")
             page.on("response", note)
+            page.on("request", sent)
+            page.on("requestfailed", failed)
             try:
                 async with page.expect_response(
                     lambda r: r.url.endswith(BATCHES + "/intencao") and r.status == 200
@@ -206,6 +225,8 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
                 )
             finally:
                 page.remove_listener("response", note)
+                page.remove_listener("request", sent)
+                page.remove_listener("requestfailed", failed)
             await expect(card).to_contain_text(f"{len(active)} apostas apagadas em")
             assert len(sends) == 1
             batch = query(page)["lote"][0]
