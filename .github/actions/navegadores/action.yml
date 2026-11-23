@@ -37,6 +37,10 @@ runs:
         fi
         test -n "$version"
         echo "version=$version" >> "$GITHUB_OUTPUT"
+        # System release and ISO week for the apt package cache: these
+        # runners do not set ImageOS/ImageVersion.
+        release=$(. /etc/os-release && echo "$ID-$VERSION_ID")
+        echo "apt=$release-$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
     - name: Cache dos binários dos navegadores
       uses: actions/cache@v4
       with:
@@ -45,14 +49,15 @@ runs:
     # The system packages (apt .deb files) are cached too: WebKit needs
     # hundreds of multimedia packages, and a slow Ubuntu mirror exhausted
     # every attempt before any test ran (23/11, four WebKit jobs). The key
-    # follows the runner image, so a new image starts from its own packages;
-    # apt still installs what the image asks for and downloads anything missing.
+    # follows the system release and renews every week, so the cache does not
+    # drift from the mirror; apt still installs what it asks for and downloads
+    # anything missing or outdated.
     - name: Cache dos pacotes do sistema
       if: inputs.with-deps == 'true'
       uses: actions/cache@v4
       with:
         path: ~/.cache/apt-navegadores
-        key: apt-${{ runner.os }}-${{ env.ImageOS }}-${{ env.ImageVersion }}-${{ inputs.tool }}-${{ steps.versao.outputs.version }}-${{ inputs.browsers || 'todos' }}
+        key: apt-${{ runner.os }}-${{ steps.versao.outputs.apt }}-${{ inputs.tool }}-${{ steps.versao.outputs.version }}-${{ inputs.browsers || 'todos' }}
     - name: Instalar navegadores e dependências
       shell: bash
       env:
