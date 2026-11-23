@@ -60,7 +60,10 @@ function Location() {
   );
 }
 async function setup(
-  custom?: (r: Request) => Promise<Response | undefined>,
+  // `sent` is the request that reached fetch. Its clone does not report an
+  // abort reliably in Node: undici links a clone's signal through a WeakRef,
+  // and a garbage collection in between drops the link (CI under coverage).
+  custom?: (r: Request, sent: Request) => Promise<Response | undefined>,
   path = '/banca',
   accessState = 'FULL_WRITE',
 ) {
@@ -100,7 +103,7 @@ async function setup(
           return json({ ...billingStatus, access: accessState });
         calls.push(r.clone());
         if (r.method !== 'GET') writes.push(r.clone());
-        const override = await custom?.(r.clone());
+        const override = await custom?.(r.clone(), r);
         if (override) return override;
         const result = fixture.handle(
           r.method,
@@ -560,9 +563,11 @@ it('GET de recuperação falho mantém escrita incerta bloqueada', async () => {
 it('logout elimina recibo/formulário e descarta resposta tardia de POST', async () => {
   let finish: (value: Response) => void = () => {};
   let request: Request | undefined;
-  const s = await setup(async (r) => {
+  let sent: Request | undefined;
+  const s = await setup(async (r, original) => {
     if (r.method === 'POST') {
       request = r;
+      sent = original;
       return new Promise((resolve) => {
         finish = resolve;
       });
@@ -573,7 +578,7 @@ it('logout elimina recibo/formulário e descarta resposta tardia de POST', async
   confirm();
   await waitFor(() => expect(s.writes).toHaveLength(1));
   await act(() => s.service.logout());
-  expect(request!.signal.aborted).toBe(true);
+  expect(sent!.signal.aborted).toBe(true);
   await act(async () => {
     finish(
       json(
