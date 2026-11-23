@@ -1,5 +1,7 @@
 # E2E dos canais de entrada — #30
 
+**Situação atual (21/11/2026, #120):** o contrato está fixado na `main` integrada da API (`c7dde0718ed08dbab1e6ec5ee005386f7936c01d`, 147 operações, OpenAPI SHA-256 `b6be9685…`), sem bloco de disponibilidade. Os pins de candidata, sandbox e `sandbox_reconciliation` citados abaixo são o registro histórico desta entrega e não bloqueiam mais a publicação, que passa a depender só dos aceites próprios (#14, #38, #39). As exigências de prova abaixo continuam valendo.
+
 ## Fonte e escopo
 
 Esta entrega amplia as provas do frontend #96, HEAD herdado 5a5dcf397e44f4250025270f11102cae573f82b2. A PR continua diretamente contra main, com dependências declaradas; não realiza merge, deploy ou promoção de contrato. O pin permanece ec46748b00ce97ae3c3cac032f03cc691f7f8908, árvore real única de 127 operações, SHA-256 OpenAPI 797c735e0fa6d63f46c3eb1635e569e434154dfc02fb17d27c940ff339cfcf96. Backend #203 e candidatas herdadas continuam sandbox_reconciliation e bloqueiam publicação até integração/revalidação.

@@ -1,5 +1,7 @@
 # Caixa — movimentos e saldos (#31)
 
+**Situação atual (21/11/2026, #120):** o contrato está fixado na `main` integrada da API (`c7dde0718ed08dbab1e6ec5ee005386f7936c01d`, 147 operações, OpenAPI SHA-256 `b6be9685…`), sem bloco de disponibilidade. Os pins de candidata, sandbox e `sandbox_reconciliation` citados abaixo são o registro histórico desta entrega e não bloqueiam mais a publicação, que passa a depender só dos aceites próprios (#14, #38, #39). As exigências de prova abaixo continuam valendo.
+
 GET/POST `/api/v1/caixa`, GET `/caixa/saldo`, GET `/caixa/extrato` e PATCH `/caixa/contas/{conta_casa_id}/banca` existem na main integrada backend b916f54331f14cf47a3800324bd61d8638043c06. Esta entrega mantém o pin único de sandbox b37a3f88b922b471d25d5f1c92c84b336cd2c9c0 da #27: 120 operações, SHA-256 9da4116cf357df8c1b933c575156c067d8df86b3a216d234d810214a27a02ecb. Descritores gerados do mesmo documento, sem shape manual ou alteração da API. Disponibilidade `sandbox_reconciliation` bloqueia publicação; Revisão #28 é independente.
 
 ## Saldos e identidades

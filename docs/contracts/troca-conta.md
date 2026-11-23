@@ -1,5 +1,7 @@
 # Troca de conta — #53
 
+**Situação atual (21/11/2026, #120):** o contrato está fixado na `main` integrada da API (`c7dde0718ed08dbab1e6ec5ee005386f7936c01d`, 147 operações, OpenAPI SHA-256 `b6be9685…`), sem bloco de disponibilidade. Os pins de candidata, sandbox e `sandbox_reconciliation` citados abaixo são o registro histórico desta entrega e não bloqueiam mais a publicação, que passa a depender só dos aceites próprios (#14, #38, #39). As exigências de prova abaixo continuam valendo.
+
 Retomada em 17/10/2026 após backend #206/PR #207. A auditoria anterior é histórica: a confirmação atômica e a consulta de intenção foram entregues no candidato 132ee91585db41494b1c33c0ae499a77007ee16e, com 26 checks verdes conferidos. Consumir a árvore real completa 5f5f06276114d35e062db45bc54c61c4cb6fc3ec, 128 operações, SHA-256 922f9d278a650fa047eb4dcfb933712d25bab9a529ca6bb881dfc6daf8ca108d. Preservar todas as fontes, disponibilidade sandbox_reconciliation e bloqueio de publicação; main permanece b916f54. Merge pelo administrador.
 
 ## Tela e confirmação

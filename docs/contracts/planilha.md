@@ -1,5 +1,7 @@
 # Planilha — prévia, colunas e confirmação (#26)
 
+**Situação atual (21/11/2026, #120):** o contrato está fixado na `main` integrada da API (`c7dde0718ed08dbab1e6ec5ee005386f7936c01d`, 147 operações, OpenAPI SHA-256 `b6be9685…`), sem bloco de disponibilidade. Os pins de candidata, sandbox e `sandbox_reconciliation` citados abaixo são o registro histórico desta entrega e não bloqueiam mais a publicação, que passa a depender só dos aceites próprios (#14, #38, #39). As exigências de prova abaixo continuam valendo.
+
 Contrato candidato da PR backend [#197](https://github.com/pradyumna-001/bancaemdia-api/pull/197), issue #196, commit `2140bdabb21835e3c66487c4fe532b09fadebe0b`. Main auditada `b916f54331f14cf47a3800324bd61d8638043c06` não contém o fluxo. A árvore real reconciliada `003d3a0782cca071eaa0db4e8ce66fed2811a7ac` incorpora o sandbox anterior cf20de6 e o código próprio da #197. OpenAPI gerado pelo aplicativo: 115 operações, SHA-256 `c28137d18b64db1a7d3663159f15ee3d6a456abf9d6b8c25776b9f68050301de`. Tipos, políticas e descritores usam esse único documento. Sem união de schemas. Publicação bloqueada até integração administrativa e revalidação.
 
 ## Fluxo e identidade

@@ -1,5 +1,7 @@
 # Hipotética — frontend #21
 
+**Situação atual (21/11/2026, #120):** o contrato está fixado na `main` integrada da API (`c7dde0718ed08dbab1e6ec5ee005386f7936c01d`, 147 operações, OpenAPI SHA-256 `b6be9685…`), sem bloco de disponibilidade. Os pins de candidata, sandbox e `sandbox_reconciliation` citados abaixo são o registro histórico desta entrega e não bloqueiam mais a publicação, que passa a depender só dos aceites próprios (#14, #38, #39). As exigências de prova abaixo continuam valendo.
+
 Revalidação da composição #36 em 18/10/2026: consumidor recuperado no pin real
 único `37b130282c0d4a240f152b72fc76933074f38e4e`, 129 operações, hash
 `04f091f45b327f4fe87d629afa0a2df4fca84674686fd4e145be35bb0b0460dd`.
