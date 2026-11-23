@@ -1,7 +1,7 @@
 name: Instalar navegadores do Playwright
 description: >-
-  Cache dos binários dos navegadores e instalação das dependências do sistema
-  com tentativas limitadas e registradas. Só repete a instalação, nunca testes
+  Cache dos binários dos navegadores e dos pacotes do sistema, e instalação
+  das dependências do sistema com tentativas limitadas e registradas. Só repete a instalação, nunca testes
   nem medições (#125).
 inputs:
   browsers:
@@ -37,11 +37,27 @@ runs:
         fi
         test -n "$version"
         echo "version=$version" >> "$GITHUB_OUTPUT"
+        # System release and ISO week for the apt package cache: these
+        # runners do not set ImageOS/ImageVersion.
+        release=$(. /etc/os-release && echo "$ID-$VERSION_ID")
+        echo "apt=$release-$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
     - name: Cache dos binários dos navegadores
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
         key: playwright-${{ runner.os }}-${{ inputs.tool }}-${{ steps.versao.outputs.version }}-${{ inputs.browsers || 'todos' }}
+    # The system packages (apt .deb files) are cached too: WebKit needs
+    # hundreds of multimedia packages, and a slow Ubuntu mirror exhausted
+    # every attempt before any test ran (23/11, four WebKit jobs). The key
+    # follows the system release and renews every week, so the cache does not
+    # drift from the mirror; apt still installs what it asks for and downloads
+    # anything missing or outdated.
+    - name: Cache dos pacotes do sistema
+      if: inputs.with-deps == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/apt-navegadores
+        key: apt-${{ runner.os }}-${{ steps.versao.outputs.apt }}-${{ inputs.tool }}-${{ steps.versao.outputs.version }}-${{ inputs.browsers || 'todos' }}
     - name: Instalar navegadores e dependências
       shell: bash
       env:
@@ -49,4 +65,5 @@ runs:
         BROWSERS: ${{ inputs.browsers }}
         WITH_DEPS: ${{ inputs.with-deps }}
         ATTEMPT_SECONDS: ${{ inputs.attempt-seconds }}
+        APT_CACHE: ~/.cache/apt-navegadores
       run: bash "$GITHUB_ACTION_PATH/instalar.sh"
