@@ -554,3 +554,48 @@ it('consulta atravessa a renovação do acesso e recupera a banca', async () => 
   expect(lookups).toEqual([writes[0]!.key, writes[0]!.key]);
   expect(writes).toHaveLength(1);
 });
+
+it('sem sessão no gesto mostra o erro, libera a chave e o próximo toque grava', async () => {
+  const { writes, search, session } = await open();
+  // No session at the gesture: capture() refuses with 401 until it returns.
+  const recusa = vi.spyOn(session, 'capture').mockImplementation(() => {
+    throw new ApiError('http', { status: 401 });
+  });
+  const user = await criar('Sem sessão');
+  expect(
+    await screen.findByRole('heading', {
+      name: 'Entre novamente para continuar',
+    }),
+  ).toBeVisible();
+  expect(writes).toHaveLength(0);
+  expect(search().has('banca_intencao')).toBe(false);
+  expect(screen.getByLabelText('Nome da banca')).toHaveValue('Sem sessão');
+  recusa.mockRestore();
+  await user.click(screen.getByRole('button', { name: 'Criar banca' }));
+  expect(await screen.findByText('Banca Sem sessão criada.')).toBeVisible();
+  expect(writes).toHaveLength(1);
+});
+
+it('consulta sem sessão no gesto mostra o erro junto da incerteza e o próximo toque consulta', async () => {
+  const { lookups, session, search } = await open({
+    entry: `/caixa?casa=7&banca_intencao=${KEY}`,
+  });
+  const consultar = await screen.findByRole('button', {
+    name: 'Consultar resultado',
+  });
+  // Before #144 the failure was swallowed: a live button, nothing on screen.
+  const recusa = vi.spyOn(session, 'capture').mockImplementation(() => {
+    throw new ApiError('http', { status: 401 });
+  });
+  const user = userEvent.setup();
+  await user.click(consultar);
+  expect(await screen.findByRole('alert')).toBeVisible();
+  expect(
+    screen.getByText('Não foi possível confirmar', { exact: false }),
+  ).toBeVisible();
+  expect(lookups).toHaveLength(0);
+  expect(search().get('banca_intencao')).toBe(KEY);
+  recusa.mockRestore();
+  await user.click(consultar);
+  await waitFor(() => expect(lookups).toEqual([KEY]));
+});

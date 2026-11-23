@@ -4,6 +4,7 @@ import type { createApiClient } from '../../../api/client';
 import type { components } from '../../../api/schema';
 import { ApiError } from '../../../api/error';
 import { useAuth } from '../../../auth/ProvedorAuth';
+import type { RequestContext } from '../../../auth/session';
 import { useRetryAfter } from '../../../lib/useRetryAfter';
 import { useAcesso } from '../../acesso/ProvedorAcesso';
 import { LIST, ITEM, conferir, conferirLista, type Entrada } from './protocol';
@@ -72,13 +73,15 @@ export function useMetas(client: ReturnType<typeof createApiClient>) {
     setError(undefined);
     setErrorIntent('gravacao');
     setNotice('');
-    let scope = auth.service.capture();
+    let scope: RequestContext | undefined;
     const mounted = () =>
       alive.current && auth.service.getSnapshot().privateEpoch === epoch;
     const current = () =>
-      mounted() && scope.isCurrent() && !controller.signal.aborted;
+      mounted() && !!scope?.isCurrent() && !controller.signal.aborted;
     let sent = false;
     try {
+      // Inside the try: without a session the gesture ends with its error.
+      scope = auth.service.capture();
       const value = await access.run(operation, async () => {
         // Bound to the sending session: a same-person renewal in the
         // billing gate comes before the write and does not cancel it.
@@ -146,7 +149,12 @@ export function useMetas(client: ReturnType<typeof createApiClient>) {
     setErrorIntent('leitura');
     setNotice('');
     if (!unknown?.id) {
-      auth.service.capture(); // Only an authenticated session consults.
+      try {
+        auth.service.capture(); // Only an authenticated session consults.
+      } catch (cause) {
+        setError(cause);
+        return;
+      }
       // A renewal during the refetch repeats the safe read once, so its
       // answer is current; logout or a person change still discards it.
       const result = await query.refetch();
@@ -165,7 +173,6 @@ export function useMetas(client: ReturnType<typeof createApiClient>) {
     const controller = new AbortController();
     active.current = controller;
     setBusy(true);
-    auth.service.capture(); // Only an authenticated session starts a lookup.
     // A safe read survives the renewal done by auth.service.read; logout or a
     // person change (privateEpoch) still discards it.
     const current = () =>
@@ -173,6 +180,7 @@ export function useMetas(client: ReturnType<typeof createApiClient>) {
       auth.service.getSnapshot().privateEpoch === epoch &&
       !controller.signal.aborted;
     try {
+      auth.service.capture(); // Only an authenticated session starts a lookup.
       const value = await auth.service.read(async () =>
         conferir(
           (

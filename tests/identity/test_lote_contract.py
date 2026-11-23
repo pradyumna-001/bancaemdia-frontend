@@ -206,6 +206,7 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
                     seen.append(f"falhou {request.method} {path} {code}")
 
             consult = card.get_by_role("button", name="Consultar resultado")
+            clicked = False
             page.on("response", note)
             page.on("request", sent)
             page.on("requestfailed", failed)
@@ -214,14 +215,27 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
                     lambda r: r.url.endswith(BATCHES + "/intencao") and r.status == 200
                 ):
                     await consult.click()
+                    # The click itself completed; only the answer is awaited.
+                    clicked = True
             except PlaywrightTimeout:
                 disabled = (
                     await consult.is_disabled() if await consult.count() else None
                 )
+                visible = await consult.is_visible() if await consult.count() else None
                 alerts = await card.get_by_role("alert").count()
+                # Which session screen covers the page (fixed interface text
+                # only): checking, failed check, or none.
+                checking = await page.get_by_text("Conferindo sessão…").count()
+                session_error = await page.get_by_role(
+                    "heading", name="Não foi possível conferir sua sessão"
+                ).count()
+                page_alerts = await page.get_by_role("alert").count()
                 pytest.fail(
                     "Intention consult never answered 200: "
-                    f"{seen}, button disabled={disabled}, alerts={alerts}"
+                    f"{seen}, button visible={visible} disabled={disabled}, "
+                    f"alerts={alerts}, page alerts={page_alerts}, "
+                    f"checking={checking}, session error={session_error}, "
+                    f"clicked={clicked}"
                 )
             finally:
                 page.remove_listener("response", note)

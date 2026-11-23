@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { createApiClient } from '../../api/client';
 import { ApiError } from '../../api/error';
 import { useAuth } from '../../auth/ProvedorAuth';
+import type { RequestContext } from '../../auth/session';
 import { useRetryAfter } from '../../lib/useRetryAfter';
 import { useAcesso } from '../acesso/ProvedorAcesso';
 import {
@@ -69,24 +70,26 @@ export function useUnidade(client: ReturnType<typeof createApiClient>) {
     if (kind === 'consult' && !current.uncertain) return;
     if (!current.id) return;
     if (kind !== 'consult' && !access.can(POST)) return;
-    update(current);
     const controller = new AbortController();
     active.current = controller;
     setBusy(true);
     setError(undefined);
-    const scope = auth.service.capture();
+    const mounted = () =>
+      alive.current && auth.service.getSnapshot().privateEpoch === epoch;
+    let scope: RequestContext | undefined;
     // A consultation is a safe read: auth.service.read renews an expired
     // access once and only resolves for the current session, so its answer
     // stays valid across that renewal. A write stays bound to the session
     // that sent it.
     const live = () =>
-      alive.current &&
+      mounted() &&
       !controller.signal.aborted &&
-      (kind === 'consult' || scope.isCurrent()) &&
-      auth.service.getSnapshot().privateEpoch === epoch;
+      (kind === 'consult' || !!scope?.isCurrent());
     const headers = { 'Idempotency-Key': current.id };
     let sent = false;
     try {
+      scope = auth.service.capture();
+      update(current);
       const receipt =
         kind === 'consult'
           ? await auth.service.read(async () => {
@@ -111,6 +114,11 @@ export function useUnidade(client: ReturnType<typeof createApiClient>) {
       update({ ...current, receipt, uncertain: false, notRecorded: false });
       await queries.invalidateQueries({ queryKey: ['unidade'] });
     } catch (cause) {
+      // No session at the gesture: nothing was sent and the state is kept.
+      if (!scope) {
+        if (mounted()) setError(cause);
+        return;
+      }
       if (!live()) return;
       const failure =
         cause instanceof ApiError
@@ -136,8 +144,7 @@ export function useUnidade(client: ReturnType<typeof createApiClient>) {
       else update({ ...current, uncertain: true, notRecorded: false });
     } finally {
       if (active.current === controller) active.current = undefined;
-      if (alive.current && auth.service.getSnapshot().privateEpoch === epoch)
-        setBusy(false);
+      if (mounted()) setBusy(false);
     }
   }
 
