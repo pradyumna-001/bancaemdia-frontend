@@ -70,7 +70,40 @@ attempt() {
   return 1
 }
 
+# Downloaded .deb files are kept between runs (see action.yml): restored into
+# apt's own archive before installing, saved back after a successful install.
+# apt checks each file against the index, so a stale one is simply downloaded
+# again; nothing installed differs from a run without the cache.
+cache="${APT_CACHE:-}"
+cache="${cache/#\~/$HOME}"
+archives="${APT_ARCHIVES:-/var/cache/apt/archives}"
+apt_conf="${APT_CONF_DIR:-/etc/apt/apt.conf.d}/99manter-pacotes-navegadores"
+restore_debs() {
+  [ -n "$cache" ] && command -v dpkg > /dev/null || return 0
+  # apt-get keeps what it downloads, unless an image setting cleans it.
+  echo 'APT::Keep-Downloaded-Packages "true"; Binary::apt::APT::Keep-Downloaded-Packages "true";' |
+    sudo tee "$apt_conf" > /dev/null
+  mkdir -p "$cache"
+  local count
+  count=$(find "$cache" -maxdepth 1 -name '*.deb' | wc -l)
+  if [ "$count" -gt 0 ]; then
+    sudo cp -n "$cache"/*.deb "$archives"/
+  fi
+  echo "Pacotes do sistema restaurados do cache: $count."
+}
+save_debs() {
+  [ -n "$cache" ] && command -v dpkg > /dev/null || return 0
+  local count
+  count=$(find "$archives" -maxdepth 1 -name '*.deb' | wc -l)
+  if [ "$count" -gt 0 ]; then
+    cp -n "$archives"/*.deb "$cache"/
+  fi
+  echo "Pacotes do sistema guardados para o cache: $count."
+}
+
 if [ "${WITH_DEPS:-true}" = true ]; then
+  restore_debs
   attempt "Dependências do sistema" "${playwright[@]}" install-deps "${browsers[@]}"
+  save_debs
 fi
 attempt "Navegadores" "${playwright[@]}" install "${browsers[@]}"

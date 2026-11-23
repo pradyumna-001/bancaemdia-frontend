@@ -1,7 +1,7 @@
 name: Instalar navegadores do Playwright
 description: >-
-  Cache dos binários dos navegadores e instalação das dependências do sistema
-  com tentativas limitadas e registradas. Só repete a instalação, nunca testes
+  Cache dos binários dos navegadores e dos pacotes do sistema, e instalação
+  das dependências do sistema com tentativas limitadas e registradas. Só repete a instalação, nunca testes
   nem medições (#125).
 inputs:
   browsers:
@@ -42,6 +42,17 @@ runs:
       with:
         path: ~/.cache/ms-playwright
         key: playwright-${{ runner.os }}-${{ inputs.tool }}-${{ steps.versao.outputs.version }}-${{ inputs.browsers || 'todos' }}
+    # The system packages (apt .deb files) are cached too: WebKit needs
+    # hundreds of multimedia packages, and a slow Ubuntu mirror exhausted
+    # every attempt before any test ran (23/11, four WebKit jobs). The key
+    # follows the runner image, so a new image starts from its own packages;
+    # apt still installs what the image asks for and downloads anything missing.
+    - name: Cache dos pacotes do sistema
+      if: inputs.with-deps == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/apt-navegadores
+        key: apt-${{ runner.os }}-${{ env.ImageOS }}-${{ env.ImageVersion }}-${{ inputs.tool }}-${{ steps.versao.outputs.version }}-${{ inputs.browsers || 'todos' }}
     - name: Instalar navegadores e dependências
       shell: bash
       env:
@@ -49,4 +60,5 @@ runs:
         BROWSERS: ${{ inputs.browsers }}
         WITH_DEPS: ${{ inputs.with-deps }}
         ATTEMPT_SECONDS: ${{ inputs.attempt-seconds }}
+        APT_CACHE: ~/.cache/apt-navegadores
       run: bash "$GITHUB_ACTION_PATH/instalar.sh"
