@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { createSession } from '../../auth/session';
@@ -632,4 +632,54 @@ it('prévia atravessa a renovação do acesso em vez de sumir em silêncio', asy
   await preparar();
   expect(await screen.findByText('APAGAR 12 APOSTAS')).toBeVisible();
   expect(reads.filter((r) => r.endsWith('/previa-apagar'))).toHaveLength(2);
+});
+
+it('sem sessão no gesto de consultar mostra o erro e o próximo toque consulta', async () => {
+  const { lookups, session, search } = await open({
+    entry: `/configuracoes?casa=7&lote_apagar=${KEY}`,
+  });
+  const consultar = await screen.findByRole('button', {
+    name: 'Consultar resultado',
+  });
+  // No session at the gesture (#144): capture() refuses with 401.
+  const recusa = vi.spyOn(session, 'capture').mockImplementation(() => {
+    throw new ApiError('http', { status: 401 });
+  });
+  const user = userEvent.setup();
+  await user.click(consultar);
+  expect(await screen.findByRole('alert')).toBeVisible();
+  expect(lookups).toHaveLength(0);
+  expect(search().get('lote_apagar')).toBe(KEY);
+  expect(consultar).toBeEnabled();
+  recusa.mockRestore();
+  await user.click(consultar);
+  await waitFor(() => expect(lookups).toEqual([KEY]));
+});
+
+it('sem sessão no gesto de apagar mostra o erro, libera a chave e o próximo toque apaga', async () => {
+  const { posts, session, search } = await open();
+  const user = await preparar();
+  const input = await screen.findByLabelText('Para confirmar, digite', {
+    exact: false,
+  });
+  await user.type(input, 'APAGAR 12 APOSTAS');
+  const botao = screen.getByRole('button', { name: 'Apagar 12 apostas' });
+  await waitFor(() => expect(botao).toBeEnabled());
+  // The key goes to the URL, then the send finds no session (#144).
+  const recusa = vi.spyOn(session, 'capture').mockImplementation(() => {
+    throw new ApiError('http', { status: 401 });
+  });
+  await user.click(botao);
+  expect(await screen.findByRole('alert')).toBeVisible();
+  expect(posts).toHaveLength(0);
+  await waitFor(() => expect(search().has('lote_apagar')).toBe(false));
+  expect(search().get('casa')).toBe('7');
+  recusa.mockRestore();
+  await user.click(
+    await screen.findByRole('button', { name: 'Apagar 12 apostas' }),
+  );
+  expect(
+    await screen.findByText('apagadas em', { exact: false }),
+  ).toBeVisible();
+  expect(posts).toHaveLength(1);
 });
