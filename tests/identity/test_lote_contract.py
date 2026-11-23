@@ -13,6 +13,7 @@ from uuid import uuid4
 
 import pytest
 from playwright.async_api import Error as BrowserError
+from playwright.async_api import TimeoutError as PlaywrightTimeout
 from playwright.async_api import async_playwright, expect
 from sqlalchemy import text
 
@@ -178,10 +179,54 @@ async def test_public_spa_lote(harness, engine_admin, viewport, browser_name):
             # Reload keeps only the key: consultation is still possible.
             await page.reload()
             await settled(page)
-            async with page.expect_response(
-                lambda r: r.url.endswith(BATCHES + "/intencao") and r.status == 200
-            ):
-                await card.get_by_role("button", name="Consultar resultado").click()
+            # Only methods, paths, status or browser error codes and the button
+            # state are kept for a failure message: no bodies, headers, keys or
+            # page text.
+            seen = []
+
+            def watched(url):
+                path = urlsplit(url).path
+                return (
+                    path.endswith((BATCHES + "/intencao", "/billing/status"))
+                    or path.startswith("/auth/")
+                ) and path
+
+            def note(response):
+                if path := watched(response.url):
+                    seen.append(f"{response.request.method} {path} {response.status}")
+
+            def sent(request):
+                if path := watched(request.url):
+                    seen.append(f"enviado {request.method} {path}")
+
+            def failed(request):
+                # The browser's error code only (e.g. NS_BINDING_ABORTED).
+                if path := watched(request.url):
+                    code = (request.failure or "").split(" ")[0][:40]
+                    seen.append(f"falhou {request.method} {path} {code}")
+
+            consult = card.get_by_role("button", name="Consultar resultado")
+            page.on("response", note)
+            page.on("request", sent)
+            page.on("requestfailed", failed)
+            try:
+                async with page.expect_response(
+                    lambda r: r.url.endswith(BATCHES + "/intencao") and r.status == 200
+                ):
+                    await consult.click()
+            except PlaywrightTimeout:
+                disabled = (
+                    await consult.is_disabled() if await consult.count() else None
+                )
+                alerts = await card.get_by_role("alert").count()
+                pytest.fail(
+                    "Intention consult never answered 200: "
+                    f"{seen}, button disabled={disabled}, alerts={alerts}"
+                )
+            finally:
+                page.remove_listener("response", note)
+                page.remove_listener("request", sent)
+                page.remove_listener("requestfailed", failed)
             await expect(card).to_contain_text(f"{len(active)} apostas apagadas em")
             assert len(sends) == 1
             batch = query(page)["lote"][0]
