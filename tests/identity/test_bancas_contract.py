@@ -35,7 +35,15 @@ ROWS = (
 async def settled(page):
     # Cards load independently and grow when their data arrives; a click
     # computed before that can land on a target that has already moved.
-    await expect(page.get_by_text(re.compile(r"^Consultando"))).to_have_count(0)
+    # Right after goto/reload the app has not rendered yet (only "Abrindo
+    # página…" while the session is checked), so "no Consultando" passed at
+    # once and the click raced the cards loading above it: it hit whatever
+    # moved under the pointer and the consult was never sent (#125). Wait for
+    # the page itself first, then for every loading line to end.
+    await expect(page.locator("#conteudo")).to_be_visible()
+    await expect(
+        page.get_by_text(re.compile(r"^(Consultando|Abrindo|Conferindo)"))
+    ).to_have_count(0)
 
 
 async def rows(engine, uid):
@@ -165,6 +173,7 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
 
             consult = section.get_by_role("button", name="Consultar resultado")
             clicked = False
+            box = await consult.bounding_box()
             page.on("response", note)
             page.on("request", sent)
             page.on("requestfailed", failed)
@@ -188,12 +197,16 @@ async def test_public_spa_bancas(harness, engine_admin, viewport, browser_name):
                     "heading", name="Não foi possível conferir sua sessão"
                 ).count()
                 page_alerts = await page.get_by_role("alert").count()
+                # Whether the button moved after the click was computed
+                # (position only, in CSS pixels).
+                after = await consult.bounding_box() if await consult.count() else None
+                moved = round(after["y"] - box["y"]) if box and after else None
                 pytest.fail(
                     "Intention consult never answered 200: "
                     f"{seen}, button visible={visible} disabled={disabled}, "
                     f"alerts={alerts}, page alerts={page_alerts}, "
                     f"checking={checking}, session error={session_error}, "
-                    f"clicked={clicked}"
+                    f"clicked={clicked}, moved={moved}"
                 )
             finally:
                 page.remove_listener("response", note)
